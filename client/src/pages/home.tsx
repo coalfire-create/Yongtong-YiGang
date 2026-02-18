@@ -273,7 +273,7 @@ function QuickMenuGrid() {
 function HeroSection() {
   return (
     <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6" data-testid="hero-section">
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-0 lg:h-[520px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[6px] lg:h-[520px]">
         <div className="aspect-[16/9] lg:aspect-auto lg:h-full">
           <HeroCarousel />
         </div>
