@@ -49,7 +49,7 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200" data-testid="header">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-[68px] gap-4">
           <a
             href="/"
@@ -272,8 +272,8 @@ function QuickMenuGrid() {
 
 function HeroSection() {
   return (
-    <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6" data-testid="hero-section">
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[6px] lg:h-[520px]">
+    <section className="px-4 sm:px-6 lg:px-8 py-4 lg:py-6" data-testid="hero-section">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[5px] lg:h-[calc(100vh-100px)] lg:min-h-[480px] lg:max-h-[680px]">
         <div className="aspect-[16/9] lg:aspect-auto lg:h-full">
           <HeroCarousel />
         </div>
