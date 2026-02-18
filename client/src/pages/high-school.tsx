@@ -1,6 +1,16 @@
 import { SectionPage } from "@/components/layout";
 import { Link } from "wouter";
-import { Calendar, Users, Clock, BookOpen } from "lucide-react";
+import { Calendar, Users, Clock, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { TimetableGallery } from "@/components/timetable-gallery";
+
+interface Teacher {
+  id: string;
+  name: string;
+  subject: string;
+  description: string;
+  image_url: string | null;
+}
 
 export function HighSchool() {
   return (
@@ -45,63 +55,83 @@ export function HighSchool() {
 }
 
 export function HighSchoolSchedule() {
-  const scheduleData = [
-    { time: "14:00~15:30", mon: "고3 수학(상)", tue: "", wed: "고3 수학(상)", thu: "", fri: "고3 수학(상)", sat: "고3 모의" },
-    { time: "16:00~17:30", mon: "고3 수학(하)", tue: "", wed: "고3 수학(하)", thu: "", fri: "고3 수학(하)", sat: "고3 모의" },
-    { time: "18:00~19:30", mon: "고1 수학(상)", tue: "고2 수학I", wed: "고1 수학(상)", thu: "고2 수학I", fri: "고1 수학(상)", sat: "" },
-    { time: "20:00~21:30", mon: "고1 수학(하)", tue: "고2 수학II", wed: "고1 수학(하)", thu: "고2 수학II", fri: "고1 수학(하)", sat: "" },
-  ];
   return (
     <SectionPage title="고등관 강의시간표" subtitle="고등부 전 학년 강의 시간표">
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse" data-testid="table-schedule">
-          <thead>
-            <tr className="bg-[#1B2A4A] text-white">
-              <th className="py-3 px-4 text-sm font-semibold text-left border border-[#1B2A4A]">시간</th>
-              {["월", "화", "수", "목", "금", "토"].map((d) => (
-                <th key={d} className="py-3 px-4 text-sm font-semibold text-center border border-[#1B2A4A]">{d}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {scheduleData.map((row) => (
-              <tr key={row.time} className="border-b border-gray-200">
-                <td className="py-3 px-4 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 whitespace-nowrap">{row.time}</td>
-                {[row.mon, row.tue, row.wed, row.thu, row.fri, row.sat].map((cell, i) => (
-                  <td key={i} className={`py-3 px-4 text-sm text-center border border-gray-200 ${cell ? "text-gray-800 font-medium" : "text-gray-300"}`}>{cell || "-"}</td>
+      <TimetableGallery category="고등관" />
+      <div className="mt-10">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">기본 시간표</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse" data-testid="table-schedule">
+            <thead>
+              <tr className="bg-[#1B2A4A] text-white">
+                <th className="py-3 px-4 text-sm font-semibold text-left border border-[#1B2A4A]">시간</th>
+                {["월", "화", "수", "목", "금", "토"].map((d) => (
+                  <th key={d} className="py-3 px-4 text-sm font-semibold text-center border border-[#1B2A4A]">{d}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {[
+                { time: "14:00~15:30", mon: "고3 수학(상)", tue: "", wed: "고3 수학(상)", thu: "", fri: "고3 수학(상)", sat: "고3 모의" },
+                { time: "16:00~17:30", mon: "고3 수학(하)", tue: "", wed: "고3 수학(하)", thu: "", fri: "고3 수학(하)", sat: "고3 모의" },
+                { time: "18:00~19:30", mon: "고1 수학(상)", tue: "고2 수학I", wed: "고1 수학(상)", thu: "고2 수학I", fri: "고1 수학(상)", sat: "" },
+                { time: "20:00~21:30", mon: "고1 수학(하)", tue: "고2 수학II", wed: "고1 수학(하)", thu: "고2 수학II", fri: "고1 수학(하)", sat: "" },
+              ].map((row) => (
+                <tr key={row.time} className="border-b border-gray-200">
+                  <td className="py-3 px-4 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 whitespace-nowrap">{row.time}</td>
+                  {[row.mon, row.tue, row.wed, row.thu, row.fri, row.sat].map((cell, i) => (
+                    <td key={i} className={`py-3 px-4 text-sm text-center border border-gray-200 ${cell ? "text-gray-800 font-medium" : "text-gray-300"}`}>{cell || "-"}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-4 text-xs text-gray-400">* 시간표는 학원 사정에 따라 변경될 수 있습니다.</p>
       </div>
-      <p className="mt-4 text-xs text-gray-400">* 시간표는 학원 사정에 따라 변경될 수 있습니다.</p>
     </SectionPage>
   );
 }
 
 export function HighSchoolTeachers() {
-  const teachers = [
-    { name: "이강 원장", subject: "수학(상)·수학(하)", exp: "경력 15년", desc: "수능 출제 경향 분석 전문가. 개념부터 실전까지 체계적 수업." },
-    { name: "김수현 선생님", subject: "수학I·수학II", exp: "경력 10년", desc: "학생 눈높이에 맞춘 맞춤형 강의. 내신 1등급 다수 배출." },
-    { name: "박정호 선생님", subject: "미적분·기하", exp: "경력 8년", desc: "심화 과정 전문. 의대·SKY 목표 학생 집중 관리." },
+  const { data: teachers = [], isLoading } = useQuery<Teacher[]>({
+    queryKey: ["/api/teachers"],
+  });
+
+  const fallbackTeachers = [
+    { id: "f1", name: "이강 원장", subject: "수학(상)·수학(하)", description: "수능 출제 경향 분석 전문가. 개념부터 실전까지 체계적 수업.", image_url: null },
+    { id: "f2", name: "김수현 선생님", subject: "수학I·수학II", description: "학생 눈높이에 맞춘 맞춤형 강의. 내신 1등급 다수 배출.", image_url: null },
+    { id: "f3", name: "박정호 선생님", subject: "미적분·기하", description: "심화 과정 전문. 의대·SKY 목표 학생 집중 관리.", image_url: null },
   ];
+
+  const displayTeachers = teachers.length > 0 ? teachers : fallbackTeachers;
+
   return (
     <SectionPage title="고등관 선생님 소개" subtitle="최고의 실력을 갖춘 고등부 전문 강사진">
-      <div className="space-y-6">
-        {teachers.map((t) => (
-          <div key={t.name} className="flex items-start gap-6 bg-white border border-gray-200 p-6" data-testid={`card-teacher-${t.name}`}>
-            <div className="flex-shrink-0 w-20 h-20 bg-orange-50 flex items-center justify-center">
-              <Users className="w-10 h-10 text-orange-400" />
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {displayTeachers.map((t) => (
+            <div key={t.id} className="bg-white border border-gray-200 overflow-hidden" data-testid={`card-teacher-${t.name}`}>
+              {t.image_url ? (
+                <img src={t.image_url} alt={t.name} className="w-full h-48 object-cover" />
+              ) : (
+                <div className="w-full h-48 bg-orange-50 flex items-center justify-center">
+                  <Users className="w-16 h-16 text-orange-300" />
+                </div>
+              )}
+              <div className="p-5">
+                <h3 className="text-lg font-bold text-gray-900">{t.name}</h3>
+                <p className="text-sm text-orange-500 font-medium mt-0.5">{t.subject}</p>
+                <p className="text-sm text-gray-500 mt-2">{t.description}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900">{t.name}</h3>
-              <p className="text-sm text-orange-500 font-medium mt-0.5">{t.subject} | {t.exp}</p>
-              <p className="text-sm text-gray-500 mt-2">{t.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </SectionPage>
   );
 }

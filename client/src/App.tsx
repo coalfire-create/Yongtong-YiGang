@@ -11,6 +11,7 @@ import { Owl, OwlInfo, OwlUsage } from "@/pages/owl";
 import { Briefing, BriefingReservation, BriefingSchedule } from "@/pages/briefing";
 import { Admissions, AdmissionsResults, AdmissionsReviews } from "@/pages/admissions";
 import { Directions } from "@/pages/directions";
+import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/admissions/results" component={AdmissionsResults} />
       <Route path="/admissions/reviews" component={AdmissionsReviews} />
       <Route path="/directions" component={Directions} />
+      <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );
