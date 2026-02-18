@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { Menu, X, ChevronLeft, ChevronRight, Users, Calendar, Trophy, Star, BookOpen, GraduationCap } from "lucide-react";
 
-const NAV_ITEMS = ["고등관", "중등관", "초등관", "올빼미", "설명회", "입시", "오시는길"];
+const NAV_ITEMS = [
+  { label: "고등관", sub: ["강의시간표", "선생님 소개"] },
+  { label: "중등관", sub: ["강의시간표", "선생님 소개"] },
+  { label: "초등관", sub: ["강의시간표", "선생님 소개"] },
+  { label: "올빼미", sub: ["독학관 안내", "이용 방법"] },
+  { label: "설명회", sub: ["설명회 예약", "설명회 일정"] },
+  { label: "입시", sub: ["입시 실적", "합격 후기"] },
+  { label: "오시는길", sub: [] },
+];
 
 const QUICK_MENU_ITEMS = [
   { label: "강사소개", sub: "자세히 보기 +", icon: Users, highlight: false },
@@ -50,26 +58,41 @@ function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200" data-testid="header">
       <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-[68px] gap-4">
+        <div className="flex items-center h-[68px] gap-4">
           <a
             href="/"
-            className="flex-shrink-0 text-2xl font-extrabold tracking-tight"
+            className="flex-shrink-0 text-2xl font-extrabold tracking-tight mr-auto lg:mr-0"
             style={{ color: "#1B2A4A" }}
             data-testid="link-logo"
           >
             영통이강학원
           </a>
 
-          <nav className="hidden lg:flex items-center gap-0" data-testid="nav-desktop">
+          <nav className="hidden lg:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
             {NAV_ITEMS.map((item) => (
-              <a
-                key={item}
-                href={`#${item}`}
-                className="px-5 py-2 text-[15px] font-semibold text-gray-700 hover:text-orange-500 transition-colors duration-200"
-                data-testid={`link-nav-${item}`}
-              >
-                {item}
-              </a>
+              <div key={item.label} className="relative group" data-testid={`nav-item-${item.label}`}>
+                <a
+                  href={`#${item.label}`}
+                  className="block px-6 py-5 text-[15px] font-semibold text-gray-700 hover:text-orange-500 transition-colors duration-200 border-b-2 border-transparent hover:border-orange-500"
+                  data-testid={`link-nav-${item.label}`}
+                >
+                  {item.label}
+                </a>
+                {item.sub.length > 0 && (
+                  <div className="invisible group-hover:visible absolute top-full left-0 bg-white border border-gray-200 shadow-lg min-w-[160px] z-50" data-testid={`dropdown-${item.label}`}>
+                    {item.sub.map((subItem) => (
+                      <a
+                        key={subItem}
+                        href={`#${item.label}-${subItem}`}
+                        className="block px-5 py-3 text-sm text-gray-600 hover:text-orange-500 hover:bg-gray-50 transition-colors duration-150"
+                        data-testid={`link-sub-${subItem}`}
+                      >
+                        {subItem}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
@@ -92,15 +115,31 @@ function Header() {
       >
         <nav className="flex flex-col p-6 gap-1">
           {NAV_ITEMS.map((item) => (
-            <a
-              key={item}
-              href={`#${item}`}
-              className="px-4 py-3 text-base font-semibold text-gray-700 hover:text-orange-500 hover:bg-orange-50 transition-colors duration-200"
-              onClick={() => setMobileMenuOpen(false)}
-              data-testid={`link-mobile-nav-${item}`}
-            >
-              {item}
-            </a>
+            <div key={item.label}>
+              <a
+                href={`#${item.label}`}
+                className="block px-4 py-3 text-base font-semibold text-gray-700 hover:text-orange-500 hover:bg-orange-50 transition-colors duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+                data-testid={`link-mobile-nav-${item.label}`}
+              >
+                {item.label}
+              </a>
+              {item.sub.length > 0 && (
+                <div className="pl-8 flex flex-col">
+                  {item.sub.map((subItem) => (
+                    <a
+                      key={subItem}
+                      href={`#${item.label}-${subItem}`}
+                      className="block px-4 py-2 text-sm text-gray-500 hover:text-orange-500 transition-colors duration-200"
+                      onClick={() => setMobileMenuOpen(false)}
+                      data-testid={`link-mobile-sub-${subItem}`}
+                    >
+                      {subItem}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
       </div>
