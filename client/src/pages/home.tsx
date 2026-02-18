@@ -4,7 +4,7 @@ import { Menu, X, ChevronLeft, ChevronRight, Users, Calendar, Trophy, Star, Book
 const NAV_ITEMS = ["고등관", "중등관", "초등관", "올빼미", "설명회", "입시", "오시는길"];
 
 const QUICK_MENU_ITEMS = [
-  { label: "강사소개", sub: "자세히 보기 +", icon: Users, highlight: true },
+  { label: "강사소개", sub: "자세히 보기 +", icon: Users, highlight: false },
   { label: "중등 시간표", sub: "자세히 보기 +", icon: BookOpen, highlight: false },
   { label: "고1 시간표", sub: "자세히 보기 +", icon: Calendar, highlight: false },
   { label: "고2 시간표", sub: "자세히 보기 +", icon: Calendar, highlight: false },
@@ -256,7 +256,7 @@ function QuickMenuCard({
 
 function QuickMenuGrid() {
   return (
-    <div className="grid grid-cols-2 gap-0 h-full" data-testid="quick-menu-grid">
+    <div className="grid grid-cols-2 gap-[6px] h-full" data-testid="quick-menu-grid">
       {QUICK_MENU_ITEMS.map((item) => (
         <QuickMenuCard
           key={item.label}
