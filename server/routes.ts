@@ -47,20 +47,37 @@ export async function registerRoutes(
   });
 
   // ========== TEACHERS ==========
-  app.get("/api/teachers", async (_req, res) => {
-    const { data, error } = await supabase
+  app.get("/api/teachers", async (req, res) => {
+    const division = req.query.division as string | undefined;
+    let query = supabase
       .from("teachers")
       .select("*")
       .order("created_at", { ascending: false });
+    if (division) {
+      query = query.like("subject", `${division}::%`);
+    }
+    const { data, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+
+    const teachers = (data || []).map((t: any) => {
+      const parts = (t.subject || "").split("::");
+      return {
+        ...t,
+        division: parts.length > 1 ? parts[0] : "",
+        subject: parts.length > 1 ? parts[1] : t.subject,
+      };
+    });
+
+    res.json(teachers);
   });
 
   app.post("/api/teachers", requireAdmin, upload.single("image"), async (req, res) => {
-    const { name, subject, description } = req.body;
-    if (!name || !subject || !description) {
-      return res.status(400).json({ error: "이름, 과목, 한줄 소개는 필수입니다." });
+    const { name, subject, description, division } = req.body;
+    if (!name || !subject || !description || !division) {
+      return res.status(400).json({ error: "이름, 소속, 과목, 한줄 소개는 필수입니다." });
     }
+
+    const encodedSubject = `${division}::${subject}`;
 
     let image_url: string | null = null;
     if (req.file) {
@@ -79,11 +96,17 @@ export async function registerRoutes(
 
     const { data, error } = await supabase
       .from("teachers")
-      .insert({ name, subject, description, image_url })
+      .insert({ name, subject: encodedSubject, description, image_url })
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+
+    const parts = (data.subject || "").split("::");
+    res.json({
+      ...data,
+      division: parts.length > 1 ? parts[0] : "",
+      subject: parts.length > 1 ? parts[1] : data.subject,
+    });
   });
 
   app.delete("/api/teachers/:id", requireAdmin, async (req, res) => {

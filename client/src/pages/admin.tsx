@@ -9,6 +9,7 @@ interface Teacher {
   id: number;
   name: string;
   subject: string;
+  division: string;
   description: string;
   image_url: string | null;
   created_at: string;
@@ -22,9 +23,16 @@ interface Timetable {
   created_at: string;
 }
 
+const SUBJECT_OPTIONS: Record<string, string[]> = {
+  "고등관": ["국어", "영어", "수학", "과학", "사회/한국사", "제2외국어"],
+  "중등관": ["국어", "영어", "수학", "과학", "사회/역사"],
+  "초등관": ["국어", "영어", "수학", "과학", "사회"],
+};
+
 function TeachersTab() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedDivision, setSelectedDivision] = useState("고등관");
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{
     name: string;
     subject: string;
@@ -43,6 +51,9 @@ function TeachersTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/teachers"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("고등관")}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("중등관")}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("초등관")}`] });
       reset();
       if (fileRef.current) fileRef.current.value = "";
     },
@@ -54,6 +65,9 @@ function TeachersTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/teachers"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("고등관")}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("중등관")}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("초등관")}`] });
     },
   });
 
@@ -63,6 +77,7 @@ function TeachersTab() {
     formData.append("name", data.name);
     formData.append("subject", data.subject);
     formData.append("description", data.description);
+    formData.append("division", selectedDivision);
     const file = fileRef.current?.files?.[0];
     if (file) formData.append("image", file);
     try {
@@ -72,12 +87,14 @@ function TeachersTab() {
     }
   };
 
+  const divisionLabel: Record<string, string> = { "고등관": "고등관", "중등관": "중등관", "초등관": "초등관" };
+
   return (
     <div>
       <div className="bg-white border border-gray-200 p-6 mb-8" data-testid="form-add-teacher">
         <h3 className="text-lg font-bold text-gray-900 mb-4">선생님 추가</h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
               <input
@@ -89,13 +106,31 @@ function TeachersTab() {
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">소속 *</label>
+              <select
+                value={selectedDivision}
+                onChange={(e) => setSelectedDivision(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 bg-white"
+                data-testid="select-teacher-division"
+              >
+                <option value="고등관">고등관</option>
+                <option value="중등관">중등관</option>
+                <option value="초등관">초등관</option>
+              </select>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">과목 *</label>
-              <input
-                {...register("subject", { required: "과목을 입력하세요" })}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
-                placeholder="예: 수학(상)·수학(하)"
-                data-testid="input-teacher-subject"
-              />
+              <select
+                {...register("subject", { required: "과목을 선택하세요" })}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 bg-white"
+                data-testid="select-teacher-subject"
+                defaultValue=""
+              >
+                <option value="" disabled>과목 선택</option>
+                {(SUBJECT_OPTIONS[selectedDivision] || []).map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
               {errors.subject && <p className="text-xs text-red-500 mt-1">{errors.subject.message}</p>}
             </div>
           </div>
@@ -160,7 +195,11 @@ function TeachersTab() {
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 truncate">{t.name}</p>
-                <p className="text-sm text-gray-500 truncate">{t.subject}</p>
+                <p className="text-sm text-gray-500 truncate">
+                  <span className="text-orange-500 font-medium">{divisionLabel[t.division] || t.division}</span>
+                  {t.division && " · "}
+                  {t.subject}
+                </p>
               </div>
               <button
                 onClick={() => {

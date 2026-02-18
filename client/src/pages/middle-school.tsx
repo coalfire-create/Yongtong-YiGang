@@ -1,16 +1,10 @@
 import { SectionPage } from "@/components/layout";
 import { Link } from "wouter";
-import { Calendar, Users, Clock, Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Calendar, Users, Clock } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
+import { TeacherIntroPage } from "@/components/teacher-intro";
 
-interface Teacher {
-  id: number;
-  name: string;
-  subject: string;
-  description: string;
-  image_url: string | null;
-}
+const MIDDLE_SCHOOL_SUBJECTS = ["국어", "영어", "수학", "과학", "사회/역사"];
 
 export function MiddleSchool() {
   return (
@@ -93,43 +87,5 @@ export function MiddleSchoolSchedule() {
 }
 
 export function MiddleSchoolTeachers() {
-  const { data: teachers = [], isLoading } = useQuery<Teacher[]>({
-    queryKey: ["/api/teachers"],
-  });
-
-  const fallbackTeachers = [
-    { id: 0, name: "정민수 선생님", subject: "중등 수학 전 과정", description: "기본기를 탄탄히 잡아주는 맞춤형 수업. 중등 내신 만점자 다수 배출.", image_url: null },
-    { id: 0, name: "한지영 선생님", subject: "중등 심화·선행", description: "개념 이해부터 고난도 문제까지. 고등 수학 선행 전문.", image_url: null },
-  ];
-
-  const displayTeachers = teachers.length > 0 ? teachers : fallbackTeachers;
-
-  return (
-    <SectionPage title="중등관 선생님 소개" subtitle="중등부 전문 강사진을 소개합니다">
-      {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayTeachers.map((t) => (
-            <div key={t.id} className="bg-white border border-gray-200 overflow-hidden" data-testid={`card-teacher-${t.name}`}>
-              {t.image_url ? (
-                <img src={t.image_url} alt={t.name} className="w-full h-48 object-cover" />
-              ) : (
-                <div className="w-full h-48 bg-orange-50 flex items-center justify-center">
-                  <Users className="w-16 h-16 text-orange-300" />
-                </div>
-              )}
-              <div className="p-5">
-                <h3 className="text-lg font-bold text-gray-900">{t.name}</h3>
-                <p className="text-sm text-orange-500 font-medium mt-0.5">{t.subject}</p>
-                <p className="text-sm text-gray-500 mt-2">{t.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </SectionPage>
-  );
+  return <TeacherIntroPage division="중등관" subjects={MIDDLE_SCHOOL_SUBJECTS} />;
 }
