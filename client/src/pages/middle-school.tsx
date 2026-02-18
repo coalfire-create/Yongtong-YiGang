@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TimetableGallery } from "@/components/timetable-gallery";
 
 interface Teacher {
-  id: string;
+  id: number;
   name: string;
   subject: string;
   description: string;
@@ -98,8 +98,8 @@ export function MiddleSchoolTeachers() {
   });
 
   const fallbackTeachers = [
-    { id: "f1", name: "정민수 선생님", subject: "중등 수학 전 과정", description: "기본기를 탄탄히 잡아주는 맞춤형 수업. 중등 내신 만점자 다수 배출.", image_url: null },
-    { id: "f2", name: "한지영 선생님", subject: "중등 심화·선행", description: "개념 이해부터 고난도 문제까지. 고등 수학 선행 전문.", image_url: null },
+    { id: 0, name: "정민수 선생님", subject: "중등 수학 전 과정", description: "기본기를 탄탄히 잡아주는 맞춤형 수업. 중등 내신 만점자 다수 배출.", image_url: null },
+    { id: 0, name: "한지영 선생님", subject: "중등 심화·선행", description: "개념 이해부터 고난도 문제까지. 고등 수학 선행 전문.", image_url: null },
   ];
 
   const displayTeachers = teachers.length > 0 ? teachers : fallbackTeachers;

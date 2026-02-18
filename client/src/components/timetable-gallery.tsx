@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, X, Calendar } from "lucide-react";
 
 interface Timetable {
-  id: string;
+  id: number;
   title: string;
   category: string;
   image_url: string | null;

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TimetableGallery } from "@/components/timetable-gallery";
 
 interface Teacher {
-  id: string;
+  id: number;
   name: string;
   subject: string;
   description: string;
@@ -99,9 +99,9 @@ export function HighSchoolTeachers() {
   });
 
   const fallbackTeachers = [
-    { id: "f1", name: "이강 원장", subject: "수학(상)·수학(하)", description: "수능 출제 경향 분석 전문가. 개념부터 실전까지 체계적 수업.", image_url: null },
-    { id: "f2", name: "김수현 선생님", subject: "수학I·수학II", description: "학생 눈높이에 맞춘 맞춤형 강의. 내신 1등급 다수 배출.", image_url: null },
-    { id: "f3", name: "박정호 선생님", subject: "미적분·기하", description: "심화 과정 전문. 의대·SKY 목표 학생 집중 관리.", image_url: null },
+    { id: 0, name: "이강 원장", subject: "수학(상)·수학(하)", description: "수능 출제 경향 분석 전문가. 개념부터 실전까지 체계적 수업.", image_url: null },
+    { id: 0, name: "김수현 선생님", subject: "수학I·수학II", description: "학생 눈높이에 맞춘 맞춤형 강의. 내신 1등급 다수 배출.", image_url: null },
+    { id: 0, name: "박정호 선생님", subject: "미적분·기하", description: "심화 과정 전문. 의대·SKY 목표 학생 집중 관리.", image_url: null },
   ];
 
   const displayTeachers = teachers.length > 0 ? teachers : fallbackTeachers;

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TimetableGallery } from "@/components/timetable-gallery";
 
 interface Teacher {
-  id: string;
+  id: number;
   name: string;
   subject: string;
   description: string;
@@ -97,8 +97,8 @@ export function ElementaryTeachers() {
   });
 
   const fallbackTeachers = [
-    { id: "f1", name: "최연희 선생님", subject: "초등 수학 전 과정", description: "아이들 눈높이에 맞춘 재미있는 수학 수업. 수학에 대한 흥미 유발 전문.", image_url: null },
-    { id: "f2", name: "오승재 선생님", subject: "사고력·경시 수학", description: "창의력과 논리력을 키우는 심화 수학. 경시대회 수상자 다수 배출.", image_url: null },
+    { id: 0, name: "최연희 선생님", subject: "초등 수학 전 과정", description: "아이들 눈높이에 맞춘 재미있는 수학 수업. 수학에 대한 흥미 유발 전문.", image_url: null },
+    { id: 0, name: "오승재 선생님", subject: "사고력·경시 수학", description: "창의력과 논리력을 키우는 심화 수학. 경시대회 수상자 다수 배출.", image_url: null },
   ];
 
   const displayTeachers = teachers.length > 0 ? teachers : fallbackTeachers;

@@ -2,11 +2,11 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, Calendar, ArrowLeft } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, Calendar, ArrowLeft, Lock } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
-  id: string;
+  id: number;
   name: string;
   subject: string;
   description: string;
@@ -15,7 +15,7 @@ interface Teacher {
 }
 
 interface Timetable {
-  id: string;
+  id: number;
   title: string;
   category: string;
   image_url: string | null;
@@ -49,7 +49,7 @@ function TeachersTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/teachers/${id}`);
     },
     onSuccess: () => {
@@ -207,7 +207,7 @@ function TimetablesTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/timetables/${id}`);
     },
     onSuccess: () => {
@@ -339,8 +339,102 @@ function TimetablesTab() {
   );
 }
 
+function LoginForm({ onLogin }: { onLogin: () => void }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "로그인 실패");
+        return;
+      }
+      onLogin();
+    } catch {
+      setError("서버 연결에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-sm bg-white border border-gray-200 p-8" data-testid="form-admin-login">
+        <div className="flex items-center justify-center mb-6">
+          <div className="w-12 h-12 bg-orange-50 flex items-center justify-center">
+            <Lock className="w-6 h-6 text-orange-500" />
+          </div>
+        </div>
+        <h1 className="text-xl font-extrabold text-gray-900 text-center mb-6">관리자 로그인</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              placeholder="관리자 비밀번호를 입력하세요"
+              data-testid="input-admin-password"
+              autoFocus
+            />
+          </div>
+          {error && <p className="text-xs text-red-500" data-testid="text-login-error">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading || !password}
+            className="w-full bg-orange-500 text-white py-2 text-sm font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+            data-testid="button-admin-login"
+          >
+            {loading ? "로그인 중..." : "로그인"}
+          </button>
+        </form>
+        <Link href="/" className="block text-center text-xs text-gray-400 mt-4 hover:text-gray-600" data-testid="link-back-home">
+          홈으로 돌아가기
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [tab, setTab] = useState<"teachers" | "timetables">("teachers");
+
+  const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
+    queryKey: ["/api/admin/status"],
+  });
+
+  const [loggedIn, setLoggedIn] = useState(false);
+  const isAdmin = loggedIn || authStatus?.isAdmin;
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <LoginForm
+        onLogin={() => {
+          setLoggedIn(true);
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
