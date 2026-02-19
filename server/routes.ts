@@ -160,6 +160,27 @@ export async function registerRoutes(
     });
   });
 
+  app.patch("/api/teachers/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { bio } = req.body;
+    if (bio === undefined) {
+      return res.status(400).json({ error: "bio 필드가 필요합니다." });
+    }
+    const { data, error } = await supabase
+      .from("teachers")
+      .update({ description: bio })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) return res.status(500).json({ error: error.message });
+    const parts = (data.subject || "").split("::");
+    res.json({
+      ...data,
+      division: parts.length > 1 ? parts[0] : "",
+      subject: parts.length > 1 ? parts[1] : data.subject,
+    });
+  });
+
   app.delete("/api/teachers/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { data: teacher } = await supabase.from("teachers").select("image_url").eq("id", id).single();

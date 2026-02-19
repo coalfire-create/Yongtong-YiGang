@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, Calendar, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, Calendar, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
@@ -50,10 +50,7 @@ function TeachersTab() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/teachers"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("고등관")}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("중등관")}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("초등관")}`] });
+      invalidateTeachers();
       reset();
       if (fileRef.current) fileRef.current.value = "";
     },
@@ -64,12 +61,29 @@ function TeachersTab() {
       await apiRequest("DELETE", `/api/teachers/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/teachers"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("고등관")}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("중등관")}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("초등관")}`] });
+      invalidateTeachers();
     },
   });
+
+  const bioMutation = useMutation({
+    mutationFn: async ({ id, bio }: { id: number; bio: string }) => {
+      await apiRequest("PATCH", `/api/teachers/${id}`, { bio });
+    },
+    onSuccess: () => {
+      invalidateTeachers();
+      setEditingBioId(null);
+    },
+  });
+
+  const [editingBioId, setEditingBioId] = useState<number | null>(null);
+  const [editBioText, setEditBioText] = useState("");
+
+  function invalidateTeachers() {
+    queryClient.invalidateQueries({ queryKey: ["/api/teachers"] });
+    queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("고등관")}`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("중등관")}`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("초등관")}`] });
+  }
 
   const onSubmit = async (data: { name: string; subject: string; description: string }) => {
     setUploading(true);
@@ -135,11 +149,12 @@ function TeachersTab() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">한줄 소개 *</label>
-            <input
+            <label className="block text-sm font-medium text-gray-700 mb-1">약력 / 소개 *</label>
+            <textarea
               {...register("description", { required: "소개를 입력하세요" })}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
-              placeholder="선생님 한줄 소개"
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-none"
+              placeholder={"줄바꿈으로 항목 구분\n예: 대성마이맥 출강\n전 SNT 고등관 국어"}
+              rows={3}
               data-testid="input-teacher-desc"
             />
             {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
@@ -185,33 +200,85 @@ function TeachersTab() {
       ) : (
         <div className="space-y-3">
           {teachers.map((t) => (
-            <div key={t.id} className="flex items-center gap-4 bg-white border border-gray-200 p-4" data-testid={`card-admin-teacher-${t.id}`}>
-              {t.image_url ? (
-                <img src={t.image_url} alt={t.name} className="w-14 h-14 object-cover flex-shrink-0" />
-              ) : (
-                <div className="w-14 h-14 bg-orange-50 flex items-center justify-center flex-shrink-0">
-                  <Users className="w-7 h-7 text-orange-400" />
+            <div key={t.id} className="bg-white border border-gray-200 p-4" data-testid={`card-admin-teacher-${t.id}`}>
+              <div className="flex items-center gap-4">
+                {t.image_url ? (
+                  <img src={t.image_url} alt={t.name} className="w-14 h-14 object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-14 h-14 bg-orange-50 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-7 h-7 text-orange-400" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 truncate">{t.name}</p>
+                  <p className="text-sm text-gray-500 truncate">
+                    <span className="text-orange-500 font-medium">{divisionLabel[t.division] || t.division}</span>
+                    {t.division && " · "}
+                    {t.subject}
+                  </p>
+                  {editingBioId !== t.id && (
+                    <p className="text-xs text-gray-400 mt-1 line-clamp-2" data-testid={`text-teacher-bio-${t.id}`}>
+                      {t.description || "약력 미등록"}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingBioId(editingBioId === t.id ? null : t.id);
+                    setEditBioText(t.description || "");
+                  }}
+                  className="flex-shrink-0 p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors"
+                  title="약력 편집"
+                  data-testid={`button-edit-bio-${t.id}`}
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`"${t.name}" 선생님을 삭제하시겠습니까?`)) {
+                      deleteMutation.mutate(t.id);
+                    }
+                  }}
+                  className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  data-testid={`button-delete-teacher-${t.id}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              {editingBioId === t.id && (
+                <div className="mt-3 pt-3 border-t border-gray-100" data-testid={`form-edit-bio-${t.id}`}>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    약력 (줄바꿈으로 항목 구분, 마우스 오버 시 표시됨)
+                  </label>
+                  <textarea
+                    value={editBioText}
+                    onChange={(e) => setEditBioText(e.target.value)}
+                    rows={4}
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-none"
+                    placeholder={"대성마이맥 출강\n전 SNT 고등관 국어, 두각\n전 대형"}
+                    data-testid={`textarea-bio-${t.id}`}
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      onClick={() => bioMutation.mutate({ id: t.id, bio: editBioText })}
+                      disabled={bioMutation.isPending}
+                      className="flex items-center gap-1 bg-orange-500 text-white px-4 py-1.5 text-xs font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                      data-testid={`button-save-bio-${t.id}`}
+                    >
+                      {bioMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                      저장
+                    </button>
+                    <button
+                      onClick={() => setEditingBioId(null)}
+                      className="flex items-center gap-1 text-gray-500 px-4 py-1.5 text-xs font-semibold border border-gray-200 hover:bg-gray-50 transition-colors"
+                      data-testid={`button-cancel-bio-${t.id}`}
+                    >
+                      <X className="w-3 h-3" />
+                      취소
+                    </button>
+                  </div>
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{t.name}</p>
-                <p className="text-sm text-gray-500 truncate">
-                  <span className="text-orange-500 font-medium">{divisionLabel[t.division] || t.division}</span>
-                  {t.division && " · "}
-                  {t.subject}
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  if (confirm(`"${t.name}" 선생님을 삭제하시겠습니까?`)) {
-                    deleteMutation.mutate(t.id);
-                  }
-                }}
-                className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                data-testid={`button-delete-teacher-${t.id}`}
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           ))}
         </div>

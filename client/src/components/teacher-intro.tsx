@@ -36,7 +36,7 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
   return (
     <PageLayout>
       <div className="bg-white min-h-screen">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <h1
             className="text-2xl sm:text-3xl font-extrabold text-gray-900 text-center mb-10"
             data-testid="text-teacher-intro-title"
@@ -102,7 +102,7 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
                       </h2>
                     </div>
                     <div className="border-t border-gray-200 pt-5">
-                      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                         {groupTeachers.map((teacher) => (
                           <TeacherCard key={teacher.id} teacher={teacher} />
                         ))}
@@ -120,32 +120,52 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
 }
 
 function TeacherCard({ teacher }: { teacher: Teacher }) {
+  const bioLines = teacher.description
+    ? teacher.description.split("\n").filter((l) => l.trim())
+    : [];
+
   return (
     <div
-      className="bg-gray-100 overflow-hidden"
+      className="group relative bg-gray-50 border border-gray-100 overflow-hidden"
       data-testid={`card-teacher-${teacher.id}`}
     >
-      {teacher.image_url ? (
-        <div className="relative aspect-[3/4] w-full">
+      <div className="relative aspect-[3/4] w-full">
+        {teacher.image_url ? (
           <img
             src={teacher.image_url}
             alt={teacher.name}
             className="w-full h-full object-cover"
           />
-        </div>
-      ) : (
-        <div className="relative aspect-[3/4] w-full bg-gray-200 flex items-center justify-center">
-          <svg
-            viewBox="0 0 120 160"
-            className="w-3/4 h-3/4 text-gray-300"
-            fill="currentColor"
-          >
-            <ellipse cx="60" cy="50" rx="28" ry="30" />
-            <path d="M15 160 Q15 105 60 100 Q105 105 105 160 Z" />
-          </svg>
-        </div>
-      )}
-      <div className="px-3 py-3 sm:px-4 sm:py-4">
+        ) : (
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <svg
+              viewBox="0 0 120 160"
+              className="w-3/5 h-3/5 text-gray-300"
+              fill="currentColor"
+            >
+              <ellipse cx="60" cy="50" rx="28" ry="30" />
+              <path d="M15 160 Q15 105 60 100 Q105 105 105 160 Z" />
+            </svg>
+          </div>
+        )}
+
+        {bioLines.length > 0 && (
+          <div className="absolute inset-0 bg-black/70 flex flex-col justify-start pt-14 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <p className="text-white font-bold text-sm sm:text-base mb-1">
+              {teacher.name} <span className="text-orange-400">T</span>
+            </p>
+            <div className="space-y-0.5 mt-1">
+              {bioLines.map((line, i) => (
+                <p key={i} className="text-white/90 text-xs sm:text-sm leading-relaxed">
+                  {line}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="px-3 py-3 sm:px-4 sm:py-3">
         <h3 className="text-sm sm:text-base font-extrabold text-gray-900" data-testid={`text-teacher-name-${teacher.id}`}>
           {teacher.name} <span className="text-orange-500 font-bold">T</span>
         </h3>
