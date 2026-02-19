@@ -51,14 +51,15 @@ The project is organized into three main directories:
 
 ## User Authentication
 
-- **Component:** `client/src/components/auth-modal.tsx` - Login modal with Kakao/Naver OAuth and phone verification
+- **Component:** `client/src/components/auth-modal.tsx` - Login/Register modals with full registration form
 - **Auth Context:** `AuthProvider` wraps the app in `App.tsx`, provides `useAuth()` hook
-- **Header Integration:** `AuthHeaderButton` shows login button or user info/logout in header
-- **DB Tables:** `members` (id, kakao_id, naver_id, name, phone, auth_provider, created_at) and `phone_verifications` (id, phone, code, expires_at, verified, created_at) - auto-created on server start
-- **OAuth Routes:** `/api/auth/kakao` + callback, `/api/auth/naver` + callback (with CSRF state validation)
+- **Header Integration:** `AuthHeaderButton` shows login/register buttons or user info/logout in header
+- **DB Tables:** `members` (id, username, password, member_type, student_name, gender, track, grade, school, student_phone, parent_phone, birthday, subject, email, academy_status, created_at) and `phone_verifications` (id, phone, code, expires_at, verified, created_at) - auto-created on server start
+- **Registration:** Student/Parent type selection, ID with duplicate check, password, student info (name, gender, track, grade, school), phone verification (mock), parent phone, birthday, subject, email, academy status, terms agreement
+- **Auth Routes:** `/api/auth/register`, `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/check-username`, `/api/auth/phone/send`, `/api/auth/phone/verify`
 - **Phone Auth:** `/api/auth/phone/send` (mock - logs code to console) + `/api/auth/phone/verify`
-- **Session:** Member stored as `req.session.member` with `{ id, name, provider }`
-- **Required Secrets:** `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET` (optional), `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
+- **Session:** Member stored as `req.session.member` with `{ id, name, username, memberType }`
+- **Password:** Hashed with bcryptjs
 
 ## Popup Feature
 

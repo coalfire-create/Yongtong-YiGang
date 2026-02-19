@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import crypto from "crypto";
 import pg from "pg";
+import bcrypt from "bcryptjs";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -46,11 +47,20 @@ async function ensureMembersTable() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS members (
         id SERIAL PRIMARY KEY,
-        kakao_id TEXT UNIQUE,
-        naver_id TEXT UNIQUE,
-        name TEXT NOT NULL DEFAULT '',
-        phone TEXT,
-        auth_provider TEXT NOT NULL DEFAULT 'phone',
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        member_type TEXT NOT NULL DEFAULT 'student',
+        student_name TEXT NOT NULL DEFAULT '',
+        gender TEXT NOT NULL DEFAULT '',
+        track TEXT NOT NULL DEFAULT '',
+        grade TEXT NOT NULL DEFAULT '',
+        school TEXT NOT NULL DEFAULT '',
+        student_phone TEXT NOT NULL DEFAULT '',
+        parent_phone TEXT NOT NULL DEFAULT '',
+        birthday TEXT NOT NULL DEFAULT '',
+        subject TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        academy_status TEXT NOT NULL DEFAULT 'none',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
@@ -514,9 +524,8 @@ export async function registerRoutes(
     }
   });
 
-  // ========== USER AUTH (카카오/네이버/전화번호) ==========
+  // ========== USER AUTH (회원가입/로그인/전화번호 인증) ==========
 
-  // --- Current user status ---
   app.get("/api/auth/me", (req, res) => {
     const member = (req.session as any)?.member;
     if (member) {
@@ -532,135 +541,25 @@ export async function registerRoutes(
     });
   });
 
-  // --- 카카오 OAuth ---
-  app.get("/api/auth/kakao", (req, res) => {
-    const KAKAO_KEY = process.env.KAKAO_REST_API_KEY;
-    if (!KAKAO_KEY) return res.status(500).json({ error: "카카오 API 키가 설정되지 않았습니다." });
-    const redirectUri = `${getBaseUrl(req)}/api/auth/kakao/callback`;
-    const state = crypto.randomBytes(16).toString("hex");
-    (req.session as any).kakaoState = state;
-    req.session.save(() => {
-      const url = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_KEY}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${state}`;
-      res.redirect(url);
-    });
-  });
-
-  app.get("/api/auth/kakao/callback", async (req, res) => {
-    const { code, state } = req.query;
-    if (!code) return res.redirect("/?auth_error=missing_code");
-    const savedState = (req.session as any)?.kakaoState;
-    if (!state || state !== savedState) return res.redirect("/?auth_error=invalid_state");
-    (req.session as any).kakaoState = null;
-    const KAKAO_KEY = process.env.KAKAO_REST_API_KEY;
-    const KAKAO_SECRET = process.env.KAKAO_CLIENT_SECRET || "";
-    const redirectUri = `${getBaseUrl(req)}/api/auth/kakao/callback`;
-
+  app.get("/api/auth/check-username", async (req, res) => {
+    const { username } = req.query;
+    if (!username || typeof username !== "string") {
+      return res.status(400).json({ error: "아이디를 입력해 주세요." });
+    }
+    if (!/^[a-z0-9]{6,15}$/.test(username)) {
+      return res.status(400).json({ error: "6~15자의 영문 소문자, 숫자만 가능합니다." });
+    }
     try {
-      const tokenRes = await fetch("https://kauth.kakao.com/oauth/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          client_id: KAKAO_KEY!,
-          ...(KAKAO_SECRET ? { client_secret: KAKAO_SECRET } : {}),
-          redirect_uri: redirectUri,
-          code: code as string,
-        }),
-      });
-      const tokenData = await tokenRes.json() as any;
-      if (!tokenData.access_token) return res.redirect("/?auth_error=token_failed");
-
-      const profileRes = await fetch("https://kapi.kakao.com/v2/user/me", {
-        headers: { Authorization: `Bearer ${tokenData.access_token}` },
-      });
-      const profile = await profileRes.json() as any;
-      const kakaoId = String(profile.id);
-      const name = profile.kakao_account?.profile?.nickname || "";
-
-      const { rows: existing } = await pool.query("SELECT * FROM members WHERE kakao_id = $1", [kakaoId]);
-      let member;
-      if (existing.length > 0) {
-        member = existing[0];
-      } else {
-        const { rows: created } = await pool.query(
-          "INSERT INTO members (kakao_id, name, auth_provider) VALUES ($1, $2, 'kakao') RETURNING *",
-          [kakaoId, name]
-        );
-        member = created[0];
+      const { rows } = await pool.query("SELECT id FROM members WHERE username = $1", [username]);
+      if (rows.length > 0) {
+        return res.json({ available: false, message: "이미 사용 중인 아이디입니다." });
       }
-
-      (req.session as any).member = { id: member.id, name: member.name, provider: "kakao" };
-      req.session.save(() => {
-        res.redirect("/?auth_success=kakao");
-      });
+      return res.json({ available: true, message: "사용 가능한 아이디입니다." });
     } catch (err: any) {
-      console.error("Kakao auth error:", err);
-      res.redirect("/?auth_error=kakao_failed");
+      res.status(500).json({ error: err.message });
     }
   });
 
-  // --- 네이버 OAuth ---
-  app.get("/api/auth/naver", (req, res) => {
-    const NAVER_ID = process.env.NAVER_CLIENT_ID;
-    if (!NAVER_ID) return res.status(500).json({ error: "네이버 API 키가 설정되지 않았습니다." });
-    const redirectUri = `${getBaseUrl(req)}/api/auth/naver/callback`;
-    const state = crypto.randomBytes(16).toString("hex");
-    (req.session as any).naverState = state;
-    req.session.save(() => {
-      const url = `https://nid.naver.com/oauth2.0/authorize?client_id=${NAVER_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${state}`;
-      res.redirect(url);
-    });
-  });
-
-  app.get("/api/auth/naver/callback", async (req, res) => {
-    const { code, state } = req.query;
-    if (!code) return res.redirect("/?auth_error=missing_code");
-    const savedState = (req.session as any)?.naverState;
-    if (!state || state !== savedState) return res.redirect("/?auth_error=invalid_state");
-    (req.session as any).naverState = null;
-
-    const NAVER_ID = process.env.NAVER_CLIENT_ID;
-    const NAVER_SECRET = process.env.NAVER_CLIENT_SECRET;
-    if (!NAVER_ID || !NAVER_SECRET) return res.redirect("/?auth_error=config_missing");
-
-    try {
-      const tokenRes = await fetch(`https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=${NAVER_ID}&client_secret=${NAVER_SECRET}&code=${code}&state=${state}`, {
-        method: "GET",
-      });
-      const tokenData = await tokenRes.json() as any;
-      if (!tokenData.access_token) return res.redirect("/?auth_error=token_failed");
-
-      const profileRes = await fetch("https://openapi.naver.com/v1/nid/me", {
-        headers: { Authorization: `Bearer ${tokenData.access_token}` },
-      });
-      const profileData = await profileRes.json() as any;
-      const naverId = String(profileData.response?.id);
-      const name = profileData.response?.name || profileData.response?.nickname || "";
-      const phone = profileData.response?.mobile?.replace(/-/g, "") || "";
-
-      const { rows: existing } = await pool.query("SELECT * FROM members WHERE naver_id = $1", [naverId]);
-      let member;
-      if (existing.length > 0) {
-        member = existing[0];
-      } else {
-        const { rows: created } = await pool.query(
-          "INSERT INTO members (naver_id, name, phone, auth_provider) VALUES ($1, $2, $3, 'naver') RETURNING *",
-          [naverId, name, phone]
-        );
-        member = created[0];
-      }
-
-      (req.session as any).member = { id: member.id, name: member.name, provider: "naver" };
-      req.session.save(() => {
-        res.redirect("/?auth_success=naver");
-      });
-    } catch (err: any) {
-      console.error("Naver auth error:", err);
-      res.redirect("/?auth_error=naver_failed");
-    }
-  });
-
-  // --- 전화번호 인증 ---
   app.post("/api/auth/phone/send", async (req, res) => {
     const { phone } = req.body;
     if (!phone || phone.replace(/\D/g, "").length < 10) {
@@ -684,12 +583,11 @@ export async function registerRoutes(
   });
 
   app.post("/api/auth/phone/verify", async (req, res) => {
-    const { phone, code, name } = req.body;
+    const { phone, code } = req.body;
     if (!phone || !code) {
       return res.status(400).json({ error: "전화번호와 인증번호를 입력해 주세요." });
     }
     const cleanPhone = phone.replace(/\D/g, "");
-
     try {
       const { rows } = await pool.query(
         "SELECT * FROM phone_verifications WHERE phone = $1 AND code = $2 AND verified = false AND expires_at > now() ORDER BY created_at DESC LIMIT 1",
@@ -698,28 +596,93 @@ export async function registerRoutes(
       if (rows.length === 0) {
         return res.status(400).json({ error: "인증번호가 올바르지 않거나 만료되었습니다." });
       }
-
       await pool.query("UPDATE phone_verifications SET verified = true WHERE id = $1", [rows[0].id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
-      const { rows: existing } = await pool.query("SELECT * FROM members WHERE phone = $1 AND auth_provider = 'phone'", [cleanPhone]);
-      let member;
+  app.post("/api/auth/register", async (req, res) => {
+    const {
+      username, password, memberType, studentName, gender, track, grade,
+      school, studentPhone, parentPhone, birthday, subject, email, academyStatus
+    } = req.body;
+
+    if (!username || !/^[a-z0-9]{6,15}$/.test(username)) {
+      return res.status(400).json({ error: "아이디는 6~15자의 영문 소문자, 숫자만 가능합니다." });
+    }
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: "비밀번호는 6자 이상이어야 합니다." });
+    }
+    if (!studentName?.trim()) {
+      return res.status(400).json({ error: "학생이름을 입력해 주세요." });
+    }
+    if (!gender) {
+      return res.status(400).json({ error: "성별을 선택해 주세요." });
+    }
+    if (!track) {
+      return res.status(400).json({ error: "계열을 선택해 주세요." });
+    }
+    if (!grade) {
+      return res.status(400).json({ error: "학년을 선택해 주세요." });
+    }
+    if (!school?.trim()) {
+      return res.status(400).json({ error: "학교를 입력해 주세요." });
+    }
+    if (!studentPhone || studentPhone.replace(/\D/g, "").length < 10) {
+      return res.status(400).json({ error: "학생 휴대폰 번호를 입력해 주세요." });
+    }
+    if (!parentPhone || parentPhone.replace(/\D/g, "").length < 10) {
+      return res.status(400).json({ error: "학부모 휴대폰 번호를 입력해 주세요." });
+    }
+
+    try {
+      const { rows: existing } = await pool.query("SELECT id FROM members WHERE username = $1", [username]);
       if (existing.length > 0) {
-        member = existing[0];
-        if (name && name.trim()) {
-          await pool.query("UPDATE members SET name = $1 WHERE id = $2", [name.trim(), member.id]);
-          member.name = name.trim();
-        }
-      } else {
-        const { rows: created } = await pool.query(
-          "INSERT INTO members (phone, name, auth_provider) VALUES ($1, $2, 'phone') RETURNING *",
-          [cleanPhone, name?.trim() || ""]
-        );
-        member = created[0];
+        return res.status(400).json({ error: "이미 사용 중인 아이디입니다." });
       }
 
-      (req.session as any).member = { id: member.id, name: member.name || cleanPhone, provider: "phone" };
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const cleanStudentPhone = studentPhone.replace(/\D/g, "");
+      const cleanParentPhone = parentPhone.replace(/\D/g, "");
+
+      const { rows: created } = await pool.query(
+        `INSERT INTO members (username, password, member_type, student_name, gender, track, grade, school, student_phone, parent_phone, birthday, subject, email, academy_status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id, username, student_name, member_type`,
+        [username, hashedPassword, memberType || "student", studentName.trim(), gender, track, grade, school.trim(), cleanStudentPhone, cleanParentPhone, birthday || "", subject || "", email || "", academyStatus || "none"]
+      );
+      const member = created[0];
+
+      (req.session as any).member = { id: member.id, name: member.student_name, username: member.username, memberType: member.member_type };
       req.session.save(() => {
-        res.json({ success: true, member: { id: member.id, name: member.name, provider: "phone" } });
+        res.json({ success: true, member: { id: member.id, name: member.student_name, username: member.username } });
+      });
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      res.status(500).json({ error: "회원가입에 실패했습니다." });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: "아이디와 비밀번호를 입력해 주세요." });
+    }
+    try {
+      const { rows } = await pool.query("SELECT * FROM members WHERE username = $1", [username]);
+      if (rows.length === 0) {
+        return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+      }
+      const member = rows[0];
+      const valid = await bcrypt.compare(password, member.password);
+      if (!valid) {
+        return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+      }
+
+      (req.session as any).member = { id: member.id, name: member.student_name, username: member.username, memberType: member.member_type };
+      req.session.save(() => {
+        res.json({ success: true, member: { id: member.id, name: member.student_name, username: member.username } });
       });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -727,10 +690,4 @@ export async function registerRoutes(
   });
 
   return httpServer;
-}
-
-function getBaseUrl(req: Request): string {
-  const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
-  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5000";
-  return `${proto}://${host}`;
 }
