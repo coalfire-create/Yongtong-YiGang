@@ -207,8 +207,8 @@ export async function registerRoutes(
 
   app.post("/api/timetables", requireAdmin, upload.single("image"), async (req, res) => {
     const { title, category } = req.body;
-    if (!title || !category) {
-      return res.status(400).json({ error: "제목과 카테고리는 필수입니다." });
+    if (!category) {
+      return res.status(400).json({ error: "카테고리는 필수입니다." });
     }
 
     let image_url: string | null = null;
@@ -228,7 +228,7 @@ export async function registerRoutes(
 
     const { data, error } = await supabase
       .from("timetables")
-      .insert({ title, category, image_url })
+      .insert({ title: title || "", category, image_url })
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });

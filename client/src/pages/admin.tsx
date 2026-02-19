@@ -291,7 +291,6 @@ function TimetablesTab() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{
-    title: string;
     category: string;
   }>();
 
@@ -321,10 +320,9 @@ function TimetablesTab() {
     },
   });
 
-  const onSubmit = async (data: { title: string; category: string }) => {
+  const onSubmit = async (data: { category: string }) => {
     setUploading(true);
     const formData = new FormData();
-    formData.append("title", data.title);
     formData.append("category", data.category);
     const file = fileRef.current?.files?.[0];
     if (file) formData.append("image", file);
@@ -347,16 +345,6 @@ function TimetablesTab() {
         <h3 className="text-lg font-bold text-gray-900 mb-4">시간표 올리기</h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">제목 *</label>
-              <input
-                {...register("title", { required: "제목을 입력하세요" })}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
-                placeholder="예: 2026 고1 여름특강"
-                data-testid="input-timetable-title"
-              />
-              {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>}
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">카테고리 *</label>
               <select
@@ -426,12 +414,11 @@ function TimetablesTab() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{tt.title}</p>
-                <p className="text-xs text-orange-500 font-medium">{categoryLabel[tt.category] || tt.category}</p>
+                <p className="font-bold text-gray-900 truncate">{categoryLabel[tt.category] || tt.category}</p>
               </div>
               <button
                 onClick={() => {
-                  if (confirm(`"${tt.title}" 시간표를 삭제하시겠습니까?`)) {
+                  if (confirm("이 시간표를 삭제하시겠습니까?")) {
                     deleteMutation.mutate(tt.id);
                   }
                 }}

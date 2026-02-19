@@ -69,9 +69,11 @@ export function TimetableGallery({ category }: { category: string }) {
                 <Calendar className="w-10 h-10 text-orange-300" />
               </div>
             )}
-            <div className="px-4 py-3 border-t border-gray-100">
-              <h3 className="text-sm font-bold text-gray-900 truncate">{tt.title}</h3>
-            </div>
+            {tt.title && (
+              <div className="px-4 py-3 border-t border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900 truncate">{tt.title}</h3>
+              </div>
+            )}
           </div>
         ))}
       </div>
