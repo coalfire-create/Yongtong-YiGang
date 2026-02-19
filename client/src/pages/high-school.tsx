@@ -1,7 +1,6 @@
 import { PageLayout } from "@/components/layout";
-import { SectionPage } from "@/components/layout";
-import { Link } from "wouter";
-import { Calendar, Users, ChevronRight } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Calendar, Users, ChevronRight, ChevronLeft, ArrowLeft } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 
@@ -41,6 +40,80 @@ const NAV_ITEMS = [
     iconBg: "bg-violet-500/20",
   },
 ];
+
+const GRADE_TABS = [
+  { label: "고1", path: "/high-school/schedule/g1", color: "blue" },
+  { label: "고2", path: "/high-school/schedule/g2", color: "emerald" },
+  { label: "고3", path: "/high-school/schedule/g3", color: "violet" },
+];
+
+function SchedulePageLayout({ grade, category, color }: { grade: string; category: string; color: string }) {
+  const [location] = useLocation();
+
+  const colorMap: Record<string, { gradient: string; accent: string; badge: string }> = {
+    blue: { gradient: "from-blue-600 via-blue-700 to-[#1B2A4A]", accent: "text-blue-400", badge: "bg-blue-500/20 text-blue-300" },
+    emerald: { gradient: "from-emerald-600 via-emerald-700 to-[#1B2A4A]", accent: "text-emerald-400", badge: "bg-emerald-500/20 text-emerald-300" },
+    violet: { gradient: "from-violet-600 via-violet-700 to-[#1B2A4A]", accent: "text-violet-400", badge: "bg-violet-500/20 text-violet-300" },
+  };
+
+  const c = colorMap[color] || colorMap.blue;
+
+  return (
+    <PageLayout>
+      <div className={`bg-gradient-to-r ${c.gradient} text-white`}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          <Link
+            href="/high-school"
+            className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors mb-4"
+            data-testid="link-back-high"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            고등관
+          </Link>
+          <div className="flex items-center gap-3 mb-2">
+            <span className={`px-2.5 py-0.5 text-xs font-bold rounded-sm ${c.badge}`}>
+              {grade}
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-4xl font-extrabold" data-testid="text-page-title">
+            {grade} 시간표
+          </h1>
+          <p className="mt-2 text-white/50 text-sm sm:text-base" data-testid="text-page-subtitle">
+            고등관 {grade} 강의 시간표를 확인하세요
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-gray-50 min-h-[50vh]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-1 -mt-5 mb-8">
+            {GRADE_TABS.map((tab) => {
+              const isActive = location === tab.path;
+              return (
+                <Link
+                  key={tab.label}
+                  href={tab.path}
+                  className={`px-5 py-2.5 text-sm font-bold transition-all duration-200 ${
+                    isActive
+                      ? "bg-white text-gray-900 shadow-sm border border-gray-200 border-b-0"
+                      : "bg-white/60 text-gray-500 hover:bg-white hover:text-gray-700 border border-transparent"
+                  }`}
+                  data-testid={`tab-${tab.label}`}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="pb-16">
+            <TimetableGallery category={category} />
+          </div>
+        </div>
+      </div>
+    </PageLayout>
+  );
+}
 
 export function HighSchool() {
   return (
@@ -88,7 +161,6 @@ export function HighSchool() {
               </Link>
             ))}
           </div>
-
         </div>
       </div>
     </PageLayout>
@@ -96,35 +168,19 @@ export function HighSchool() {
 }
 
 export function HighSchoolSchedule() {
-  return (
-    <SectionPage title="고등관 강의시간표" subtitle="고등부 전 학년 강의 시간표">
-      <TimetableGallery category="고등관" />
-    </SectionPage>
-  );
+  return <SchedulePageLayout grade="전체" category="고등관" color="blue" />;
 }
 
 export function HighSchoolScheduleG1() {
-  return (
-    <SectionPage title="고1 시간표" subtitle="고등관 고1 강의 시간표">
-      <TimetableGallery category="고등관-고1" />
-    </SectionPage>
-  );
+  return <SchedulePageLayout grade="고1" category="고등관-고1" color="blue" />;
 }
 
 export function HighSchoolScheduleG2() {
-  return (
-    <SectionPage title="고2 시간표" subtitle="고등관 고2 강의 시간표">
-      <TimetableGallery category="고등관-고2" />
-    </SectionPage>
-  );
+  return <SchedulePageLayout grade="고2" category="고등관-고2" color="emerald" />;
 }
 
 export function HighSchoolScheduleG3() {
-  return (
-    <SectionPage title="고3 시간표" subtitle="고등관 고3 강의 시간표">
-      <TimetableGallery category="고등관-고3" />
-    </SectionPage>
-  );
+  return <SchedulePageLayout grade="고3" category="고등관-고3" color="violet" />;
 }
 
 export function HighSchoolTeachers() {
