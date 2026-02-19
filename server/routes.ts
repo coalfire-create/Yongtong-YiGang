@@ -86,6 +86,26 @@ async function ensurePhoneVerificationsTable() {
   }
 }
 
+async function ensureBriefingsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS briefings (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL DEFAULT '',
+        date TEXT NOT NULL DEFAULT '',
+        time TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        form_url TEXT,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure briefings table:", err);
+  }
+}
+
 async function ensureBannersTable() {
   try {
     await pool.query(`
@@ -135,6 +155,7 @@ export async function registerRoutes(
 
   await ensurePopupsTable();
   await ensureBannersTable();
+  await ensureBriefingsTable();
   await ensureSmsSubscriptionsTable();
   await ensureMembersTable();
   await ensurePhoneVerificationsTable();
@@ -684,6 +705,62 @@ export async function registerRoutes(
       req.session.save(() => {
         res.json({ success: true, member: { id: member.id, name: member.student_name, username: member.username } });
       });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== BRIEFINGS ==========
+  app.get("/api/briefings", async (_req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM briefings ORDER BY display_order ASC, created_at DESC");
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/briefings/active", async (_req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM briefings WHERE is_active = true ORDER BY display_order ASC, created_at DESC");
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/briefings", requireAdmin, async (req, res) => {
+    try {
+      const { title, date, time, description, form_url, is_active, display_order } = req.body;
+      const { rows } = await pool.query(
+        "INSERT INTO briefings (title, date, time, description, form_url, is_active, display_order) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+        [title || "", date || "", time || "", description || "", form_url || null, is_active !== false, display_order || 0]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/briefings/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, date, time, description, form_url, is_active, display_order } = req.body;
+      const { rows } = await pool.query(
+        "UPDATE briefings SET title=$1, date=$2, time=$3, description=$4, form_url=$5, is_active=$6, display_order=$7 WHERE id=$8 RETURNING *",
+        [title, date, time, description, form_url || null, is_active, display_order || 0, id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Not found" });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/briefings/:id", requireAdmin, async (req, res) => {
+    try {
+      await pool.query("DELETE FROM briefings WHERE id = $1", [req.params.id]);
+      res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

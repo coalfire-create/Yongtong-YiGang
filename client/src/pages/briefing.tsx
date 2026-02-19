@@ -1,54 +1,92 @@
-import { SectionPage } from "@/components/layout";
-import { CalendarDays, Phone, MapPin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { CalendarDays, ExternalLink, Loader2 } from "lucide-react";
+import { PageLayout } from "@/components/layout";
+
+interface Briefing {
+  id: number;
+  title: string;
+  date: string;
+  time: string;
+  description: string;
+  form_url: string | null;
+  is_active: boolean;
+  display_order: number;
+}
+
+function BriefingCard({ briefing }: { briefing: Briefing }) {
+  return (
+    <div
+      className="bg-white border border-gray-200 p-6 sm:p-8 transition-colors duration-200"
+      data-testid={`card-briefing-${briefing.id}`}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+        <div className="flex-shrink-0 w-14 h-14 bg-orange-50 flex items-center justify-center">
+          <CalendarDays className="w-7 h-7 text-orange-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-bold text-gray-900 leading-snug" data-testid={`text-briefing-title-${briefing.id}`}>
+            {briefing.title}
+          </h3>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+            <span className="font-medium">{briefing.date}</span>
+            {briefing.time && (
+              <span>{briefing.time}</span>
+            )}
+          </div>
+          {briefing.description && (
+            <p className="mt-3 text-sm text-gray-600 leading-relaxed">{briefing.description}</p>
+          )}
+          {briefing.form_url && (
+            <a
+              href={briefing.form_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors duration-200"
+              data-testid={`link-briefing-form-${briefing.id}`}
+            >
+              <ExternalLink className="w-4 h-4" />
+              설명회 신청하기
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function Briefing() {
+  const { data: briefings = [], isLoading } = useQuery<Briefing[]>({
+    queryKey: ["/api/briefings/active"],
+  });
+
   return (
-    <SectionPage title="설명회" subtitle="학부모 설명회 일정 및 예약 안내">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        <div className="bg-white border border-gray-200 p-8" data-testid="card-briefing-reservation">
-          <Phone className="w-10 h-10 text-orange-500 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">설명회 예약</h3>
-          <p className="text-gray-500 text-sm mb-4">전화 또는 방문 예약을 통해 설명회에 참석하실 수 있습니다.</p>
-          <div className="bg-orange-50 p-4">
-            <p className="text-sm font-bold text-gray-900">예약 전화</p>
-            <p className="text-lg font-extrabold text-orange-500 mt-1">031-123-4567</p>
-          </div>
-        </div>
-        <div className="bg-white border border-gray-200 p-8" data-testid="card-briefing-location">
-          <MapPin className="w-10 h-10 text-orange-500 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">설명회 장소</h3>
-          <p className="text-gray-500 text-sm mb-4">영통이강학원 본관 3층 대강의실에서 진행됩니다.</p>
-          <div className="bg-orange-50 p-4">
-            <p className="text-sm font-bold text-gray-900">주소</p>
-            <p className="text-sm text-gray-600 mt-1">경기도 수원시 영통구 영통동 123-45</p>
-          </div>
+    <PageLayout>
+      <div className="bg-gradient-to-r from-[#1B2A4A] to-[#2d4470] text-white py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl font-extrabold" data-testid="text-page-title">설명회</h1>
+          <p className="mt-2 text-white/70 text-base sm:text-lg" data-testid="text-page-subtitle">학부모 설명회 일정 안내</p>
         </div>
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">설명회 일정</h2>
-      <div className="space-y-4">
-        {[
-          { date: "2026년 3월 8일 (토)", time: "14:00~16:00", topic: "2026학년도 고등부 신입생 설명회", status: "예약중" },
-          { date: "2026년 3월 15일 (토)", time: "14:00~16:00", topic: "중등부 봄학기 커리큘럼 설명회", status: "예약중" },
-          { date: "2026년 3월 22일 (토)", time: "10:00~12:00", topic: "초등부 사고력 수학 과정 설명회", status: "준비중" },
-        ].map((event) => (
-          <div key={event.date} className="flex flex-col sm:flex-row sm:items-center gap-4 bg-white border border-gray-200 p-6" data-testid={`card-event-${event.topic}`}>
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <CalendarDays className="w-6 h-6 text-orange-500" />
-              <div>
-                <p className="text-sm font-bold text-gray-900">{event.date}</p>
-                <p className="text-xs text-gray-500">{event.time}</p>
-              </div>
-            </div>
-            <div className="flex-1">
-              <p className="font-semibold text-gray-800">{event.topic}</p>
-            </div>
-            <span className={`text-xs font-bold px-3 py-1 self-start sm:self-center ${event.status === "예약중" ? "bg-orange-100 text-orange-600" : "bg-gray-100 text-gray-500"}`}>
-              {event.status}
-            </span>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
           </div>
-        ))}
+        ) : briefings.length === 0 ? (
+          <div className="text-center py-20">
+            <CalendarDays className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-400 text-lg font-medium">현재 예정된 설명회가 없습니다.</p>
+            <p className="text-gray-400 text-sm mt-1">새로운 설명회 일정이 등록되면 이곳에 표시됩니다.</p>
+          </div>
+        ) : (
+          <div className="space-y-4" data-testid="briefing-list">
+            {briefings.map((b) => (
+              <BriefingCard key={b.id} briefing={b} />
+            ))}
+          </div>
+        )}
       </div>
-    </SectionPage>
+    </PageLayout>
   );
 }
 

@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { label: "고등관", path: "/high-school", sub: [{ label: "강사 소개", path: "/high-school/teachers" }, { label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }] },
   { label: "초/중등관", path: "/junior-school", sub: [{ label: "강의시간표", path: "/junior-school/schedule" }, { label: "선생님 소개", path: "/junior-school/teachers" }] },
   { label: "올빼미", path: "/owl", sub: [{ label: "독학관 안내", path: "/owl/info" }, { label: "이용 방법", path: "/owl/usage" }] },
-  { label: "설명회", path: "/briefing", sub: [{ label: "설명회 예약", path: "/briefing/reservation" }, { label: "설명회 일정", path: "/briefing/schedule" }] },
+  { label: "설명회", path: "/briefing", sub: [] },
   { label: "입시", path: "/admissions", sub: [{ label: "입시 실적", path: "/admissions/results" }, { label: "합격 후기", path: "/admissions/reviews" }] },
   { label: "오시는길", path: "/directions", sub: [] },
 ];
@@ -130,19 +130,19 @@ export function Header() {
     </header>
   );
 }
-
 function Footer() {
   return (
     <footer className="bg-[#1B2A4A] text-white py-10 px-4 sm:px-6 lg:px-8" data-testid="footer">
       <div className="max-w-5xl mx-auto space-y-4">
         <h2 className="text-lg font-bold tracking-tight">영통이강학원</h2>
         <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-10 text-sm text-white/70 leading-relaxed">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <p className="flex items-center gap-2">
-              <span className="text-orange-400 font-semibold">수강문의</span>
+              <span className="text-orange-400 font-semibold mb-1">수강문의</span>
             </p>
-            <p>031-204-1353 <span className="text-white/50">(평일 14:00-22:00 / 주말 8:30-22:00)</span></p>
-            <p>010-9764-1353 <span className="text-white/50">(문자전용)</span></p>
+            <p><span className="text-white/90 font-medium">영통이강 고등 (내신/수능 전문)</span> 031-204-1352</p>
+            <p><span className="text-white/90 font-medium">영통이강 초/중등관</span> 031-548-0985</p>
+            <p><span className="text-white/90 font-medium">올빼미 관리형 스터디 카페</span> 031-548-098</p>
           </div>
           <div className="space-y-1">
             <p>제5795-3호</p>
@@ -156,7 +156,6 @@ function Footer() {
     </footer>
   );
 }
-
 export function PageLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

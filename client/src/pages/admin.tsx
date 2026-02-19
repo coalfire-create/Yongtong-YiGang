@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, Calendar, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
@@ -997,8 +997,295 @@ function SmsSubscriptionsTab() {
   );
 }
 
+interface BriefingItem {
+  id: number;
+  title: string;
+  date: string;
+  time: string;
+  description: string;
+  form_url: string | null;
+  is_active: boolean;
+  display_order: number;
+}
+
+function BriefingsTab() {
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Partial<BriefingItem>>({});
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<{
+    title: string;
+    date: string;
+    time: string;
+    description: string;
+    form_url: string;
+  }>();
+
+  const { data: briefings = [], isLoading } = useQuery<BriefingItem[]>({
+    queryKey: ["/api/briefings"],
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (data: { title: string; date: string; time: string; description: string; form_url: string }) => {
+      await apiRequest("POST", "/api/briefings", {
+        title: data.title,
+        date: data.date,
+        time: data.time,
+        description: data.description,
+        form_url: data.form_url || null,
+        is_active: true,
+        display_order: 0,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/briefings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/briefings/active"] });
+      reset();
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<BriefingItem> }) => {
+      await apiRequest("PUT", `/api/briefings/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/briefings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/briefings/active"] });
+      setEditingId(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/briefings/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/briefings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/briefings/active"] });
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
+      const b = briefings.find((x) => x.id === id);
+      if (!b) return;
+      await apiRequest("PUT", `/api/briefings/${id}`, { ...b, is_active });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/briefings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/briefings/active"] });
+    },
+  });
+
+  const onSubmit = (data: { title: string; date: string; time: string; description: string; form_url: string }) => {
+    addMutation.mutate(data);
+  };
+
+  const startEdit = (b: BriefingItem) => {
+    setEditingId(b.id);
+    setEditForm({ title: b.title, date: b.date, time: b.time, description: b.description, form_url: b.form_url || "", display_order: b.display_order });
+  };
+
+  const saveEdit = () => {
+    if (editingId === null) return;
+    const original = briefings.find((b) => b.id === editingId);
+    if (!original) return;
+    updateMutation.mutate({ id: editingId, data: { ...original, ...editForm } });
+  };
+
+  return (
+    <div>
+      <div className="bg-white border border-gray-200 p-6 mb-8" data-testid="form-add-briefing">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">설명회 일정 추가</h3>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">제목 *</label>
+            <input
+              {...register("title", { required: "제목을 입력하세요" })}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              placeholder="예: 2026학년도 고등부 신입생 설명회"
+              data-testid="input-briefing-title"
+            />
+            {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">날짜 *</label>
+              <input
+                {...register("date", { required: "날짜를 입력하세요" })}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                placeholder="예: 2026년 3월 8일 (토)"
+                data-testid="input-briefing-date"
+              />
+              {errors.date && <p className="text-xs text-red-500 mt-1">{errors.date.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">시간</label>
+              <input
+                {...register("time")}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                placeholder="예: 14:00~16:00"
+                data-testid="input-briefing-time"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+            <textarea
+              {...register("description")}
+              rows={2}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-none"
+              placeholder="설명회에 대한 간단한 안내"
+              data-testid="input-briefing-description"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">구글폼 링크</label>
+            <input
+              {...register("form_url")}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              placeholder="https://forms.gle/..."
+              data-testid="input-briefing-form-url"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={addMutation.isPending}
+            className="flex items-center gap-2 px-6 py-2 bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50"
+            data-testid="button-add-briefing"
+          >
+            {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            추가
+          </button>
+        </form>
+      </div>
+
+      <h3 className="text-lg font-bold text-gray-900 mb-4">등록된 설명회 ({briefings.length}개)</h3>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : briefings.length === 0 ? (
+        <p className="text-sm text-gray-400 py-6 text-center" data-testid="text-briefing-empty">등록된 설명회가 없습니다.</p>
+      ) : (
+        <div className="space-y-3">
+          {briefings.map((b) => (
+            <div key={b.id} className="bg-white border border-gray-200 p-5" data-testid={`card-admin-briefing-${b.id}`}>
+              {editingId === b.id ? (
+                <div className="space-y-3">
+                  <input
+                    value={editForm.title || ""}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                    placeholder="제목"
+                    data-testid="input-edit-briefing-title"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      value={editForm.date || ""}
+                      onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                      placeholder="날짜"
+                      data-testid="input-edit-briefing-date"
+                    />
+                    <input
+                      value={editForm.time || ""}
+                      onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                      placeholder="시간"
+                      data-testid="input-edit-briefing-time"
+                    />
+                  </div>
+                  <textarea
+                    value={editForm.description || ""}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    rows={2}
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-none"
+                    placeholder="설명"
+                    data-testid="input-edit-briefing-description"
+                  />
+                  <input
+                    value={editForm.form_url || ""}
+                    onChange={(e) => setEditForm({ ...editForm, form_url: e.target.value })}
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                    placeholder="구글폼 링크"
+                    data-testid="input-edit-briefing-form-url"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={saveEdit}
+                      disabled={updateMutation.isPending}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50"
+                      data-testid="button-save-briefing"
+                    >
+                      <Check className="w-4 h-4" />
+                      저장
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-600 text-sm font-semibold hover:bg-gray-200 transition-colors"
+                      data-testid="button-cancel-edit-briefing"
+                    >
+                      <X className="w-4 h-4" />
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-bold text-gray-900">{b.title}</h4>
+                      {!b.is_active && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-500">비활성</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">{b.date} {b.time}</p>
+                    {b.description && <p className="text-sm text-gray-500 mt-1">{b.description}</p>}
+                    {b.form_url && (
+                      <a href={b.form_url} target="_blank" rel="noopener noreferrer" className="text-xs text-orange-500 hover:text-orange-600 mt-1 inline-block break-all">
+                        {b.form_url}
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => toggleMutation.mutate({ id: b.id, is_active: !b.is_active })}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                      title={b.is_active ? "비활성화" : "활성화"}
+                      data-testid={`button-toggle-briefing-${b.id}`}
+                    >
+                      {b.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => startEdit(b)}
+                      className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors"
+                      data-testid={`button-edit-briefing-${b.id}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm("이 설명회를 삭제하시겠습니까?")) {
+                          deleteMutation.mutate(b.id);
+                        }
+                      }}
+                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      data-testid={`button-delete-briefing-${b.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups" | "sms">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups" | "briefings" | "sms">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -1088,6 +1375,18 @@ export default function AdminPage() {
             팝업 관리
           </button>
           <button
+            onClick={() => setTab("briefings")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "briefings"
+                ? "bg-orange-500 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-briefings"
+          >
+            <CalendarDays className="w-4 h-4" />
+            설명회 관리
+          </button>
+          <button
             onClick={() => setTab("sms")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "sms"
@@ -1101,7 +1400,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );
