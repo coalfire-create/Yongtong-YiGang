@@ -321,15 +321,19 @@ function TimetablesTab() {
   });
 
   const onSubmit = async (data: { category: string }) => {
+    const files = fileRef.current?.files;
+    if (!files || files.length === 0) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append("category", data.category);
-    const file = fileRef.current?.files?.[0];
-    if (file) formData.append("image", file);
     try {
-      await addMutation.mutateAsync(formData);
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append("category", data.category);
+        formData.append("image", files[i]);
+        await addMutation.mutateAsync(formData);
+      }
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -370,9 +374,11 @@ function TimetablesTab() {
               ref={fileRef}
               type="file"
               accept="image/*"
+              multiple
               className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
               data-testid="input-timetable-image"
             />
+            <p className="text-xs text-gray-400 mt-1">여러 장을 한번에 선택할 수 있습니다.</p>
           </div>
           <button
             type="submit"
