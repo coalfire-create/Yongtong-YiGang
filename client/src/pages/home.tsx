@@ -27,9 +27,9 @@ const DEFAULT_SLIDES = [
 ];
 
 const QUICK_MENU_ITEMS = [
-  { label: "고등관", sub: "자세히 보기 +", icon: GraduationCap, path: "/high-school/teachers" },
-  { label: "중등관", sub: "자세히 보기 +", icon: BookOpen, path: "/middle-school/teachers" },
-  { label: "초등관", sub: "자세히 보기 +", icon: Users, path: "/elementary/teachers" },
+  { label: "고등관", sub: "자세히 보기 +", icon: GraduationCap, path: "/high-school" },
+  { label: "중등관", sub: "자세히 보기 +", icon: BookOpen, path: "/middle-school" },
+  { label: "초등관", sub: "자세히 보기 +", icon: Users, path: "/elementary" },
   { label: "올빼미 학습관", sub: "자세히 보기 +", icon: Moon, path: "/study-hall" },
   { label: "입시실적", sub: "자세히 보기 +", icon: Trophy, path: "/admissions/results" },
 ];
