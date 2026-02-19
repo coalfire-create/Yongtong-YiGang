@@ -89,21 +89,6 @@ export function HighSchool() {
             ))}
           </div>
 
-          <div className="mt-12 bg-white border border-gray-200 p-6 sm:p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6" data-testid="text-course-title">과정 안내</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { grade: "고1", desc: "내신 대비 + 수능 기초 완성", color: "border-blue-400 bg-blue-50", textColor: "text-blue-600" },
-                { grade: "고2", desc: "수능 실전 + 모의고사 집중 분석", color: "border-emerald-400 bg-emerald-50", textColor: "text-emerald-600" },
-                { grade: "고3", desc: "수능 파이널 + 실전 모의 훈련", color: "border-violet-400 bg-violet-50", textColor: "text-violet-600" },
-              ].map((c) => (
-                <div key={c.grade} className={`border-l-4 ${c.color} p-5`} data-testid={`card-course-${c.grade}`}>
-                  <span className={`text-2xl font-extrabold ${c.textColor}`}>{c.grade}</span>
-                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">{c.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </PageLayout>
