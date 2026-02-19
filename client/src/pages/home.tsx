@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Users, Calendar, Trophy, BookOpen, GraduationCap, Moon, Loader2 } from "lucide-react";
 import { Link } from "wouter";
-import { Header } from "@/components/layout";
+import { PageLayout } from "@/components/layout";
 import { PopupModal } from "@/components/popup-modal";
 
 interface Banner {
@@ -235,10 +235,9 @@ function HeroSection() {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <PageLayout>
       <HeroSection />
       <PopupModal />
-    </div>
+    </PageLayout>
   );
 }
