@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 
 const NAV_ITEMS = [
-  { label: "고등관", path: "/high-school", sub: [{ label: "강의시간표", path: "/high-school/schedule" }, { label: "선생님 소개", path: "/high-school/teachers" }] },
+  { label: "고등관", path: "/high-school", sub: [{ label: "강사 소개", path: "/high-school/teachers" }, { label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }] },
   { label: "중등관", path: "/middle-school", sub: [{ label: "강의시간표", path: "/middle-school/schedule" }, { label: "선생님 소개", path: "/middle-school/teachers" }] },
   { label: "초등관", path: "/elementary", sub: [{ label: "강의시간표", path: "/elementary/schedule" }, { label: "선생님 소개", path: "/elementary/teachers" }] },
   { label: "올빼미", path: "/owl", sub: [{ label: "독학관 안내", path: "/owl/info" }, { label: "이용 방법", path: "/owl/usage" }] },
