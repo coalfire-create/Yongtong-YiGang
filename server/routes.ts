@@ -81,7 +81,14 @@ export async function registerRoutes(
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
       (req.session as any).isAdmin = true;
-      return res.json({ success: true });
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ error: "세션 저장 실패" });
+        }
+        return res.json({ success: true });
+      });
+      return;
     }
     return res.status(401).json({ error: "비밀번호가 틀렸습니다." });
   });

@@ -23,6 +23,9 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+app.set("trust proxy", 1);
+
+const isProd = process.env.NODE_ENV === "production" || !!process.env.REPL_SLUG;
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "fallback-secret",
@@ -31,7 +34,8 @@ app.use(
     cookie: {
       maxAge: 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: isProd ? "none" as const : "lax" as const,
+      secure: isProd,
     },
   }),
 );
