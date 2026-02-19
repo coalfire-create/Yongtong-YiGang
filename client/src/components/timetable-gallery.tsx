@@ -42,42 +42,36 @@ export function TimetableGallery({ category }: { category: string }) {
 
   return (
     <div data-testid="timetable-gallery">
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {timetables.map((tt) => (
           <div
             key={tt.id}
-            className="bg-white border border-gray-200 overflow-hidden"
+            className="group bg-white border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+            onClick={() => setSelectedImage(tt)}
             data-testid={`card-timetable-${tt.id}`}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <h3 className="text-sm font-bold text-gray-900">{tt.title}</h3>
-              {tt.image_url && (
-                <button
-                  onClick={() => setSelectedImage(tt)}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-orange-500 transition-colors"
-                  data-testid={`button-zoom-${tt.id}`}
-                >
-                  <ZoomIn className="w-3.5 h-3.5" />
-                  크게 보기
-                </button>
-              )}
-            </div>
             {tt.image_url ? (
-              <button
-                onClick={() => setSelectedImage(tt)}
-                className="w-full cursor-pointer"
-              >
+              <div className="relative aspect-[3/4] overflow-hidden bg-gray-50">
                 <img
                   src={tt.image_url}
                   alt={tt.title}
-                  className="w-full object-contain"
+                  className="w-full h-full object-cover object-top"
                 />
-              </button>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 px-3 py-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-800">
+                    <ZoomIn className="w-4 h-4" />
+                    크게 보기
+                  </div>
+                </div>
+              </div>
             ) : (
-              <div className="h-48 bg-orange-50 flex items-center justify-center">
+              <div className="aspect-[3/4] bg-orange-50 flex items-center justify-center">
                 <Calendar className="w-10 h-10 text-orange-300" />
               </div>
             )}
+            <div className="px-4 py-3 border-t border-gray-100">
+              <h3 className="text-sm font-bold text-gray-900 truncate">{tt.title}</h3>
+            </div>
           </div>
         ))}
       </div>
