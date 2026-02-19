@@ -4,6 +4,27 @@ import { supabase } from "./supabase";
 import multer from "multer";
 import path from "path";
 import crypto from "crypto";
+import pg from "pg";
+
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+
+async function ensurePopupsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS popups (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL DEFAULT '',
+        image_url TEXT,
+        link_url TEXT,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure popups table:", err);
+  }
+}
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
@@ -31,6 +52,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  await ensurePopupsTable();
 
   // ========== ADMIN AUTH ==========
   app.post("/api/admin/login", (req, res) => {
@@ -175,6 +198,92 @@ export async function registerRoutes(
     const { error } = await supabase.from("timetables").delete().eq("id", id);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true });
+  });
+
+  // ========== POPUPS ==========
+  app.get("/api/popups", async (_req, res) => {
+    try {
+      const { rows } = await pool.query(
+        "SELECT * FROM popups WHERE is_active = true ORDER BY display_order ASC, created_at DESC"
+      );
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/popups/all", requireAdmin, async (_req, res) => {
+    try {
+      const { rows } = await pool.query(
+        "SELECT * FROM popups ORDER BY display_order ASC, created_at DESC"
+      );
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/popups", requireAdmin, upload.single("image"), async (req, res) => {
+    const { title, link_url, display_order } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: "제목은 필수입니다." });
+    }
+
+    let image_url: string | null = null;
+    if (req.file) {
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      const fileName = `popups/${crypto.randomUUID()}${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("images")
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false,
+        });
+      if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+      const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+      image_url = urlData.publicUrl;
+    }
+
+    try {
+      const { rows } = await pool.query(
+        "INSERT INTO popups (title, image_url, link_url, display_order) VALUES ($1, $2, $3, $4) RETURNING *",
+        [title, image_url, link_url || null, parseInt(display_order) || 0]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/popups/:id/toggle", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      const { rows } = await pool.query(
+        "UPDATE popups SET is_active = NOT is_active WHERE id = $1 RETURNING *",
+        [id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "팝업을 찾을 수 없습니다." });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/popups/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      const { rows } = await pool.query("SELECT image_url FROM popups WHERE id = $1", [id]);
+      if (rows[0]?.image_url) {
+        const urlParts = rows[0].image_url.split("/images/");
+        if (urlParts[1]) {
+          await supabase.storage.from("images").remove([urlParts[1]]);
+        }
+      }
+      await pool.query("DELETE FROM popups WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   return httpServer;

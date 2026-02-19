@@ -43,9 +43,20 @@ The project is organized into three main directories:
 - **ORM:** Drizzle ORM with PostgreSQL dialect
 - **Schema Location:** `shared/schema.ts` — defines tables and Zod validation schemas using `drizzle-zod`
 - **Current Schema:** A `users` table with `id` (UUID), `username`, and `password` fields
+- **Additional Tables:** `popups` table (managed via raw pg.Pool, auto-created on server start) for homepage popup announcements
+- **Supabase Tables:** `teachers` and `timetables` tables managed via Supabase client; images stored in Supabase Storage
 - **Migrations:** Output to `./migrations` directory
 - **Schema Push:** Use `npm run db:push` (runs `drizzle-kit push`)
 - **Connection:** Requires `DATABASE_URL` environment variable
+
+## Popup Feature
+
+- **Component:** `client/src/components/popup-modal.tsx` - Shows promotional popups on homepage
+- **Admin Management:** Managed via admin page "팝업 관리" tab
+- **Storage:** `popups` table in local PostgreSQL (auto-created via `ensurePopupsTable()` on server start)
+- **Images:** Uploaded to Supabase Storage `images/popups/` bucket
+- **Dismiss Logic:** "오늘하루 보지않기" stores today's date in localStorage key `popup_dismissed_date`
+- **Division Encoding:** Teachers use `division::subject` format in the subject column to encode division membership
 
 ## Build Process
 

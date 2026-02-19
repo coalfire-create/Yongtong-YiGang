@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Users, Calendar, Trophy, BookOpen, GraduationCap } from "lucide-react";
 import { Link } from "wouter";
 import { Header } from "@/components/layout";
+import { PopupModal } from "@/components/popup-modal";
 
 const QUICK_MENU_ITEMS = [
   { label: "강사소개", sub: "자세히 보기 +", icon: Users, path: "/high-school/teachers" },
@@ -183,6 +184,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <HeroSection />
+      <PopupModal />
     </div>
   );
 }
