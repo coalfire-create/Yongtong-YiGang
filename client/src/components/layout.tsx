@@ -123,11 +123,38 @@ export function Header() {
   );
 }
 
+function Footer() {
+  return (
+    <footer className="bg-[#1B2A4A] text-white py-10 px-4 sm:px-6 lg:px-8" data-testid="footer">
+      <div className="max-w-5xl mx-auto space-y-4">
+        <h2 className="text-lg font-bold tracking-tight">영통이강학원</h2>
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-10 text-sm text-white/70 leading-relaxed">
+          <div className="space-y-1">
+            <p className="flex items-center gap-2">
+              <span className="text-orange-400 font-semibold">수강문의</span>
+            </p>
+            <p>031-204-1353 <span className="text-white/50">(평일 14:00-22:00 / 주말 8:30-22:00)</span></p>
+            <p>010-9764-1353 <span className="text-white/50">(문자전용)</span></p>
+          </div>
+          <div className="space-y-1">
+            <p>제5795-3호</p>
+            <p>이강학원입시센터학원</p>
+          </div>
+        </div>
+        <div className="border-t border-white/10 pt-4 text-xs text-white/40">
+          &copy; {new Date().getFullYear()} 영통이강학원. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 export function PageLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      {children}
+      <div className="flex-1">{children}</div>
+      <Footer />
     </div>
   );
 }
