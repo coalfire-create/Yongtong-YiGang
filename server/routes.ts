@@ -26,6 +26,21 @@ async function ensurePopupsTable() {
   }
 }
 
+async function ensureSmsSubscriptionsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sms_subscriptions (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure sms_subscriptions table:", err);
+  }
+}
+
 async function ensureBannersTable() {
   try {
     await pool.query(`
@@ -75,6 +90,7 @@ export async function registerRoutes(
 
   await ensurePopupsTable();
   await ensureBannersTable();
+  await ensureSmsSubscriptionsTable();
 
   // ========== ADMIN AUTH ==========
   app.post("/api/admin/login", (req, res) => {
@@ -415,6 +431,46 @@ export async function registerRoutes(
         }
       }
       await pool.query("DELETE FROM banners WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== SMS SUBSCRIPTIONS ==========
+  app.post("/api/sms-subscriptions", async (req, res) => {
+    const { name, phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: "전화번호는 필수입니다." });
+    }
+    const cleaned = phone.replace(/[^0-9-]/g, "");
+    if (cleaned.length < 10) {
+      return res.status(400).json({ error: "올바른 전화번호를 입력하세요." });
+    }
+    try {
+      const { rows } = await pool.query(
+        "INSERT INTO sms_subscriptions (name, phone) VALUES ($1, $2) RETURNING *",
+        [name || "", cleaned]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/sms-subscriptions", requireAdmin, async (_req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM sms_subscriptions ORDER BY created_at DESC");
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/sms-subscriptions/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      await pool.query("DELETE FROM sms_subscriptions WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

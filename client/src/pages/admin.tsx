@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, Calendar, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, Calendar, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
@@ -932,8 +932,78 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
   );
 }
 
+interface SmsSubscription {
+  id: number;
+  name: string;
+  phone: string;
+  created_at: string;
+}
+
+function SmsSubscriptionsTab() {
+  const { data: subs = [], isLoading } = useQuery<SmsSubscription[]>({
+    queryKey: ["/api/sms-subscriptions"],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/sms-subscriptions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sms-subscriptions"] });
+    },
+  });
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">문자 수신 신청 목록 ({subs.length}건)</h3>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : subs.length === 0 ? (
+        <p className="text-sm text-gray-400 py-6 text-center" data-testid="text-sms-empty">신청 내역이 없습니다.</p>
+      ) : (
+        <div className="bg-white border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm" data-testid="table-sms-subscriptions">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">이름</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">전화번호</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">신청일</th>
+                <th className="w-12"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {subs.map((sub) => (
+                <tr key={sub.id} data-testid={`row-sms-${sub.id}`}>
+                  <td className="px-4 py-3 text-gray-900">{sub.name || "-"}</td>
+                  <td className="px-4 py-3 text-gray-900 font-mono">{sub.phone}</td>
+                  <td className="px-4 py-3 text-gray-500">{new Date(sub.created_at).toLocaleDateString("ko-KR")}</td>
+                  <td className="px-2 py-3">
+                    <button
+                      onClick={() => {
+                        if (confirm("이 신청을 삭제하시겠습니까?")) {
+                          deleteMutation.mutate(sub.id);
+                        }
+                      }}
+                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      data-testid={`button-delete-sms-${sub.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups" | "sms">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -1022,9 +1092,21 @@ export default function AdminPage() {
             <Megaphone className="w-4 h-4" />
             팝업 관리
           </button>
+          <button
+            onClick={() => setTab("sms")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "sms"
+                ? "bg-orange-500 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-sms"
+          >
+            <MessageSquare className="w-4 h-4" />
+            문자 수신
+          </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : <PopupsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );
