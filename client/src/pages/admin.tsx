@@ -304,11 +304,6 @@ function TimetablesTab() {
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
-      reset();
-      if (fileRef.current) fileRef.current.value = "";
-    },
   });
 
   const deleteMutation = useMutation({
@@ -320,19 +315,26 @@ function TimetablesTab() {
     },
   });
 
+  const [uploadProgress, setUploadProgress] = useState("");
+
   const onSubmit = async (data: { category: string }) => {
     const files = fileRef.current?.files;
     if (!files || files.length === 0) return;
+    const fileList = Array.from(files);
     setUploading(true);
     try {
-      for (let i = 0; i < files.length; i++) {
+      for (let i = 0; i < fileList.length; i++) {
+        setUploadProgress(`${i + 1} / ${fileList.length}`);
         const formData = new FormData();
         formData.append("category", data.category);
-        formData.append("image", files[i]);
+        formData.append("image", fileList[i]);
         await addMutation.mutateAsync(formData);
       }
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+      reset();
     } finally {
       setUploading(false);
+      setUploadProgress("");
       if (fileRef.current) fileRef.current.value = "";
     }
   };
@@ -389,7 +391,7 @@ function TimetablesTab() {
             {uploading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                업로드 중...
+                업로드 중... {uploadProgress}
               </>
             ) : (
               <>
