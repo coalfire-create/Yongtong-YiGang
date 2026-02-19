@@ -25,8 +25,7 @@ interface Timetable {
 
 const SUBJECT_OPTIONS: Record<string, string[]> = {
   "고등관": ["국어", "영어", "수학", "과학", "사회/한국사", "제2외국어"],
-  "중등관": ["국어", "영어", "수학", "과학", "사회/역사"],
-  "초등관": ["국어", "영어", "수학", "과학", "사회"],
+  "초/중등관": ["국어", "영어", "수학", "과학", "사회/역사"],
 };
 
 function TeachersTab() {
@@ -81,8 +80,7 @@ function TeachersTab() {
   function invalidateTeachers() {
     queryClient.invalidateQueries({ queryKey: ["/api/teachers"] });
     queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("고등관")}`] });
-    queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("중등관")}`] });
-    queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("초등관")}`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/teachers?division=${encodeURIComponent("초/중등관")}`] });
   }
 
   const onSubmit = async (data: { name: string; subject: string; description: string }) => {
@@ -101,7 +99,7 @@ function TeachersTab() {
     }
   };
 
-  const divisionLabel: Record<string, string> = { "고등관": "고등관", "중등관": "중등관", "초등관": "초등관" };
+  const divisionLabel: Record<string, string> = { "고등관": "고등관", "초/중등관": "초/중등관" };
 
   return (
     <div>
@@ -128,8 +126,7 @@ function TeachersTab() {
                 data-testid="select-teacher-division"
               >
                 <option value="고등관">고등관</option>
-                <option value="중등관">중등관</option>
-                <option value="초등관">초등관</option>
+                <option value="초/중등관">초/중등관</option>
               </select>
             </div>
             <div>
@@ -341,8 +338,7 @@ function TimetablesTab() {
 
   const categoryLabel: Record<string, string> = {
     "고등관": "고등관",
-    "중등관": "중등관",
-    "초등관": "초등관",
+    "초/중등관": "초/중등관",
   };
 
   return (
@@ -364,8 +360,7 @@ function TimetablesTab() {
                 <option value="고등관-고1">고등관 - 고1</option>
                 <option value="고등관-고2">고등관 - 고2</option>
                 <option value="고등관-고3">고등관 - 고3</option>
-                <option value="중등관">중등관</option>
-                <option value="초등관">초등관</option>
+                <option value="초/중등관">초/중등관</option>
               </select>
               {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category.message}</p>}
             </div>

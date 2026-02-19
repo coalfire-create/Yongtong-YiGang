@@ -1,6 +1,6 @@
 # Overview
 
-This is a website for **영통이강학원 (Yeongtong Lee Gang Academy)**, a Korean math tutoring academy. The site serves as the academy's official homepage, showcasing their programs across three divisions: high school (고등관), middle school (중등관), and elementary school (초등관). It features banner slides, quick menu navigation, instructor introductions, schedules, and admission results.
+This is a website for **영통이강학원 (Yeongtong Lee Gang Academy)**, a Korean math tutoring academy. The site serves as the academy's official homepage, showcasing their programs across two divisions: high school (고등관) and junior school (초/중등관, combining elementary and middle school). It features banner slides, quick menu navigation, instructor introductions, schedules, and admission results.
 
 The project follows a full-stack TypeScript monorepo pattern with a React frontend and Express backend, using PostgreSQL for data storage.
 

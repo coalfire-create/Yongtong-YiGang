@@ -6,8 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/auth-modal";
 import Home from "@/pages/home";
 import { HighSchool, HighSchoolSchedule, HighSchoolScheduleG1, HighSchoolScheduleG2, HighSchoolScheduleG3, HighSchoolTeachers } from "@/pages/high-school";
-import { MiddleSchool, MiddleSchoolSchedule, MiddleSchoolTeachers } from "@/pages/middle-school";
-import { Elementary, ElementarySchedule, ElementaryTeachers } from "@/pages/elementary";
+import { JuniorSchool, JuniorSchoolSchedule, JuniorSchoolTeachers } from "@/pages/junior-school";
 import { Owl, OwlInfo, OwlUsage } from "@/pages/owl";
 import { Briefing, BriefingReservation, BriefingSchedule } from "@/pages/briefing";
 import { Admissions, AdmissionsResults, AdmissionsReviews } from "@/pages/admissions";
@@ -25,12 +24,9 @@ function Router() {
       <Route path="/high-school/schedule/g2" component={HighSchoolScheduleG2} />
       <Route path="/high-school/schedule/g3" component={HighSchoolScheduleG3} />
       <Route path="/high-school/teachers" component={HighSchoolTeachers} />
-      <Route path="/middle-school" component={MiddleSchool} />
-      <Route path="/middle-school/schedule" component={MiddleSchoolSchedule} />
-      <Route path="/middle-school/teachers" component={MiddleSchoolTeachers} />
-      <Route path="/elementary" component={Elementary} />
-      <Route path="/elementary/schedule" component={ElementarySchedule} />
-      <Route path="/elementary/teachers" component={ElementaryTeachers} />
+      <Route path="/junior-school" component={JuniorSchool} />
+      <Route path="/junior-school/schedule" component={JuniorSchoolSchedule} />
+      <Route path="/junior-school/teachers" component={JuniorSchoolTeachers} />
       <Route path="/owl" component={Owl} />
       <Route path="/owl/info" component={OwlInfo} />
       <Route path="/owl/usage" component={OwlUsage} />
