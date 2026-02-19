@@ -1,8 +1,30 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Users, Calendar, Trophy, BookOpen, GraduationCap } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight, Users, Calendar, Trophy, BookOpen, GraduationCap, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Header } from "@/components/layout";
 import { PopupModal } from "@/components/popup-modal";
+
+interface Banner {
+  id: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  image_url: string | null;
+  link_url: string | null;
+  is_active: boolean;
+  display_order: number;
+}
+
+const DEFAULT_SLIDES = [
+  {
+    title: "영통이강학원",
+    subtitle: "수학 전문",
+    description: "수능·내신 완벽 대비, 실력 있는 강사진과 함께",
+    image_url: null as string | null,
+    link_url: null as string | null,
+  },
+];
 
 const QUICK_MENU_ITEMS = [
   { label: "강사소개", sub: "자세히 보기 +", icon: Users, path: "/high-school/teachers" },
@@ -13,30 +35,23 @@ const QUICK_MENU_ITEMS = [
   { label: "입시 실적", sub: "자세히 보기 +", icon: Trophy, path: "/admissions/results" },
 ];
 
-const SLIDES = [
-  {
-    image: "/images/banner-1.png",
-    title: "SNT 초스피드",
-    subtitle: "달리는 독학관",
-    description: "체계적인 학습관리 시스템으로 성적 향상을 이끕니다",
-  },
-  {
-    image: "/images/banner-2.png",
-    title: "메이저 의대",
-    subtitle: "& SKY행",
-    description: "2024학년도 의약학 계열 합격자 다수 배출",
-  },
-  {
-    image: "/images/banner-3.png",
-    title: "영통이강학원",
-    subtitle: "수학 전문",
-    description: "수능·내신 완벽 대비, 실력 있는 강사진과 함께",
-  },
-];
-
 function HeroCarousel() {
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const { data: banners = [], isLoading } = useQuery<Banner[]>({
+    queryKey: ["/api/banners"],
+  });
+
+  const slides = banners.length > 0
+    ? banners.map((b) => ({
+        title: b.title,
+        subtitle: b.subtitle,
+        description: b.description,
+        image_url: b.image_url,
+        link_url: b.link_url,
+      }))
+    : DEFAULT_SLIDES;
 
   const goTo = useCallback(
     (index: number) => {
@@ -49,69 +64,100 @@ function HeroCarousel() {
   );
 
   const prev = useCallback(() => {
-    goTo(current === 0 ? SLIDES.length - 1 : current - 1);
-  }, [current, goTo]);
+    goTo(current === 0 ? slides.length - 1 : current - 1);
+  }, [current, goTo, slides.length]);
 
   const next = useCallback(() => {
-    goTo(current === SLIDES.length - 1 ? 0 : current + 1);
-  }, [current, goTo]);
+    goTo(current === slides.length - 1 ? 0 : current + 1);
+  }, [current, goTo, slides.length]);
 
   useEffect(() => {
+    if (slides.length <= 1) return;
     const interval = setInterval(() => {
       next();
     }, 5000);
     return () => clearInterval(interval);
-  }, [next]);
+  }, [next, slides.length]);
+
+  useEffect(() => {
+    if (current >= slides.length) setCurrent(0);
+  }, [slides.length, current]);
+
+  if (isLoading) {
+    return (
+      <div className="relative w-full h-full overflow-hidden bg-gray-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-gray-900" data-testid="carousel">
-      {SLIDES.map((slide, index) => (
+      {slides.map((slide, index) => (
         <div
           key={index}
           className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
             index === current ? "opacity-100 z-10" : "opacity-0 z-0"
           }`}
         >
-          <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
+          {slide.image_url ? (
+            <img src={slide.image_url} alt={slide.title} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-10 text-white">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight">{slide.title}</h2>
-            <p className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mt-1">{slide.subtitle}</p>
-            <p className="text-sm sm:text-base mt-3 text-white/80 max-w-md">{slide.description}</p>
+            {slide.link_url ? (
+              <Link href={slide.link_url}>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight" data-testid={`text-banner-title-${index}`}>{slide.title}</h2>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mt-1">{slide.subtitle}</p>
+                <p className="text-sm sm:text-base mt-3 text-white/80 max-w-md">{slide.description}</p>
+              </Link>
+            ) : (
+              <>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight" data-testid={`text-banner-title-${index}`}>{slide.title}</h2>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mt-1">{slide.subtitle}</p>
+                <p className="text-sm sm:text-base mt-3 text-white/80 max-w-md">{slide.description}</p>
+              </>
+            )}
           </div>
         </div>
       ))}
 
-      <button
-        onClick={prev}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors duration-200"
-        data-testid="button-carousel-prev"
-        aria-label="이전 슬라이드"
-      >
-        <ChevronLeft className="w-6 h-6" />
-      </button>
-      <button
-        onClick={next}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors duration-200"
-        data-testid="button-carousel-next"
-        aria-label="다음 슬라이드"
-      >
-        <ChevronRight className="w-6 h-6" />
-      </button>
-
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2" data-testid="carousel-dots">
-        {SLIDES.map((_, index) => (
+      {slides.length > 1 && (
+        <>
           <button
-            key={index}
-            onClick={() => goTo(index)}
-            className={`transition-all duration-300 ${
-              index === current ? "w-7 h-2.5 bg-white" : "w-2.5 h-2.5 bg-white/50 hover:bg-white/80"
-            }`}
-            data-testid={`button-carousel-dot-${index}`}
-            aria-label={`슬라이드 ${index + 1}`}
-          />
-        ))}
-      </div>
+            onClick={prev}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors duration-200"
+            data-testid="button-carousel-prev"
+            aria-label="이전 슬라이드"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors duration-200"
+            data-testid="button-carousel-next"
+            aria-label="다음 슬라이드"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2" data-testid="carousel-dots">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goTo(index)}
+                className={`transition-all duration-300 ${
+                  index === current ? "w-7 h-2.5 bg-white" : "w-2.5 h-2.5 bg-white/50 hover:bg-white/80"
+                }`}
+                data-testid={`button-carousel-dot-${index}`}
+                aria-label={`슬라이드 ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

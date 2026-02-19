@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, Calendar, ArrowLeft, Lock, Megaphone, Eye, EyeOff } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, Calendar, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
@@ -378,6 +378,231 @@ function TimetablesTab() {
   );
 }
 
+interface Banner {
+  id: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  image_url: string | null;
+  link_url: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+}
+
+function BannersTab() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<{
+    title: string;
+    subtitle: string;
+    description: string;
+    link_url: string;
+    display_order: string;
+  }>();
+
+  const { data: banners = [], isLoading } = useQuery<Banner[]>({
+    queryKey: ["/api/banners/all"],
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/banners", { method: "POST", body: formData });
+      if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/banners/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/banners"] });
+      reset();
+      if (fileRef.current) fileRef.current.value = "";
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("PATCH", `/api/banners/${id}/toggle`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/banners/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/banners"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/banners/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/banners/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/banners"] });
+    },
+  });
+
+  const onSubmit = async (data: { title: string; subtitle: string; description: string; link_url: string; display_order: string }) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("subtitle", data.subtitle || "");
+    formData.append("description", data.description || "");
+    formData.append("link_url", data.link_url || "");
+    formData.append("display_order", data.display_order || "0");
+    const file = fileRef.current?.files?.[0];
+    if (file) formData.append("image", file);
+    try {
+      await addMutation.mutateAsync(formData);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="bg-white border border-gray-200 p-6 mb-8" data-testid="form-add-banner">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">배너 추가</h3>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">제목 (큰 글씨) *</label>
+              <input
+                {...register("title", { required: "제목을 입력하세요" })}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                placeholder="예: 2026년 NEW"
+                data-testid="input-banner-title"
+              />
+              {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">부제목</label>
+              <input
+                {...register("subtitle")}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                placeholder="예: 고3 정규/특강"
+                data-testid="input-banner-subtitle"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+            <input
+              {...register("description")}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              placeholder="배너 하단 설명 문구"
+              data-testid="input-banner-description"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL</label>
+              <input
+                {...register("link_url")}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                placeholder="/high-school/schedule"
+                data-testid="input-banner-link"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">순서</label>
+              <input
+                {...register("display_order")}
+                type="number"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                placeholder="0"
+                defaultValue="0"
+                data-testid="input-banner-order"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">배경 이미지</label>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
+              data-testid="input-banner-image"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={uploading}
+            className="flex items-center gap-2 bg-orange-500 text-white px-5 py-2 text-sm font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+            data-testid="button-add-banner"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                업로드 중...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                배너 추가
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+
+      <h3 className="text-lg font-bold text-gray-900 mb-4">등록된 배너 ({banners.length}개)</h3>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : banners.length === 0 ? (
+        <p className="text-sm text-gray-400 py-6 text-center">등록된 배너가 없습니다. 배너를 추가하면 홈페이지 첫 화면에 표시됩니다.</p>
+      ) : (
+        <div className="space-y-3">
+          {banners.map((b) => (
+            <div key={b.id} className="flex items-center gap-4 bg-white border border-gray-200 p-4" data-testid={`card-admin-banner-${b.id}`}>
+              {b.image_url ? (
+                <img src={b.image_url} alt={b.title} className="w-24 h-14 object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-24 h-14 bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <Image className="w-6 h-6 text-gray-500" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-gray-900 truncate">{b.title}</p>
+                <p className="text-sm text-gray-500 truncate">
+                  {b.subtitle && <span>{b.subtitle} · </span>}
+                  {b.description || "설명 없음"}
+                </p>
+                <p className="text-xs text-gray-400 truncate mt-0.5">
+                  {b.link_url || "링크 없음"} · 순서: {b.display_order}
+                </p>
+              </div>
+              <button
+                onClick={() => toggleMutation.mutate(b.id)}
+                className={`flex-shrink-0 p-2 transition-colors ${
+                  b.is_active
+                    ? "text-green-500 hover:text-green-700 hover:bg-green-50"
+                    : "text-gray-300 hover:text-gray-500 hover:bg-gray-50"
+                }`}
+                title={b.is_active ? "활성 (클릭하면 비활성)" : "비활성 (클릭하면 활성)"}
+                data-testid={`button-toggle-banner-${b.id}`}
+              >
+                {b.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(`"${b.title}" 배너를 삭제하시겠습니까?`)) {
+                    deleteMutation.mutate(b.id);
+                  }
+                }}
+                className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                data-testid={`button-delete-banner-${b.id}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Popup {
   id: number;
   title: string;
@@ -643,7 +868,7 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "popups">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -709,6 +934,18 @@ export default function AdminPage() {
             시간표 관리
           </button>
           <button
+            onClick={() => setTab("banners")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "banners"
+                ? "bg-orange-500 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-banners"
+          >
+            <Image className="w-4 h-4" />
+            배너 관리
+          </button>
+          <button
             onClick={() => setTab("popups")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "popups"
@@ -722,7 +959,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : <PopupsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : <PopupsTab />}
       </div>
     </div>
   );

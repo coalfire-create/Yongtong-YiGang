@@ -58,6 +58,15 @@ The project is organized into three main directories:
 - **Dismiss Logic:** "오늘하루 보지않기" stores today's date in localStorage key `popup_dismissed_date`
 - **Division Encoding:** Teachers use `division::subject` format in the subject column to encode division membership
 
+## Banner Feature
+
+- **Component:** Homepage hero carousel in `client/src/pages/home.tsx` dynamically loads banners from API
+- **Admin Management:** Managed via admin page "배너 관리" tab
+- **Storage:** `banners` table in local PostgreSQL (auto-created via `ensureBannersTable()` on server start)
+- **Fields:** title, subtitle, description, image_url, link_url, is_active, display_order
+- **Images:** Uploaded to Supabase Storage `images/banners/` bucket
+- **Fallback:** Shows default slide if no banners are registered
+
 ## Build Process
 
 - **Client Build:** Vite builds to `dist/public`
