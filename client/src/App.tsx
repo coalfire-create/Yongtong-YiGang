@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
-import { HighSchool, HighSchoolSchedule, HighSchoolTeachers } from "@/pages/high-school";
+import { HighSchool, HighSchoolSchedule, HighSchoolScheduleG1, HighSchoolScheduleG2, HighSchoolScheduleG3, HighSchoolTeachers } from "@/pages/high-school";
 import { MiddleSchool, MiddleSchoolSchedule, MiddleSchoolTeachers } from "@/pages/middle-school";
 import { Elementary, ElementarySchedule, ElementaryTeachers } from "@/pages/elementary";
 import { Owl, OwlInfo, OwlUsage } from "@/pages/owl";
@@ -20,6 +20,9 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/high-school" component={HighSchool} />
       <Route path="/high-school/schedule" component={HighSchoolSchedule} />
+      <Route path="/high-school/schedule/g1" component={HighSchoolScheduleG1} />
+      <Route path="/high-school/schedule/g2" component={HighSchoolScheduleG2} />
+      <Route path="/high-school/schedule/g3" component={HighSchoolScheduleG3} />
       <Route path="/high-school/teachers" component={HighSchoolTeachers} />
       <Route path="/middle-school" component={MiddleSchool} />
       <Route path="/middle-school/schedule" component={MiddleSchoolSchedule} />

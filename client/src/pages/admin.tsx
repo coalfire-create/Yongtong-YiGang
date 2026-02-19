@@ -366,7 +366,10 @@ function TimetablesTab() {
                 defaultValue=""
               >
                 <option value="" disabled>카테고리 선택</option>
-                <option value="고등관">고등관</option>
+                <option value="고등관">고등관 (전체)</option>
+                <option value="고등관-고1">고등관 - 고1</option>
+                <option value="고등관-고2">고등관 - 고2</option>
+                <option value="고등관-고3">고등관 - 고3</option>
                 <option value="중등관">중등관</option>
                 <option value="초등관">초등관</option>
               </select>
