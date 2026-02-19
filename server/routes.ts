@@ -61,7 +61,7 @@ const upload = multer({
   },
 });
 
-const ADMIN_PASSWORD = process.env.SESSION_SECRET || "admin";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if ((req.session as any)?.isAdmin) return next();
