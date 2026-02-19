@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { SmsSubscribeButton } from "./sms-subscribe-modal";
+import { AuthHeaderButton } from "./auth-modal";
 
 const NAV_ITEMS = [
   { label: "고등관", path: "/high-school", sub: [{ label: "강사 소개", path: "/high-school/teachers" }, { label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }] },
@@ -75,14 +76,21 @@ export function Header() {
             ))}
           </nav>
 
-          <button
-            className="lg:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            data-testid="button-mobile-menu"
-            aria-label="메뉴 열기"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="hidden lg:block flex-shrink-0">
+            <AuthHeaderButton />
+          </div>
+
+          <div className="flex items-center gap-2 lg:hidden">
+            <AuthHeaderButton />
+            <button
+              className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              data-testid="button-mobile-menu"
+              aria-label="메뉴 열기"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
 

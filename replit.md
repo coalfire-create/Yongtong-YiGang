@@ -49,6 +49,17 @@ The project is organized into three main directories:
 - **Schema Push:** Use `npm run db:push` (runs `drizzle-kit push`)
 - **Connection:** Requires `DATABASE_URL` environment variable
 
+## User Authentication
+
+- **Component:** `client/src/components/auth-modal.tsx` - Login modal with Kakao/Naver OAuth and phone verification
+- **Auth Context:** `AuthProvider` wraps the app in `App.tsx`, provides `useAuth()` hook
+- **Header Integration:** `AuthHeaderButton` shows login button or user info/logout in header
+- **DB Tables:** `members` (id, kakao_id, naver_id, name, phone, auth_provider, created_at) and `phone_verifications` (id, phone, code, expires_at, verified, created_at) - auto-created on server start
+- **OAuth Routes:** `/api/auth/kakao` + callback, `/api/auth/naver` + callback (with CSRF state validation)
+- **Phone Auth:** `/api/auth/phone/send` (mock - logs code to console) + `/api/auth/phone/verify`
+- **Session:** Member stored as `req.session.member` with `{ id, name, provider }`
+- **Required Secrets:** `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET` (optional), `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
+
 ## Popup Feature
 
 - **Component:** `client/src/components/popup-modal.tsx` - Shows promotional popups on homepage

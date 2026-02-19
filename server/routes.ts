@@ -41,6 +41,41 @@ async function ensureSmsSubscriptionsTable() {
   }
 }
 
+async function ensureMembersTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS members (
+        id SERIAL PRIMARY KEY,
+        kakao_id TEXT UNIQUE,
+        naver_id TEXT UNIQUE,
+        name TEXT NOT NULL DEFAULT '',
+        phone TEXT,
+        auth_provider TEXT NOT NULL DEFAULT 'phone',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure members table:", err);
+  }
+}
+
+async function ensurePhoneVerificationsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS phone_verifications (
+        id SERIAL PRIMARY KEY,
+        phone TEXT NOT NULL,
+        code TEXT NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        verified BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure phone_verifications table:", err);
+  }
+}
+
 async function ensureBannersTable() {
   try {
     await pool.query(`
@@ -91,6 +126,8 @@ export async function registerRoutes(
   await ensurePopupsTable();
   await ensureBannersTable();
   await ensureSmsSubscriptionsTable();
+  await ensureMembersTable();
+  await ensurePhoneVerificationsTable();
 
   // ========== ADMIN AUTH ==========
   app.post("/api/admin/login", (req, res) => {
@@ -477,5 +514,223 @@ export async function registerRoutes(
     }
   });
 
+  // ========== USER AUTH (카카오/네이버/전화번호) ==========
+
+  // --- Current user status ---
+  app.get("/api/auth/me", (req, res) => {
+    const member = (req.session as any)?.member;
+    if (member) {
+      return res.json({ loggedIn: true, member });
+    }
+    return res.json({ loggedIn: false });
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    (req.session as any).member = null;
+    req.session.save(() => {
+      res.json({ success: true });
+    });
+  });
+
+  // --- 카카오 OAuth ---
+  app.get("/api/auth/kakao", (req, res) => {
+    const KAKAO_KEY = process.env.KAKAO_REST_API_KEY;
+    if (!KAKAO_KEY) return res.status(500).json({ error: "카카오 API 키가 설정되지 않았습니다." });
+    const redirectUri = `${getBaseUrl(req)}/api/auth/kakao/callback`;
+    const state = crypto.randomBytes(16).toString("hex");
+    (req.session as any).kakaoState = state;
+    req.session.save(() => {
+      const url = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_KEY}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${state}`;
+      res.redirect(url);
+    });
+  });
+
+  app.get("/api/auth/kakao/callback", async (req, res) => {
+    const { code, state } = req.query;
+    if (!code) return res.redirect("/?auth_error=missing_code");
+    const savedState = (req.session as any)?.kakaoState;
+    if (!state || state !== savedState) return res.redirect("/?auth_error=invalid_state");
+    (req.session as any).kakaoState = null;
+    const KAKAO_KEY = process.env.KAKAO_REST_API_KEY;
+    const KAKAO_SECRET = process.env.KAKAO_CLIENT_SECRET || "";
+    const redirectUri = `${getBaseUrl(req)}/api/auth/kakao/callback`;
+
+    try {
+      const tokenRes = await fetch("https://kauth.kakao.com/oauth/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          client_id: KAKAO_KEY!,
+          ...(KAKAO_SECRET ? { client_secret: KAKAO_SECRET } : {}),
+          redirect_uri: redirectUri,
+          code: code as string,
+        }),
+      });
+      const tokenData = await tokenRes.json() as any;
+      if (!tokenData.access_token) return res.redirect("/?auth_error=token_failed");
+
+      const profileRes = await fetch("https://kapi.kakao.com/v2/user/me", {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      const profile = await profileRes.json() as any;
+      const kakaoId = String(profile.id);
+      const name = profile.kakao_account?.profile?.nickname || "";
+
+      const { rows: existing } = await pool.query("SELECT * FROM members WHERE kakao_id = $1", [kakaoId]);
+      let member;
+      if (existing.length > 0) {
+        member = existing[0];
+      } else {
+        const { rows: created } = await pool.query(
+          "INSERT INTO members (kakao_id, name, auth_provider) VALUES ($1, $2, 'kakao') RETURNING *",
+          [kakaoId, name]
+        );
+        member = created[0];
+      }
+
+      (req.session as any).member = { id: member.id, name: member.name, provider: "kakao" };
+      req.session.save(() => {
+        res.redirect("/?auth_success=kakao");
+      });
+    } catch (err: any) {
+      console.error("Kakao auth error:", err);
+      res.redirect("/?auth_error=kakao_failed");
+    }
+  });
+
+  // --- 네이버 OAuth ---
+  app.get("/api/auth/naver", (req, res) => {
+    const NAVER_ID = process.env.NAVER_CLIENT_ID;
+    if (!NAVER_ID) return res.status(500).json({ error: "네이버 API 키가 설정되지 않았습니다." });
+    const redirectUri = `${getBaseUrl(req)}/api/auth/naver/callback`;
+    const state = crypto.randomBytes(16).toString("hex");
+    (req.session as any).naverState = state;
+    req.session.save(() => {
+      const url = `https://nid.naver.com/oauth2.0/authorize?client_id=${NAVER_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${state}`;
+      res.redirect(url);
+    });
+  });
+
+  app.get("/api/auth/naver/callback", async (req, res) => {
+    const { code, state } = req.query;
+    if (!code) return res.redirect("/?auth_error=missing_code");
+    const savedState = (req.session as any)?.naverState;
+    if (!state || state !== savedState) return res.redirect("/?auth_error=invalid_state");
+    (req.session as any).naverState = null;
+
+    const NAVER_ID = process.env.NAVER_CLIENT_ID;
+    const NAVER_SECRET = process.env.NAVER_CLIENT_SECRET;
+    if (!NAVER_ID || !NAVER_SECRET) return res.redirect("/?auth_error=config_missing");
+
+    try {
+      const tokenRes = await fetch(`https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=${NAVER_ID}&client_secret=${NAVER_SECRET}&code=${code}&state=${state}`, {
+        method: "GET",
+      });
+      const tokenData = await tokenRes.json() as any;
+      if (!tokenData.access_token) return res.redirect("/?auth_error=token_failed");
+
+      const profileRes = await fetch("https://openapi.naver.com/v1/nid/me", {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      const profileData = await profileRes.json() as any;
+      const naverId = String(profileData.response?.id);
+      const name = profileData.response?.name || profileData.response?.nickname || "";
+      const phone = profileData.response?.mobile?.replace(/-/g, "") || "";
+
+      const { rows: existing } = await pool.query("SELECT * FROM members WHERE naver_id = $1", [naverId]);
+      let member;
+      if (existing.length > 0) {
+        member = existing[0];
+      } else {
+        const { rows: created } = await pool.query(
+          "INSERT INTO members (naver_id, name, phone, auth_provider) VALUES ($1, $2, $3, 'naver') RETURNING *",
+          [naverId, name, phone]
+        );
+        member = created[0];
+      }
+
+      (req.session as any).member = { id: member.id, name: member.name, provider: "naver" };
+      req.session.save(() => {
+        res.redirect("/?auth_success=naver");
+      });
+    } catch (err: any) {
+      console.error("Naver auth error:", err);
+      res.redirect("/?auth_error=naver_failed");
+    }
+  });
+
+  // --- 전화번호 인증 ---
+  app.post("/api/auth/phone/send", async (req, res) => {
+    const { phone } = req.body;
+    if (!phone || phone.replace(/\D/g, "").length < 10) {
+      return res.status(400).json({ error: "올바른 전화번호를 입력해 주세요." });
+    }
+    const cleanPhone = phone.replace(/\D/g, "");
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
+
+    try {
+      await pool.query("UPDATE phone_verifications SET verified = true WHERE phone = $1 AND verified = false", [cleanPhone]);
+      await pool.query(
+        "INSERT INTO phone_verifications (phone, code, expires_at) VALUES ($1, $2, $3)",
+        [cleanPhone, code, expiresAt]
+      );
+      console.log(`[PHONE AUTH] 인증번호 발송 (mock): ${cleanPhone} -> ${code}`);
+      res.json({ success: true, message: "인증번호가 발송되었습니다." });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/auth/phone/verify", async (req, res) => {
+    const { phone, code, name } = req.body;
+    if (!phone || !code) {
+      return res.status(400).json({ error: "전화번호와 인증번호를 입력해 주세요." });
+    }
+    const cleanPhone = phone.replace(/\D/g, "");
+
+    try {
+      const { rows } = await pool.query(
+        "SELECT * FROM phone_verifications WHERE phone = $1 AND code = $2 AND verified = false AND expires_at > now() ORDER BY created_at DESC LIMIT 1",
+        [cleanPhone, code]
+      );
+      if (rows.length === 0) {
+        return res.status(400).json({ error: "인증번호가 올바르지 않거나 만료되었습니다." });
+      }
+
+      await pool.query("UPDATE phone_verifications SET verified = true WHERE id = $1", [rows[0].id]);
+
+      const { rows: existing } = await pool.query("SELECT * FROM members WHERE phone = $1 AND auth_provider = 'phone'", [cleanPhone]);
+      let member;
+      if (existing.length > 0) {
+        member = existing[0];
+        if (name && name.trim()) {
+          await pool.query("UPDATE members SET name = $1 WHERE id = $2", [name.trim(), member.id]);
+          member.name = name.trim();
+        }
+      } else {
+        const { rows: created } = await pool.query(
+          "INSERT INTO members (phone, name, auth_provider) VALUES ($1, $2, 'phone') RETURNING *",
+          [cleanPhone, name?.trim() || ""]
+        );
+        member = created[0];
+      }
+
+      (req.session as any).member = { id: member.id, name: member.name || cleanPhone, provider: "phone" };
+      req.session.save(() => {
+        res.json({ success: true, member: { id: member.id, name: member.name, provider: "phone" } });
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   return httpServer;
+}
+
+function getBaseUrl(req: Request): string {
+  const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5000";
+  return `${proto}://${host}`;
 }

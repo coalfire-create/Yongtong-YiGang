@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/components/auth-modal";
 import Home from "@/pages/home";
 import { HighSchool, HighSchoolSchedule, HighSchoolScheduleG1, HighSchoolScheduleG2, HighSchoolScheduleG3, HighSchoolTeachers } from "@/pages/high-school";
 import { MiddleSchool, MiddleSchoolSchedule, MiddleSchoolTeachers } from "@/pages/middle-school";
@@ -50,8 +51,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <AuthProvider>
+          <Toaster />
+          <Router />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
