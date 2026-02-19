@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Users, Calendar, Trophy, BookOpen, GraduationCap, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Calendar, Trophy, BookOpen, GraduationCap, Moon, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Header } from "@/components/layout";
 import { PopupModal } from "@/components/popup-modal";
@@ -27,12 +27,11 @@ const DEFAULT_SLIDES = [
 ];
 
 const QUICK_MENU_ITEMS = [
-  { label: "강사소개", sub: "자세히 보기 +", icon: Users, path: "/high-school/teachers" },
-  { label: "중등 시간표", sub: "자세히 보기 +", icon: BookOpen, path: "/middle-school/schedule" },
-  { label: "고1 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/high-school/schedule" },
-  { label: "고2 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/high-school/schedule" },
-  { label: "고3 시간표", sub: "자세히 보기 +", icon: GraduationCap, path: "/high-school/schedule" },
-  { label: "입시 실적", sub: "자세히 보기 +", icon: Trophy, path: "/admissions/results" },
+  { label: "고등관", sub: "자세히 보기 +", icon: GraduationCap, path: "/high-school/teachers" },
+  { label: "중등관", sub: "자세히 보기 +", icon: BookOpen, path: "/middle-school/teachers" },
+  { label: "초등관", sub: "자세히 보기 +", icon: Users, path: "/elementary/teachers" },
+  { label: "올빼미 학습관", sub: "자세히 보기 +", icon: Moon, path: "/study-hall" },
+  { label: "입시실적", sub: "자세히 보기 +", icon: Trophy, path: "/admissions/results" },
 ];
 
 function HeroCarousel() {
@@ -201,11 +200,20 @@ function QuickMenuCard({
 }
 
 function QuickMenuGrid() {
+  const topRow = QUICK_MENU_ITEMS.slice(0, 3);
+  const bottomRow = QUICK_MENU_ITEMS.slice(3);
   return (
-    <div className="grid grid-cols-2 gap-[6px] h-full" data-testid="quick-menu-grid">
-      {QUICK_MENU_ITEMS.map((item) => (
-        <QuickMenuCard key={item.label} label={item.label} sub={item.sub} icon={item.icon} path={item.path} />
-      ))}
+    <div className="flex flex-col gap-[6px] h-full" data-testid="quick-menu-grid">
+      <div className="grid grid-cols-3 gap-[6px] flex-1">
+        {topRow.map((item) => (
+          <QuickMenuCard key={item.label} label={item.label} sub={item.sub} icon={item.icon} path={item.path} />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-[6px] flex-1">
+        {bottomRow.map((item) => (
+          <QuickMenuCard key={item.label} label={item.label} sub={item.sub} icon={item.icon} path={item.path} />
+        ))}
+      </div>
     </div>
   );
 }
