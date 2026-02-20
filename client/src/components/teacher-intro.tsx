@@ -50,7 +50,7 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
                 onClick={() => setSelectedSubject("ALL")}
                 className={`px-5 py-2 text-sm font-semibold transition-colors ${
                   selectedSubject === "ALL"
-                    ? "bg-orange-500 text-white"
+                    ? "bg-red-600 text-white"
                     : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                 }`}
                 data-testid="filter-subject-all"
@@ -63,7 +63,7 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
                   onClick={() => setSelectedSubject(s)}
                   className={`px-5 py-2 text-sm font-semibold transition-colors ${
                     selectedSubject === s
-                      ? "bg-orange-500 text-white"
+                      ? "bg-red-600 text-white"
                       : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                   }`}
                   data-testid={`filter-subject-${s}`}
@@ -93,7 +93,7 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
                 return (
                   <div key={subj}>
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="w-1 h-5 bg-orange-500" />
+                      <div className="w-1 h-5 bg-red-600" />
                       <h2
                         className="text-lg font-extrabold text-gray-900"
                         data-testid={`text-subject-group-${subj}`}
@@ -152,7 +152,7 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
         {bioLines.length > 0 && (
           <div className="absolute inset-0 bg-black/70 flex flex-col justify-start pt-14 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <p className="text-white font-bold text-sm sm:text-base mb-1">
-              {teacher.name} <span className="text-orange-400">T</span>
+              {teacher.name} <span className="text-red-500">T</span>
             </p>
             <div className="space-y-0.5 mt-1">
               {bioLines.map((line, i) => (
@@ -167,7 +167,7 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
 
       <div className="px-3 py-3 sm:px-4 sm:py-3">
         <h3 className="text-sm sm:text-base font-extrabold text-gray-900" data-testid={`text-teacher-name-${teacher.id}`}>
-          {teacher.name} <span className="text-orange-500 font-bold">T</span>
+          {teacher.name} <span className="text-red-600 font-bold">T</span>
         </h3>
         <p className="text-xs sm:text-sm text-gray-500 mt-0.5" data-testid={`text-teacher-subject-${teacher.id}`}>
           {teacher.subject}

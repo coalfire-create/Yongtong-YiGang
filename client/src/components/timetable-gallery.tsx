@@ -65,8 +65,8 @@ export function TimetableGallery({ category }: { category: string }) {
                 </div>
               </div>
             ) : (
-              <div className="aspect-[3/4] bg-orange-50 flex items-center justify-center">
-                <Calendar className="w-10 h-10 text-orange-300" />
+              <div className="aspect-[3/4] bg-red-50 flex items-center justify-center">
+                <Calendar className="w-10 h-10 text-red-400" />
               </div>
             )}
             {tt.title && (

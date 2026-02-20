@@ -98,7 +98,7 @@ export function PopupModal() {
                   className="w-full object-contain max-h-[70vh]"
                 />
               ) : (
-                <div className="w-full aspect-[4/5] bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center p-8">
+                <div className="w-full aspect-[4/5] bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center p-8">
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-white text-center leading-tight">
                     {popup.title}
                   </h3>
@@ -114,7 +114,7 @@ export function PopupModal() {
                   className="w-full object-contain max-h-[70vh]"
                 />
               ) : (
-                <div className="w-full aspect-[4/5] bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center p-8">
+                <div className="w-full aspect-[4/5] bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center p-8">
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-white text-center leading-tight">
                     {popup.title}
                   </h3>
@@ -169,7 +169,7 @@ export function PopupModal() {
           </button>
           <button
             onClick={close}
-            className="px-6 py-2.5 text-sm font-bold text-gray-900 bg-orange-400 hover:bg-orange-500 transition-colors rounded"
+            className="px-6 py-2.5 text-sm font-bold text-gray-900 bg-red-500 hover:bg-red-600 transition-colors rounded"
             data-testid="button-popup-close"
           >
             닫기

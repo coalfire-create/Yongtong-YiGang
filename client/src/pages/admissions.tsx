@@ -11,9 +11,9 @@ export function Admissions() {
           { label: "주요 대학 합격", count: "156명", year: "2025학년도" },
         ].map((stat) => (
           <div key={stat.label} className="bg-white border border-gray-200 p-6 text-center" data-testid={`card-stat-${stat.label}`}>
-            <TrendingUp className="w-8 h-8 text-orange-500 mx-auto mb-3" />
+            <TrendingUp className="w-8 h-8 text-red-600 mx-auto mb-3" />
             <p className="text-3xl font-extrabold text-gray-900">{stat.count}</p>
-            <p className="text-sm font-bold text-orange-500 mt-1">{stat.label}</p>
+            <p className="text-sm font-bold text-red-600 mt-1">{stat.label}</p>
             <p className="text-xs text-gray-400 mt-1">{stat.year}</p>
           </div>
         ))}
@@ -31,7 +31,7 @@ export function Admissions() {
           { univ: "경희대학교", dept: "한의예과", year: "2024" },
         ].map((r, i) => (
           <div key={i} className="flex items-center gap-4 bg-white border border-gray-200 p-4" data-testid={`card-result-${i}`}>
-            <Trophy className="w-5 h-5 text-orange-500 flex-shrink-0" />
+            <Trophy className="w-5 h-5 text-red-600 flex-shrink-0" />
             <span className="font-bold text-gray-900 min-w-[130px]">{r.univ}</span>
             <span className="text-gray-600 flex-1">{r.dept}</span>
             <span className="text-xs text-gray-400">{r.year}학년도</span>
@@ -57,9 +57,9 @@ export function AdmissionsReviews() {
         ].map((r, i) => (
           <div key={i} className="bg-white border border-gray-200 p-6" data-testid={`card-review-${i}`}>
             <div className="flex items-center gap-2 mb-3">
-              <Star className="w-5 h-5 text-orange-500" />
+              <Star className="w-5 h-5 text-red-600" />
               <span className="font-bold text-gray-900">{r.name}</span>
-              <span className="text-sm text-orange-500 font-medium">| {r.univ}</span>
+              <span className="text-sm text-red-600 font-medium">| {r.univ}</span>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">{r.review}</p>
           </div>

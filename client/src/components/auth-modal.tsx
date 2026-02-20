@@ -104,7 +104,7 @@ export function AuthHeaderButton() {
       </button>
       <button
         onClick={openRegisterModal}
-        className="px-4 py-1.5 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+        className="px-4 py-1.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
         style={{ borderRadius: "4px" }}
         data-testid="button-register-open"
       >
@@ -156,7 +156,7 @@ function LoginModal({ onClose, onSwitchToRegister }: { onClose: () => void; onSw
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="아이디를 입력해 주세요"
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               data-testid="input-login-username"
             />
@@ -168,7 +168,7 @@ function LoginModal({ onClose, onSwitchToRegister }: { onClose: () => void; onSw
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="비밀번호를 입력해 주세요"
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               onKeyDown={(e) => { if (e.key === "Enter") loginMutation.mutate(); }}
               data-testid="input-login-password"
@@ -178,7 +178,7 @@ function LoginModal({ onClose, onSwitchToRegister }: { onClose: () => void; onSw
           <button
             onClick={() => loginMutation.mutate()}
             disabled={loginMutation.isPending || !username || !password}
-            className="w-full py-2.5 text-sm font-semibold text-white bg-[#1B2A4A] hover:bg-[#253a5e] disabled:bg-gray-300 transition-colors"
+            className="w-full py-2.5 text-sm font-semibold text-white bg-[#7B2332] hover:bg-[#8B3040] disabled:bg-gray-300 transition-colors"
             style={{ borderRadius: "6px" }}
             data-testid="button-login-submit"
           >
@@ -187,10 +187,10 @@ function LoginModal({ onClose, onSwitchToRegister }: { onClose: () => void; onSw
           <div className="text-center">
             <button
               onClick={onSwitchToRegister}
-              className="text-sm text-gray-400 hover:text-orange-500 transition-colors"
+              className="text-sm text-gray-400 hover:text-red-600 transition-colors"
               data-testid="button-switch-to-register"
             >
-              아직 회원이 아니신가요? <span className="font-semibold text-orange-500">회원가입</span>
+              아직 회원이 아니신가요? <span className="font-semibold text-red-600">회원가입</span>
             </button>
           </div>
         </div>
@@ -335,7 +335,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
           <p className="text-sm text-gray-500 mb-6">환영합니다, {studentName}님!</p>
           <button
             onClick={onClose}
-            className="w-full py-2.5 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+            className="w-full py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
             style={{ borderRadius: "6px" }}
             data-testid="button-register-close"
           >
@@ -362,7 +362,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
             <button
               onClick={() => setMemberType("student")}
               className={`flex-1 py-3 text-sm font-semibold transition-colors ${
-                memberType === "student" ? "bg-[#1B2A4A] text-white" : "bg-white text-gray-500 hover:bg-gray-50"
+                memberType === "student" ? "bg-[#7B2332] text-white" : "bg-white text-gray-500 hover:bg-gray-50"
               }`}
               data-testid="button-type-student"
             >
@@ -371,7 +371,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
             <button
               onClick={() => setMemberType("parent")}
               className={`flex-1 py-3 text-sm font-semibold transition-colors ${
-                memberType === "parent" ? "bg-[#1B2A4A] text-white" : "bg-white text-gray-500 hover:bg-gray-50"
+                memberType === "parent" ? "bg-[#7B2332] text-white" : "bg-white text-gray-500 hover:bg-gray-50"
               }`}
               data-testid="button-type-parent"
             >
@@ -387,14 +387,14 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
                 onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "")); setUsernameChecked(null); setUsernameMsg(""); }}
                 placeholder="6~15자의 영문 소문자, 숫자만 가능"
                 maxLength={15}
-                className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+                className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
                 style={{ borderRadius: "6px" }}
                 data-testid="input-reg-username"
               />
               <button
                 onClick={() => checkUsernameMutation.mutate()}
                 disabled={!username || username.length < 6 || checkUsernameMutation.isPending}
-                className="px-4 py-2.5 text-sm font-semibold text-white bg-[#1B2A4A] hover:bg-[#253a5e] disabled:bg-gray-300 transition-colors flex-shrink-0"
+                className="px-4 py-2.5 text-sm font-semibold text-white bg-[#7B2332] hover:bg-[#8B3040] disabled:bg-gray-300 transition-colors flex-shrink-0"
                 style={{ borderRadius: "6px" }}
                 data-testid="button-check-username"
               >
@@ -414,7 +414,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="비밀번호"
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               data-testid="input-reg-password"
             />
@@ -426,7 +426,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}
               placeholder="비밀번호를 다시 한번 입력해 주세요."
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               data-testid="input-reg-password-confirm"
             />
@@ -441,7 +441,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
               value={studentName}
               onChange={(e) => setStudentName(e.target.value)}
               placeholder="이름을 입력해주세요."
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               data-testid="input-reg-name"
             />
@@ -451,7 +451,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors bg-white"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors bg-white"
               style={{ borderRadius: "6px" }}
               data-testid="select-reg-gender"
             >
@@ -464,7 +464,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
             <select
               value={track}
               onChange={(e) => setTrack(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors bg-white"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors bg-white"
               style={{ borderRadius: "6px" }}
               data-testid="select-reg-track"
             >
@@ -477,7 +477,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
             <select
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors bg-white"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors bg-white"
               style={{ borderRadius: "6px" }}
               data-testid="select-reg-grade"
             >
@@ -492,7 +492,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
               value={school}
               onChange={(e) => setSchool(e.target.value)}
               placeholder="학교명을 입력해주세요."
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               data-testid="input-reg-school"
             />
@@ -505,7 +505,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
                 value={studentPhone}
                 onChange={(e) => { setStudentPhone(e.target.value); setPhoneVerified(false); }}
                 placeholder="휴대폰번호(-없이 입력)"
-                className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+                className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
                 style={{ borderRadius: "6px" }}
                 disabled={phoneVerified}
                 data-testid="input-reg-student-phone"
@@ -514,7 +514,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
                 <button
                   onClick={() => sendCodeMutation.mutate()}
                   disabled={!studentPhone || studentPhone.replace(/\D/g, "").length < 10 || sendCodeMutation.isPending}
-                  className="px-4 py-2.5 text-sm font-semibold text-white bg-[#1B2A4A] hover:bg-[#253a5e] disabled:bg-gray-300 transition-colors flex-shrink-0"
+                  className="px-4 py-2.5 text-sm font-semibold text-white bg-[#7B2332] hover:bg-[#8B3040] disabled:bg-gray-300 transition-colors flex-shrink-0"
                   style={{ borderRadius: "6px" }}
                   data-testid="button-send-phone-code"
                 >
@@ -535,16 +535,16 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
                     onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="인증번호 6자리"
                     maxLength={6}
-                    className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors text-center tracking-widest font-mono"
+                    className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors text-center tracking-widest font-mono"
                     style={{ borderRadius: "6px" }}
                     data-testid="input-reg-phone-code"
                   />
-                  <span className="text-sm text-orange-500 flex items-center font-medium w-12">{formatTime(phoneCountdown)}</span>
+                  <span className="text-sm text-red-600 flex items-center font-medium w-12">{formatTime(phoneCountdown)}</span>
                 </div>
                 <button
                   onClick={() => verifyCodeMutation.mutate()}
                   disabled={phoneCode.length < 6 || verifyCodeMutation.isPending}
-                  className="w-full py-2.5 text-sm font-semibold text-[#1B2A4A] bg-amber-300 hover:bg-amber-400 disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
+                  className="w-full py-2.5 text-sm font-semibold text-[#7B2332] bg-amber-300 hover:bg-amber-400 disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
                   style={{ borderRadius: "6px" }}
                   data-testid="button-verify-phone-code"
                 >
@@ -560,7 +560,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
               value={parentPhone}
               onChange={(e) => setParentPhone(e.target.value)}
               placeholder="(-)없이 숫자만 입력"
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               data-testid="input-reg-parent-phone"
             />
@@ -573,7 +573,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
               onChange={(e) => setBirthday(e.target.value.replace(/\D/g, "").slice(0, 8))}
               placeholder="생년월일 8자리 (예시: 20001231)"
               maxLength={8}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               data-testid="input-reg-birthday"
             />
@@ -583,7 +583,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors bg-white"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors bg-white"
               style={{ borderRadius: "6px" }}
               data-testid="select-reg-subject"
             >
@@ -598,7 +598,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="메일주소 입력"
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-orange-400 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               data-testid="input-reg-email"
             />
@@ -613,7 +613,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
                   onClick={() => setAcademyStatus(opt.value)}
                   className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
                     academyStatus === opt.value
-                      ? "bg-[#1B2A4A] text-white"
+                      ? "bg-[#7B2332] text-white"
                       : "bg-white text-gray-500 hover:bg-gray-50"
                   }`}
                   data-testid={`button-academy-${opt.value}`}
@@ -632,7 +632,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
                   type="checkbox"
                   checked={agreeTerms && agreePrivacy}
                   onChange={(e) => { setAgreeTerms(e.target.checked); setAgreePrivacy(e.target.checked); }}
-                  className="w-4 h-4 accent-orange-500"
+                  className="w-4 h-4 accent-red-600"
                   data-testid="checkbox-agree-all"
                 />
                 <span className="text-sm text-gray-700 font-medium">모두 동의합니다.</span>
@@ -642,11 +642,11 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
                   type="checkbox"
                   checked={agreeTerms}
                   onChange={(e) => setAgreeTerms(e.target.checked)}
-                  className="w-4 h-4 accent-orange-500"
+                  className="w-4 h-4 accent-red-600"
                   data-testid="checkbox-agree-terms"
                 />
                 <span className="text-sm text-gray-600">
-                  이용약관 <span className="text-orange-500">(필수)</span>
+                  이용약관 <span className="text-red-600">(필수)</span>
                 </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer pl-2" data-testid="label-agree-privacy">
@@ -654,11 +654,11 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
                   type="checkbox"
                   checked={agreePrivacy}
                   onChange={(e) => setAgreePrivacy(e.target.checked)}
-                  className="w-4 h-4 accent-orange-500"
+                  className="w-4 h-4 accent-red-600"
                   data-testid="checkbox-agree-privacy"
                 />
                 <span className="text-sm text-gray-600">
-                  개인정보 수집 및 이용 동의 <span className="text-orange-500">(필수)</span>
+                  개인정보 수집 및 이용 동의 <span className="text-red-600">(필수)</span>
                 </span>
               </label>
             </div>
@@ -674,7 +674,7 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
           <button
             onClick={handleSubmit}
             disabled={registerMutation.isPending}
-            className="w-full py-3 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 transition-colors"
+            className="w-full py-3 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-300 transition-colors"
             style={{ borderRadius: "6px" }}
             data-testid="button-register-submit"
           >
@@ -684,10 +684,10 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
           <div className="text-center pb-2">
             <button
               onClick={onSwitchToLogin}
-              className="text-sm text-gray-400 hover:text-orange-500 transition-colors"
+              className="text-sm text-gray-400 hover:text-red-600 transition-colors"
               data-testid="button-switch-to-login"
             >
-              이미 회원이신가요? <span className="font-semibold text-orange-500">로그인</span>
+              이미 회원이신가요? <span className="font-semibold text-red-600">로그인</span>
             </button>
           </div>
         </div>

@@ -111,7 +111,7 @@ function TeachersTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
               <input
                 {...register("name", { required: "이름을 입력하세요" })}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="이름"
                 data-testid="input-teacher-name"
               />
@@ -122,7 +122,7 @@ function TeachersTab() {
               <select
                 value={selectedDivision}
                 onChange={(e) => setSelectedDivision(e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 bg-white"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-white"
                 data-testid="select-teacher-division"
               >
                 <option value="고등관">고등관</option>
@@ -133,7 +133,7 @@ function TeachersTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">과목 *</label>
               <select
                 {...register("subject", { required: "과목을 선택하세요" })}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 bg-white"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-white"
                 data-testid="select-teacher-subject"
                 defaultValue=""
               >
@@ -149,7 +149,7 @@ function TeachersTab() {
             <label className="block text-sm font-medium text-gray-700 mb-1">약력 / 소개 *</label>
             <textarea
               {...register("description", { required: "소개를 입력하세요" })}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-none"
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
               placeholder={"줄바꿈으로 항목 구분\n예: 대성마이맥 출강\n전 SNT 고등관 국어"}
               rows={3}
               data-testid="input-teacher-desc"
@@ -162,14 +162,14 @@ function TeachersTab() {
               ref={fileRef}
               type="file"
               accept="image/*"
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               data-testid="input-teacher-image"
             />
           </div>
           <button
             type="submit"
             disabled={uploading}
-            className="flex items-center gap-2 bg-orange-500 text-white px-5 py-2 text-sm font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-red-600 text-white px-5 py-2 text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
             data-testid="button-add-teacher"
           >
             {uploading ? (
@@ -202,14 +202,14 @@ function TeachersTab() {
                 {t.image_url ? (
                   <img src={t.image_url} alt={t.name} className="w-14 h-14 object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-14 h-14 bg-orange-50 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-7 h-7 text-orange-400" />
+                  <div className="w-14 h-14 bg-red-50 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-7 h-7 text-red-500" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900 truncate">{t.name}</p>
                   <p className="text-sm text-gray-500 truncate">
-                    <span className="text-orange-500 font-medium">{divisionLabel[t.division] || t.division}</span>
+                    <span className="text-red-600 font-medium">{divisionLabel[t.division] || t.division}</span>
                     {t.division && " · "}
                     {t.subject}
                   </p>
@@ -224,7 +224,7 @@ function TeachersTab() {
                     setEditingBioId(editingBioId === t.id ? null : t.id);
                     setEditBioText(t.description || "");
                   }}
-                  className="flex-shrink-0 p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors"
+                  className="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                   title="약력 편집"
                   data-testid={`button-edit-bio-${t.id}`}
                 >
@@ -251,7 +251,7 @@ function TeachersTab() {
                     value={editBioText}
                     onChange={(e) => setEditBioText(e.target.value)}
                     rows={4}
-                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-none"
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
                     placeholder={"대성마이맥 출강\n전 SNT 고등관 국어, 두각\n전 대형"}
                     data-testid={`textarea-bio-${t.id}`}
                   />
@@ -259,7 +259,7 @@ function TeachersTab() {
                     <button
                       onClick={() => bioMutation.mutate({ id: t.id, bio: editBioText })}
                       disabled={bioMutation.isPending}
-                      className="flex items-center gap-1 bg-orange-500 text-white px-4 py-1.5 text-xs font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1 bg-red-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
                       data-testid={`button-save-bio-${t.id}`}
                     >
                       {bioMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
@@ -351,7 +351,7 @@ function TimetablesTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">카테고리 *</label>
               <select
                 {...register("category", { required: "카테고리를 선택하세요" })}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 bg-white"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-white"
                 data-testid="select-timetable-category"
                 defaultValue=""
               >
@@ -372,7 +372,7 @@ function TimetablesTab() {
               type="file"
               accept="image/*"
               multiple
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               data-testid="input-timetable-image"
             />
             <p className="text-xs text-gray-400 mt-1">여러 장을 한번에 선택할 수 있습니다.</p>
@@ -380,7 +380,7 @@ function TimetablesTab() {
           <button
             type="submit"
             disabled={uploading}
-            className="flex items-center gap-2 bg-orange-500 text-white px-5 py-2 text-sm font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-red-600 text-white px-5 py-2 text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
             data-testid="button-add-timetable"
           >
             {uploading ? (
@@ -412,8 +412,8 @@ function TimetablesTab() {
               {tt.image_url ? (
                 <img src={tt.image_url} alt={tt.title} className="w-20 h-14 object-cover flex-shrink-0" />
               ) : (
-                <div className="w-20 h-14 bg-orange-50 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-7 h-7 text-orange-400" />
+                <div className="w-20 h-14 bg-red-50 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-7 h-7 text-red-500" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -526,7 +526,7 @@ function BannersTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">제목 (큰 글씨) *</label>
               <input
                 {...register("title", { required: "제목을 입력하세요" })}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="예: 2026년 NEW"
                 data-testid="input-banner-title"
               />
@@ -536,7 +536,7 @@ function BannersTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">부제목</label>
               <input
                 {...register("subtitle")}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="예: 고3 정규/특강"
                 data-testid="input-banner-subtitle"
               />
@@ -546,7 +546,7 @@ function BannersTab() {
             <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
             <input
               {...register("description")}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
               placeholder="배너 하단 설명 문구"
               data-testid="input-banner-description"
             />
@@ -556,7 +556,7 @@ function BannersTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL</label>
               <input
                 {...register("link_url")}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="/high-school/schedule"
                 data-testid="input-banner-link"
               />
@@ -566,7 +566,7 @@ function BannersTab() {
               <input
                 {...register("display_order")}
                 type="number"
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="0"
                 defaultValue="0"
                 data-testid="input-banner-order"
@@ -579,14 +579,14 @@ function BannersTab() {
               ref={fileRef}
               type="file"
               accept="image/*"
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               data-testid="input-banner-image"
             />
           </div>
           <button
             type="submit"
             disabled={uploading}
-            className="flex items-center gap-2 bg-orange-500 text-white px-5 py-2 text-sm font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-red-600 text-white px-5 py-2 text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
             data-testid="button-add-banner"
           >
             {uploading ? (
@@ -745,7 +745,7 @@ function PopupsTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">제목 *</label>
               <input
                 {...register("title", { required: "제목을 입력하세요" })}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="팝업 제목"
                 data-testid="input-popup-title"
               />
@@ -755,7 +755,7 @@ function PopupsTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL</label>
               <input
                 {...register("link_url")}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="https://..."
                 data-testid="input-popup-link"
               />
@@ -765,7 +765,7 @@ function PopupsTab() {
               <input
                 {...register("display_order")}
                 type="number"
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="0"
                 defaultValue="0"
                 data-testid="input-popup-order"
@@ -778,14 +778,14 @@ function PopupsTab() {
               ref={fileRef}
               type="file"
               accept="image/*"
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               data-testid="input-popup-image"
             />
           </div>
           <button
             type="submit"
             disabled={uploading}
-            className="flex items-center gap-2 bg-orange-500 text-white px-5 py-2 text-sm font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-red-600 text-white px-5 py-2 text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
             data-testid="button-add-popup"
           >
             {uploading ? (
@@ -817,8 +817,8 @@ function PopupsTab() {
               {p.image_url ? (
                 <img src={p.image_url} alt={p.title} className="w-20 h-14 object-cover flex-shrink-0" />
               ) : (
-                <div className="w-20 h-14 bg-orange-50 flex items-center justify-center flex-shrink-0">
-                  <Megaphone className="w-7 h-7 text-orange-400" />
+                <div className="w-20 h-14 bg-red-50 flex items-center justify-center flex-shrink-0">
+                  <Megaphone className="w-7 h-7 text-red-500" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -891,8 +891,8 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white border border-gray-200 p-8" data-testid="form-admin-login">
         <div className="flex items-center justify-center mb-6">
-          <div className="w-12 h-12 bg-orange-50 flex items-center justify-center">
-            <Lock className="w-6 h-6 text-orange-500" />
+          <div className="w-12 h-12 bg-red-50 flex items-center justify-center">
+            <Lock className="w-6 h-6 text-red-600" />
           </div>
         </div>
         <h1 className="text-xl font-extrabold text-gray-900 text-center mb-6">관리자 로그인</h1>
@@ -903,7 +903,7 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
               placeholder="관리자 비밀번호를 입력하세요"
               data-testid="input-admin-password"
               autoFocus
@@ -913,7 +913,7 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
           <button
             type="submit"
             disabled={loading || !password}
-            className="w-full bg-orange-500 text-white py-2 text-sm font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+            className="w-full bg-red-600 text-white py-2 text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
             data-testid="button-admin-login"
           >
             {loading ? "로그인 중..." : "로그인"}
@@ -1100,7 +1100,7 @@ function BriefingsTab() {
             <label className="block text-sm font-medium text-gray-700 mb-1">제목 *</label>
             <input
               {...register("title", { required: "제목을 입력하세요" })}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
               placeholder="예: 2026학년도 고등부 신입생 설명회"
               data-testid="input-briefing-title"
             />
@@ -1111,7 +1111,7 @@ function BriefingsTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">날짜 *</label>
               <input
                 {...register("date", { required: "날짜를 입력하세요" })}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="예: 2026년 3월 8일 (토)"
                 data-testid="input-briefing-date"
               />
@@ -1121,7 +1121,7 @@ function BriefingsTab() {
               <label className="block text-sm font-medium text-gray-700 mb-1">시간</label>
               <input
                 {...register("time")}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="예: 14:00~16:00"
                 data-testid="input-briefing-time"
               />
@@ -1132,7 +1132,7 @@ function BriefingsTab() {
             <textarea
               {...register("description")}
               rows={2}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-none"
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
               placeholder="설명회에 대한 간단한 안내"
               data-testid="input-briefing-description"
             />
@@ -1141,7 +1141,7 @@ function BriefingsTab() {
             <label className="block text-sm font-medium text-gray-700 mb-1">구글폼 링크</label>
             <input
               {...register("form_url")}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
               placeholder="https://forms.gle/..."
               data-testid="input-briefing-form-url"
             />
@@ -1149,7 +1149,7 @@ function BriefingsTab() {
           <button
             type="submit"
             disabled={addMutation.isPending}
-            className="flex items-center gap-2 px-6 py-2 bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
             data-testid="button-add-briefing"
           >
             {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
@@ -1174,7 +1174,7 @@ function BriefingsTab() {
                   <input
                     value={editForm.title || ""}
                     onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                     placeholder="제목"
                     data-testid="input-edit-briefing-title"
                   />
@@ -1182,14 +1182,14 @@ function BriefingsTab() {
                     <input
                       value={editForm.date || ""}
                       onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                       placeholder="날짜"
                       data-testid="input-edit-briefing-date"
                     />
                     <input
                       value={editForm.time || ""}
                       onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
-                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                       placeholder="시간"
                       data-testid="input-edit-briefing-time"
                     />
@@ -1198,14 +1198,14 @@ function BriefingsTab() {
                     value={editForm.description || ""}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     rows={2}
-                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500 resize-none"
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
                     placeholder="설명"
                     data-testid="input-edit-briefing-description"
                   />
                   <input
                     value={editForm.form_url || ""}
                     onChange={(e) => setEditForm({ ...editForm, form_url: e.target.value })}
-                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                     placeholder="구글폼 링크"
                     data-testid="input-edit-briefing-form-url"
                   />
@@ -1213,7 +1213,7 @@ function BriefingsTab() {
                     <button
                       onClick={saveEdit}
                       disabled={updateMutation.isPending}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
                       data-testid="button-save-briefing"
                     >
                       <Check className="w-4 h-4" />
@@ -1241,7 +1241,7 @@ function BriefingsTab() {
                     <p className="text-sm text-gray-500 mt-1">{b.date} {b.time}</p>
                     {b.description && <p className="text-sm text-gray-500 mt-1">{b.description}</p>}
                     {b.form_url && (
-                      <a href={b.form_url} target="_blank" rel="noopener noreferrer" className="text-xs text-orange-500 hover:text-orange-600 mt-1 inline-block break-all">
+                      <a href={b.form_url} target="_blank" rel="noopener noreferrer" className="text-xs text-red-600 hover:text-red-700 mt-1 inline-block break-all">
                         {b.form_url}
                       </a>
                     )}
@@ -1257,7 +1257,7 @@ function BriefingsTab() {
                     </button>
                     <button
                       onClick={() => startEdit(b)}
-                      className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors"
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                       data-testid={`button-edit-briefing-${b.id}`}
                     >
                       <Pencil className="w-4 h-4" />
@@ -1330,7 +1330,7 @@ export default function AdminPage() {
             onClick={() => setTab("teachers")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "teachers"
-                ? "bg-orange-500 text-white"
+                ? "bg-red-600 text-white"
                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
             data-testid="tab-teachers"
@@ -1342,7 +1342,7 @@ export default function AdminPage() {
             onClick={() => setTab("timetables")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "timetables"
-                ? "bg-orange-500 text-white"
+                ? "bg-red-600 text-white"
                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
             data-testid="tab-timetables"
@@ -1354,7 +1354,7 @@ export default function AdminPage() {
             onClick={() => setTab("banners")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "banners"
-                ? "bg-orange-500 text-white"
+                ? "bg-red-600 text-white"
                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
             data-testid="tab-banners"
@@ -1366,7 +1366,7 @@ export default function AdminPage() {
             onClick={() => setTab("popups")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "popups"
-                ? "bg-orange-500 text-white"
+                ? "bg-red-600 text-white"
                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
             data-testid="tab-popups"
@@ -1378,7 +1378,7 @@ export default function AdminPage() {
             onClick={() => setTab("briefings")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "briefings"
-                ? "bg-orange-500 text-white"
+                ? "bg-red-600 text-white"
                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
             data-testid="tab-briefings"
@@ -1390,7 +1390,7 @@ export default function AdminPage() {
             onClick={() => setTab("sms")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "sms"
-                ? "bg-orange-500 text-white"
+                ? "bg-red-600 text-white"
                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
             data-testid="tab-sms"

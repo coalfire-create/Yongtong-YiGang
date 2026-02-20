@@ -9,7 +9,7 @@ export function SmsSubscribeButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed right-4 bottom-20 z-40 w-14 h-14 bg-orange-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-orange-600 transition-colors"
+        className="fixed right-4 bottom-20 z-40 w-14 h-14 bg-red-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-red-700 transition-colors"
         data-testid="button-sms-subscribe-open"
         aria-label="문자 수신 신청"
       >
@@ -57,7 +57,7 @@ function SmsSubscribeModal({ onClose }: { onClose: () => void }) {
         className="bg-white w-full max-w-sm relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-[#1B2A4A] text-white px-6 py-5">
+        <div className="bg-[#7B2332] text-white px-6 py-5">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
@@ -78,7 +78,7 @@ function SmsSubscribeModal({ onClose }: { onClose: () => void }) {
             <p className="text-sm text-gray-500 mt-2">학원 소식을 문자로 보내드리겠습니다.</p>
             <button
               onClick={onClose}
-              className="mt-6 bg-[#1B2A4A] text-white px-6 py-2.5 text-sm font-semibold hover:bg-[#243558] transition-colors"
+              className="mt-6 bg-[#7B2332] text-white px-6 py-2.5 text-sm font-semibold hover:bg-[#8B3040] transition-colors"
               data-testid="button-sms-done"
             >
               확인
@@ -92,7 +92,7 @@ function SmsSubscribeModal({ onClose }: { onClose: () => void }) {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-red-600"
                 placeholder="이름을 입력하세요"
                 data-testid="input-sms-name"
               />
@@ -105,7 +105,7 @@ function SmsSubscribeModal({ onClose }: { onClose: () => void }) {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-red-600"
                 placeholder="010-0000-0000"
                 required
                 data-testid="input-sms-phone"
@@ -119,7 +119,7 @@ function SmsSubscribeModal({ onClose }: { onClose: () => void }) {
             <button
               type="submit"
               disabled={mutation.isPending || !phone.trim()}
-              className="w-full bg-orange-500 text-white py-2.5 text-sm font-bold hover:bg-orange-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-red-600 text-white py-2.5 text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
               data-testid="button-sms-submit"
             >
               {mutation.isPending ? (

@@ -12,51 +12,51 @@ const NAV_ITEMS = [
     desc: "고등부 전문 강사진을 만나보세요",
     icon: Users,
     path: "/high-school/teachers",
-    accent: "from-orange-500 to-amber-500",
-    iconBg: "bg-orange-500/20",
+    accent: "from-red-600 to-amber-500",
+    iconBg: "bg-red-600/20",
   },
   {
     label: "고1 시간표",
     desc: "고1 정규 · 특강 수업 시간표",
     icon: Calendar,
     path: "/high-school/schedule/g1",
-    accent: "from-blue-500 to-cyan-500",
-    iconBg: "bg-blue-500/20",
+    accent: "from-rose-500 to-pink-500",
+    iconBg: "bg-rose-500/20",
   },
   {
     label: "고2 시간표",
     desc: "고2 정규 · 특강 수업 시간표",
     icon: Calendar,
     path: "/high-school/schedule/g2",
-    accent: "from-emerald-500 to-teal-500",
-    iconBg: "bg-emerald-500/20",
+    accent: "from-rose-600 to-red-500",
+    iconBg: "bg-rose-600/20",
   },
   {
     label: "고3 시간표",
     desc: "고3 정규 · 특강 · 파이널 시간표",
     icon: Calendar,
     path: "/high-school/schedule/g3",
-    accent: "from-violet-500 to-purple-500",
-    iconBg: "bg-violet-500/20",
+    accent: "from-rose-700 to-rose-500",
+    iconBg: "bg-rose-700/20",
   },
 ];
 
 const GRADE_TABS = [
-  { label: "고1", path: "/high-school/schedule/g1", color: "blue" },
-  { label: "고2", path: "/high-school/schedule/g2", color: "emerald" },
-  { label: "고3", path: "/high-school/schedule/g3", color: "violet" },
+  { label: "고1", path: "/high-school/schedule/g1", color: "rose" },
+  { label: "고2", path: "/high-school/schedule/g2", color: "crimson" },
+  { label: "고3", path: "/high-school/schedule/g3", color: "maroon" },
 ];
 
 function SchedulePageLayout({ grade, category, color }: { grade: string; category: string; color: string }) {
   const [location] = useLocation();
 
   const colorMap: Record<string, { gradient: string; accent: string; badge: string }> = {
-    blue: { gradient: "from-blue-600 via-blue-700 to-[#1B2A4A]", accent: "text-blue-400", badge: "bg-blue-500/20 text-blue-300" },
-    emerald: { gradient: "from-emerald-600 via-emerald-700 to-[#1B2A4A]", accent: "text-emerald-400", badge: "bg-emerald-500/20 text-emerald-300" },
-    violet: { gradient: "from-violet-600 via-violet-700 to-[#1B2A4A]", accent: "text-violet-400", badge: "bg-violet-500/20 text-violet-300" },
+    rose: { gradient: "from-rose-600 via-rose-700 to-[#7B2332]", accent: "text-rose-400", badge: "bg-rose-500/20 text-rose-300" },
+    crimson: { gradient: "from-red-600 via-red-700 to-[#7B2332]", accent: "text-red-400", badge: "bg-red-500/20 text-red-300" },
+    maroon: { gradient: "from-[#7B2332] via-[#8B3040] to-[#6B1D2A]", accent: "text-rose-300", badge: "bg-rose-500/20 text-rose-200" },
   };
 
-  const c = colorMap[color] || colorMap.blue;
+  const c = colorMap[color] || colorMap.rose;
 
   return (
     <PageLayout>
@@ -118,9 +118,9 @@ function SchedulePageLayout({ grade, category, color }: { grade: string; categor
 export function HighSchool() {
   return (
     <PageLayout>
-      <div className="bg-gradient-to-br from-[#1B2A4A] via-[#243558] to-[#1a2844] text-white">
+      <div className="bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-          <p className="text-orange-400 text-sm font-bold tracking-widest uppercase mb-2" data-testid="text-high-label">
+          <p className="text-red-500 text-sm font-bold tracking-widest uppercase mb-2" data-testid="text-high-label">
             High School
           </p>
           <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight" data-testid="text-page-title">
@@ -147,14 +147,14 @@ export function HighSchool() {
                   <item.icon className="w-6 h-6 text-gray-700" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-red-600 transition-colors">
                     {item.label}
                   </h3>
                   <p className="text-sm text-gray-500 mt-1 leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 text-xs font-semibold text-gray-400 group-hover:text-orange-500 transition-colors">
+                <div className="flex items-center gap-1 text-xs font-semibold text-gray-400 group-hover:text-red-600 transition-colors">
                   자세히 보기
                   <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </div>

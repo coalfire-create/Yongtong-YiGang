@@ -41,7 +41,7 @@ export function Header() {
             data-testid="link-logo"
           >
             <img src={logoImg} alt="이강학원 로고" className="h-10 w-10 rounded-md object-cover" data-testid="img-header-logo" />
-            <span className="text-xl font-extrabold tracking-tight" style={{ color: "#1B2A4A" }}>영통이강학원</span>
+            <span className="text-xl font-extrabold tracking-tight" style={{ color: "#7B2332" }}>영통이강학원</span>
           </Link>
 
           <nav className="hidden lg:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
@@ -51,8 +51,8 @@ export function Header() {
                   href={item.path}
                   className={`block px-6 py-5 text-[15px] font-semibold transition-colors duration-200 border-b-2 ${
                     location.startsWith(item.path)
-                      ? "text-orange-500 border-orange-500"
-                      : "text-gray-700 border-transparent hover:text-orange-500 hover:border-orange-500"
+                      ? "text-red-600 border-red-600"
+                      : "text-gray-700 border-transparent hover:text-red-600 hover:border-red-600"
                   }`}
                   data-testid={`link-nav-${item.label}`}
                 >
@@ -64,7 +64,7 @@ export function Header() {
                       <Link
                         key={subItem.label}
                         href={subItem.path}
-                        className="block px-5 py-3 text-sm text-gray-600 hover:text-orange-500 hover:bg-gray-50 transition-colors duration-150"
+                        className="block px-5 py-3 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 transition-colors duration-150"
                         data-testid={`link-sub-${subItem.label}`}
                       >
                         {subItem.label}
@@ -105,7 +105,7 @@ export function Header() {
             <div key={item.label}>
               <Link
                 href={item.path}
-                className="block px-4 py-3 text-base font-semibold text-gray-700 hover:text-orange-500 hover:bg-orange-50 transition-colors duration-200"
+                className="block px-4 py-3 text-base font-semibold text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
                 data-testid={`link-mobile-nav-${item.label}`}
               >
                 {item.label}
@@ -116,7 +116,7 @@ export function Header() {
                     <Link
                       key={subItem.label}
                       href={subItem.path}
-                      className="block px-4 py-2 text-sm text-gray-500 hover:text-orange-500 transition-colors duration-200"
+                      className="block px-4 py-2 text-sm text-gray-500 hover:text-red-600 transition-colors duration-200"
                       data-testid={`link-mobile-sub-${subItem.label}`}
                     >
                       {subItem.label}
@@ -133,7 +133,7 @@ export function Header() {
 }
 function Footer() {
   return (
-    <footer className="bg-[#1B2A4A] text-white py-12 px-4 sm:px-6 lg:px-8" data-testid="footer">
+    <footer className="bg-[#7B2332] text-white py-12 px-4 sm:px-6 lg:px-8" data-testid="footer">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-start gap-8 sm:gap-14">
           <div className="flex-shrink-0 flex flex-col items-start gap-3">
@@ -141,7 +141,7 @@ function Footer() {
             <span className="text-lg font-bold tracking-tight">영통이강학원</span>
           </div>
           <div className="flex-1 space-y-4 text-sm text-white/70 leading-relaxed">
-            <p className="text-orange-400 font-semibold text-[13px] uppercase tracking-wider">수강문의</p>
+            <p className="text-red-500 font-semibold text-[13px] uppercase tracking-wider">수강문의</p>
             <div className="space-y-1.5">
               <p><span className="text-white/90 font-medium">영통이강 고등 (내신/수능 전문)</span>&ensp;031-204-1352</p>
               <p><span className="text-white/90 font-medium">영통이강 초/중등관</span>&ensp;031-548-0985</p>
@@ -181,7 +181,7 @@ export function SectionPage({
 }) {
   return (
     <PageLayout>
-      <div className="bg-gradient-to-r from-[#1B2A4A] to-[#2d4470] text-white py-16 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-r from-[#7B2332] to-[#943848] text-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-extrabold" data-testid="text-page-title">{title}</h1>
           <p className="mt-2 text-white/70 text-base sm:text-lg" data-testid="text-page-subtitle">{subtitle}</p>

@@ -10,13 +10,13 @@ export function JuniorSchool() {
   return (
     <SectionPage title="초/중등관" subtitle="초등·중등부 수학 전문 과정 안내">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link href="/junior-school/schedule" className="block border border-gray-200 bg-white p-8 hover:border-orange-300 transition-colors duration-200 cursor-pointer" data-testid="card-junior-schedule">
-          <Calendar className="w-10 h-10 text-orange-500 mb-4" />
+        <Link href="/junior-school/schedule" className="block border border-gray-200 bg-white p-8 hover:border-red-400 transition-colors duration-200 cursor-pointer" data-testid="card-junior-schedule">
+          <Calendar className="w-10 h-10 text-red-600 mb-4" />
           <h3 className="text-xl font-bold text-gray-900 mb-2">강의시간표</h3>
           <p className="text-gray-500 text-sm">초등·중등 과정별 시간표를 확인하세요.</p>
         </Link>
-        <Link href="/junior-school/teachers" className="block border border-gray-200 bg-white p-8 hover:border-orange-300 transition-colors duration-200 cursor-pointer" data-testid="card-junior-teachers">
-          <Users className="w-10 h-10 text-orange-500 mb-4" />
+        <Link href="/junior-school/teachers" className="block border border-gray-200 bg-white p-8 hover:border-red-400 transition-colors duration-200 cursor-pointer" data-testid="card-junior-teachers">
+          <Users className="w-10 h-10 text-red-600 mb-4" />
           <h3 className="text-xl font-bold text-gray-900 mb-2">선생님 소개</h3>
           <p className="text-gray-500 text-sm">초등·중등부 전문 강사진을 소개합니다.</p>
         </Link>
@@ -30,8 +30,8 @@ export function JuniorSchool() {
             { grade: "중3", desc: "고등 수학 선행 + 내신 완성", time: "월·수·금 18:30~20:30" },
           ].map((course) => (
             <div key={course.grade} className="flex items-start gap-4 bg-white border border-gray-200 p-6" data-testid={`card-course-${course.grade}`}>
-              <div className="flex-shrink-0 w-14 h-14 bg-orange-50 flex items-center justify-center">
-                <span className="text-orange-500 font-extrabold text-lg">{course.grade}</span>
+              <div className="flex-shrink-0 w-14 h-14 bg-red-50 flex items-center justify-center">
+                <span className="text-red-600 font-extrabold text-lg">{course.grade}</span>
               </div>
               <div className="flex-1">
                 <h4 className="font-bold text-gray-900">{course.desc}</h4>
@@ -53,8 +53,8 @@ export function JuniorSchool() {
             { grade: "초6", desc: "중등 선행 + 경시 대비", time: "월·수·금 16:30~18:00" },
           ].map((course) => (
             <div key={course.grade} className="flex items-start gap-4 bg-white border border-gray-200 p-6" data-testid={`card-course-${course.grade}`}>
-              <div className="flex-shrink-0 w-14 h-14 bg-orange-50 flex items-center justify-center">
-                <span className="text-orange-500 font-extrabold text-lg">{course.grade}</span>
+              <div className="flex-shrink-0 w-14 h-14 bg-red-50 flex items-center justify-center">
+                <span className="text-red-600 font-extrabold text-lg">{course.grade}</span>
               </div>
               <div className="flex-1">
                 <h4 className="font-bold text-gray-900">{course.desc}</h4>
@@ -80,10 +80,10 @@ export function JuniorSchoolSchedule() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse" data-testid="table-schedule-middle">
             <thead>
-              <tr className="bg-[#1B2A4A] text-white">
-                <th className="py-3 px-4 text-sm font-semibold text-left border border-[#1B2A4A]">시간</th>
+              <tr className="bg-[#7B2332] text-white">
+                <th className="py-3 px-4 text-sm font-semibold text-left border border-[#7B2332]">시간</th>
                 {["월", "화", "수", "목", "금", "토"].map((d) => (
-                  <th key={d} className="py-3 px-4 text-sm font-semibold text-center border border-[#1B2A4A]">{d}</th>
+                  <th key={d} className="py-3 px-4 text-sm font-semibold text-center border border-[#7B2332]">{d}</th>
                 ))}
               </tr>
             </thead>
@@ -109,10 +109,10 @@ export function JuniorSchoolSchedule() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse" data-testid="table-schedule-elementary">
             <thead>
-              <tr className="bg-[#1B2A4A] text-white">
-                <th className="py-3 px-4 text-sm font-semibold text-left border border-[#1B2A4A]">시간</th>
+              <tr className="bg-[#7B2332] text-white">
+                <th className="py-3 px-4 text-sm font-semibold text-left border border-[#7B2332]">시간</th>
                 {["월", "화", "수", "목", "금", "토"].map((d) => (
-                  <th key={d} className="py-3 px-4 text-sm font-semibold text-center border border-[#1B2A4A]">{d}</th>
+                  <th key={d} className="py-3 px-4 text-sm font-semibold text-center border border-[#7B2332]">{d}</th>
                 ))}
               </tr>
             </thead>

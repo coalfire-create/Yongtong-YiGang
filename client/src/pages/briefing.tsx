@@ -20,8 +20,8 @@ function BriefingCard({ briefing }: { briefing: Briefing }) {
       data-testid={`card-briefing-${briefing.id}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
-        <div className="flex-shrink-0 w-14 h-14 bg-orange-50 flex items-center justify-center">
-          <CalendarDays className="w-7 h-7 text-orange-500" />
+        <div className="flex-shrink-0 w-14 h-14 bg-red-50 flex items-center justify-center">
+          <CalendarDays className="w-7 h-7 text-red-600" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-gray-900 leading-snug" data-testid={`text-briefing-title-${briefing.id}`}>
@@ -41,7 +41,7 @@ function BriefingCard({ briefing }: { briefing: Briefing }) {
               href={briefing.form_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors duration-200"
+              className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors duration-200"
               data-testid={`link-briefing-form-${briefing.id}`}
             >
               <ExternalLink className="w-4 h-4" />
@@ -61,7 +61,7 @@ export function Briefing() {
 
   return (
     <PageLayout>
-      <div className="bg-gradient-to-r from-[#1B2A4A] to-[#2d4470] text-white py-16 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-r from-[#7B2332] to-[#943848] text-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-extrabold" data-testid="text-page-title">설명회</h1>
           <p className="mt-2 text-white/70 text-base sm:text-lg" data-testid="text-page-subtitle">학부모 설명회 일정 안내</p>

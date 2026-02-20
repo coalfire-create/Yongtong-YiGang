@@ -174,7 +174,7 @@ function QuickMenuCard({
   return (
     <Link
       href={path}
-      className="group relative flex flex-col justify-between p-5 cursor-pointer transition-colors duration-300 overflow-hidden bg-white text-gray-900 border border-gray-200 hover:bg-orange-500 hover:border-orange-500 hover:text-white"
+      className="group relative flex flex-col justify-between p-5 cursor-pointer transition-colors duration-300 overflow-hidden bg-white text-gray-900 border border-gray-200 hover:bg-red-600 hover:border-red-600 hover:text-white"
       data-testid={`card-quick-menu-${label}`}
     >
       <div className="relative z-10">
