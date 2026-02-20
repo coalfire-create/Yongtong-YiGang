@@ -9,9 +9,7 @@ const JUNIOR_SUBJECTS = ["국어", "영어", "수학", "과학", "사회/역사"
 
 const QUICK_MENU_ITEMS: { label: string; sub: string; icon: LucideIcon; path: string }[] = [
   { label: "강사 소개", sub: "자세히 보기 +", icon: Users, path: "/junior-school/teachers" },
-  { label: "초등부 과정", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
-  { label: "중등부 과정", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
-  { label: "강의시간표", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
+  { label: "초/중등부 과정", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
 ];
 
 function QuickMenuCard({ label, sub, icon: Icon, path }: { label: string; sub: string; icon: LucideIcon; path: string }) {
@@ -54,7 +52,7 @@ export function JuniorSchool() {
             />
           </div>
           <div className="lg:h-full">
-            <div className="grid grid-cols-2 gap-[6px] h-full" data-testid="quick-menu-grid-junior">
+            <div className="grid grid-cols-1 gap-[6px] h-full" data-testid="quick-menu-grid-junior">
               {QUICK_MENU_ITEMS.map((item) => (
                 <QuickMenuCard key={item.label} label={item.label} sub={item.sub} icon={item.icon} path={item.path} />
               ))}
