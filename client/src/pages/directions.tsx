@@ -1,6 +1,6 @@
 import { SectionPage } from "@/components/layout";
 import { MapPin, Clock, Bus, Car } from "lucide-react";
-import mapImage from "@assets/스크린샷_2026-02-20_오후_5.26.39_1771576002134.png";
+import mapImage from "@assets/map.png";
 
 export function Directions() {
   return (
