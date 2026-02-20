@@ -78,9 +78,7 @@ function SchedulePageLayout({ grade, category, color }: { grade: string; categor
           <h1 className="text-2xl sm:text-4xl font-extrabold" data-testid="text-page-title">
             {grade} 시간표
           </h1>
-          <p className="mt-2 text-white/50 text-sm sm:text-base" data-testid="text-page-subtitle">
-            고등관 {grade} 강의 시간표를 확인하세요
-          </p>
+          <div className="mt-3 w-12 h-1 bg-white/40 rounded-full" />
         </div>
       </div>
 
@@ -118,17 +116,16 @@ function SchedulePageLayout({ grade, category, color }: { grade: string; categor
 export function HighSchool() {
   return (
     <PageLayout>
-      <div className="bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-          <p className="text-red-500 text-sm font-bold tracking-widest uppercase mb-2" data-testid="text-high-label">
+      <div className="relative bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <p className="text-rose-300/80 text-xs font-bold tracking-[0.2em] uppercase mb-2" data-testid="text-high-label">
             High School
           </p>
-          <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight" data-testid="text-page-title">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight" data-testid="text-page-title">
             고등관
           </h1>
-          <p className="mt-3 text-white/60 text-base sm:text-lg max-w-lg" data-testid="text-page-subtitle">
-            체계적인 커리큘럼과 실력 있는 강사진으로 수능과 내신을 완벽하게 대비합니다.
-          </p>
+          <div className="mt-3 w-12 h-1 bg-white/40 rounded-full" />
         </div>
       </div>
 
@@ -168,19 +165,19 @@ export function HighSchool() {
 }
 
 export function HighSchoolSchedule() {
-  return <SchedulePageLayout grade="전체" category="고등관" color="blue" />;
+  return <SchedulePageLayout grade="전체" category="고등관" color="rose" />;
 }
 
 export function HighSchoolScheduleG1() {
-  return <SchedulePageLayout grade="고1" category="고등관-고1" color="blue" />;
+  return <SchedulePageLayout grade="고1" category="고등관-고1" color="rose" />;
 }
 
 export function HighSchoolScheduleG2() {
-  return <SchedulePageLayout grade="고2" category="고등관-고2" color="emerald" />;
+  return <SchedulePageLayout grade="고2" category="고등관-고2" color="crimson" />;
 }
 
 export function HighSchoolScheduleG3() {
-  return <SchedulePageLayout grade="고3" category="고등관-고3" color="violet" />;
+  return <SchedulePageLayout grade="고3" category="고등관-고3" color="maroon" />;
 }
 
 export function HighSchoolTeachers() {
