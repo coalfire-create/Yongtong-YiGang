@@ -20,9 +20,11 @@ interface BannerCarouselProps {
   defaultSubtitle?: string;
   defaultDescription?: string;
   height?: string;
+  className?: string;
 }
 
-export function BannerCarousel({ division, defaultTitle, defaultSubtitle, defaultDescription, height = "h-[340px] sm:h-[400px]" }: BannerCarouselProps) {
+export function BannerCarousel({ division, defaultTitle, defaultSubtitle, defaultDescription, height = "h-[340px] sm:h-[400px]", className }: BannerCarouselProps) {
+  const sizeClass = className || height;
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -79,7 +81,7 @@ export function BannerCarousel({ division, defaultTitle, defaultSubtitle, defaul
 
   if (isLoading) {
     return (
-      <div className={`relative w-full ${height} overflow-hidden bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] flex items-center justify-center`}>
+      <div className={`relative w-full ${sizeClass} overflow-hidden bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] flex items-center justify-center`}>
         <Loader2 className="w-8 h-8 animate-spin text-white/50" />
       </div>
     );
@@ -87,7 +89,7 @@ export function BannerCarousel({ division, defaultTitle, defaultSubtitle, defaul
 
   if (slides.length === 0) {
     return (
-      <div className={`relative w-full ${height} overflow-hidden bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A]`}>
+      <div className={`relative w-full ${sizeClass} overflow-hidden bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A]`}>
         <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
         <div className="relative flex items-center justify-center h-full text-white/40 text-sm">
           배너가 등록되지 않았습니다
@@ -97,7 +99,7 @@ export function BannerCarousel({ division, defaultTitle, defaultSubtitle, defaul
   }
 
   return (
-    <div className={`relative w-full ${height} overflow-hidden bg-gray-900`} data-testid={`carousel-${division}`}>
+    <div className={`relative w-full ${sizeClass} overflow-hidden bg-gray-900`} data-testid={`carousel-${division}`}>
       {slides.map((slide, index) => (
         <div
           key={index}

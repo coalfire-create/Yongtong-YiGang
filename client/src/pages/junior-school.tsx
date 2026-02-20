@@ -1,81 +1,67 @@
 import { SectionPage, PageLayout } from "@/components/layout";
 import { Link } from "wouter";
-import { Calendar, Users, Clock } from "lucide-react";
+import { Calendar, Users, type LucideIcon } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 import { BannerCarousel } from "@/components/banner-carousel";
 
 const JUNIOR_SUBJECTS = ["국어", "영어", "수학", "과학", "사회/역사"];
 
+const QUICK_MENU_ITEMS: { label: string; sub: string; icon: LucideIcon; path: string }[] = [
+  { label: "강사 소개", sub: "자세히 보기 +", icon: Users, path: "/junior-school/teachers" },
+  { label: "초등부 과정", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
+  { label: "중등부 과정", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
+  { label: "강의시간표", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
+];
+
+function QuickMenuCard({ label, sub, icon: Icon, path }: { label: string; sub: string; icon: LucideIcon; path: string }) {
+  return (
+    <Link
+      href={path}
+      className="group relative flex flex-col justify-between p-5 cursor-pointer transition-colors duration-300 overflow-hidden bg-white text-gray-900 border border-gray-200 hover:bg-red-600 hover:border-red-600 hover:text-white"
+      data-testid={`card-junior-menu-${label}`}
+    >
+      <div className="relative z-10">
+        <p className="text-[11px] font-bold tracking-widest uppercase mb-1 transition-colors duration-300 text-gray-400 group-hover:text-white/80">
+          CLASS
+        </p>
+        <h3 className="text-lg font-extrabold leading-tight transition-colors duration-300 text-gray-900 group-hover:text-white">
+          {label}
+        </h3>
+        <p className="text-xs mt-1.5 font-medium transition-colors duration-300 text-gray-400 group-hover:text-white/80">
+          {sub}
+        </p>
+      </div>
+      <div className="absolute bottom-3 right-3 z-0">
+        <Icon className="w-12 h-12 transition-colors duration-300 text-gray-200 group-hover:text-white/30" strokeWidth={1.5} />
+      </div>
+    </Link>
+  );
+}
+
 export function JuniorSchool() {
   return (
     <PageLayout>
-      <BannerCarousel
-        division="junior"
-        defaultTitle="초/중등관"
-        defaultSubtitle="수학 전문 과정"
-        defaultDescription="기초부터 심화까지, 체계적인 수학 학습을 시작하세요"
-      />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link href="/junior-school/schedule" className="block border border-gray-200 bg-white p-8 hover:border-red-400 transition-colors duration-200 cursor-pointer" data-testid="card-junior-schedule">
-          <Calendar className="w-10 h-10 text-red-600 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">강의시간표</h3>
-          <p className="text-gray-500 text-sm">초등·중등 과정별 시간표를 확인하세요.</p>
-        </Link>
-        <Link href="/junior-school/teachers" className="block border border-gray-200 bg-white p-8 hover:border-red-400 transition-colors duration-200 cursor-pointer" data-testid="card-junior-teachers">
-          <Users className="w-10 h-10 text-red-600 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">선생님 소개</h3>
-          <p className="text-gray-500 text-sm">초등·중등부 전문 강사진을 소개합니다.</p>
-        </Link>
-      </div>
-      <div className="mt-10">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">중등부 과정 안내</h2>
-        <div className="space-y-4">
-          {[
-            { grade: "중1", desc: "수학 기초 완성 + 내신 대비", time: "월·수·금 16:00~18:00" },
-            { grade: "중2", desc: "심화 문제 풀이 + 선행 학습", time: "화·목·토 16:00~18:00" },
-            { grade: "중3", desc: "고등 수학 선행 + 내신 완성", time: "월·수·금 18:30~20:30" },
-          ].map((course) => (
-            <div key={course.grade} className="flex items-start gap-4 bg-white border border-gray-200 p-6" data-testid={`card-course-${course.grade}`}>
-              <div className="flex-shrink-0 w-14 h-14 bg-red-50 flex items-center justify-center">
-                <span className="text-red-600 font-extrabold text-lg">{course.grade}</span>
-              </div>
-              <div className="flex-1">
-                <h4 className="font-bold text-gray-900">{course.desc}</h4>
-                <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{course.time}</span>
-                </div>
-              </div>
+      <section className="px-4 sm:px-6 lg:px-8 py-4 lg:py-6" data-testid="hero-section-junior">
+        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[5px] lg:h-[calc(100vh-100px)] lg:min-h-[480px] lg:max-h-[680px]">
+          <div className="aspect-[16/9] lg:aspect-auto lg:h-full">
+            <BannerCarousel
+              division="junior"
+              defaultTitle="초/중등관"
+              defaultSubtitle="수학 전문 과정"
+              defaultDescription="기초부터 심화까지, 체계적인 수학 학습을 시작하세요"
+              className="h-full"
+            />
+          </div>
+          <div className="lg:h-full">
+            <div className="grid grid-cols-2 gap-[6px] h-full" data-testid="quick-menu-grid-junior">
+              {QUICK_MENU_ITEMS.map((item) => (
+                <QuickMenuCard key={item.label} label={item.label} sub={item.sub} icon={item.icon} path={item.path} />
+              ))}
             </div>
-          ))}
+          </div>
         </div>
-      </div>
-      <div className="mt-10">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">초등부 과정 안내</h2>
-        <div className="space-y-4">
-          {[
-            { grade: "초4", desc: "수학 사고력 + 연산 완성", time: "월·수·금 15:00~16:30" },
-            { grade: "초5", desc: "심화 수학 + 중등 대비 기초", time: "화·목·토 15:00~16:30" },
-            { grade: "초6", desc: "중등 선행 + 경시 대비", time: "월·수·금 16:30~18:00" },
-          ].map((course) => (
-            <div key={course.grade} className="flex items-start gap-4 bg-white border border-gray-200 p-6" data-testid={`card-course-${course.grade}`}>
-              <div className="flex-shrink-0 w-14 h-14 bg-red-50 flex items-center justify-center">
-                <span className="text-red-600 font-extrabold text-lg">{course.grade}</span>
-              </div>
-              <div className="flex-1">
-                <h4 className="font-bold text-gray-900">{course.desc}</h4>
-                <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{course.time}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      </div>
+      </section>
     </PageLayout>
   );
 }

@@ -1,45 +1,17 @@
 import { PageLayout } from "@/components/layout";
 import { Link, useLocation } from "wouter";
-import { Calendar, Users, ChevronRight, ChevronLeft, ArrowLeft } from "lucide-react";
+import { Calendar, Users, ArrowLeft, type LucideIcon } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 import { BannerCarousel } from "@/components/banner-carousel";
 
 const HIGH_SCHOOL_SUBJECTS = ["국어", "영어", "수학", "과학", "사회/한국사", "제2외국어"];
 
-const NAV_ITEMS = [
-  {
-    label: "강사 소개",
-    desc: "고등부 전문 강사진을 만나보세요",
-    icon: Users,
-    path: "/high-school/teachers",
-    accent: "from-red-600 to-amber-500",
-    iconBg: "bg-red-600/20",
-  },
-  {
-    label: "고1 시간표",
-    desc: "고1 정규 · 특강 수업 시간표",
-    icon: Calendar,
-    path: "/high-school/schedule/g1",
-    accent: "from-rose-500 to-pink-500",
-    iconBg: "bg-rose-500/20",
-  },
-  {
-    label: "고2 시간표",
-    desc: "고2 정규 · 특강 수업 시간표",
-    icon: Calendar,
-    path: "/high-school/schedule/g2",
-    accent: "from-rose-600 to-red-500",
-    iconBg: "bg-rose-600/20",
-  },
-  {
-    label: "고3 시간표",
-    desc: "고3 정규 · 특강 · 파이널 시간표",
-    icon: Calendar,
-    path: "/high-school/schedule/g3",
-    accent: "from-rose-700 to-rose-500",
-    iconBg: "bg-rose-700/20",
-  },
+const QUICK_MENU_ITEMS: { label: string; sub: string; icon: LucideIcon; path: string }[] = [
+  { label: "강사 소개", sub: "자세히 보기 +", icon: Users, path: "/high-school/teachers" },
+  { label: "고1 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/high-school/schedule/g1" },
+  { label: "고2 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/high-school/schedule/g2" },
+  { label: "고3 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/high-school/schedule/g3" },
 ];
 
 const GRADE_TABS = [
@@ -47,6 +19,31 @@ const GRADE_TABS = [
   { label: "고2", path: "/high-school/schedule/g2", color: "crimson" },
   { label: "고3", path: "/high-school/schedule/g3", color: "maroon" },
 ];
+
+function QuickMenuCard({ label, sub, icon: Icon, path }: { label: string; sub: string; icon: LucideIcon; path: string }) {
+  return (
+    <Link
+      href={path}
+      className="group relative flex flex-col justify-between p-5 cursor-pointer transition-colors duration-300 overflow-hidden bg-white text-gray-900 border border-gray-200 hover:bg-red-600 hover:border-red-600 hover:text-white"
+      data-testid={`card-high-menu-${label}`}
+    >
+      <div className="relative z-10">
+        <p className="text-[11px] font-bold tracking-widest uppercase mb-1 transition-colors duration-300 text-gray-400 group-hover:text-white/80">
+          CLASS
+        </p>
+        <h3 className="text-lg font-extrabold leading-tight transition-colors duration-300 text-gray-900 group-hover:text-white">
+          {label}
+        </h3>
+        <p className="text-xs mt-1.5 font-medium transition-colors duration-300 text-gray-400 group-hover:text-white/80">
+          {sub}
+        </p>
+      </div>
+      <div className="absolute bottom-3 right-3 z-0">
+        <Icon className="w-12 h-12 transition-colors duration-300 text-gray-200 group-hover:text-white/30" strokeWidth={1.5} />
+      </div>
+    </Link>
+  );
+}
 
 function SchedulePageLayout({ grade, category, color }: { grade: string; category: string; color: string }) {
   const [location] = useLocation();
@@ -117,44 +114,26 @@ function SchedulePageLayout({ grade, category, color }: { grade: string; categor
 export function HighSchool() {
   return (
     <PageLayout>
-      <BannerCarousel
-        division="high"
-        defaultTitle="고등관"
-        defaultSubtitle="수능·내신 완벽 대비"
-        defaultDescription="체계적인 커리큘럼과 실력 있는 강사진이 함께합니다"
-      />
-
-      <div className="bg-gray-50 min-h-[50vh]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 pb-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.label}
-                href={item.path}
-                className="group relative bg-white border border-gray-200 p-6 flex flex-col gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden"
-                data-testid={`card-high-${item.path.split("/").pop()}`}
-              >
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${item.accent} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-                <div className={`w-12 h-12 rounded-lg ${item.iconBg} flex items-center justify-center`}>
-                  <item.icon className="w-6 h-6 text-gray-700" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-red-600 transition-colors">
-                    {item.label}
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                    {item.desc}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1 text-xs font-semibold text-gray-400 group-hover:text-red-600 transition-colors">
-                  자세히 보기
-                  <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                </div>
-              </Link>
-            ))}
+      <section className="px-4 sm:px-6 lg:px-8 py-4 lg:py-6" data-testid="hero-section-high">
+        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[5px] lg:h-[calc(100vh-100px)] lg:min-h-[480px] lg:max-h-[680px]">
+          <div className="aspect-[16/9] lg:aspect-auto lg:h-full">
+            <BannerCarousel
+              division="high"
+              defaultTitle="고등관"
+              defaultSubtitle="수능·내신 완벽 대비"
+              defaultDescription="체계적인 커리큘럼과 실력 있는 강사진이 함께합니다"
+              className="h-full"
+            />
+          </div>
+          <div className="lg:h-full">
+            <div className="grid grid-cols-2 gap-[6px] h-full" data-testid="quick-menu-grid-high">
+              {QUICK_MENU_ITEMS.map((item) => (
+                <QuickMenuCard key={item.label} label={item.label} sub={item.sub} icon={item.icon} path={item.path} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
     </PageLayout>
   );
 }
