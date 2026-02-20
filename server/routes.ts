@@ -118,8 +118,15 @@ async function ensureBannersTable() {
         link_url TEXT,
         is_active BOOLEAN NOT NULL DEFAULT true,
         display_order INTEGER NOT NULL DEFAULT 0,
+        division TEXT NOT NULL DEFAULT 'main',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
+    `);
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE banners ADD COLUMN IF NOT EXISTS division TEXT NOT NULL DEFAULT 'main';
+      EXCEPTION WHEN others THEN NULL;
+      END $$;
     `);
   } catch (err) {
     console.error("Failed to ensure banners table:", err);
@@ -420,10 +427,12 @@ export async function registerRoutes(
   });
 
   // ========== BANNERS ==========
-  app.get("/api/banners", async (_req, res) => {
+  app.get("/api/banners", async (req, res) => {
     try {
+      const division = (req.query.division as string) || "main";
       const { rows } = await pool.query(
-        "SELECT * FROM banners WHERE is_active = true ORDER BY display_order ASC, created_at DESC"
+        "SELECT * FROM banners WHERE is_active = true AND division = $1 ORDER BY display_order ASC, created_at DESC",
+        [division]
       );
       res.json(rows);
     } catch (err: any) {
@@ -431,11 +440,14 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/banners/all", requireAdmin, async (_req, res) => {
+  app.get("/api/banners/all", requireAdmin, async (req, res) => {
     try {
-      const { rows } = await pool.query(
-        "SELECT * FROM banners ORDER BY display_order ASC, created_at DESC"
-      );
+      const division = req.query.division as string | undefined;
+      const query = division
+        ? "SELECT * FROM banners WHERE division = $1 ORDER BY display_order ASC, created_at DESC"
+        : "SELECT * FROM banners ORDER BY display_order ASC, created_at DESC";
+      const params = division ? [division] : [];
+      const { rows } = await pool.query(query, params);
       res.json(rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -443,7 +455,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/banners", requireAdmin, upload.single("image"), async (req, res) => {
-    const { title, subtitle, description, link_url, display_order } = req.body;
+    const { title, subtitle, description, link_url, display_order, division } = req.body;
     if (!title) {
       return res.status(400).json({ error: "제목은 필수입니다." });
     }
@@ -465,8 +477,8 @@ export async function registerRoutes(
 
     try {
       const { rows } = await pool.query(
-        "INSERT INTO banners (title, subtitle, description, image_url, link_url, display_order) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-        [title, subtitle || "", description || "", image_url, link_url || null, parseInt(display_order) || 0]
+        "INSERT INTO banners (title, subtitle, description, image_url, link_url, display_order, division) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+        [title, subtitle || "", description || "", image_url, link_url || null, parseInt(display_order) || 0, division || "main"]
       );
       res.json(rows[0]);
     } catch (err: any) {

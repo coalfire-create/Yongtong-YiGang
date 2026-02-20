@@ -72,12 +72,16 @@ The project is organized into three main directories:
 
 ## Banner Feature
 
-- **Component:** Homepage hero carousel in `client/src/pages/home.tsx` dynamically loads banners from API
-- **Admin Management:** Managed via admin page "배너 관리" tab
+- **Component:** Reusable `BannerCarousel` component in `client/src/components/banner-carousel.tsx`
+- **Homepage:** Uses `HeroCarousel` in `client/src/pages/home.tsx` (division=main)
+- **Division Pages:** 고등관 (division=high), 초/중등관 (division=junior), 올빼미 독학관 (division=owl) each have their own banner carousel
+- **Admin Management:** Managed via admin page "배너 관리" tab with division filter tabs (메인/고등관/초/중등관/올빼미 독학관)
 - **Storage:** `banners` table in local PostgreSQL (auto-created via `ensureBannersTable()` on server start)
-- **Fields:** title, subtitle, description, image_url, link_url, is_active, display_order
+- **Fields:** title, subtitle, description, image_url, link_url, is_active, display_order, division
+- **Division Values:** 'main' (homepage), 'high' (고등관), 'junior' (초/중등관), 'owl' (올빼미 독학관)
+- **API:** `GET /api/banners?division=main` returns active banners for specified division
 - **Images:** Uploaded to Supabase Storage `images/banners/` bucket
-- **Fallback:** Shows default slide if no banners are registered
+- **Fallback:** Shows default slide with maroon gradient if no banners are registered for that division
 
 ## Build Process
 

@@ -38,7 +38,12 @@ function HeroCarousel() {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const { data: banners = [], isLoading } = useQuery<Banner[]>({
-    queryKey: ["/api/banners"],
+    queryKey: ["/api/banners", "main"],
+    queryFn: async () => {
+      const res = await fetch("/api/banners?division=main");
+      if (!res.ok) throw new Error("Failed to fetch banners");
+      return res.json();
+    },
   });
 
   const slides = banners.length > 0

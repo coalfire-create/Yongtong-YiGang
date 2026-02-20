@@ -447,12 +447,21 @@ interface Banner {
   link_url: string | null;
   is_active: boolean;
   display_order: number;
+  division: string;
   created_at: string;
 }
+
+const BANNER_DIVISIONS = [
+  { key: "main", label: "메인" },
+  { key: "high", label: "고등관" },
+  { key: "junior", label: "초/중등관" },
+  { key: "owl", label: "올빼미 독학관" },
+];
 
 function BannersTab() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedDivision, setSelectedDivision] = useState("main");
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{
     title: string;
     subtitle: string;
@@ -462,18 +471,27 @@ function BannersTab() {
   }>();
 
   const { data: banners = [], isLoading } = useQuery<Banner[]>({
-    queryKey: ["/api/banners/all"],
+    queryKey: ["/api/banners/all", selectedDivision],
+    queryFn: async () => {
+      const res = await fetch(`/api/banners/all?division=${selectedDivision}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
   });
+
+  const invalidateBannerCaches = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/banners/all", selectedDivision] });
+    queryClient.invalidateQueries({ queryKey: ["/api/banners", selectedDivision] });
+  };
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/banners", { method: "POST", body: formData });
+      const res = await fetch("/api/banners", { method: "POST", body: formData, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/banners/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/banners"] });
+      invalidateBannerCaches();
       reset();
       if (fileRef.current) fileRef.current.value = "";
     },
@@ -483,20 +501,14 @@ function BannersTab() {
     mutationFn: async (id: number) => {
       await apiRequest("PATCH", `/api/banners/${id}/toggle`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/banners/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/banners"] });
-    },
+    onSuccess: invalidateBannerCaches,
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/banners/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/banners/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/banners"] });
-    },
+    onSuccess: invalidateBannerCaches,
   });
 
   const onSubmit = async (data: { title: string; subtitle: string; description: string; link_url: string; display_order: string }) => {
@@ -507,6 +519,7 @@ function BannersTab() {
     formData.append("description", data.description || "");
     formData.append("link_url", data.link_url || "");
     formData.append("display_order", data.display_order || "0");
+    formData.append("division", selectedDivision);
     const file = fileRef.current?.files?.[0];
     if (file) formData.append("image", file);
     try {
@@ -516,10 +529,29 @@ function BannersTab() {
     }
   };
 
+  const divisionLabel = BANNER_DIVISIONS.find((d) => d.key === selectedDivision)?.label || selectedDivision;
+
   return (
     <div>
+      <div className="flex flex-wrap gap-2 mb-6" data-testid="banner-division-tabs">
+        {BANNER_DIVISIONS.map((div) => (
+          <button
+            key={div.key}
+            onClick={() => setSelectedDivision(div.key)}
+            className={`px-4 py-2 text-sm font-semibold transition-colors ${
+              selectedDivision === div.key
+                ? "bg-[#7B2332] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+            data-testid={`tab-banner-division-${div.key}`}
+          >
+            {div.label}
+          </button>
+        ))}
+      </div>
+
       <div className="bg-white border border-gray-200 p-6 mb-8" data-testid="form-add-banner">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">배너 추가</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">{divisionLabel} 배너 추가</h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -604,13 +636,13 @@ function BannersTab() {
         </form>
       </div>
 
-      <h3 className="text-lg font-bold text-gray-900 mb-4">등록된 배너 ({banners.length}개)</h3>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">{divisionLabel} 배너 ({banners.length}개)</h3>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
       ) : banners.length === 0 ? (
-        <p className="text-sm text-gray-400 py-6 text-center">등록된 배너가 없습니다. 배너를 추가하면 홈페이지 첫 화면에 표시됩니다.</p>
+        <p className="text-sm text-gray-400 py-6 text-center">{divisionLabel} 배너가 없습니다. 배너를 추가하면 해당 페이지에 표시됩니다.</p>
       ) : (
         <div className="space-y-3">
           {banners.map((b) => (

@@ -1,9 +1,17 @@
-import { SectionPage } from "@/components/layout";
+import { PageLayout } from "@/components/layout";
 import { Moon, Clock, BookOpen, CheckCircle } from "lucide-react";
+import { BannerCarousel } from "@/components/banner-carousel";
 
 export function Owl() {
   return (
-    <SectionPage title="올빼미 독학관" subtitle="자기주도 학습을 위한 최적의 공간">
+    <PageLayout>
+      <BannerCarousel
+        division="owl"
+        defaultTitle="올빼미 독학관"
+        defaultSubtitle="자기주도 학습"
+        defaultDescription="조용하고 쾌적한 환경에서 집중 학습이 가능한 공간"
+      />
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         <div className="bg-white border border-gray-200 p-8" data-testid="card-owl-info">
           <Moon className="w-10 h-10 text-red-600 mb-4" />
@@ -39,7 +47,8 @@ export function Owl() {
           </div>
         ))}
       </div>
-    </SectionPage>
+      </div>
+    </PageLayout>
   );
 }
 

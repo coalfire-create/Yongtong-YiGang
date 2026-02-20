@@ -1,14 +1,22 @@
-import { SectionPage } from "@/components/layout";
+import { SectionPage, PageLayout } from "@/components/layout";
 import { Link } from "wouter";
 import { Calendar, Users, Clock } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
+import { BannerCarousel } from "@/components/banner-carousel";
 
 const JUNIOR_SUBJECTS = ["국어", "영어", "수학", "과학", "사회/역사"];
 
 export function JuniorSchool() {
   return (
-    <SectionPage title="초/중등관" subtitle="초등·중등부 수학 전문 과정 안내">
+    <PageLayout>
+      <BannerCarousel
+        division="junior"
+        defaultTitle="초/중등관"
+        defaultSubtitle="수학 전문 과정"
+        defaultDescription="기초부터 심화까지, 체계적인 수학 학습을 시작하세요"
+      />
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Link href="/junior-school/schedule" className="block border border-gray-200 bg-white p-8 hover:border-red-400 transition-colors duration-200 cursor-pointer" data-testid="card-junior-schedule">
           <Calendar className="w-10 h-10 text-red-600 mb-4" />
@@ -67,13 +75,14 @@ export function JuniorSchool() {
           ))}
         </div>
       </div>
-    </SectionPage>
+      </div>
+    </PageLayout>
   );
 }
 
 export function JuniorSchoolSchedule() {
   return (
-    <SectionPage title="초/중등관 강의시간표" subtitle="초등·중등부 전 학년 강의 시간표">
+    <SectionPage title="초/중등관 강의시간표">
       <TimetableGallery category="초/중등관" />
       <div className="mt-10">
         <h2 className="text-xl font-bold text-gray-900 mb-4">중등부 시간표</h2>

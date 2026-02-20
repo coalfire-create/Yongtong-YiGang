@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Calendar, Users, ChevronRight, ChevronLeft, ArrowLeft } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
+import { BannerCarousel } from "@/components/banner-carousel";
 
 const HIGH_SCHOOL_SUBJECTS = ["국어", "영어", "수학", "과학", "사회/한국사", "제2외국어"];
 
@@ -116,18 +117,12 @@ function SchedulePageLayout({ grade, category, color }: { grade: string; categor
 export function HighSchool() {
   return (
     <PageLayout>
-      <div className="relative bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <p className="text-rose-300/80 text-xs font-bold tracking-[0.2em] uppercase mb-2" data-testid="text-high-label">
-            High School
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight" data-testid="text-page-title">
-            고등관
-          </h1>
-          <div className="mt-3 w-12 h-1 bg-white/40 rounded-full" />
-        </div>
-      </div>
+      <BannerCarousel
+        division="high"
+        defaultTitle="고등관"
+        defaultSubtitle="수능·내신 완벽 대비"
+        defaultDescription="체계적인 커리큘럼과 실력 있는 강사진이 함께합니다"
+      />
 
       <div className="bg-gray-50 min-h-[50vh]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 pb-16">
