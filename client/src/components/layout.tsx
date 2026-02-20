@@ -42,6 +42,15 @@ export function Header() {
           >
             <img src={logoImg} alt="이강학원 로고" className="h-10 w-10 rounded-md object-cover" data-testid="img-header-logo" />
             <span className="text-xl font-extrabold tracking-tight" style={{ color: "#7B2332" }}>영통이강학원</span>
+            {location.startsWith("/high-school") && (
+              <span className="text-sm font-bold text-gray-400 ml-1.5">고등관</span>
+            )}
+            {location.startsWith("/junior-school") && (
+              <span className="text-sm font-bold text-gray-400 ml-1.5">초/중등관</span>
+            )}
+            {location.startsWith("/owl") && (
+              <span className="text-sm font-bold text-gray-400 ml-1.5">올빼미 스파르타</span>
+            )}
           </Link>
 
           <nav className="hidden lg:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
