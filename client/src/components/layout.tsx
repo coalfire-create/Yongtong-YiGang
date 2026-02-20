@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { SmsSubscribeButton } from "./sms-subscribe-modal";
 import { AuthHeaderButton } from "./auth-modal";
+import logoImg from "@assets/logo.png";
 
 const NAV_ITEMS = [
   { label: "고등관", path: "/high-school", sub: [{ label: "강사 소개", path: "/high-school/teachers" }, { label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }] },
@@ -36,11 +37,11 @@ export function Header() {
         <div className="flex items-center h-[68px] gap-4">
           <Link
             href="/"
-            className="flex-shrink-0 text-2xl font-extrabold tracking-tight mr-auto lg:mr-0"
-            style={{ color: "#1B2A4A" }}
+            className="flex-shrink-0 flex items-center gap-2.5 mr-auto lg:mr-0"
             data-testid="link-logo"
           >
-            영통이강학원
+            <img src={logoImg} alt="이강학원 로고" className="h-10 w-10 rounded-md object-cover" data-testid="img-header-logo" />
+            <span className="text-xl font-extrabold tracking-tight" style={{ color: "#1B2A4A" }}>영통이강학원</span>
           </Link>
 
           <nav className="hidden lg:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
@@ -132,24 +133,26 @@ export function Header() {
 }
 function Footer() {
   return (
-    <footer className="bg-[#1B2A4A] text-white py-10 px-4 sm:px-6 lg:px-8" data-testid="footer">
-      <div className="max-w-5xl mx-auto space-y-4">
-        <h2 className="text-lg font-bold tracking-tight">영통이강학원</h2>
-        <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-10 text-sm text-white/70 leading-relaxed">
-          <div className="space-y-2">
-            <p className="flex items-center gap-2">
-              <span className="text-orange-400 font-semibold mb-1">수강문의</span>
-            </p>
-            <p><span className="text-white/90 font-medium">영통이강 고등 (내신/수능 전문)</span> 031-204-1352</p>
-            <p><span className="text-white/90 font-medium">영통이강 초/중등관</span> 031-548-0985</p>
-            <p><span className="text-white/90 font-medium">올빼미 관리형 스터디 카페</span> 031-548-098</p>
+    <footer className="bg-[#1B2A4A] text-white py-12 px-4 sm:px-6 lg:px-8" data-testid="footer">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-8 sm:gap-14">
+          <div className="flex-shrink-0 flex flex-col items-start gap-3">
+            <img src={logoImg} alt="이강학원 로고" className="h-14 w-14 rounded-lg object-cover" data-testid="img-footer-logo" />
+            <span className="text-lg font-bold tracking-tight">영통이강학원</span>
           </div>
-          <div className="space-y-1">
-            <p>제5795-3호</p>
-            <p>이강학원입시센터학원</p>
+          <div className="flex-1 space-y-4 text-sm text-white/70 leading-relaxed">
+            <p className="text-orange-400 font-semibold text-[13px] uppercase tracking-wider">수강문의</p>
+            <div className="space-y-1.5">
+              <p><span className="text-white/90 font-medium">영통이강 고등 (내신/수능 전문)</span>&ensp;031-204-1352</p>
+              <p><span className="text-white/90 font-medium">영통이강 초/중등관</span>&ensp;031-548-0985</p>
+              <p><span className="text-white/90 font-medium">올빼미 관리형 스터디 카페</span>&ensp;031-548-098</p>
+            </div>
+            <div className="text-white/50 text-xs space-y-0.5 pt-1">
+              <p>제5795-3호 &middot; 이강학원입시센터학원</p>
+            </div>
           </div>
         </div>
-        <div className="border-t border-white/10 pt-4 text-xs text-white/40">
+        <div className="border-t border-white/10 mt-8 pt-5 text-xs text-white/40">
           &copy; {new Date().getFullYear()} 영통이강학원. All rights reserved.
         </div>
       </div>
