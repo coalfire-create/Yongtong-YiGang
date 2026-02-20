@@ -317,7 +317,6 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
     if (!track) { setError("계열을 선택해 주세요."); return; }
     if (!grade) { setError("학년을 선택해 주세요."); return; }
     if (!school.trim()) { setError("학교를 입력해 주세요."); return; }
-    if (!phoneVerified) { setError("학생 휴대폰 번호 인증을 완료해 주세요."); return; }
     if (!parentPhone || parentPhone.replace(/\D/g, "").length < 10) { setError("학부모 휴대폰 번호를 입력해 주세요."); return; }
     if (!agreeTerms || !agreePrivacy) { setError("필수 약관에 동의해 주세요."); return; }
     registerMutation.mutate();
