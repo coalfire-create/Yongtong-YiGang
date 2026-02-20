@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
@@ -1316,8 +1316,211 @@ function BriefingsTab() {
   );
 }
 
+interface Review {
+  id: number;
+  name: string;
+  school: string;
+  division: string;
+  content: string;
+  image_urls: string[];
+  display_order: number;
+  created_at: string;
+}
+
+function ReviewsTab() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [selectedDivision, setSelectedDivision] = useState("high");
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<{
+    name: string;
+    school: string;
+    content: string;
+    display_order: string;
+  }>();
+
+  const { data: reviews = [], isLoading } = useQuery<Review[]>({
+    queryKey: ["/api/reviews"],
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/reviews", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reviews"] });
+      reset();
+      if (fileRef.current) fileRef.current.value = "";
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/reviews/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reviews"] });
+    },
+  });
+
+  const onSubmit = async (data: { name: string; school: string; content: string; display_order: string }) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("school", data.school || "");
+    formData.append("content", data.content);
+    formData.append("display_order", data.display_order || "0");
+    formData.append("division", selectedDivision);
+    if (fileRef.current?.files) {
+      for (let i = 0; i < fileRef.current.files.length; i++) {
+        formData.append("images", fileRef.current.files[i]);
+      }
+    }
+    try {
+      await addMutation.mutateAsync(formData);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const divisionLabel = selectedDivision === "high" ? "고등관" : "초/중등관";
+  const filteredReviews = reviews.filter((r) => r.division === selectedDivision);
+
+  return (
+    <div>
+      <div className="flex gap-2 mb-6" data-testid="review-division-tabs">
+        {[
+          { key: "high", label: "고등관" },
+          { key: "junior", label: "초/중등관" },
+        ].map((div) => (
+          <button
+            key={div.key}
+            onClick={() => setSelectedDivision(div.key)}
+            className={`px-4 py-2 text-sm font-bold transition-colors ${
+              selectedDivision === div.key
+                ? "bg-[#7B2332] text-white"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            }`}
+            data-testid={`tab-review-division-${div.key}`}
+          >
+            {div.label}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white border border-gray-200 p-6 mb-8 space-y-4" data-testid="form-add-review">
+        <h3 className="font-bold text-gray-900">{divisionLabel} 합격후기 추가</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
+            <input
+              {...register("name", { required: true })}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+              placeholder="예: 김O준"
+              data-testid="input-review-name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">학교/학과</label>
+            <input
+              {...register("school")}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+              placeholder="예: 서울대학교 수학과"
+              data-testid="input-review-school"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">후기 내용 *</label>
+          <textarea
+            {...register("content", { required: true })}
+            rows={4}
+            className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none resize-none"
+            placeholder="합격 후기를 입력하세요"
+            data-testid="input-review-content"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">사진 (여러장 가능)</label>
+            <input
+              type="file"
+              ref={fileRef}
+              accept="image/*"
+              multiple
+              className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+              data-testid="input-review-images"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">순서</label>
+            <input
+              {...register("display_order")}
+              type="number"
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+              defaultValue="0"
+              data-testid="input-review-order"
+            />
+          </div>
+        </div>
+        <button
+          type="submit"
+          disabled={uploading}
+          className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+          data-testid="button-add-review"
+        >
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+          등록
+        </button>
+      </form>
+
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : filteredReviews.length === 0 ? (
+        <p className="text-center text-gray-400 py-10 text-sm">등록된 합격후기가 없습니다.</p>
+      ) : (
+        <div className="space-y-4">
+          {filteredReviews.map((r) => (
+            <div key={r.id} className="bg-white border border-gray-200 p-5" data-testid={`card-admin-review-${r.id}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-red-600" />
+                  <span className="font-bold text-gray-900 text-sm">{r.name}</span>
+                  {r.school && <span className="text-xs text-red-600 font-medium">| {r.school}</span>}
+                </div>
+                <button
+                  onClick={() => {
+                    if (confirm("삭제하시겠습니까?")) {
+                      deleteMutation.mutate(r.id);
+                    }
+                  }}
+                  className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  data-testid={`button-delete-review-${r.id}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed mb-3">{r.content}</p>
+              {r.image_urls && r.image_urls.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {r.image_urls.map((url, i) => (
+                    <img key={i} src={url} alt={`후기 이미지 ${i + 1}`} className="w-20 h-20 object-cover border border-gray-200" />
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups" | "briefings" | "sms">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -1419,6 +1622,18 @@ export default function AdminPage() {
             설명회 관리
           </button>
           <button
+            onClick={() => setTab("reviews")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "reviews"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-reviews"
+          >
+            <Star className="w-4 h-4" />
+            합격후기
+          </button>
+          <button
             onClick={() => setTab("sms")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "sms"
@@ -1432,7 +1647,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "reviews" ? <ReviewsTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );

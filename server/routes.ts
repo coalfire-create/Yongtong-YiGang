@@ -106,6 +106,25 @@ async function ensureBriefingsTable() {
   }
 }
 
+async function ensureReviewsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reviews (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL DEFAULT '',
+        school TEXT NOT NULL DEFAULT '',
+        division TEXT NOT NULL DEFAULT 'high',
+        content TEXT NOT NULL DEFAULT '',
+        image_urls TEXT[] NOT NULL DEFAULT '{}',
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure reviews table:", err);
+  }
+}
+
 async function ensureBannersTable() {
   try {
     await pool.query(`
@@ -166,6 +185,7 @@ export async function registerRoutes(
   await ensureSmsSubscriptionsTable();
   await ensureMembersTable();
   await ensurePhoneVerificationsTable();
+  await ensureReviewsTable();
 
   // ========== ADMIN AUTH ==========
   app.post("/api/admin/login", (req, res) => {
@@ -511,6 +531,77 @@ export async function registerRoutes(
         }
       }
       await pool.query("DELETE FROM banners WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== REVIEWS ==========
+  app.get("/api/reviews", async (req, res) => {
+    const division = req.query.division as string | undefined;
+    try {
+      let query = "SELECT * FROM reviews";
+      const params: string[] = [];
+      if (division) {
+        query += " WHERE division = $1";
+        params.push(division);
+      }
+      query += " ORDER BY display_order ASC, created_at DESC";
+      const { rows } = await pool.query(query, params);
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/reviews", requireAdmin, upload.array("images", 10), async (req, res) => {
+    const { name, school, division, content, display_order } = req.body;
+    if (!name || !content) {
+      return res.status(400).json({ error: "이름과 내용은 필수입니다." });
+    }
+
+    const image_urls: string[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      for (const file of req.files) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const fileName = `reviews/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false,
+          });
+        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+        image_urls.push(urlData.publicUrl);
+      }
+    }
+
+    try {
+      const { rows } = await pool.query(
+        "INSERT INTO reviews (name, school, division, content, image_urls, display_order) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+        [name, school || "", division || "high", content, image_urls, parseInt(display_order) || 0]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/reviews/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      const { rows } = await pool.query("SELECT image_urls FROM reviews WHERE id = $1", [id]);
+      if (rows[0]?.image_urls) {
+        for (const url of rows[0].image_urls) {
+          const urlParts = url.split("/images/");
+          if (urlParts[1]) {
+            await supabase.storage.from("images").remove([urlParts[1]]);
+          }
+        }
+      }
+      await pool.query("DELETE FROM reviews WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

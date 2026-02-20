@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { SectionPage } from "@/components/layout";
-import { Trophy, Star, TrendingUp } from "lucide-react";
+import { Trophy, Star, TrendingUp, Loader2 } from "lucide-react";
 
 const DIVISIONS = [
   { key: "high", label: "고등관" },
@@ -41,17 +42,15 @@ const RESULTS: Record<string, { univ: string; dept: string; year: string }[]> = 
   ],
 };
 
-const REVIEWS: Record<string, { name: string; univ: string; review: string }[]> = {
-  high: [
-    { name: "김O준", univ: "서울대학교 수학과", review: "고2부터 이강학원에서 수학을 배웠습니다. 체계적인 커리큘럼과 선생님들의 열정 덕분에 수능에서 좋은 결과를 얻을 수 있었습니다. 특히 모의고사 분석 수업이 큰 도움이 되었습니다." },
-    { name: "이O현", univ: "연세대학교 의예과", review: "초/중등관부터 고등관까지 쭉 다녔습니다. 선생님들이 학생 한 명 한 명을 세심하게 관리해주셔서 수학이 가장 자신있는 과목이 되었습니다. 감사합니다!" },
-    { name: "박O서", univ: "고려대학교 경영학과", review: "올빼미 독학관을 정말 많이 이용했습니다. 집중할 수 있는 환경이 공부에 큰 도움이 되었고, 수학 성적이 4등급에서 1등급까지 올랐습니다." },
-  ],
-  junior: [
-    { name: "정O아", univ: "수원외국어고등학교 영어과", review: "중2부터 이강학원에서 수학을 시작했습니다. 선생님들의 꼼꼼한 지도 덕분에 수학 실력이 많이 늘었고, 외고 입시 준비도 큰 도움이 되었습니다." },
-    { name: "최O민", univ: "경기과학고등학교 과학과", review: "초등학교 때부터 다녔는데, 수학적 사고력을 키우는 수업이 정말 좋았습니다. 과학고 입시에서 수학이 큰 강점이 되었어요!" },
-  ],
-};
+interface Review {
+  id: number;
+  name: string;
+  school: string;
+  division: string;
+  content: string;
+  image_urls: string[];
+  display_order: number;
+}
 
 function DivisionTabs({ selected, onChange }: { selected: string; onChange: (key: string) => void }) {
   return (
@@ -117,24 +116,54 @@ export function AdmissionsResults() {
 
 export function AdmissionsReviews() {
   const [division, setDivision] = useState("high");
-  const reviews = REVIEWS[division] || [];
+
+  const { data: reviews = [], isLoading } = useQuery<Review[]>({
+    queryKey: ["/api/reviews", division],
+    queryFn: async () => {
+      const res = await fetch(`/api/reviews?division=${division}`);
+      if (!res.ok) throw new Error("Failed to fetch reviews");
+      return res.json();
+    },
+  });
 
   return (
     <SectionPage title="합격 후기" subtitle="영통이강학원 졸업생들의 생생한 후기">
       <DivisionTabs selected={division} onChange={setDivision} />
 
-      <div className="space-y-6">
-        {reviews.map((r, i) => (
-          <div key={i} className="bg-white border border-gray-200 p-6" data-testid={`card-review-${i}`}>
-            <div className="flex items-center gap-2 mb-3">
-              <Star className="w-5 h-5 text-red-600" />
-              <span className="font-bold text-gray-900">{r.name}</span>
-              <span className="text-sm text-red-600 font-medium">| {r.univ}</span>
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : reviews.length === 0 ? (
+        <p className="text-center text-gray-400 py-10 text-sm">등록된 합격후기가 없습니다.</p>
+      ) : (
+        <div className="space-y-8">
+          {reviews.map((r) => (
+            <div key={r.id} className="bg-white border border-gray-200 p-6" data-testid={`card-review-${r.id}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <Star className="w-5 h-5 text-red-600" />
+                <span className="font-bold text-gray-900">{r.name}</span>
+                {r.school && <span className="text-sm text-red-600 font-medium">| {r.school}</span>}
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed mb-4">{r.content}</p>
+              {r.image_urls && r.image_urls.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {r.image_urls.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt={`${r.name} 후기 이미지 ${i + 1}`}
+                      className="w-full aspect-square object-cover border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                      data-testid={`img-review-${r.id}-${i}`}
+                      onClick={() => window.open(url, "_blank")}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed">{r.review}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </SectionPage>
   );
 }
