@@ -1,15 +1,90 @@
+import { useState } from "react";
 import { SectionPage } from "@/components/layout";
 import { Trophy, Star, TrendingUp } from "lucide-react";
 
+const DIVISIONS = [
+  { key: "high", label: "고등관" },
+  { key: "junior", label: "초/중등관" },
+] as const;
+
+const STATS: Record<string, { label: string; count: string; year: string }[]> = {
+  high: [
+    { label: "의약학 계열", count: "23명", year: "2025학년도" },
+    { label: "SKY 합격", count: "47명", year: "2025학년도" },
+    { label: "주요 대학 합격", count: "156명", year: "2025학년도" },
+  ],
+  junior: [
+    { label: "특목고 합격", count: "18명", year: "2025학년도" },
+    { label: "자사고 합격", count: "32명", year: "2025학년도" },
+    { label: "영재원 선발", count: "15명", year: "2025학년도" },
+  ],
+};
+
+const RESULTS: Record<string, { univ: string; dept: string; year: string }[]> = {
+  high: [
+    { univ: "서울대학교", dept: "수학과", year: "2025" },
+    { univ: "연세대학교", dept: "의예과", year: "2025" },
+    { univ: "고려대학교", dept: "경영학과", year: "2025" },
+    { univ: "서울대학교", dept: "전기공학부", year: "2025" },
+    { univ: "성균관대학교", dept: "의예과", year: "2025" },
+    { univ: "한양대학교", dept: "수학교육과", year: "2025" },
+    { univ: "중앙대학교", dept: "약학과", year: "2024" },
+    { univ: "경희대학교", dept: "한의예과", year: "2024" },
+  ],
+  junior: [
+    { univ: "수원외국어고등학교", dept: "영어과", year: "2025" },
+    { univ: "경기과학고등학교", dept: "과학과", year: "2025" },
+    { univ: "용인외국어고등학교", dept: "중국어과", year: "2025" },
+    { univ: "수원과학고등학교", dept: "과학과", year: "2025" },
+    { univ: "영재교육원", dept: "수학영재반", year: "2025" },
+    { univ: "수원외국어고등학교", dept: "일본어과", year: "2024" },
+  ],
+};
+
+const REVIEWS: Record<string, { name: string; univ: string; review: string }[]> = {
+  high: [
+    { name: "김O준", univ: "서울대학교 수학과", review: "고2부터 이강학원에서 수학을 배웠습니다. 체계적인 커리큘럼과 선생님들의 열정 덕분에 수능에서 좋은 결과를 얻을 수 있었습니다. 특히 모의고사 분석 수업이 큰 도움이 되었습니다." },
+    { name: "이O현", univ: "연세대학교 의예과", review: "초/중등관부터 고등관까지 쭉 다녔습니다. 선생님들이 학생 한 명 한 명을 세심하게 관리해주셔서 수학이 가장 자신있는 과목이 되었습니다. 감사합니다!" },
+    { name: "박O서", univ: "고려대학교 경영학과", review: "올빼미 독학관을 정말 많이 이용했습니다. 집중할 수 있는 환경이 공부에 큰 도움이 되었고, 수학 성적이 4등급에서 1등급까지 올랐습니다." },
+  ],
+  junior: [
+    { name: "정O아", univ: "수원외국어고등학교 영어과", review: "중2부터 이강학원에서 수학을 시작했습니다. 선생님들의 꼼꼼한 지도 덕분에 수학 실력이 많이 늘었고, 외고 입시 준비도 큰 도움이 되었습니다." },
+    { name: "최O민", univ: "경기과학고등학교 과학과", review: "초등학교 때부터 다녔는데, 수학적 사고력을 키우는 수업이 정말 좋았습니다. 과학고 입시에서 수학이 큰 강점이 되었어요!" },
+  ],
+};
+
+function DivisionTabs({ selected, onChange }: { selected: string; onChange: (key: string) => void }) {
+  return (
+    <div className="flex items-center gap-1 mb-8" data-testid="admissions-division-tabs">
+      {DIVISIONS.map((d) => (
+        <button
+          key={d.key}
+          onClick={() => onChange(d.key)}
+          className={`px-6 py-2.5 text-sm font-bold transition-all duration-200 ${
+            selected === d.key
+              ? "bg-[#7B2332] text-white"
+              : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+          }`}
+          data-testid={`tab-admissions-${d.key}`}
+        >
+          {d.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Admissions() {
+  const [division, setDivision] = useState("high");
+  const stats = STATS[division] || [];
+  const results = RESULTS[division] || [];
+
   return (
     <SectionPage title="입시" subtitle="영통이강학원 입시 실적 및 합격 후기">
+      <DivisionTabs selected={division} onChange={setDivision} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        {[
-          { label: "의약학 계열", count: "23명", year: "2025학년도" },
-          { label: "SKY 합격", count: "47명", year: "2025학년도" },
-          { label: "주요 대학 합격", count: "156명", year: "2025학년도" },
-        ].map((stat) => (
+        {stats.map((stat) => (
           <div key={stat.label} className="bg-white border border-gray-200 p-6 text-center" data-testid={`card-stat-${stat.label}`}>
             <TrendingUp className="w-8 h-8 text-red-600 mx-auto mb-3" />
             <p className="text-3xl font-extrabold text-gray-900">{stat.count}</p>
@@ -18,18 +93,12 @@ export function Admissions() {
           </div>
         ))}
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">주요 합격 실적</h2>
+
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        {division === "high" ? "주요 합격 실적" : "주요 진학 실적"}
+      </h2>
       <div className="space-y-3">
-        {[
-          { univ: "서울대학교", dept: "수학과", year: "2025" },
-          { univ: "연세대학교", dept: "의예과", year: "2025" },
-          { univ: "고려대학교", dept: "경영학과", year: "2025" },
-          { univ: "서울대학교", dept: "전기공학부", year: "2025" },
-          { univ: "성균관대학교", dept: "의예과", year: "2025" },
-          { univ: "한양대학교", dept: "수학교육과", year: "2025" },
-          { univ: "중앙대학교", dept: "약학과", year: "2024" },
-          { univ: "경희대학교", dept: "한의예과", year: "2024" },
-        ].map((r, i) => (
+        {results.map((r, i) => (
           <div key={i} className="flex items-center gap-4 bg-white border border-gray-200 p-4" data-testid={`card-result-${i}`}>
             <Trophy className="w-5 h-5 text-red-600 flex-shrink-0" />
             <span className="font-bold text-gray-900 min-w-[130px]">{r.univ}</span>
@@ -47,14 +116,15 @@ export function AdmissionsResults() {
 }
 
 export function AdmissionsReviews() {
+  const [division, setDivision] = useState("high");
+  const reviews = REVIEWS[division] || [];
+
   return (
     <SectionPage title="합격 후기" subtitle="영통이강학원 졸업생들의 생생한 후기">
+      <DivisionTabs selected={division} onChange={setDivision} />
+
       <div className="space-y-6">
-        {[
-          { name: "김O준", univ: "서울대학교 수학과", review: "고2부터 이강학원에서 수학을 배웠습니다. 체계적인 커리큘럼과 선생님들의 열정 덕분에 수능에서 좋은 결과를 얻을 수 있었습니다. 특히 모의고사 분석 수업이 큰 도움이 되었습니다." },
-          { name: "이O현", univ: "연세대학교 의예과", review: "초/중등관부터 고등관까지 쭉 다녔습니다. 선생님들이 학생 한 명 한 명을 세심하게 관리해주셔서 수학이 가장 자신있는 과목이 되었습니다. 감사합니다!" },
-          { name: "박O서", univ: "고려대학교 경영학과", review: "올빼미 독학관을 정말 많이 이용했습니다. 집중할 수 있는 환경이 공부에 큰 도움이 되었고, 수학 성적이 4등급에서 1등급까지 올랐습니다." },
-        ].map((r, i) => (
+        {reviews.map((r, i) => (
           <div key={i} className="bg-white border border-gray-200 p-6" data-testid={`card-review-${i}`}>
             <div className="flex items-center gap-2 mb-3">
               <Star className="w-5 h-5 text-red-600" />
