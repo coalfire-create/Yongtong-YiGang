@@ -76,17 +76,17 @@ export function AuthHeaderButton() {
 
   if (member) {
     return (
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 text-sm text-gray-700" data-testid="text-auth-user">
-          <User className="w-4 h-4" />
-          <span className="font-medium max-w-[80px] truncate">{member.name || "회원"}</span>
+      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-700" data-testid="text-auth-user">
+          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="font-medium max-w-[60px] sm:max-w-[80px] truncate">{member.name || "회원"}</span>
         </div>
         <button
           onClick={logout}
-          className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors px-2 py-1"
+          className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors px-1.5 sm:px-2 py-1 whitespace-nowrap"
           data-testid="button-logout"
         >
-          <LogOut className="w-3.5 h-3.5" />
+          <LogOut className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
           로그아웃
         </button>
       </div>
@@ -94,17 +94,17 @@ export function AuthHeaderButton() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
       <button
         onClick={openLoginModal}
-        className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+        className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap"
         data-testid="button-login-open"
       >
         로그인
       </button>
       <button
         onClick={openRegisterModal}
-        className="px-4 py-1.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+        className="px-2.5 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors whitespace-nowrap"
         style={{ borderRadius: "4px" }}
         data-testid="button-register-open"
       >

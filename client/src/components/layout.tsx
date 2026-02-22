@@ -34,22 +34,22 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200" data-testid="header">
       <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-[68px] gap-4">
+        <div className="flex items-center h-[68px] gap-2 sm:gap-4">
           <Link
             href="/"
-            className="flex-shrink-0 flex items-center gap-2.5 mr-auto lg:mr-0"
+            className="flex-shrink-0 flex items-center gap-2 sm:gap-2.5 mr-auto lg:mr-0 min-w-0"
             data-testid="link-logo"
           >
-            <img src={logoImg} alt="이강학원 로고" className="h-10 w-10 rounded-md object-cover" data-testid="img-header-logo" />
-            <span className="text-xl font-extrabold tracking-tight" style={{ color: "#7B2332" }}>영통이강학원</span>
+            <img src={logoImg} alt="이강학원 로고" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md object-cover flex-shrink-0" data-testid="img-header-logo" />
+            <span className="text-base sm:text-xl font-extrabold tracking-tight whitespace-nowrap" style={{ color: "#7B2332" }}>영통이강학원</span>
             {location.startsWith("/high-school") && (
-              <span className="text-sm font-bold text-gray-400 ml-1.5">고등관</span>
+              <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">고등관</span>
             )}
             {location.startsWith("/junior-school") && (
-              <span className="text-sm font-bold text-gray-400 ml-1.5">초/중등관</span>
+              <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">초/중등관</span>
             )}
             {location.startsWith("/owl") && (
-              <span className="text-sm font-bold text-gray-400 ml-1.5">올빼미 스파르타</span>
+              <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">올빼미 스파르타</span>
             )}
           </Link>
 
