@@ -17,9 +17,31 @@ interface Teacher {
 
 interface Timetable {
   id: number;
-  title: string;
+  teacher_id: number | null;
+  teacher_name: string;
   category: string;
-  image_url: string | null;
+  target_school: string;
+  class_name: string;
+  class_time: string;
+  class_date: string;
+  created_at: string;
+}
+
+interface Reservation {
+  id: number;
+  user_id: number;
+  timetable_id: number;
+  student_name: string;
+  student_phone: string;
+  parent_phone: string;
+  student_school: string;
+  student_grade: string;
+  class_name: string;
+  teacher_name: string;
+  target_school: string;
+  class_time: string;
+  class_date: string;
+  category: string;
   created_at: string;
 }
 
@@ -285,21 +307,31 @@ function TeachersTab() {
 }
 
 function TimetablesTab() {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{
     category: string;
+    target_school: string;
+    class_name: string;
+    class_time: string;
+    class_date: string;
+    teacher_id: string;
   }>();
 
   const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables"],
   });
 
+  const { data: teachers = [] } = useQuery<Teacher[]>({
+    queryKey: ["/api/teachers"],
+  });
+
   const addMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/timetables", { method: "POST", body: formData });
-      if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
+    mutationFn: async (body: any) => {
+      const res = await apiRequest("POST", "/api/timetables", body);
       return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+      reset();
     },
   });
 
@@ -312,39 +344,23 @@ function TimetablesTab() {
     },
   });
 
-  const [uploadProgress, setUploadProgress] = useState("");
-
-  const onSubmit = async (data: { category: string }) => {
-    const files = fileRef.current?.files;
-    if (!files || files.length === 0) return;
-    const fileList = Array.from(files);
-    setUploading(true);
-    try {
-      for (let i = 0; i < fileList.length; i++) {
-        setUploadProgress(`${i + 1} / ${fileList.length}`);
-        const formData = new FormData();
-        formData.append("category", data.category);
-        formData.append("image", fileList[i]);
-        await addMutation.mutateAsync(formData);
-      }
-      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
-      reset();
-    } finally {
-      setUploading(false);
-      setUploadProgress("");
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  };
-
-  const categoryLabel: Record<string, string> = {
-    "고등관": "고등관",
-    "초/중등관": "초/중등관",
+  const onSubmit = (data: any) => {
+    const teacher = teachers.find((t) => String(t.id) === data.teacher_id);
+    addMutation.mutate({
+      teacher_id: data.teacher_id ? Number(data.teacher_id) : null,
+      teacher_name: teacher?.name || "",
+      category: data.category,
+      target_school: data.target_school || "",
+      class_name: data.class_name,
+      class_time: data.class_time || "",
+      class_date: data.class_date || "",
+    });
   };
 
   return (
     <div>
       <div className="bg-white border border-gray-200 p-6 mb-8" data-testid="form-add-timetable">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">시간표 올리기</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">시간표 등록</h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -364,36 +380,70 @@ function TimetablesTab() {
               </select>
               {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category.message}</p>}
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">담당 선생님</label>
+              <select
+                {...register("teacher_id")}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-white"
+                data-testid="select-timetable-teacher"
+                defaultValue=""
+              >
+                <option value="">선택 안함</option>
+                {teachers.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name} ({t.subject})</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">시간표 이미지</label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-              data-testid="input-timetable-image"
-            />
-            <p className="text-xs text-gray-400 mt-1">여러 장을 한번에 선택할 수 있습니다.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">수업명 *</label>
+              <input
+                {...register("class_name", { required: "수업명을 입력하세요" })}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                placeholder="예: 수학 정규반"
+                data-testid="input-timetable-classname"
+              />
+              {errors.class_name && <p className="text-xs text-red-500 mt-1">{errors.class_name.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">대상 학교</label>
+              <input
+                {...register("target_school")}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                placeholder="예: 경기고, 단대부고"
+                data-testid="input-timetable-school"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">수업 시간</label>
+              <input
+                {...register("class_time")}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                placeholder="예: 월/수 18:00~20:00"
+                data-testid="input-timetable-time"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">개강일</label>
+              <input
+                {...register("class_date")}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                placeholder="예: 2025년 3월 3일"
+                data-testid="input-timetable-date"
+              />
+            </div>
           </div>
           <button
             type="submit"
-            disabled={uploading}
+            disabled={addMutation.isPending}
             className="flex items-center gap-2 bg-red-600 text-white px-5 py-2 text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
             data-testid="button-add-timetable"
           >
-            {uploading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                업로드 중... {uploadProgress}
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4" />
-                시간표 올리기
-              </>
-            )}
+            {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            시간표 등록
           </button>
         </form>
       </div>
@@ -409,15 +459,17 @@ function TimetablesTab() {
         <div className="space-y-3">
           {timetables.map((tt) => (
             <div key={tt.id} className="flex items-center gap-4 bg-white border border-gray-200 p-4" data-testid={`card-admin-timetable-${tt.id}`}>
-              {tt.image_url ? (
-                <img src={tt.image_url} alt={tt.title} className="w-20 h-14 object-cover flex-shrink-0" />
-              ) : (
-                <div className="w-20 h-14 bg-red-50 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-7 h-7 text-red-500" />
-                </div>
-              )}
+              <div className="w-10 h-10 bg-red-50 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-red-500" />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{categoryLabel[tt.category] || tt.category}</p>
+                <p className="font-bold text-gray-900 text-sm">{tt.class_name}</p>
+                <p className="text-xs text-gray-500">
+                  {tt.category}{tt.teacher_name ? ` · ${tt.teacher_name}` : ""}{tt.target_school ? ` · ${tt.target_school}` : ""}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {tt.class_time}{tt.class_date ? ` | 개강: ${tt.class_date}` : ""}
+                </p>
               </div>
               <button
                 onClick={() => {
@@ -432,6 +484,78 @@ function TimetablesTab() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReservationsTab() {
+  const { data: reservations = [], isLoading } = useQuery<Reservation[]>({
+    queryKey: ["/api/admin/reservations"],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/admin/reservations/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reservations"] });
+    },
+  });
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">수강예약 목록 ({reservations.length}건)</h3>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : reservations.length === 0 ? (
+        <p className="text-sm text-gray-400 py-6 text-center">접수된 수강예약이 없습니다.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" data-testid="table-reservations">
+            <thead>
+              <tr className="border-b border-gray-200 text-left">
+                <th className="px-3 py-3 font-bold text-gray-700">학생명</th>
+                <th className="px-3 py-3 font-bold text-gray-700">학교/학년</th>
+                <th className="px-3 py-3 font-bold text-gray-700">연락처</th>
+                <th className="px-3 py-3 font-bold text-gray-700">수업명</th>
+                <th className="px-3 py-3 font-bold text-gray-700">선생님</th>
+                <th className="px-3 py-3 font-bold text-gray-700">수업시간</th>
+                <th className="px-3 py-3 font-bold text-gray-700">예약일</th>
+                <th className="px-3 py-3 font-bold text-gray-700"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {reservations.map((r) => (
+                <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50" data-testid={`row-reservation-${r.id}`}>
+                  <td className="px-3 py-3 font-medium text-gray-900">{r.student_name || "-"}</td>
+                  <td className="px-3 py-3 text-gray-600">{r.student_school || "-"} {r.student_grade || ""}</td>
+                  <td className="px-3 py-3 text-gray-600">
+                    <div>{r.student_phone || "-"}</div>
+                    {r.parent_phone && <div className="text-xs text-gray-400">학부모: {r.parent_phone}</div>}
+                  </td>
+                  <td className="px-3 py-3 font-medium text-gray-900">{r.class_name || "-"}</td>
+                  <td className="px-3 py-3 text-gray-600">{r.teacher_name || "-"}</td>
+                  <td className="px-3 py-3 text-gray-600">{r.class_time || "-"}</td>
+                  <td className="px-3 py-3 text-gray-400 text-xs">{r.created_at ? new Date(r.created_at).toLocaleDateString("ko-KR") : "-"}</td>
+                  <td className="px-3 py-3">
+                    <button
+                      onClick={() => {
+                        if (confirm("이 예약을 삭제하시겠습니까?")) deleteMutation.mutate(r.id);
+                      }}
+                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      data-testid={`button-delete-reservation-${r.id}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
@@ -1520,7 +1644,7 @@ function ReviewsTab() {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -1634,6 +1758,18 @@ export default function AdminPage() {
             합격후기
           </button>
           <button
+            onClick={() => setTab("reservations")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "reservations"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-reservations"
+          >
+            <CalendarDays className="w-4 h-4" />
+            수강예약 관리
+          </button>
+          <button
             onClick={() => setTab("sms")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "sms"
@@ -1647,7 +1783,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "reviews" ? <ReviewsTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );

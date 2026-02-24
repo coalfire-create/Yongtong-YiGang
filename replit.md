@@ -44,7 +44,8 @@ The project is organized into three main directories:
 - **Schema Location:** `shared/schema.ts` — defines tables and Zod validation schemas using `drizzle-zod`
 - **Current Schema:** A `users` table with `id` (UUID), `username`, and `password` fields
 - **Additional Tables:** `popups` table (managed via raw pg.Pool, auto-created on server start) for homepage popup announcements
-- **Supabase Tables:** `teachers` and `timetables` tables managed via Supabase client; images stored in Supabase Storage
+- **Supabase Tables:** `teachers` table managed via Supabase client; images stored in Supabase Storage
+- **Additional Local Tables:** `timetables` (text-based: teacher_id, teacher_name, category, target_school, class_name, class_time, class_date), `reservations` (user_id, timetable_id) - auto-created on server start
 - **Migrations:** Output to `./migrations` directory
 - **Schema Push:** Use `npm run db:push` (runs `drizzle-kit push`)
 - **Connection:** Requires `DATABASE_URL` environment variable

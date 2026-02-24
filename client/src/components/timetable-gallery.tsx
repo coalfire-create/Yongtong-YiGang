@@ -1,17 +1,22 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, X, Calendar, ZoomIn } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/components/auth-modal";
+import { Loader2, Calendar, Clock, BookOpen, User, GraduationCap } from "lucide-react";
 
 interface Timetable {
   id: number;
-  title: string;
+  teacher_id: number | null;
+  teacher_name: string;
   category: string;
-  image_url: string | null;
+  target_school: string;
+  class_name: string;
+  class_time: string;
+  class_date: string;
   created_at: string;
 }
 
 export function TimetableGallery({ category }: { category: string }) {
-  const [selectedImage, setSelectedImage] = useState<Timetable | null>(null);
+  const { member, openLoginModal } = useAuth();
 
   const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables", category],
@@ -21,6 +26,34 @@ export function TimetableGallery({ category }: { category: string }) {
       return res.json();
     },
   });
+
+  const reserveMutation = useMutation({
+    mutationFn: async (timetable_id: number) => {
+      const res = await apiRequest("POST", "/api/reservations", { timetable_id });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "예약 실패");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      alert("예약이 완료되었습니다.");
+    },
+    onError: (err: Error) => {
+      alert(err.message);
+    },
+  });
+
+  const handleReserve = (tt: Timetable) => {
+    if (!member) {
+      alert("로그인이 필요합니다.");
+      openLoginModal();
+      return;
+    }
+    if (confirm(`"${tt.class_name}" 수업을 예약하시겠습니까?`)) {
+      reserveMutation.mutate(tt.id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -35,77 +68,68 @@ export function TimetableGallery({ category }: { category: string }) {
       <div className="text-center py-16" data-testid="timetable-empty">
         <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <p className="text-sm text-gray-400">등록된 시간표가 없습니다.</p>
-        <p className="text-xs text-gray-300 mt-1">관리자 페이지에서 시간표 이미지를 업로드하세요.</p>
       </div>
     );
   }
 
   return (
-    <div data-testid="timetable-gallery">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div data-testid="timetable-list">
+      <div className="space-y-4">
         {timetables.map((tt) => (
           <div
             key={tt.id}
-            className="group bg-white border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-            onClick={() => setSelectedImage(tt)}
+            className="bg-white border border-gray-200 p-5 hover:shadow-sm transition-shadow"
             data-testid={`card-timetable-${tt.id}`}
           >
-            {tt.image_url ? (
-              <div className="relative aspect-[3/4] overflow-hidden bg-gray-50">
-                <img
-                  src={tt.image_url}
-                  alt={tt.title}
-                  className="w-full h-full object-cover object-top"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 px-3 py-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-800">
-                    <ZoomIn className="w-4 h-4" />
-                    크게 보기
-                  </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <h3 className="text-base font-bold text-gray-900" data-testid={`text-classname-${tt.id}`}>{tt.class_name}</h3>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                  {tt.teacher_name && (
+                    <span className="flex items-center gap-1">
+                      <User className="w-3.5 h-3.5" />
+                      {tt.teacher_name}
+                    </span>
+                  )}
+                  {tt.target_school && (
+                    <span className="flex items-center gap-1">
+                      <GraduationCap className="w-3.5 h-3.5" />
+                      {tt.target_school}
+                    </span>
+                  )}
+                  {tt.class_time && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {tt.class_time}
+                    </span>
+                  )}
+                  {tt.class_date && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      개강: {tt.class_date}
+                    </span>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="aspect-[3/4] bg-red-50 flex items-center justify-center">
-                <Calendar className="w-10 h-10 text-red-400" />
-              </div>
-            )}
-            {tt.title && (
-              <div className="px-4 py-3 border-t border-gray-100">
-                <h3 className="text-sm font-bold text-gray-900 truncate">{tt.title}</h3>
-              </div>
-            )}
+              <button
+                onClick={() => handleReserve(tt)}
+                disabled={reserveMutation.isPending}
+                className="flex-shrink-0 px-5 py-2.5 bg-[#7B2332] text-white text-sm font-bold hover:bg-[#6B1D2A] disabled:opacity-50 transition-colors"
+                data-testid={`button-reserve-${tt.id}`}
+              >
+                {reserveMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "수강예약"
+                )}
+              </button>
+            </div>
           </div>
         ))}
       </div>
-
-      {selectedImage && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
-          data-testid="modal-timetable"
-        >
-          <div
-            className="bg-white max-w-4xl w-full max-h-[90vh] overflow-auto relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sticky top-0 bg-white flex items-center justify-between p-4 border-b border-gray-200 z-10">
-              <h3 className="font-bold text-gray-900">{selectedImage.title}</h3>
-              <button
-                onClick={() => setSelectedImage(null)}
-                className="p-1 text-gray-400 hover:text-gray-700 transition-colors"
-                data-testid="button-close-modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {selectedImage.image_url ? (
-              <img src={selectedImage.image_url} alt={selectedImage.title} className="w-full" />
-            ) : (
-              <div className="h-64 flex items-center justify-center text-gray-400">이미지가 없습니다</div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

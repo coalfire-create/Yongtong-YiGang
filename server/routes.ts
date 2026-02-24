@@ -106,6 +106,41 @@ async function ensureBriefingsTable() {
   }
 }
 
+async function ensureTimetablesTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS timetables (
+        id SERIAL PRIMARY KEY,
+        teacher_id INTEGER,
+        teacher_name TEXT NOT NULL DEFAULT '',
+        category TEXT NOT NULL DEFAULT '',
+        target_school TEXT NOT NULL DEFAULT '',
+        class_name TEXT NOT NULL DEFAULT '',
+        class_time TEXT NOT NULL DEFAULT '',
+        class_date TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure timetables table:", err);
+  }
+}
+
+async function ensureReservationsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reservations (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        timetable_id INTEGER NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure reservations table:", err);
+  }
+}
+
 async function ensureReviewsTable() {
   try {
     await pool.query(`
@@ -186,6 +221,8 @@ export async function registerRoutes(
   await ensureMembersTable();
   await ensurePhoneVerificationsTable();
   await ensureReviewsTable();
+  await ensureTimetablesTable();
+  await ensureReservationsTable();
 
   // ========== ADMIN AUTH ==========
   app.post("/api/admin/login", (req, res) => {
@@ -306,58 +343,105 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  // ========== TIMETABLES ==========
+  // ========== TIMETABLES (text-based) ==========
   app.get("/api/timetables", async (req, res) => {
     const category = req.query.category as string | undefined;
-    let query = supabase.from("timetables").select("*").order("created_at", { ascending: false });
-    if (category) query = query.eq("category", category);
-    const { data, error } = await query;
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+    try {
+      let sql = "SELECT * FROM timetables";
+      const params: string[] = [];
+      if (category) {
+        sql += " WHERE category = $1";
+        params.push(category);
+      }
+      sql += " ORDER BY created_at DESC";
+      const { rows } = await pool.query(sql, params);
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  app.post("/api/timetables", requireAdmin, upload.single("image"), async (req, res) => {
-    const { title, category } = req.body;
-    if (!category) {
-      return res.status(400).json({ error: "카테고리는 필수입니다." });
+  app.post("/api/timetables", requireAdmin, async (req, res) => {
+    const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date } = req.body;
+    if (!category || !class_name) {
+      return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
     }
-
-    let image_url: string | null = null;
-    if (req.file) {
-      const ext = path.extname(req.file.originalname).toLowerCase();
-      const fileName = `timetables/${crypto.randomUUID()}${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("images")
-        .upload(fileName, req.file.buffer, {
-          contentType: req.file.mimetype,
-          upsert: false,
-        });
-      if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
-      const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-      image_url = urlData.publicUrl;
+    try {
+      const { rows } = await pool.query(
+        `INSERT INTO timetables (teacher_id, teacher_name, category, target_school, class_name, class_time, class_date)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [teacher_id || null, teacher_name || "", category, target_school || "", class_name, class_time || "", class_date || ""]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
-
-    const { data, error } = await supabase
-      .from("timetables")
-      .insert({ title: title || "", category, image_url })
-      .select()
-      .single();
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
   });
 
   app.delete("/api/timetables/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
-    const { data: timetable } = await supabase.from("timetables").select("image_url").eq("id", id).single();
-    if (timetable?.image_url) {
-      const urlParts = timetable.image_url.split("/images/");
-      if (urlParts[1]) {
-        await supabase.storage.from("images").remove([urlParts[1]]);
-      }
+    try {
+      await pool.query("DELETE FROM reservations WHERE timetable_id = $1", [id]);
+      await pool.query("DELETE FROM timetables WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
-    const { error } = await supabase.from("timetables").delete().eq("id", id);
-    if (error) return res.status(500).json({ error: error.message });
-    res.json({ success: true });
+  });
+
+  // ========== RESERVATIONS ==========
+  app.post("/api/reservations", async (req, res) => {
+    const member = (req.session as any)?.member;
+    if (!member) {
+      return res.status(401).json({ error: "로그인이 필요합니다." });
+    }
+    const { timetable_id } = req.body;
+    if (!timetable_id) {
+      return res.status(400).json({ error: "수업을 선택해 주세요." });
+    }
+    try {
+      const { rows: existing } = await pool.query(
+        "SELECT id FROM reservations WHERE user_id = $1 AND timetable_id = $2",
+        [member.id, timetable_id]
+      );
+      if (existing.length > 0) {
+        return res.status(400).json({ error: "이미 예약한 수업입니다." });
+      }
+      const { rows } = await pool.query(
+        "INSERT INTO reservations (user_id, timetable_id) VALUES ($1, $2) RETURNING *",
+        [member.id, timetable_id]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/admin/reservations", requireAdmin, async (_req, res) => {
+    try {
+      const { rows } = await pool.query(`
+        SELECT r.id, r.created_at, r.timetable_id, r.user_id,
+               m.student_name, m.student_phone, m.parent_phone, m.school as student_school, m.grade as student_grade,
+               t.class_name, t.teacher_name, t.target_school, t.class_time, t.class_date, t.category
+        FROM reservations r
+        LEFT JOIN members m ON r.user_id = m.id
+        LEFT JOIN timetables t ON r.timetable_id = t.id
+        ORDER BY r.created_at DESC
+      `);
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/admin/reservations/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      await pool.query("DELETE FROM reservations WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // ========== POPUPS ==========
