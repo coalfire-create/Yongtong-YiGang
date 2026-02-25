@@ -498,59 +498,15 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
           </FormField>
 
           <FormField label="학생 휴대폰 번호" required>
-            <div className="flex gap-2">
-              <input
-                type="tel"
-                value={studentPhone}
-                onChange={(e) => { setStudentPhone(e.target.value); setPhoneVerified(false); }}
-                placeholder="휴대폰번호(-없이 입력)"
-                className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
-                style={{ borderRadius: "6px" }}
-                disabled={phoneVerified}
-                data-testid="input-reg-student-phone"
-              />
-              {!phoneVerified && (
-                <button
-                  onClick={() => sendCodeMutation.mutate()}
-                  disabled={!studentPhone || studentPhone.replace(/\D/g, "").length < 10 || sendCodeMutation.isPending}
-                  className="px-4 py-2.5 text-sm font-semibold text-white bg-[#7B2332] hover:bg-[#8B3040] disabled:bg-gray-300 transition-colors flex-shrink-0"
-                  style={{ borderRadius: "6px" }}
-                  data-testid="button-send-phone-code"
-                >
-                  인증번호 받기
-                </button>
-              )}
-            </div>
-            {phoneVerified ? (
-              <p className="text-xs mt-1 text-green-500 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> 인증 완료
-              </p>
-            ) : phoneCountdown > 0 && (
-              <div className="mt-2 space-y-2">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={phoneCode}
-                    onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    placeholder="인증번호 6자리"
-                    maxLength={6}
-                    className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors text-center tracking-widest font-mono"
-                    style={{ borderRadius: "6px" }}
-                    data-testid="input-reg-phone-code"
-                  />
-                  <span className="text-sm text-red-600 flex items-center font-medium w-12">{formatTime(phoneCountdown)}</span>
-                </div>
-                <button
-                  onClick={() => verifyCodeMutation.mutate()}
-                  disabled={phoneCode.length < 6 || verifyCodeMutation.isPending}
-                  className="w-full py-2.5 text-sm font-semibold text-[#7B2332] bg-amber-300 hover:bg-amber-400 disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
-                  style={{ borderRadius: "6px" }}
-                  data-testid="button-verify-phone-code"
-                >
-                  {verifyCodeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "인증하기"}
-                </button>
-              </div>
-            )}
+            <input
+              type="tel"
+              value={studentPhone}
+              onChange={(e) => setStudentPhone(e.target.value)}
+              placeholder="휴대폰번호(-없이 입력)"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
+              style={{ borderRadius: "6px" }}
+              data-testid="input-reg-student-phone"
+            />
           </FormField>
 
           <FormField label="학부모 휴대폰 번호" required>
