@@ -118,8 +118,12 @@ async function ensureTimetablesTable() {
         class_name TEXT NOT NULL DEFAULT '',
         class_time TEXT NOT NULL DEFAULT '',
         class_date TEXT NOT NULL DEFAULT '',
+        teacher_image_url TEXT NOT NULL DEFAULT '',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
+    `);
+    await pool.query(`
+      ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_image_url TEXT NOT NULL DEFAULT ''
     `);
   } catch (err) {
     console.error("Failed to ensure timetables table:", err);
@@ -361,16 +365,30 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/timetables", requireAdmin, async (req, res) => {
+  app.post("/api/timetables", requireAdmin, upload.single("teacher_image"), async (req, res) => {
     const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date } = req.body;
     if (!category || !class_name) {
       return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
     }
     try {
+      let teacher_image_url = "";
+      if (req.file) {
+        const ext = path.extname(req.file.originalname) || ".jpg";
+        const fileName = `timetables/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(fileName, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false,
+          });
+        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+        teacher_image_url = urlData.publicUrl;
+      }
       const { rows } = await pool.query(
-        `INSERT INTO timetables (teacher_id, teacher_name, category, target_school, class_name, class_time, class_date)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        [teacher_id || null, teacher_name || "", category, target_school || "", class_name, class_time || "", class_date || ""]
+        `INSERT INTO timetables (teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, teacher_image_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [teacher_id || null, teacher_name || "", category, target_school || "", class_name, class_time || "", class_date || "", teacher_image_url]
       );
       res.json(rows[0]);
     } catch (err: any) {

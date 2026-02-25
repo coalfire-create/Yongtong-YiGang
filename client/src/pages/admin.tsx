@@ -24,6 +24,7 @@ interface Timetable {
   class_name: string;
   class_time: string;
   class_date: string;
+  teacher_image_url: string;
   created_at: string;
 }
 
@@ -315,6 +316,9 @@ function TimetablesTab() {
     class_date: string;
     teacher_id: string;
   }>();
+  const [teacherImageFile, setTeacherImageFile] = useState<File | null>(null);
+  const [teacherImagePreview, setTeacherImagePreview] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables"],
@@ -325,13 +329,24 @@ function TimetablesTab() {
   });
 
   const addMutation = useMutation({
-    mutationFn: async (body: any) => {
-      const res = await apiRequest("POST", "/api/timetables", body);
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/timetables", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "등록 실패");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
       reset();
+      setTeacherImageFile(null);
+      setTeacherImagePreview("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
     },
   });
 
@@ -344,17 +359,28 @@ function TimetablesTab() {
     },
   });
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setTeacherImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setTeacherImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = (data: any) => {
     const teacher = teachers.find((t) => String(t.id) === data.teacher_id);
-    addMutation.mutate({
-      teacher_id: data.teacher_id ? Number(data.teacher_id) : null,
-      teacher_name: teacher?.name || "",
-      category: data.category,
-      target_school: data.target_school || "",
-      class_name: data.class_name,
-      class_time: data.class_time || "",
-      class_date: data.class_date || "",
-    });
+    const formData = new FormData();
+    if (data.teacher_id) formData.append("teacher_id", data.teacher_id);
+    formData.append("teacher_name", teacher?.name || "");
+    formData.append("category", data.category);
+    formData.append("target_school", data.target_school || "");
+    formData.append("class_name", data.class_name);
+    formData.append("class_time", data.class_time || "");
+    formData.append("class_date", data.class_date || "");
+    if (teacherImageFile) formData.append("teacher_image", teacherImageFile);
+    addMutation.mutate(formData);
   };
 
   return (
@@ -436,6 +462,22 @@ function TimetablesTab() {
               />
             </div>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">선생님 사진 (얼굴)</label>
+            <div className="flex items-center gap-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-red-50 file:text-red-600 hover:file:bg-red-100"
+                data-testid="input-timetable-teacher-image"
+              />
+              {teacherImagePreview && (
+                <img src={teacherImagePreview} alt="미리보기" className="w-12 h-12 rounded-full object-cover border-2 border-gray-200" />
+              )}
+            </div>
+          </div>
           <button
             type="submit"
             disabled={addMutation.isPending}
@@ -459,9 +501,13 @@ function TimetablesTab() {
         <div className="space-y-3">
           {timetables.map((tt) => (
             <div key={tt.id} className="flex items-center gap-4 bg-white border border-gray-200 p-4" data-testid={`card-admin-timetable-${tt.id}`}>
-              <div className="w-10 h-10 bg-red-50 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-red-500" />
-              </div>
+              {tt.teacher_image_url ? (
+                <img src={tt.teacher_image_url} alt={tt.teacher_name} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200" />
+              ) : (
+                <div className="w-10 h-10 bg-red-50 flex items-center justify-center flex-shrink-0 rounded-full">
+                  <Calendar className="w-5 h-5 text-red-500" />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 text-sm">{tt.class_name}</p>
                 <p className="text-xs text-gray-500">
