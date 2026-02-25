@@ -1,5 +1,6 @@
 import { SectionPage } from "@/components/layout";
 import { MapPin, Clock, Bus, Car } from "lucide-react";
+import mapImage from "@assets/map.png";
 
 export function Directions() {
   return (
@@ -23,12 +24,7 @@ export function Directions() {
           </div>
         </div>
         <div className="border border-gray-200 overflow-hidden min-h-[250px]" data-testid="map-image">
-          <div className="w-full h-full min-h-[250px] bg-gray-100 flex items-center justify-center">
-            <div className="text-center text-gray-400">
-              <MapPin className="w-10 h-10 mx-auto mb-2" />
-              <p className="text-sm">지도 이미지</p>
-            </div>
-          </div>
+          <img src={mapImage} alt="영통이강학원 위치 지도" className="w-full h-full object-cover" />
         </div>
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-6">교통 안내</h2>
