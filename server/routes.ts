@@ -362,12 +362,14 @@ export async function registerRoutes(
       const { rows } = await pool.query(sql, params);
       res.json(rows);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      console.error("[GET /api/timetables] Error:", err);
+      res.status(500).json({ error: err.message || "시간표 조회 중 오류가 발생했습니다." });
     }
   });
 
   app.post("/api/timetables", requireAdmin, upload.single("teacher_image"), async (req, res) => {
     const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date } = req.body;
+    console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date });
     if (!category || !class_name) {
       return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
     }
@@ -382,18 +384,31 @@ export async function registerRoutes(
             contentType: req.file.mimetype,
             upsert: false,
           });
-        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+        if (uploadError) {
+          console.error("[POST /api/timetables] Image upload error:", uploadError);
+          return res.status(500).json({ error: "이미지 업로드 실패: " + (uploadError.message || JSON.stringify(uploadError)) });
+        }
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
         teacher_image_url = urlData.publicUrl;
       }
       const { rows } = await pool.query(
         `INSERT INTO timetables (teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, teacher_image_url)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-        [teacher_id || null, teacher_name || "", category, target_school || "", class_name, class_time || "", class_date || "", teacher_image_url]
+        [
+          teacher_id ? Number(teacher_id) : null,
+          teacher_name || "",
+          category || "",
+          target_school || "",
+          class_name || "",
+          class_time || "",
+          class_date || "",
+          teacher_image_url || ""
+        ]
       );
       res.json(rows[0]);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      console.error("[POST /api/timetables] Error:", err);
+      res.status(500).json({ error: err.message || JSON.stringify(err) || "시간표 등록 중 오류가 발생했습니다." });
     }
   });
 
