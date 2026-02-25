@@ -45,7 +45,8 @@ The project is organized into three main directories:
 - **Current Schema:** A `users` table with `id` (UUID), `username`, and `password` fields
 - **Additional Tables:** `popups` table (managed via raw pg.Pool, auto-created on server start) for homepage popup announcements
 - **Supabase Tables:** `teachers` table managed via Supabase client; images stored in Supabase Storage
-- **Additional Local Tables:** `timetables` (text-based: teacher_id, teacher_name, category, target_school, class_name, class_time, class_date), `reservations` (user_id, timetable_id) - auto-created on server start
+- **Additional Local Tables:** `timetables` (teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, teacher_image_url), `reservations` (user_id, timetable_id), `banners`, `popups`, `briefings`, `reviews`, `sms_subscriptions` - auto-created on server start
+- **Google Sheets Sync:** Reservations and SMS subscriptions are logged to Google Sheets in real-time via Replit Google Sheets integration (`server/googleSheets.ts`, `server/sheets-sync.ts`). If `GOOGLE_SHEET_ID` env var is set, uses that spreadsheet; otherwise auto-creates one on first write
 - **Migrations:** Output to `./migrations` directory
 - **Schema Push:** Use `npm run db:push` (runs `drizzle-kit push`)
 - **Connection:** Requires `DATABASE_URL` environment variable

@@ -42,3 +42,6 @@ waitForPort = 5000
 
 [userenv.shared]
 ADMIN_PASSWORD = "777777"
+
+[agent]
+integrations = ["google-sheet:1.0.0"]

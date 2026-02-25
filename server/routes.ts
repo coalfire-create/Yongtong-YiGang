@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { supabase } from "./supabase";
+import { appendReservationRow, appendSmsRow } from "./sheets-sync";
 import multer from "multer";
 import path from "path";
 import crypto from "crypto";
@@ -429,6 +430,27 @@ export async function registerRoutes(
         "INSERT INTO reservations (user_id, timetable_id) VALUES ($1, $2) RETURNING *",
         [member.id, timetable_id]
       );
+
+      const { rows: memberRows } = await pool.query(
+        "SELECT student_name, school, grade, student_phone FROM members WHERE id = $1",
+        [member.id]
+      );
+      const { rows: ttRows } = await pool.query(
+        "SELECT class_name FROM timetables WHERE id = $1",
+        [timetable_id]
+      );
+      const m = memberRows[0];
+      const tt = ttRows[0];
+      if (m && tt) {
+        appendReservationRow({
+          studentName: m.student_name || "",
+          school: m.school || "",
+          grade: m.grade || "",
+          phone: m.student_phone || "",
+          className: tt.class_name || "",
+        }).catch(() => {});
+      }
+
       res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -725,6 +747,9 @@ export async function registerRoutes(
         "INSERT INTO sms_subscriptions (name, phone) VALUES ($1, $2) RETURNING *",
         [name || "", cleaned]
       );
+
+      appendSmsRow({ name: name || "", phone: cleaned }).catch(() => {});
+
       res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
