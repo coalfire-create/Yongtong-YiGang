@@ -156,11 +156,13 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
         )}
 
         {bioLines.length > 0 && (
-          <div className="absolute inset-0 bg-black/70 flex flex-col justify-start pt-14 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <p className="text-white font-bold text-sm sm:text-base mb-1">
-              {teacher.name} <span className="text-red-500">T</span>
-            </p>
-            <div className="space-y-0.5 mt-1">
+          <div className="absolute inset-0 bg-black/70 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="flex-shrink-0 pt-4 px-4 pb-2">
+              <p className="text-white font-bold text-sm sm:text-base">
+                {teacher.name} <span className="text-red-500">T</span>
+              </p>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-0.5">
               {bioLines.map((line, i) => (
                 <p key={i} className="text-white/90 text-xs sm:text-sm leading-relaxed">
                   {line}
