@@ -15,6 +15,12 @@ interface Timetable {
   created_at: string;
 }
 
+interface Teacher {
+  id: number;
+  name: string;
+  image_url: string | null;
+}
+
 export function TimetableGallery({ category }: { category: string }) {
   const { member, openLoginModal } = useAuth();
 
@@ -26,6 +32,17 @@ export function TimetableGallery({ category }: { category: string }) {
       return res.json();
     },
   });
+
+  const { data: teachers = [] } = useQuery<Teacher[]>({
+    queryKey: ["/api/teachers"],
+    queryFn: async () => {
+      const res = await fetch("/api/teachers");
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+  });
+
+  const teacherMap = new Map(teachers.map((t) => [t.id, t]));
 
   const reserveMutation = useMutation({
     mutationFn: async (timetable_id: number) => {
@@ -82,9 +99,27 @@ export function TimetableGallery({ category }: { category: string }) {
             data-testid={`card-timetable-${tt.id}`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {(() => {
+                const teacher = tt.teacher_id ? teacherMap.get(tt.teacher_id) : null;
+                const photoUrl = teacher?.image_url;
+                return photoUrl ? (
+                  <div className="flex-shrink-0">
+                    <img
+                      src={photoUrl}
+                      alt={tt.teacher_name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                      data-testid={`img-teacher-${tt.id}`}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0 w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                    <User className="w-7 h-7 text-gray-400" />
+                  </div>
+                );
+              })()}
               <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <BookOpen className="w-4 h-4 text-[#7B2332] flex-shrink-0" />
                   <h3 className="text-base font-bold text-gray-900" data-testid={`text-classname-${tt.id}`}>{tt.class_name}</h3>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
