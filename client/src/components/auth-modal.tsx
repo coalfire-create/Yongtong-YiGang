@@ -525,26 +525,13 @@ function RegisterModal({ onClose, onSwitchToLogin }: { onClose: () => void; onSw
             <input
               type="text"
               value={birthday}
-              onChange={(e) => setBirthday(e.target.value.replace(/\D/g, "").slice(0, 8))}
-              placeholder="생년월일 8자리 (예시: 20001231)"
-              maxLength={8}
+              onChange={(e) => setBirthday(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="생년월일 6자리 (예시: 000101)"
+              maxLength={6}
               className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors"
               style={{ borderRadius: "6px" }}
               data-testid="input-reg-birthday"
             />
-          </FormField>
-
-          <FormField label="선택과목">
-            <select
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-red-500 focus:outline-none transition-colors bg-white"
-              style={{ borderRadius: "6px" }}
-              data-testid="select-reg-subject"
-            >
-              <option value="">선택</option>
-              {SUBJECT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
           </FormField>
 
           <FormField label="메일주소">
