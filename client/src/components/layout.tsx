@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { SmsSubscribeButton } from "./sms-subscribe-modal";
 import { AuthHeaderButton } from "./auth-modal";
-import logoImg from "@assets/logo.png";
 
 const NAV_ITEMS = [
   { label: "고등관", path: "/high-school", sub: [{ label: "강사 소개", path: "/high-school/teachers" }, { label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }] },
@@ -40,7 +39,9 @@ export function Header() {
             className="flex-shrink-0 flex items-center gap-2 sm:gap-2.5 mr-auto lg:mr-0 min-w-0"
             data-testid="link-logo"
           >
-            <img src={logoImg} alt="이강학원 로고" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md object-cover flex-shrink-0" data-testid="img-header-logo" />
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-md bg-[#7B2332] flex items-center justify-center flex-shrink-0" data-testid="img-header-logo">
+              <span className="text-white font-bold text-sm sm:text-base">이강</span>
+            </div>
             <span className="text-base sm:text-xl font-extrabold tracking-tight whitespace-nowrap" style={{ color: "#7B2332" }}>영통이강학원</span>
             {location.startsWith("/high-school") && (
               <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">고등관</span>
@@ -146,7 +147,9 @@ function Footer() {
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-start gap-8 sm:gap-14">
           <div className="flex-shrink-0 flex flex-col items-start gap-3">
-            <img src={logoImg} alt="이강학원 로고" className="h-14 w-14 rounded-lg object-cover" data-testid="img-footer-logo" />
+            <div className="h-14 w-14 rounded-lg bg-[#7B2332] flex items-center justify-center" data-testid="img-footer-logo">
+              <span className="text-white font-bold text-lg">이강</span>
+            </div>
             <span className="text-lg font-bold tracking-tight">영통이강학원</span>
           </div>
           <div className="flex-1 space-y-4 text-sm text-white/70 leading-relaxed">
