@@ -116,19 +116,24 @@ async function ensureTimetablesTable() {
       CREATE TABLE IF NOT EXISTS timetables (
         id SERIAL PRIMARY KEY,
         teacher_id INTEGER,
-        teacher_name TEXT NOT NULL DEFAULT '',
-        category TEXT NOT NULL DEFAULT '',
-        target_school TEXT NOT NULL DEFAULT '',
-        class_name TEXT NOT NULL DEFAULT '',
-        class_time TEXT NOT NULL DEFAULT '',
-        class_date TEXT NOT NULL DEFAULT '',
-        teacher_image_url TEXT NOT NULL DEFAULT '',
-        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        teacher_name TEXT,
+        category TEXT,
+        target_school TEXT,
+        class_name TEXT,
+        class_time TEXT,
+        start_date TEXT,
+        teacher_image_url TEXT,
+        created_at TIMESTAMPTZ DEFAULT now()
       )
     `);
-    await pool.query(`
-      ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_image_url TEXT NOT NULL DEFAULT ''
-    `);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT ''`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_image_url TEXT`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_name TEXT`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS class_name TEXT`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS target_school TEXT`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS class_time TEXT`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS start_date TEXT`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_id INTEGER`);
   } catch (err) {
     console.error("Failed to ensure timetables table:", err);
   }
@@ -376,8 +381,9 @@ export async function registerRoutes(
   });
 
   app.post("/api/timetables", requireAdmin, upload.single("teacher_image"), async (req, res) => {
-    const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date } = req.body;
-    console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date });
+    const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, start_date } = req.body;
+    const dateValue = start_date || class_date || "";
+    console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, dateValue });
     if (!category || !class_name) {
       return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
     }
@@ -400,16 +406,17 @@ export async function registerRoutes(
         teacher_image_url = urlData.publicUrl;
       }
       const { rows } = await pool.query(
-        `INSERT INTO timetables (teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, teacher_image_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
         [
+          class_name || "",
           teacher_id ? Number(teacher_id) : null,
           teacher_name || "",
           category || "",
           target_school || "",
           class_name || "",
           class_time || "",
-          class_date || "",
+          dateValue,
           teacher_image_url || ""
         ]
       );
@@ -423,7 +430,12 @@ export async function registerRoutes(
   app.delete("/api/timetables/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
-      await pool.query("DELETE FROM reservations WHERE timetable_id = $1", [id]);
+      const cols = await pool.query(
+        "SELECT column_name FROM information_schema.columns WHERE table_name = 'reservations' AND column_name = 'timetable_id'"
+      );
+      if (cols.rows.length > 0) {
+        await pool.query("DELETE FROM reservations WHERE timetable_id = $1", [id]);
+      }
       await pool.query("DELETE FROM timetables WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
@@ -485,7 +497,7 @@ export async function registerRoutes(
       const { rows } = await pool.query(`
         SELECT r.id, r.created_at, r.timetable_id, r.user_id,
                m.student_name, m.student_phone, m.parent_phone, m.school as student_school, m.grade as student_grade,
-               t.class_name, t.teacher_name, t.target_school, t.class_time, t.class_date, t.category
+               t.class_name, t.teacher_name, t.target_school, t.class_time, t.start_date, t.category
         FROM reservations r
         LEFT JOIN members m ON r.user_id = m.id
         LEFT JOIN timetables t ON r.timetable_id = t.id

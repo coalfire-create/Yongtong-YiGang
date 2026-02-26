@@ -23,7 +23,7 @@ interface Timetable {
   target_school: string;
   class_name: string;
   class_time: string;
-  class_date: string;
+  start_date: string;
   teacher_image_url: string;
   created_at: string;
 }
@@ -41,7 +41,7 @@ interface Reservation {
   teacher_name: string;
   target_school: string;
   class_time: string;
-  class_date: string;
+  start_date: string;
   category: string;
   created_at: string;
 }
@@ -67,7 +67,7 @@ function TeachersTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/teachers", { method: "POST", body: formData });
+      const res = await fetch("/api/teachers", { method: "POST", body: formData, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
@@ -313,7 +313,7 @@ function TimetablesTab() {
     target_school: string;
     class_name: string;
     class_time: string;
-    class_date: string;
+    start_date: string;
     teacher_id: string;
   }>();
   const [teacherImageFile, setTeacherImageFile] = useState<File | null>(null);
@@ -378,7 +378,7 @@ function TimetablesTab() {
     formData.append("target_school", data.target_school || "");
     formData.append("class_name", data.class_name);
     formData.append("class_time", data.class_time || "");
-    formData.append("class_date", data.class_date || "");
+    formData.append("start_date", data.start_date || "");
     if (teacherImageFile) formData.append("teacher_image", teacherImageFile);
     addMutation.mutate(formData);
   };
@@ -455,7 +455,7 @@ function TimetablesTab() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">개강일</label>
               <input
-                {...register("class_date")}
+                {...register("start_date")}
                 className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="예: 2025년 3월 3일"
                 data-testid="input-timetable-date"
@@ -514,7 +514,7 @@ function TimetablesTab() {
                   {tt.category}{tt.teacher_name ? ` · ${tt.teacher_name}` : ""}{tt.target_school ? ` · ${tt.target_school}` : ""}
                 </p>
                 <p className="text-xs text-gray-400">
-                  {tt.class_time}{tt.class_date ? ` | 개강: ${tt.class_date}` : ""}
+                  {tt.class_time}{tt.start_date ? ` | 개강: ${tt.start_date}` : ""}
                 </p>
               </div>
               <button
@@ -890,7 +890,7 @@ function PopupsTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/popups", { method: "POST", body: formData });
+      const res = await fetch("/api/popups", { method: "POST", body: formData, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
@@ -1075,6 +1075,7 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
+        credentials: "include",
       });
       if (!res.ok) {
         const data = await res.json();

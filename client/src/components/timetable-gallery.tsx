@@ -11,7 +11,7 @@ interface Timetable {
   target_school: string;
   class_name: string;
   class_time: string;
-  class_date: string;
+  start_date: string;
   teacher_image_url: string;
   created_at: string;
 }
@@ -121,10 +121,10 @@ export function TimetableGallery({ category }: { category: string }) {
                       {tt.class_time}
                     </span>
                   )}
-                  {tt.class_date && (
+                  {tt.start_date && (
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
-                      개강: {tt.class_date}
+                      개강: {tt.start_date}
                     </span>
                   )}
                 </div>
