@@ -33,11 +33,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200" data-testid="header">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-[68px] gap-2 sm:gap-4">
+      <div className="px-4 sm:px-6 lg:px-10">
+        <div className="flex items-center h-[72px] lg:h-[80px] gap-2 sm:gap-4">
           <Link
             href="/"
-            className="flex-shrink-0 flex items-center gap-2 sm:gap-2.5 mr-auto lg:mr-0 min-w-0"
+            className="flex-shrink-0 flex items-center gap-2 sm:gap-3 mr-auto lg:mr-0 min-w-0"
             data-testid="link-logo"
           >
             <img src={logoImg} alt="이강학원 로고" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md object-cover flex-shrink-0" data-testid="img-header-logo" />
@@ -58,22 +58,22 @@ export function Header() {
               <div key={item.label} className="relative group" data-testid={`nav-item-${item.label}`}>
                 <Link
                   href={item.path}
-                  className={`block px-6 py-5 text-[15px] font-semibold transition-colors duration-200 border-b-2 ${
+                  className={`block px-7 py-6 text-[16px] font-bold transition-colors duration-200 border-b-[3px] ${
                     location.startsWith(item.path)
-                      ? "text-red-600 border-red-600"
-                      : "text-gray-700 border-transparent hover:text-red-600 hover:border-red-600"
+                      ? "text-[#7B2332] border-[#7B2332]"
+                      : "text-gray-800 border-transparent hover:text-[#7B2332] hover:border-[#7B2332]"
                   }`}
                   data-testid={`link-nav-${item.label}`}
                 >
                   {item.label}
                 </Link>
                 {item.sub.length > 0 && (
-                  <div className="invisible group-hover:visible absolute top-full left-0 bg-white border border-gray-200 shadow-lg min-w-[160px] z-50" data-testid={`dropdown-${item.label}`}>
+                  <div className="invisible group-hover:visible absolute top-full left-0 bg-white border border-gray-200 shadow-lg min-w-[170px] z-50" data-testid={`dropdown-${item.label}`}>
                     {item.sub.map((subItem) => (
                       <Link
                         key={subItem.label}
                         href={subItem.path}
-                        className="block px-5 py-3 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 transition-colors duration-150"
+                        className="block px-5 py-3 text-sm text-gray-600 hover:text-[#7B2332] hover:bg-gray-50 transition-colors duration-150"
                         data-testid={`link-sub-${subItem.label}`}
                       >
                         {subItem.label}
@@ -85,7 +85,7 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="hidden lg:block flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
             <AuthHeaderButton />
           </div>
 
@@ -104,7 +104,7 @@ export function Header() {
       </div>
 
       <div
-        className={`lg:hidden fixed inset-0 top-[68px] bg-white z-40 transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed inset-0 top-[72px] bg-white z-40 transition-transform duration-300 ease-in-out ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
         data-testid="nav-mobile"

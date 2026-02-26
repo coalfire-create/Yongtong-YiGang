@@ -29,8 +29,10 @@ const DEFAULT_SLIDES = [
 const QUICK_MENU_ITEMS = [
   { label: "고등관", sub: "자세히 보기 +", icon: GraduationCap, path: "/high-school" },
   { label: "초/중등관", sub: "자세히 보기 +", icon: BookOpen, path: "/junior-school" },
-  { label: "올빼미 학습관", sub: "자세히 보기 +", icon: Moon, path: "/owl" },
+  { label: "올빼미 독학관", sub: "자세히 보기 +", icon: Moon, path: "/owl" },
   { label: "입시실적", sub: "자세히 보기 +", icon: Trophy, path: "/admissions/results" },
+  { label: "설명회", sub: "자세히 보기 +", icon: Calendar, path: "/briefing" },
+  { label: "선생님 소개", sub: "자세히 보기 +", icon: GraduationCap, path: "/high-school/teachers" },
 ];
 
 function HeroCarousel() {
@@ -170,33 +172,39 @@ function QuickMenuCard({
   sub,
   icon: Icon,
   path,
+  isBottomRow,
 }: {
   label: string;
   sub: string;
   icon: LucideIcon;
   path: string;
+  isBottomRow?: boolean;
 }) {
   return (
     <Link
       href={path}
-      className="group relative flex flex-col justify-between p-5 cursor-pointer transition-colors duration-300 overflow-hidden bg-white text-gray-900 border border-gray-200 hover:bg-red-600 hover:border-red-600 hover:text-white"
+      className={`group relative flex flex-col justify-between p-5 sm:p-6 cursor-pointer transition-all duration-300 overflow-hidden border border-gray-200 hover:border-[#7B2332] ${
+        isBottomRow
+          ? "bg-gray-100 hover:bg-[#7B2332]"
+          : "bg-white hover:bg-[#7B2332]"
+      }`}
       data-testid={`card-quick-menu-${label}`}
     >
       <div className="relative z-10">
-        <p className="text-[11px] font-bold tracking-widest uppercase mb-1 transition-colors duration-300 text-gray-400 group-hover:text-white/80">
+        <p className="text-[11px] font-bold tracking-[0.15em] uppercase mb-2 transition-colors duration-300 text-gray-400 group-hover:text-white/70">
           CLASS
         </p>
-        <h3 className="text-lg font-extrabold leading-tight transition-colors duration-300 text-gray-900 group-hover:text-white">
+        <h3 className="text-xl sm:text-2xl font-extrabold leading-tight transition-colors duration-300 text-gray-900 group-hover:text-white">
           {label}
         </h3>
-        <p className="text-xs mt-1.5 font-medium transition-colors duration-300 text-gray-400 group-hover:text-white/80">
+        <p className="text-xs sm:text-sm mt-2 font-medium transition-colors duration-300 text-gray-400 group-hover:text-white/70">
           {sub}
         </p>
       </div>
-      <div className="absolute bottom-3 right-3 z-0">
+      <div className="absolute bottom-4 right-4 z-0">
         <Icon
-          className="w-12 h-12 transition-colors duration-300 text-gray-200 group-hover:text-white/30"
-          strokeWidth={1.5}
+          className="w-14 h-14 sm:w-16 sm:h-16 transition-colors duration-300 text-gray-200 group-hover:text-white/20"
+          strokeWidth={1.2}
         />
       </div>
     </Link>
@@ -205,9 +213,16 @@ function QuickMenuCard({
 
 function QuickMenuGrid() {
   return (
-    <div className="grid grid-cols-2 gap-[6px] h-full" data-testid="quick-menu-grid">
-      {QUICK_MENU_ITEMS.map((item) => (
-        <QuickMenuCard key={item.label} label={item.label} sub={item.sub} icon={item.icon} path={item.path} />
+    <div className="grid grid-cols-2 grid-rows-3 gap-[5px] h-full" data-testid="quick-menu-grid">
+      {QUICK_MENU_ITEMS.map((item, idx) => (
+        <QuickMenuCard
+          key={item.label}
+          label={item.label}
+          sub={item.sub}
+          icon={item.icon}
+          path={item.path}
+          isBottomRow={idx >= 4}
+        />
       ))}
     </div>
   );
@@ -215,8 +230,8 @@ function QuickMenuGrid() {
 
 function HeroSection() {
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-4 lg:py-6" data-testid="hero-section">
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[5px] lg:h-[calc(100vh-100px)] lg:min-h-[480px] lg:max-h-[680px]">
+    <section className="px-3 sm:px-5 lg:px-6 py-3 lg:py-5" data-testid="hero-section">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[5px] lg:h-[calc(100vh-100px)] lg:min-h-[520px] lg:max-h-[720px]">
         <div className="aspect-[16/9] lg:aspect-auto lg:h-full">
           <HeroCarousel />
         </div>
