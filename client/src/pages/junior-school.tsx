@@ -61,7 +61,6 @@ export function JuniorSchool() {
           </div>
         </div>
       </section>
-      <SummaryTimetableSection division="junior" title="초/중등관 요약시간표" />
     </PageLayout>
   );
 }
@@ -71,62 +70,7 @@ export function JuniorSchoolSchedule() {
     <SectionPage title="초/중등관 강의시간표">
       <TimetableGallery category="초/중등관" />
       <div className="mt-10">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">중등부 시간표</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse" data-testid="table-schedule-middle">
-            <thead>
-              <tr className="bg-[#7B2332] text-white">
-                <th className="py-3 px-4 text-sm font-semibold text-left border border-[#7B2332]">시간</th>
-                {["월", "화", "수", "목", "금", "토"].map((d) => (
-                  <th key={d} className="py-3 px-4 text-sm font-semibold text-center border border-[#7B2332]">{d}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { time: "16:00~17:30", mon: "중1 수학", tue: "중2 수학", wed: "중1 수학", thu: "중2 수학", fri: "중1 수학", sat: "중3 심화" },
-                { time: "18:00~19:30", mon: "중3 수학", tue: "중1 심화", wed: "중3 수학", thu: "중1 심화", fri: "중3 수학", sat: "중3 심화" },
-                { time: "20:00~21:30", mon: "중3 선행", tue: "중2 심화", wed: "중3 선행", thu: "중2 심화", fri: "중3 선행", sat: "" },
-              ].map((row) => (
-                <tr key={row.time} className="border-b border-gray-200">
-                  <td className="py-3 px-4 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 whitespace-nowrap">{row.time}</td>
-                  {[row.mon, row.tue, row.wed, row.thu, row.fri, row.sat].map((cell, i) => (
-                    <td key={i} className={`py-3 px-4 text-sm text-center border border-gray-200 ${cell ? "text-gray-800 font-medium" : "text-gray-300"}`}>{cell || "-"}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="mt-10">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">초등부 시간표</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse" data-testid="table-schedule-elementary">
-            <thead>
-              <tr className="bg-[#7B2332] text-white">
-                <th className="py-3 px-4 text-sm font-semibold text-left border border-[#7B2332]">시간</th>
-                {["월", "화", "수", "목", "금", "토"].map((d) => (
-                  <th key={d} className="py-3 px-4 text-sm font-semibold text-center border border-[#7B2332]">{d}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { time: "15:00~16:00", mon: "초4 수학", tue: "초5 수학", wed: "초4 수학", thu: "초5 수학", fri: "초4 수학", sat: "초6 심화" },
-                { time: "16:30~17:30", mon: "초6 수학", tue: "초4 심화", wed: "초6 수학", thu: "초4 심화", fri: "초6 수학", sat: "초6 심화" },
-              ].map((row) => (
-                <tr key={row.time} className="border-b border-gray-200">
-                  <td className="py-3 px-4 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 whitespace-nowrap">{row.time}</td>
-                  {[row.mon, row.tue, row.wed, row.thu, row.fri, row.sat].map((cell, i) => (
-                    <td key={i} className={`py-3 px-4 text-sm text-center border border-gray-200 ${cell ? "text-gray-800 font-medium" : "text-gray-300"}`}>{cell || "-"}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-4 text-xs text-gray-400">* 시간표는 학원 사정에 따라 변경될 수 있습니다.</p>
+        <SummaryTimetableSection division="junior" title="초/중등관 요약시간표" />
       </div>
     </SectionPage>
   );

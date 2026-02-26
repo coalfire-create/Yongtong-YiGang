@@ -120,9 +120,6 @@ export function HighSchool() {
           </div>
         </div>
       </section>
-      <SummaryTimetableSection division="high-g1" title="고1 요약시간표" />
-      <SummaryTimetableSection division="high-g2" title="고2 요약시간표" />
-      <SummaryTimetableSection division="high-g3" title="고3 요약시간표" />
     </PageLayout>
   );
 }
@@ -141,6 +138,31 @@ export function HighSchoolScheduleG2() {
 
 export function HighSchoolScheduleG3() {
   return <SchedulePageLayout grade="고3" category="고등관-고3" color="maroon" summaryDivision="high-g3" />;
+}
+
+export function HighSchoolSummaryTimetable() {
+  return (
+    <PageLayout>
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 text-center">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight" data-testid="text-page-title">
+            요약 시간표
+          </h1>
+        </div>
+      </div>
+      <div className="bg-gray-50 min-h-[50vh]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <SummaryTimetableSection division="high-g1" title="고1 요약시간표" />
+          <div className="mt-10">
+            <SummaryTimetableSection division="high-g2" title="고2 요약시간표" />
+          </div>
+          <div className="mt-10">
+            <SummaryTimetableSection division="high-g3" title="고3 요약시간표" />
+          </div>
+        </div>
+      </div>
+    </PageLayout>
+  );
 }
 
 export function HighSchoolTeachers() {
