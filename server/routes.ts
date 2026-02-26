@@ -284,6 +284,68 @@ export async function registerRoutes(
     console.error("Failed to add display_order to teachers:", err);
   }
 
+  // ========== SITEMAP & ROBOTS ==========
+  const SITE_PAGES = [
+    "/",
+    "/high-school",
+    "/high-school/schedule/g1",
+    "/high-school/schedule/g2",
+    "/high-school/schedule/g3",
+    "/high-school/summary",
+    "/high-school/teachers",
+    "/junior-school",
+    "/junior-school/schedule",
+    "/junior-school/teachers",
+    "/owl",
+    "/owl/info",
+    "/owl/usage",
+    "/briefing",
+    "/briefing/schedule",
+    "/admissions",
+    "/admissions/results",
+    "/admissions/reviews",
+    "/directions",
+  ];
+
+  app.get("/sitemap.xml", (_req, res) => {
+    const host = _req.headers.host || "localhost:5000";
+    const protocol = _req.headers["x-forwarded-proto"] || _req.protocol || "https";
+    const baseUrl = `${protocol}://${host}`;
+    const today = new Date().toISOString().split("T")[0];
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+    for (const page of SITE_PAGES) {
+      const priority = page === "/" ? "1.0" : page.split("/").length <= 2 ? "0.8" : "0.6";
+      xml += `  <url>\n`;
+      xml += `    <loc>${baseUrl}${page}</loc>\n`;
+      xml += `    <lastmod>${today}</lastmod>\n`;
+      xml += `    <changefreq>weekly</changefreq>\n`;
+      xml += `    <priority>${priority}</priority>\n`;
+      xml += `  </url>\n`;
+    }
+    xml += `</urlset>`;
+    res.set("Content-Type", "application/xml");
+    res.send(xml);
+  });
+
+  app.get("/robots.txt", (_req, res) => {
+    const host = _req.headers.host || "localhost:5000";
+    const protocol = _req.headers["x-forwarded-proto"] || _req.protocol || "https";
+    const baseUrl = `${protocol}://${host}`;
+
+    const txt = [
+      "User-agent: *",
+      "Allow: /",
+      "Disallow: /admin",
+      "Disallow: /api/",
+      "",
+      `Sitemap: ${baseUrl}/sitemap.xml`,
+    ].join("\n");
+    res.set("Content-Type", "text/plain");
+    res.send(txt);
+  });
+
   // ========== ADMIN AUTH ==========
   app.post("/api/admin/login", (req, res) => {
     const { password } = req.body;
