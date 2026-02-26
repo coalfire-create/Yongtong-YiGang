@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ArrowUp, ArrowDown } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
@@ -25,6 +25,7 @@ interface Timetable {
   class_time: string;
   start_date: string;
   teacher_image_url: string;
+  display_order: number;
   created_at: string;
 }
 
@@ -319,6 +320,7 @@ function TimetablesTab() {
   const [teacherImageFile, setTeacherImageFile] = useState<File | null>(null);
   const [teacherImagePreview, setTeacherImagePreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [filterCategory, setFilterCategory] = useState<string>("all");
 
   const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables"],
@@ -327,6 +329,10 @@ function TimetablesTab() {
   const { data: teachers = [] } = useQuery<Teacher[]>({
     queryKey: ["/api/teachers"],
   });
+
+  const filteredTimetables = filterCategory === "all"
+    ? timetables
+    : timetables.filter((tt) => tt.category === filterCategory);
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -358,6 +364,30 @@ function TimetablesTab() {
       queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
     },
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const res = await fetch("/api/timetables/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("순서 변경 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+    },
+  });
+
+  const handleMove = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= filteredTimetables.length) return;
+    const newList = [...filteredTimetables];
+    [newList[index], newList[newIndex]] = [newList[newIndex], newList[index]];
+    reorderMutation.mutate(newList.map((t) => t.id));
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -490,17 +520,50 @@ function TimetablesTab() {
         </form>
       </div>
 
-      <h3 className="text-lg font-bold text-gray-900 mb-4">등록된 시간표 ({timetables.length}개)</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900">등록된 시간표 ({filteredTimetables.length}개)</h3>
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="border border-gray-300 px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-red-600"
+          data-testid="select-timetable-filter"
+        >
+          <option value="all">전체 보기</option>
+          <option value="고등관-고1">고1</option>
+          <option value="고등관-고2">고2</option>
+          <option value="고등관-고3">고3</option>
+          <option value="초/중등관">초/중등관</option>
+          <option value="고등관">고등관 (전체)</option>
+        </select>
+      </div>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
-      ) : timetables.length === 0 ? (
+      ) : filteredTimetables.length === 0 ? (
         <p className="text-sm text-gray-400 py-6 text-center">등록된 시간표가 없습니다.</p>
       ) : (
         <div className="space-y-3">
-          {timetables.map((tt) => (
-            <div key={tt.id} className="flex items-center gap-4 bg-white border border-gray-200 p-4" data-testid={`card-admin-timetable-${tt.id}`}>
+          {filteredTimetables.map((tt, idx) => (
+            <div key={tt.id} className="flex items-center gap-3 bg-white border border-gray-200 p-4" data-testid={`card-admin-timetable-${tt.id}`}>
+              <div className="flex flex-col gap-0.5 flex-shrink-0">
+                <button
+                  onClick={() => handleMove(idx, "up")}
+                  disabled={idx === 0 || reorderMutation.isPending}
+                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
+                  data-testid={`button-move-up-timetable-${tt.id}`}
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleMove(idx, "down")}
+                  disabled={idx === filteredTimetables.length - 1 || reorderMutation.isPending}
+                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
+                  data-testid={`button-move-down-timetable-${tt.id}`}
+                >
+                  <ArrowDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
               {tt.teacher_image_url ? (
                 <img src={tt.teacher_image_url} alt={tt.teacher_name} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200" />
               ) : (
@@ -1698,11 +1761,20 @@ interface SummaryTimetable {
   created_at: string;
 }
 
+const SUMMARY_DIVISIONS = [
+  { value: "high-g1", label: "고1" },
+  { value: "high-g2", label: "고2" },
+  { value: "high-g3", label: "고3" },
+  { value: "junior", label: "초/중등관" },
+] as const;
+
 function SummaryTimetablesTab() {
-  const [selectedDivision, setSelectedDivision] = useState<"high" | "junior">("high");
+  const [selectedDivision, setSelectedDivision] = useState<string>("high-g1");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const divisionLabel = SUMMARY_DIVISIONS.find((d) => d.value === selectedDivision)?.label || selectedDivision;
 
   const { data: items = [], isLoading } = useQuery<SummaryTimetable[]>({
     queryKey: ["/api/summary-timetables", selectedDivision],
@@ -1736,6 +1808,30 @@ function SummaryTimetablesTab() {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const res = await fetch("/api/summary-timetables/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("순서 변경 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summary-timetables", selectedDivision] });
+    },
+  });
+
+  const handleMove = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= items.length) return;
+    const newList = [...items];
+    [newList[index], newList[newIndex]] = [newList[newIndex], newList[index]];
+    reorderMutation.mutate(newList.map((t) => t.id));
+  };
+
   const handleUpload = () => {
     if (!imageFile) return;
     const formData = new FormData();
@@ -1746,25 +1842,21 @@ function SummaryTimetablesTab() {
 
   return (
     <div className="space-y-6" data-testid="section-summary-timetables">
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setSelectedDivision("high")}
-          className={`px-4 py-2 text-sm font-semibold transition-colors ${selectedDivision === "high" ? "bg-red-600 text-white" : "bg-white text-gray-600 border border-gray-200"}`}
-          data-testid="tab-summary-high"
-        >
-          고등관
-        </button>
-        <button
-          onClick={() => setSelectedDivision("junior")}
-          className={`px-4 py-2 text-sm font-semibold transition-colors ${selectedDivision === "junior" ? "bg-red-600 text-white" : "bg-white text-gray-600 border border-gray-200"}`}
-          data-testid="tab-summary-junior"
-        >
-          초/중등관
-        </button>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {SUMMARY_DIVISIONS.map((d) => (
+          <button
+            key={d.value}
+            onClick={() => setSelectedDivision(d.value)}
+            className={`px-4 py-2 text-sm font-semibold transition-colors ${selectedDivision === d.value ? "bg-red-600 text-white" : "bg-white text-gray-600 border border-gray-200"}`}
+            data-testid={`tab-summary-${d.value}`}
+          >
+            {d.label}
+          </button>
+        ))}
       </div>
 
       <div className="bg-white border border-gray-200 p-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">요약시간표 이미지 등록</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-4">요약시간표 이미지 등록 — {divisionLabel}</h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">이미지 선택</label>
@@ -1802,20 +1894,40 @@ function SummaryTimetablesTab() {
 
       <div className="bg-white border border-gray-200 p-6">
         <h3 className="text-sm font-bold text-gray-900 mb-4">
-          등록된 요약시간표 ({items.length}개) — {selectedDivision === "high" ? "고등관" : "초/중등관"}
+          등록된 요약시간표 ({items.length}개) — {divisionLabel}
         </h3>
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
         ) : items.length === 0 ? (
           <p className="text-sm text-gray-400 py-4">등록된 요약시간표가 없습니다.</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {items.map((item) => (
-              <div key={item.id} className="relative group border border-gray-200" data-testid={`card-summary-${item.id}`}>
-                <img src={item.image_url} alt="요약시간표" className="w-full" />
+          <div className="space-y-3">
+            {items.map((item, idx) => (
+              <div key={item.id} className="flex items-start gap-3 border border-gray-200 p-3" data-testid={`card-summary-${item.id}`}>
+                <div className="flex flex-col gap-0.5 flex-shrink-0 pt-2">
+                  <button
+                    onClick={() => handleMove(idx, "up")}
+                    disabled={idx === 0 || reorderMutation.isPending}
+                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
+                    data-testid={`button-move-up-summary-${item.id}`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleMove(idx, "down")}
+                    disabled={idx === items.length - 1 || reorderMutation.isPending}
+                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
+                    data-testid={`button-move-down-summary-${item.id}`}
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <img src={item.image_url} alt="요약시간표" className="w-full max-w-sm border border-gray-200" />
+                </div>
                 <button
                   onClick={() => { if (confirm("삭제하시겠습니까?")) deleteMutation.mutate(item.id); }}
-                  className="absolute top-2 right-2 bg-red-600 text-white p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                   data-testid={`button-delete-summary-${item.id}`}
                 >
                   <Trash2 className="w-4 h-4" />

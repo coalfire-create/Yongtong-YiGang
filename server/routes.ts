@@ -129,6 +129,7 @@ async function ensureTimetablesTable() {
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT ''`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_image_url TEXT`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_name TEXT`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS class_name TEXT`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS target_school TEXT`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS class_time TEXT`);
@@ -388,12 +389,25 @@ export async function registerRoutes(
         sql += " WHERE category = $1";
         params.push(category);
       }
-      sql += " ORDER BY created_at DESC";
+      sql += " ORDER BY display_order ASC, created_at DESC";
       const { rows } = await pool.query(sql, params);
       res.json(rows);
     } catch (err: any) {
       console.error("[GET /api/timetables] Error:", err);
       res.status(500).json({ error: err.message || "시간표 조회 중 오류가 발생했습니다." });
+    }
+  });
+
+  app.patch("/api/timetables/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await pool.query("UPDATE timetables SET display_order = $1 WHERE id = $2", [i, ids[i]]);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
   });
 
@@ -422,9 +436,14 @@ export async function registerRoutes(
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
         teacher_image_url = urlData.publicUrl;
       }
+      const countRes = await pool.query(
+        "SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM timetables WHERE category = $1",
+        [category]
+      );
+      const next_order = countRes.rows[0].next_order;
       const { rows } = await pool.query(
-        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
         [
           class_name || "",
           teacher_id ? Number(teacher_id) : null,
@@ -434,7 +453,8 @@ export async function registerRoutes(
           class_name || "",
           class_time || "",
           dateValue,
-          teacher_image_url || ""
+          teacher_image_url || "",
+          next_order
         ]
       );
       res.json(rows[0]);
@@ -781,6 +801,19 @@ export async function registerRoutes(
         }
       }
       await pool.query("DELETE FROM summary_timetables WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summary-timetables/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await pool.query("UPDATE summary_timetables SET display_order = $1 WHERE id = $2", [i, ids[i]]);
+      }
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

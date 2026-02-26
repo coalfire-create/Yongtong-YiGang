@@ -46,7 +46,7 @@ function QuickMenuCard({ label, sub, icon: Icon, path }: { label: string; sub: s
   );
 }
 
-function SchedulePageLayout({ grade, category, color }: { grade: string; category: string; color: string }) {
+function SchedulePageLayout({ grade, category, color, summaryDivision }: { grade: string; category: string; color: string; summaryDivision?: string }) {
   const [location] = useLocation();
 
   const colorMap: Record<string, { gradient: string; accent: string; badge: string }> = {
@@ -106,6 +106,11 @@ function SchedulePageLayout({ grade, category, color }: { grade: string; categor
           <div className="pb-16">
             <TimetableGallery category={category} />
           </div>
+          {summaryDivision && (
+            <div className="pb-8">
+              <SummaryTimetableSection division={summaryDivision} title={`${grade} 요약시간표`} />
+            </div>
+          )}
         </div>
       </div>
     </PageLayout>
@@ -135,7 +140,9 @@ export function HighSchool() {
           </div>
         </div>
       </section>
-      <SummaryTimetableSection division="high" title="고등관 요약시간표" />
+      <SummaryTimetableSection division="high-g1" title="고1 요약시간표" />
+      <SummaryTimetableSection division="high-g2" title="고2 요약시간표" />
+      <SummaryTimetableSection division="high-g3" title="고3 요약시간표" />
     </PageLayout>
   );
 }
@@ -145,15 +152,15 @@ export function HighSchoolSchedule() {
 }
 
 export function HighSchoolScheduleG1() {
-  return <SchedulePageLayout grade="고1" category="고등관-고1" color="rose" />;
+  return <SchedulePageLayout grade="고1" category="고등관-고1" color="rose" summaryDivision="high-g1" />;
 }
 
 export function HighSchoolScheduleG2() {
-  return <SchedulePageLayout grade="고2" category="고등관-고2" color="crimson" />;
+  return <SchedulePageLayout grade="고2" category="고등관-고2" color="crimson" summaryDivision="high-g2" />;
 }
 
 export function HighSchoolScheduleG3() {
-  return <SchedulePageLayout grade="고3" category="고등관-고3" color="maroon" />;
+  return <SchedulePageLayout grade="고3" category="고등관-고3" color="maroon" summaryDivision="high-g3" />;
 }
 
 export function HighSchoolTeachers() {
