@@ -1650,6 +1650,233 @@ function BriefingsTab() {
   );
 }
 
+interface BriefingEventItem {
+  id: number;
+  title: string;
+  event_date: string;
+  category: string;
+}
+
+const BRIEFING_CATEGORIES = ["초등", "중등", "고등", "국제학교"];
+
+function BriefingEventsTab() {
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Partial<BriefingEventItem>>({});
+  const [newTitle, setNewTitle] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [newCategory, setNewCategory] = useState("고등");
+
+  const { data: events = [], isLoading } = useQuery<BriefingEventItem[]>({
+    queryKey: ["/api/briefing-events"],
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/briefing-events", {
+        title: newTitle,
+        event_date: newDate,
+        category: newCategory,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/briefing-events"] });
+      setNewTitle("");
+      setNewDate("");
+      setNewCategory("고등");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<BriefingEventItem> }) => {
+      await apiRequest("PUT", `/api/briefing-events/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/briefing-events"] });
+      setEditingId(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/briefing-events/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/briefing-events"] });
+    },
+  });
+
+  const startEdit = (ev: BriefingEventItem) => {
+    setEditingId(ev.id);
+    setEditForm({ title: ev.title, event_date: ev.event_date?.split("T")[0], category: ev.category });
+  };
+
+  const saveEdit = () => {
+    if (editingId === null) return;
+    updateMutation.mutate({ id: editingId, data: editForm });
+  };
+
+  const catColor = (cat: string) => {
+    switch (cat) {
+      case "초등": return "bg-red-100 text-red-700";
+      case "중등": return "bg-green-100 text-green-700";
+      case "고등": return "bg-blue-100 text-blue-700";
+      case "국제학교": return "bg-purple-100 text-purple-700";
+      default: return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  return (
+    <div>
+      <div className="bg-white border border-gray-200 p-6 mb-8" data-testid="form-add-briefing-event">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">설명회 캘린더 이벤트 추가</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">제목 *</label>
+            <input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+              placeholder="예: 영통고 예비고1 중간 내신 전략 설명회"
+              data-testid="input-event-title"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">날짜 *</label>
+              <input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                data-testid="input-event-date"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">카테고리 *</label>
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-white"
+                data-testid="select-event-category"
+              >
+                {BRIEFING_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <button
+            onClick={() => addMutation.mutate()}
+            disabled={addMutation.isPending || !newTitle || !newDate}
+            className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+            data-testid="button-add-event"
+          >
+            {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            추가
+          </button>
+        </div>
+      </div>
+
+      <h3 className="text-lg font-bold text-gray-900 mb-4">등록된 캘린더 이벤트 ({events.length}개)</h3>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : events.length === 0 ? (
+        <p className="text-sm text-gray-400 py-6 text-center" data-testid="text-events-empty">등록된 이벤트가 없습니다.</p>
+      ) : (
+        <div className="space-y-3">
+          {events.map((ev) => (
+            <div key={ev.id} className="bg-white border border-gray-200 p-5" data-testid={`card-admin-event-${ev.id}`}>
+              {editingId === ev.id ? (
+                <div className="space-y-3">
+                  <input
+                    value={editForm.title || ""}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                    placeholder="제목"
+                    data-testid="input-edit-event-title"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="date"
+                      value={editForm.event_date || ""}
+                      onChange={(e) => setEditForm({ ...editForm, event_date: e.target.value })}
+                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                      data-testid="input-edit-event-date"
+                    />
+                    <select
+                      value={editForm.category || "고등"}
+                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-white"
+                      data-testid="select-edit-event-category"
+                    >
+                      {BRIEFING_CATEGORIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={saveEdit}
+                      disabled={updateMutation.isPending}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+                      data-testid="button-save-event"
+                    >
+                      <Check className="w-4 h-4" />
+                      저장
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-600 text-sm font-semibold hover:bg-gray-200 transition-colors"
+                      data-testid="button-cancel-edit-event"
+                    >
+                      <X className="w-4 h-4" />
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 ${catColor(ev.category)}`}>
+                      {ev.category}
+                    </span>
+                    <span className="text-sm text-gray-500 flex-shrink-0">
+                      {ev.event_date?.split("T")[0]}
+                    </span>
+                    <span className="font-medium text-gray-900 text-sm truncate">{ev.title}</span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => startEdit(ev)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      data-testid={`button-edit-event-${ev.id}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm("이 이벤트를 삭제하시겠습니까?")) {
+                          deleteMutation.mutate(ev.id);
+                        }
+                      }}
+                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      data-testid={`button-delete-event-${ev.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Review {
   id: number;
   name: string;
@@ -2186,6 +2413,18 @@ export default function AdminPage() {
             수강예약 관리
           </button>
           <button
+            onClick={() => setTab("briefing-events")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "briefing-events"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-briefing-events"
+          >
+            <CalendarDays className="w-4 h-4" />
+            설명회 캘린더
+          </button>
+          <button
             onClick={() => setTab("sms")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "sms"
@@ -2199,7 +2438,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );

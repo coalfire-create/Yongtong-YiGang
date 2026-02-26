@@ -110,6 +110,22 @@ async function ensureBriefingsTable() {
   }
 }
 
+async function ensureBriefingEventsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS briefing_events (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL DEFAULT '',
+        event_date DATE NOT NULL,
+        category TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure briefing_events table:", err);
+  }
+}
+
 async function ensureTimetablesTable() {
   try {
     await pool.query(`
@@ -261,6 +277,7 @@ export async function registerRoutes(
   await ensureTimetablesTable();
   await ensureReservationsTable();
   await ensureSummaryTimetablesTable();
+  await ensureBriefingEventsTable();
   try {
     await pool.query(`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
   } catch (err) {
@@ -1186,6 +1203,62 @@ export async function registerRoutes(
   app.delete("/api/briefings/:id", requireAdmin, async (req, res) => {
     try {
       await pool.query("DELETE FROM briefings WHERE id = $1", [req.params.id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/briefing-events", async (req, res) => {
+    try {
+      const { year, month } = req.query;
+      let sql = "SELECT * FROM briefing_events";
+      const params: any[] = [];
+      if (year && month) {
+        sql += " WHERE EXTRACT(YEAR FROM event_date) = $1 AND EXTRACT(MONTH FROM event_date) = $2";
+        params.push(Number(year), Number(month));
+      }
+      sql += " ORDER BY event_date ASC, id ASC";
+      const { rows } = await pool.query(sql, params);
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/briefing-events", requireAdmin, async (req, res) => {
+    try {
+      const { title, event_date, category } = req.body;
+      if (!title || !event_date) return res.status(400).json({ error: "제목과 날짜는 필수입니다." });
+      const { rows } = await pool.query(
+        "INSERT INTO briefing_events (title, event_date, category) VALUES ($1, $2, $3) RETURNING *",
+        [title, event_date, category || ""]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/briefing-events/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, event_date, category } = req.body;
+      if (!title || !event_date) return res.status(400).json({ error: "제목과 날짜는 필수입니다." });
+      const { rows } = await pool.query(
+        "UPDATE briefing_events SET title=$1, event_date=$2, category=$3 WHERE id=$4 RETURNING *",
+        [title, event_date, category || "", id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Not found" });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/briefing-events/:id", requireAdmin, async (req, res) => {
+    try {
+      await pool.query("DELETE FROM briefing_events WHERE id = $1", [req.params.id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

@@ -48,6 +48,9 @@ The project is organized into three main directories:
 - **Additional Local Tables:** `timetables` (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order, description, subject), `summary_timetables` (division, image_url, display_order), `reservations`, `banners`, `popups`, `briefings`, `reviews`, `sms_subscriptions` - auto-created on server start
 - **Subject Order:** All subject lists across the site use: 수학, 국어, 영어, 탐구 (in this order)
 - **Timetable Subjects:** Timetables are grouped by subject (수학/국어/영어/탐구) on the schedule pages, with expandable "상세보기" for descriptions
+- **Briefing Events:** `briefing_events` table (id, title, event_date DATE, category TEXT, created_at) for calendar view; categories: 초등, 중등, 고등, 국제학교
+- **Briefing Calendar API:** `GET /api/briefing-events?year=YYYY&month=MM`, `POST/PUT/DELETE /api/briefing-events/:id`
+- **Briefing Page Layout:** Tabbed layout with "설명회 예약" (/briefing) and "설명회 일정" (/briefing/schedule) tabs; schedule shows color-coded monthly calendar
 - **Summary Timetable Divisions:** 'high-g1' (고1), 'high-g2' (고2), 'high-g3' (고3), 'junior' (초/중등관)
 - **Reorder APIs:** `PATCH /api/timetables/reorder`, `PATCH /api/summary-timetables/reorder`, and `PATCH /api/teachers/reorder` accept `{ ids: number[] }` to set display_order
 - **Google Sheets Sync:** Reservations and SMS subscriptions are logged to Google Sheets in real-time via Replit Google Sheets integration (`server/googleSheets.ts`, `server/sheets-sync.ts`). If `GOOGLE_SHEET_ID` env var is set, uses that spreadsheet; otherwise auto-creates one on first write
