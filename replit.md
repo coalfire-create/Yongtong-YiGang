@@ -44,10 +44,10 @@ The project is organized into three main directories:
 - **Schema Location:** `shared/schema.ts` — defines tables and Zod validation schemas using `drizzle-zod`
 - **Current Schema:** A `users` table with `id` (UUID), `username`, and `password` fields
 - **Additional Tables:** `popups` table (managed via raw pg.Pool, auto-created on server start) for homepage popup announcements
-- **Supabase Tables:** `teachers` table managed via Supabase client; images stored in Supabase Storage
+- **Supabase Tables:** `teachers` table managed via Supabase client with `display_order` column (auto-added on startup); images stored in Supabase Storage
 - **Additional Local Tables:** `timetables` (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order), `summary_timetables` (division, image_url, display_order), `reservations`, `banners`, `popups`, `briefings`, `reviews`, `sms_subscriptions` - auto-created on server start
 - **Summary Timetable Divisions:** 'high-g1' (고1), 'high-g2' (고2), 'high-g3' (고3), 'junior' (초/중등관)
-- **Reorder APIs:** `PATCH /api/timetables/reorder` and `PATCH /api/summary-timetables/reorder` accept `{ ids: number[] }` to set display_order
+- **Reorder APIs:** `PATCH /api/timetables/reorder`, `PATCH /api/summary-timetables/reorder`, and `PATCH /api/teachers/reorder` accept `{ ids: number[] }` to set display_order
 - **Google Sheets Sync:** Reservations and SMS subscriptions are logged to Google Sheets in real-time via Replit Google Sheets integration (`server/googleSheets.ts`, `server/sheets-sync.ts`). If `GOOGLE_SHEET_ID` env var is set, uses that spreadsheet; otherwise auto-creates one on first write
 - **Migrations:** Output to `./migrations` directory
 - **Schema Push:** Use `npm run db:push` (runs `drizzle-kit push`)

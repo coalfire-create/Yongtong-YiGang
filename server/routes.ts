@@ -259,6 +259,11 @@ export async function registerRoutes(
   await ensureTimetablesTable();
   await ensureReservationsTable();
   await ensureSummaryTimetablesTable();
+  try {
+    await pool.query(`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
+  } catch (err) {
+    console.error("Failed to add display_order to teachers:", err);
+  }
 
   // ========== ADMIN AUTH ==========
   app.post("/api/admin/login", (req, res) => {
@@ -287,6 +292,7 @@ export async function registerRoutes(
     let query = supabase
       .from("teachers")
       .select("*")
+      .order("display_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false });
     if (division) {
       query = query.like("subject", `${division}::%`);
@@ -329,9 +335,17 @@ export async function registerRoutes(
       image_url = urlData.publicUrl;
     }
 
+    const { data: maxOrderData } = await supabase
+      .from("teachers")
+      .select("display_order")
+      .order("display_order", { ascending: false })
+      .limit(1)
+      .single();
+    const nextOrder = (maxOrderData?.display_order ?? -1) + 1;
+
     const { data, error } = await supabase
       .from("teachers")
-      .insert({ name, subject: encodedSubject, description, image_url })
+      .insert({ name, subject: encodedSubject, description, image_url, display_order: nextOrder })
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });
@@ -377,6 +391,19 @@ export async function registerRoutes(
     const { error } = await supabase.from("teachers").delete().eq("id", id);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true });
+  });
+
+  app.patch("/api/teachers/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await supabase.from("teachers").update({ display_order: i }).eq("id", ids[i]);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // ========== TIMETABLES (text-based) ==========

@@ -12,6 +12,7 @@ interface Teacher {
   division: string;
   description: string;
   image_url: string | null;
+  display_order: number;
   created_at: string;
 }
 
@@ -56,6 +57,7 @@ function TeachersTab() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [selectedDivision, setSelectedDivision] = useState("고등관");
+  const [filterSubject, setFilterSubject] = useState("all");
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{
     name: string;
     subject: string;
@@ -65,6 +67,10 @@ function TeachersTab() {
   const { data: teachers = [], isLoading } = useQuery<Teacher[]>({
     queryKey: ["/api/teachers"],
   });
+
+  const filteredTeachers = filterSubject === "all"
+    ? teachers
+    : teachers.filter((t) => t.subject === filterSubject);
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -98,8 +104,34 @@ function TeachersTab() {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const res = await fetch("/api/teachers/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("순서 변경 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      invalidateTeachers();
+    },
+  });
+
+  const handleTeacherMove = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= filteredTeachers.length) return;
+    const newList = [...filteredTeachers];
+    [newList[index], newList[newIndex]] = [newList[newIndex], newList[index]];
+    reorderMutation.mutate(newList.map((t) => t.id));
+  };
+
   const [editingBioId, setEditingBioId] = useState<number | null>(null);
   const [editBioText, setEditBioText] = useState("");
+
+  const allSubjects = [...new Set(teachers.map((t) => t.subject))];
 
   function invalidateTeachers() {
     queryClient.invalidateQueries({ queryKey: ["/api/teachers"] });
@@ -211,18 +243,49 @@ function TeachersTab() {
         </form>
       </div>
 
-      <h3 className="text-lg font-bold text-gray-900 mb-4">등록된 선생님 ({teachers.length}명)</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900">등록된 선생님 ({filteredTeachers.length}명)</h3>
+        <select
+          value={filterSubject}
+          onChange={(e) => setFilterSubject(e.target.value)}
+          className="border border-gray-300 px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-red-600"
+          data-testid="select-teacher-filter"
+        >
+          <option value="all">전체 과목</option>
+          {allSubjects.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
-      ) : teachers.length === 0 ? (
+      ) : filteredTeachers.length === 0 ? (
         <p className="text-sm text-gray-400 py-6 text-center">등록된 선생님이 없습니다.</p>
       ) : (
         <div className="space-y-3">
-          {teachers.map((t) => (
+          {filteredTeachers.map((t, idx) => (
             <div key={t.id} className="bg-white border border-gray-200 p-4" data-testid={`card-admin-teacher-${t.id}`}>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-0.5 flex-shrink-0">
+                  <button
+                    onClick={() => handleTeacherMove(idx, "up")}
+                    disabled={idx === 0 || reorderMutation.isPending}
+                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
+                    data-testid={`button-move-up-teacher-${t.id}`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleTeacherMove(idx, "down")}
+                    disabled={idx === filteredTeachers.length - 1 || reorderMutation.isPending}
+                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
+                    data-testid={`button-move-down-teacher-${t.id}`}
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 {t.image_url ? (
                   <img src={t.image_url} alt={t.name} className="w-14 h-14 object-cover flex-shrink-0" />
                 ) : (
