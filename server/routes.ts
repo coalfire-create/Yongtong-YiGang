@@ -205,6 +205,22 @@ async function ensureBannersTable() {
   }
 }
 
+async function ensureSummaryTimetablesTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS summary_timetables (
+        id SERIAL PRIMARY KEY,
+        division TEXT NOT NULL DEFAULT 'high',
+        image_url TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure summary_timetables table:", err);
+  }
+}
+
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
@@ -241,6 +257,7 @@ export async function registerRoutes(
   await ensureReviewsTable();
   await ensureTimetablesTable();
   await ensureReservationsTable();
+  await ensureSummaryTimetablesTable();
 
   // ========== ADMIN AUTH ==========
   app.post("/api/admin/login", (req, res) => {
@@ -690,6 +707,80 @@ export async function registerRoutes(
         }
       }
       await pool.query("DELETE FROM banners WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== SUMMARY TIMETABLES ==========
+  app.get("/api/summary-timetables", async (req, res) => {
+    const division = req.query.division as string | undefined;
+    try {
+      let sql = "SELECT * FROM summary_timetables";
+      const params: any[] = [];
+      if (division) {
+        sql += " WHERE division = $1";
+        params.push(division);
+      }
+      sql += " ORDER BY display_order ASC, created_at ASC";
+      const { rows } = await pool.query(sql, params);
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/summary-timetables", requireAdmin, upload.single("image"), async (req, res) => {
+    const { division } = req.body;
+    if (!division) {
+      return res.status(400).json({ error: "구분(division)은 필수입니다." });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: "이미지는 필수입니다." });
+    }
+    try {
+      const ext = path.extname(req.file.originalname) || ".jpg";
+      const fileName = `summary-timetables/${crypto.randomUUID()}${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("images")
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false,
+        });
+      if (uploadError) {
+        return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+      }
+      const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+      const image_url = urlData.publicUrl;
+
+      const { rows: countRows } = await pool.query(
+        "SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM summary_timetables WHERE division = $1",
+        [division]
+      );
+      const display_order = countRows[0].next_order;
+
+      const { rows } = await pool.query(
+        "INSERT INTO summary_timetables (division, image_url, display_order) VALUES ($1, $2, $3) RETURNING *",
+        [division, image_url, display_order]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/summary-timetables/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      const { rows } = await pool.query("SELECT image_url FROM summary_timetables WHERE id = $1", [id]);
+      if (rows[0]?.image_url) {
+        const urlParts = rows[0].image_url.split("/images/");
+        if (urlParts[1]) {
+          await supabase.storage.from("images").remove([urlParts[1]]);
+        }
+      }
+      await pool.query("DELETE FROM summary_timetables WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

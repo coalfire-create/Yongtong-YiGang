@@ -1690,8 +1690,147 @@ function ReviewsTab() {
   );
 }
 
+interface SummaryTimetable {
+  id: number;
+  division: string;
+  image_url: string;
+  display_order: number;
+  created_at: string;
+}
+
+function SummaryTimetablesTab() {
+  const [selectedDivision, setSelectedDivision] = useState<"high" | "junior">("high");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: items = [], isLoading } = useQuery<SummaryTimetable[]>({
+    queryKey: ["/api/summary-timetables", selectedDivision],
+    queryFn: async () => {
+      const res = await fetch(`/api/summary-timetables?division=${selectedDivision}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/summary-timetables", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summary-timetables", selectedDivision] });
+      setImageFile(null);
+      setImagePreview("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/summary-timetables/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summary-timetables", selectedDivision] });
+    },
+  });
+
+  const handleUpload = () => {
+    if (!imageFile) return;
+    const formData = new FormData();
+    formData.append("division", selectedDivision);
+    formData.append("image", imageFile);
+    addMutation.mutate(formData);
+  };
+
+  return (
+    <div className="space-y-6" data-testid="section-summary-timetables">
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setSelectedDivision("high")}
+          className={`px-4 py-2 text-sm font-semibold transition-colors ${selectedDivision === "high" ? "bg-red-600 text-white" : "bg-white text-gray-600 border border-gray-200"}`}
+          data-testid="tab-summary-high"
+        >
+          고등관
+        </button>
+        <button
+          onClick={() => setSelectedDivision("junior")}
+          className={`px-4 py-2 text-sm font-semibold transition-colors ${selectedDivision === "junior" ? "bg-red-600 text-white" : "bg-white text-gray-600 border border-gray-200"}`}
+          data-testid="tab-summary-junior"
+        >
+          초/중등관
+        </button>
+      </div>
+
+      <div className="bg-white border border-gray-200 p-6">
+        <h3 className="text-sm font-bold text-gray-900 mb-4">요약시간표 이미지 등록</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">이미지 선택</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setImageFile(file);
+                  setImagePreview(URL.createObjectURL(file));
+                }
+              }}
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+              data-testid="input-summary-image"
+            />
+          </div>
+          {imagePreview && (
+            <div className="w-full max-w-md">
+              <img src={imagePreview} alt="미리보기" className="w-full border border-gray-200" />
+            </div>
+          )}
+          <button
+            onClick={handleUpload}
+            disabled={!imageFile || addMutation.isPending}
+            className="px-6 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+            data-testid="button-add-summary"
+          >
+            {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            등록
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 p-6">
+        <h3 className="text-sm font-bold text-gray-900 mb-4">
+          등록된 요약시간표 ({items.length}개) — {selectedDivision === "high" ? "고등관" : "초/중등관"}
+        </h3>
+        {isLoading ? (
+          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4">등록된 요약시간표가 없습니다.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {items.map((item) => (
+              <div key={item.id} className="relative group border border-gray-200" data-testid={`card-summary-${item.id}`}>
+                <img src={item.image_url} alt="요약시간표" className="w-full" />
+                <button
+                  onClick={() => { if (confirm("삭제하시겠습니까?")) deleteMutation.mutate(item.id); }}
+                  className="absolute top-2 right-2 bg-red-600 text-white p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  data-testid={`button-delete-summary-${item.id}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -1755,6 +1894,18 @@ export default function AdminPage() {
           >
             <Calendar className="w-4 h-4" />
             시간표 관리
+          </button>
+          <button
+            onClick={() => setTab("summary-timetables")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "summary-timetables"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-summary-timetables"
+          >
+            <Image className="w-4 h-4" />
+            요약시간표
           </button>
           <button
             onClick={() => setTab("banners")}
@@ -1830,7 +1981,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );

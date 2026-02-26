@@ -4,6 +4,7 @@ import { Calendar, Users, ArrowLeft, type LucideIcon } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 import { BannerCarousel } from "@/components/banner-carousel";
+import { SummaryTimetableSection } from "@/components/summary-timetable";
 
 const HIGH_SCHOOL_SUBJECTS = ["국어", "영어", "수학", "과학", "사회/한국사", "제2외국어"];
 
@@ -134,6 +135,7 @@ export function HighSchool() {
           </div>
         </div>
       </section>
+      <SummaryTimetableSection division="high" title="고등관 요약시간표" />
     </PageLayout>
   );
 }
