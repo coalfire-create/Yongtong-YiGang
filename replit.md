@@ -108,5 +108,5 @@ The project is organized into three main directories:
 - **TanStack React Query** — Server state management and data fetching
 - **Vite** — Frontend build tool and dev server
 - **esbuild** — Server bundling for production
-- **connect-pg-simple** — PostgreSQL session store (available but not yet wired up)
+- **connect-pg-simple** — PostgreSQL session store, stores sessions in `session` table (auto-created)
 - **Replit plugins** — `@replit/vite-plugin-runtime-error-modal`, `@replit/vite-plugin-cartographer`, `@replit/vite-plugin-dev-banner` for development on Replit
