@@ -1770,8 +1770,8 @@ const SUMMARY_DIVISIONS = [
 
 function SummaryTimetablesTab() {
   const [selectedDivision, setSelectedDivision] = useState<string>("high-g1");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const divisionLabel = SUMMARY_DIVISIONS.find((d) => d.value === selectedDivision)?.label || selectedDivision;
@@ -1793,8 +1793,8 @@ function SummaryTimetablesTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/summary-timetables", selectedDivision] });
-      setImageFile(null);
-      setImagePreview("");
+      setImageFiles([]);
+      setImagePreviews([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
   });
@@ -1833,10 +1833,10 @@ function SummaryTimetablesTab() {
   };
 
   const handleUpload = () => {
-    if (!imageFile) return;
+    if (imageFiles.length === 0) return;
     const formData = new FormData();
     formData.append("division", selectedDivision);
-    formData.append("image", imageFile);
+    imageFiles.forEach((file) => formData.append("images", file));
     addMutation.mutate(formData);
   };
 
@@ -1859,35 +1859,41 @@ function SummaryTimetablesTab() {
         <h3 className="text-sm font-bold text-gray-900 mb-4">요약시간표 이미지 등록 — {divisionLabel}</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이미지 선택</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">이미지 선택 (여러 장 가능)</label>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  setImageFile(file);
-                  setImagePreview(URL.createObjectURL(file));
+                const files = Array.from(e.target.files || []);
+                if (files.length > 0) {
+                  setImageFiles(files);
+                  setImagePreviews(files.map((f) => URL.createObjectURL(f)));
                 }
               }}
               className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               data-testid="input-summary-image"
             />
           </div>
-          {imagePreview && (
-            <div className="w-full max-w-md">
-              <img src={imagePreview} alt="미리보기" className="w-full border border-gray-200" />
+          {imagePreviews.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {imagePreviews.map((preview, idx) => (
+                <div key={idx} className="relative">
+                  <img src={preview} alt={`미리보기 ${idx + 1}`} className="w-full border border-gray-200" />
+                  <span className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">{idx + 1}</span>
+                </div>
+              ))}
             </div>
           )}
           <button
             onClick={handleUpload}
-            disabled={!imageFile || addMutation.isPending}
+            disabled={imageFiles.length === 0 || addMutation.isPending}
             className="px-6 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
             data-testid="button-add-summary"
           >
             {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            등록
+            {imageFiles.length > 1 ? `${imageFiles.length}개 등록` : "등록"}
           </button>
         </div>
       </div>

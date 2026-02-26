@@ -751,40 +751,46 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/summary-timetables", requireAdmin, upload.single("image"), async (req, res) => {
+  app.post("/api/summary-timetables", requireAdmin, upload.array("images", 20), async (req, res) => {
     const { division } = req.body;
     if (!division) {
       return res.status(400).json({ error: "구분(division)은 필수입니다." });
     }
-    if (!req.file) {
+    const files = req.files as Express.Multer.File[] | undefined;
+    if (!files || files.length === 0) {
       return res.status(400).json({ error: "이미지는 필수입니다." });
     }
     try {
-      const ext = path.extname(req.file.originalname) || ".jpg";
-      const fileName = `summary-timetables/${crypto.randomUUID()}${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("images")
-        .upload(fileName, req.file.buffer, {
-          contentType: req.file.mimetype,
-          upsert: false,
-        });
-      if (uploadError) {
-        return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
-      }
-      const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-      const image_url = urlData.publicUrl;
-
       const { rows: countRows } = await pool.query(
-        "SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM summary_timetables WHERE division = $1",
+        "SELECT COALESCE(MAX(display_order), 0) as max_order FROM summary_timetables WHERE division = $1",
         [division]
       );
-      const display_order = countRows[0].next_order;
+      let nextOrder = (countRows[0].max_order || 0) + 1;
 
-      const { rows } = await pool.query(
-        "INSERT INTO summary_timetables (division, image_url, display_order) VALUES ($1, $2, $3) RETURNING *",
-        [division, image_url, display_order]
-      );
-      res.json(rows[0]);
+      const results = [];
+      for (const file of files) {
+        const ext = path.extname(file.originalname) || ".jpg";
+        const fileName = `summary-timetables/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false,
+          });
+        if (uploadError) {
+          return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+        }
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+        const image_url = urlData.publicUrl;
+
+        const { rows } = await pool.query(
+          "INSERT INTO summary_timetables (division, image_url, display_order) VALUES ($1, $2, $3) RETURNING *",
+          [division, image_url, nextOrder]
+        );
+        results.push(rows[0]);
+        nextOrder++;
+      }
+      res.json(results);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
