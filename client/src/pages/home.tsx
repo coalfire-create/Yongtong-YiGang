@@ -213,7 +213,7 @@ function QuickMenuCard({
 
 function QuickMenuGrid() {
   return (
-    <div className="grid grid-cols-2 grid-rows-3 gap-[5px] h-full" data-testid="quick-menu-grid">
+    <div className="grid grid-cols-2 grid-rows-3 gap-2.5 sm:gap-3 h-full" data-testid="quick-menu-grid">
       {QUICK_MENU_ITEMS.map((item, idx) => (
         <QuickMenuCard
           key={item.label}
@@ -231,7 +231,7 @@ function QuickMenuGrid() {
 function HeroSection() {
   return (
     <section className="px-3 sm:px-5 lg:px-6 py-3 lg:py-5" data-testid="hero-section">
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[5px] lg:h-[calc(100vh-100px)] lg:min-h-[520px] lg:max-h-[720px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-2.5 sm:gap-3 lg:h-[calc(100vh-100px)] lg:min-h-[520px] lg:max-h-[720px]">
         <div className="aspect-[16/9] lg:aspect-auto lg:h-full">
           <HeroCarousel />
         </div>
