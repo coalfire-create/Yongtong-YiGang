@@ -202,7 +202,7 @@ function LoginModal({ onClose, onSwitchToRegister }: { onClose: () => void; onSw
 const GENDER_OPTIONS = ["남", "여"];
 const TRACK_OPTIONS = ["문과", "이과", "예체능"];
 const GRADE_OPTIONS = ["초1", "초2", "초3", "초4", "초5", "초6", "중1", "중2", "중3", "고1", "고2", "고3", "N수"];
-const SUBJECT_OPTIONS = ["수학", "영어", "국어", "과학", "사회", "기타"];
+const SUBJECT_OPTIONS = ["수학", "국어", "영어", "탐구", "기타"];
 const ACADEMY_STATUS_OPTIONS = [
   { value: "none", label: "없음" },
   { value: "former", label: "재원 했었음" },

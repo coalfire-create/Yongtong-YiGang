@@ -135,6 +135,8 @@ async function ensureTimetablesTable() {
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS class_time TEXT`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS start_date TEXT`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_id INTEGER`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT ''`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS subject TEXT NOT NULL DEFAULT ''`);
   } catch (err) {
     console.error("Failed to ensure timetables table:", err);
   }
@@ -439,9 +441,9 @@ export async function registerRoutes(
   });
 
   app.post("/api/timetables", requireAdmin, upload.single("teacher_image"), async (req, res) => {
-    const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, start_date } = req.body;
+    const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, start_date, description, subject } = req.body;
     const dateValue = start_date || class_date || "";
-    console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, dateValue });
+    console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, dateValue, subject });
     if (!category || !class_name) {
       return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
     }
@@ -469,8 +471,8 @@ export async function registerRoutes(
       );
       const next_order = countRes.rows[0].next_order;
       const { rows } = await pool.query(
-        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order, description, subject)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
         [
           class_name || "",
           teacher_id ? Number(teacher_id) : null,
@@ -481,7 +483,9 @@ export async function registerRoutes(
           class_time || "",
           dateValue,
           teacher_image_url || "",
-          next_order
+          next_order,
+          description || "",
+          subject || ""
         ]
       );
       res.json(rows[0]);

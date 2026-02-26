@@ -6,7 +6,7 @@ import { TeacherIntroPage } from "@/components/teacher-intro";
 import { BannerCarousel } from "@/components/banner-carousel";
 import { SummaryTimetableSection } from "@/components/summary-timetable";
 
-const JUNIOR_SUBJECTS = ["국어", "영어", "수학", "과학", "사회/역사"];
+const JUNIOR_SUBJECTS = ["수학", "국어", "영어", "탐구"];
 
 const QUICK_MENU_ITEMS: { label: string; sub: string; icon: LucideIcon; path: string }[] = [
   { label: "강사 소개", sub: "자세히 보기 +", icon: Users, path: "/junior-school/teachers" },

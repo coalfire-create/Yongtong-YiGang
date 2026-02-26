@@ -27,6 +27,8 @@ interface Timetable {
   start_date: string;
   teacher_image_url: string;
   display_order: number;
+  description: string;
+  subject: string;
   created_at: string;
 }
 
@@ -49,9 +51,11 @@ interface Reservation {
 }
 
 const SUBJECT_OPTIONS: Record<string, string[]> = {
-  "고등관": ["국어", "영어", "수학", "과학", "사회/한국사", "제2외국어"],
-  "초/중등관": ["국어", "영어", "수학", "과학", "사회/역사"],
+  "고등관": ["수학", "국어", "영어", "탐구"],
+  "초/중등관": ["수학", "국어", "영어", "탐구"],
 };
+
+const TIMETABLE_SUBJECT_OPTIONS = ["수학", "국어", "영어", "탐구"];
 
 function TeachersTab() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -374,11 +378,13 @@ function TeachersTab() {
 function TimetablesTab() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{
     category: string;
+    subject: string;
     target_school: string;
     class_name: string;
     class_time: string;
     start_date: string;
     teacher_id: string;
+    description: string;
   }>();
   const [teacherImageFile, setTeacherImageFile] = useState<File | null>(null);
   const [teacherImagePreview, setTeacherImagePreview] = useState<string>("");
@@ -468,10 +474,12 @@ function TimetablesTab() {
     if (data.teacher_id) formData.append("teacher_id", data.teacher_id);
     formData.append("teacher_name", teacher?.name || "");
     formData.append("category", data.category);
+    formData.append("subject", data.subject || "");
     formData.append("target_school", data.target_school || "");
     formData.append("class_name", data.class_name);
     formData.append("class_time", data.class_time || "");
     formData.append("start_date", data.start_date || "");
+    formData.append("description", data.description || "");
     if (teacherImageFile) formData.append("teacher_image", teacherImageFile);
     addMutation.mutate(formData);
   };
@@ -481,7 +489,7 @@ function TimetablesTab() {
       <div className="bg-white border border-gray-200 p-6 mb-8" data-testid="form-add-timetable">
         <h3 className="text-lg font-bold text-gray-900 mb-4">시간표 등록</h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">카테고리 *</label>
               <select
@@ -498,6 +506,21 @@ function TimetablesTab() {
                 <option value="초/중등관">초/중등관</option>
               </select>
               {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">과목 *</label>
+              <select
+                {...register("subject", { required: "과목을 선택하세요" })}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-white"
+                data-testid="select-timetable-subject"
+                defaultValue=""
+              >
+                <option value="" disabled>과목 선택</option>
+                {TIMETABLE_SUBJECT_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              {errors.subject && <p className="text-xs text-red-500 mt-1">{errors.subject.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">담당 선생님</label>
@@ -554,6 +577,16 @@ function TimetablesTab() {
                 data-testid="input-timetable-date"
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">수업 설명 (상세보기에 표시)</label>
+            <textarea
+              {...register("description")}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
+              rows={3}
+              placeholder={"수업 내용, 커리큘럼, 교재 등 상세 설명을 입력하세요\n예: 기출분석 중심의 내신 대비 수학 수업\n교재: 수학의 정석, 자체 프린트"}
+              data-testid="textarea-timetable-description"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">선생님 사진 (얼굴)</label>
@@ -635,13 +668,17 @@ function TimetablesTab() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 text-sm">{tt.class_name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-gray-900 text-sm">{tt.class_name}</p>
+                  {tt.subject && <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 font-medium">{tt.subject}</span>}
+                </div>
                 <p className="text-xs text-gray-500">
                   {tt.category}{tt.teacher_name ? ` · ${tt.teacher_name}` : ""}{tt.target_school ? ` · ${tt.target_school}` : ""}
                 </p>
                 <p className="text-xs text-gray-400">
                   {tt.class_time}{tt.start_date ? ` | 개강: ${tt.start_date}` : ""}
                 </p>
+                {tt.description && <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{tt.description}</p>}
               </div>
               <button
                 onClick={() => {

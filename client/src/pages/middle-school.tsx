@@ -4,7 +4,7 @@ import { Calendar, Users, Clock } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 
-const MIDDLE_SCHOOL_SUBJECTS = ["국어", "영어", "수학", "과학", "사회/역사"];
+const MIDDLE_SCHOOL_SUBJECTS = ["수학", "국어", "영어", "탐구"];
 
 export function MiddleSchool() {
   return (
