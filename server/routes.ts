@@ -23,6 +23,9 @@ async function ensurePopupsTable() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    await pool.query(`ALTER TABLE popups ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true`);
+    await pool.query(`ALTER TABLE popups ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE popups ADD COLUMN IF NOT EXISTS link_url TEXT`);
   } catch (err) {
     console.error("Failed to ensure popups table:", err);
   }
@@ -181,6 +184,11 @@ async function ensureBannersTable() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS subtitle TEXT NOT NULL DEFAULT ''`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT ''`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS link_url TEXT`);
     await pool.query(`
       DO $$ BEGIN
         ALTER TABLE banners ADD COLUMN IF NOT EXISTS division TEXT NOT NULL DEFAULT 'main';
