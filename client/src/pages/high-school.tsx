@@ -1,6 +1,6 @@
 import { PageLayout } from "@/components/layout";
 import { Link, useLocation } from "wouter";
-import { Calendar, Users, ArrowLeft, type LucideIcon } from "lucide-react";
+import { Calendar, Users, type LucideIcon } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 import { BannerCarousel } from "@/components/banner-carousel";
@@ -46,54 +46,32 @@ function QuickMenuCard({ label, sub, icon: Icon, path }: { label: string; sub: s
   );
 }
 
-function SchedulePageLayout({ grade, category, color, summaryDivision }: { grade: string; category: string; color: string; summaryDivision?: string }) {
+function SchedulePageLayout({ grade, category, summaryDivision }: { grade: string; category: string; color?: string; summaryDivision?: string }) {
   const [location] = useLocation();
-
-  const colorMap: Record<string, { gradient: string; accent: string; badge: string }> = {
-    rose: { gradient: "from-rose-600 via-rose-700 to-[#7B2332]", accent: "text-rose-400", badge: "bg-rose-500/20 text-rose-300" },
-    crimson: { gradient: "from-red-600 via-red-700 to-[#7B2332]", accent: "text-red-400", badge: "bg-red-500/20 text-red-300" },
-    maroon: { gradient: "from-[#7B2332] via-[#8B3040] to-[#6B1D2A]", accent: "text-rose-300", badge: "bg-rose-500/20 text-rose-200" },
-  };
-
-  const c = colorMap[color] || colorMap.rose;
 
   return (
     <PageLayout>
-      <div className={`bg-gradient-to-r ${c.gradient} text-white`}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-          <Link
-            href="/high-school"
-            className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors mb-4"
-            data-testid="link-back-high"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            고등관
-          </Link>
-          <div className="flex items-center gap-3 mb-2">
-            <span className={`px-2.5 py-0.5 text-xs font-bold rounded-sm ${c.badge}`}>
-              {grade}
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold" data-testid="text-page-title">
-            {grade} 시간표
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 text-center">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight" data-testid="text-page-title">
+            {grade} 강의시간표
           </h1>
-          <div className="mt-3 w-12 h-1 bg-white/40 rounded-full" />
         </div>
       </div>
 
-      <div className="bg-gray-50 min-h-[50vh]">
+      <div className="bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 -mt-5 mb-8">
+          <div className="flex items-center justify-center border-b border-gray-200">
             {GRADE_TABS.map((tab) => {
               const isActive = location === tab.path;
               return (
                 <Link
                   key={tab.label}
                   href={tab.path}
-                  className={`px-5 py-2.5 text-sm font-bold transition-all duration-200 ${
+                  className={`px-8 py-3.5 text-sm font-bold transition-all duration-200 border-b-2 ${
                     isActive
-                      ? "bg-white text-gray-900 shadow-sm border border-gray-200 border-b-0"
-                      : "bg-white/60 text-gray-500 hover:bg-white hover:text-gray-700 border border-transparent"
+                      ? "text-gray-900 border-gray-900"
+                      : "text-gray-400 border-transparent hover:text-gray-600"
                   }`}
                   data-testid={`tab-${tab.label}`}
                 >
@@ -102,12 +80,14 @@ function SchedulePageLayout({ grade, category, color, summaryDivision }: { grade
               );
             })}
           </div>
+        </div>
+      </div>
 
-          <div className="pb-16">
-            <TimetableGallery category={category} />
-          </div>
+      <div className="bg-gray-50 min-h-[50vh]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <TimetableGallery category={category} />
           {summaryDivision && (
-            <div className="pb-8">
+            <div className="mt-10">
               <SummaryTimetableSection division={summaryDivision} title={`${grade} 요약시간표`} />
             </div>
           )}
