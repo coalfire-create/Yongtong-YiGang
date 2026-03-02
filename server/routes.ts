@@ -105,6 +105,7 @@ async function ensureBriefingsTable() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    await pool.query(`ALTER TABLE briefings ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
   } catch (err) {
     console.error("Failed to ensure briefings table:", err);
   }
