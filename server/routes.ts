@@ -297,6 +297,7 @@ export async function registerRoutes(
     "/junior-school",
     "/junior-school/schedule",
     "/junior-school/teachers",
+    "/teachers",
     "/owl",
     "/owl/info",
     "/owl/usage",

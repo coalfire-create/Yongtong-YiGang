@@ -11,6 +11,7 @@ import { Owl, OwlInfo, OwlUsage } from "@/pages/owl";
 import { Briefing, BriefingReservation, BriefingSchedule } from "@/pages/briefing";
 import { Admissions, AdmissionsResults, AdmissionsReviews } from "@/pages/admissions";
 import { Directions } from "@/pages/directions";
+import TeachersPage from "@/pages/teachers";
 import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/junior-school" component={JuniorSchool} />
       <Route path="/junior-school/schedule" component={JuniorSchoolSchedule} />
       <Route path="/junior-school/teachers" component={JuniorSchoolTeachers} />
+      <Route path="/teachers" component={TeachersPage} />
       <Route path="/owl" component={Owl} />
       <Route path="/owl/info" component={OwlInfo} />
       <Route path="/owl/usage" component={OwlUsage} />

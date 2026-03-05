@@ -14,15 +14,19 @@ interface Teacher {
 }
 
 interface TeacherIntroPageProps {
-  division: string;
+  division?: string;
   subjects: string[];
 }
 
 export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) {
   const [selectedSubject, setSelectedSubject] = useState("ALL");
 
+  const queryKey = division
+    ? `/api/teachers?division=${encodeURIComponent(division)}`
+    : "/api/teachers";
+
   const { data: teachers = [], isLoading } = useQuery<Teacher[]>({
-    queryKey: [`/api/teachers?division=${encodeURIComponent(division)}`],
+    queryKey: [queryKey],
   });
 
   const filteredTeachers =
@@ -127,6 +131,7 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
 
   return (
     <div
+      id={`teacher-${teacher.id}`}
       className="group relative bg-gray-200 overflow-hidden rounded-lg"
       data-testid={`card-teacher-${teacher.id}`}
     >
