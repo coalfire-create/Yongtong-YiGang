@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Calendar, Trophy, BookOpen, GraduationCap, Moon, Loader2, Star, type LucideIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Trophy, BookOpen, GraduationCap, Moon, Loader2, Users, type LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 import { PageLayout } from "@/components/layout";
 import { PopupModal } from "@/components/popup-modal";
@@ -30,9 +30,9 @@ const QUICK_MENU_ITEMS = [
   { label: "고등관", sub: "자세히 보기 +", icon: GraduationCap, path: "/high-school" },
   { label: "초/중등관", sub: "자세히 보기 +", icon: BookOpen, path: "/junior-school" },
   { label: "올빼미 독학관", sub: "자세히 보기 +", icon: Moon, path: "/owl" },
-  { label: "입시실적", sub: "자세히 보기 +", icon: Trophy, path: "/admissions/results" },
+  { label: "선생님", sub: "자세히 보기 +", icon: Users, path: "/teachers" },
   { label: "설명회", sub: "자세히 보기 +", icon: Calendar, path: "/briefing" },
-  { label: "합격후기", sub: "자세히 보기 +", icon: Star, path: "/admissions/reviews" },
+  { label: "입시실적", sub: "자세히 보기 +", icon: Trophy, path: "/admissions/results" },
 ];
 
 function HeroCarousel() {
