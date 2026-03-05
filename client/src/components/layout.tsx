@@ -1,23 +1,11 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { SmsSubscribeButton } from "./sms-subscribe-modal";
 import { AuthHeaderButton } from "./auth-modal";
 import logoImg from "@assets/ikang.png";
 
-interface NavSubItem {
-  label: string;
-  path: string;
-}
-
-interface NavItem {
-  label: string;
-  path: string;
-  sub: NavSubItem[];
-}
-
-const STATIC_NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS = [
   { label: "고등관", path: "/high-school", sub: [{ label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }, { label: "요약 시간표", path: "/high-school/summary" }] },
   { label: "초/중등관", path: "/junior-school", sub: [{ label: "강의시간표", path: "/junior-school/schedule" }] },
   { label: "올빼미", path: "/owl", sub: [{ label: "독학관 안내", path: "/owl/info" }, { label: "이용 방법", path: "/owl/usage" }] },
@@ -27,35 +15,9 @@ const STATIC_NAV_ITEMS: NavItem[] = [
   { label: "오시는길", path: "/directions", sub: [] },
 ];
 
-interface Teacher {
-  id: number;
-  name: string;
-  subject: string;
-}
-
-function useNavItems(): NavItem[] {
-  const { data: teachers = [] } = useQuery<Teacher[]>({
-    queryKey: ["/api/teachers"],
-  });
-
-  return STATIC_NAV_ITEMS.map((item) => {
-    if (item.label === "선생님" && teachers.length > 0) {
-      return {
-        ...item,
-        sub: teachers.map((t) => ({
-          label: `${t.name} T`,
-          path: `/teachers#teacher-${t.id}`,
-        })),
-      };
-    }
-    return item;
-  });
-}
-
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
-  const navItems = useNavItems();
 
   useEffect(() => {
     if (mobileMenuOpen) {
@@ -69,16 +31,6 @@ export function Header() {
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location]);
-
-  const handleSubClick = (path: string) => {
-    if (path.includes("#")) {
-      const [pagePath, hash] = path.split("#");
-      if (location === pagePath || location.startsWith(pagePath + "/")) {
-        const el = document.getElementById(hash);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200" data-testid="header">
@@ -103,12 +55,12 @@ export function Header() {
           </Link>
 
           <nav className="hidden lg:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
-            {navItems.map((item) => (
+            {NAV_ITEMS.map((item) => (
               <div key={item.label} className="relative group" data-testid={`nav-item-${item.label}`}>
                 <Link
-                  href={item.path.split("#")[0]}
+                  href={item.path}
                   className={`block px-7 py-6 text-[16px] font-bold transition-colors duration-200 border-b-[3px] ${
-                    location === item.path || (item.path !== "/" && location.startsWith(item.path.split("#")[0]))
+                    location === item.path || (item.path !== "/" && location.startsWith(item.path))
                       ? "text-[#7B2332] border-[#7B2332]"
                       : "text-gray-800 border-transparent hover:text-[#7B2332] hover:border-[#7B2332]"
                   }`}
@@ -121,8 +73,7 @@ export function Header() {
                     {item.sub.map((subItem) => (
                       <Link
                         key={subItem.label}
-                        href={subItem.path.split("#")[0]}
-                        onClick={() => handleSubClick(subItem.path)}
+                        href={subItem.path}
                         className="block px-5 py-3 text-sm text-gray-600 hover:text-[#7B2332] hover:bg-gray-50 transition-colors duration-150"
                         data-testid={`link-sub-${subItem.label}`}
                       >
@@ -160,10 +111,10 @@ export function Header() {
         data-testid="nav-mobile"
       >
         <nav className="flex flex-col p-6 gap-1">
-          {navItems.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <div key={item.label}>
               <Link
-                href={item.path.split("#")[0]}
+                href={item.path}
                 className="block px-4 py-3 text-base font-semibold text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
                 data-testid={`link-mobile-nav-${item.label}`}
               >
@@ -174,8 +125,7 @@ export function Header() {
                   {item.sub.map((subItem) => (
                     <Link
                       key={subItem.label}
-                      href={subItem.path.split("#")[0]}
-                      onClick={() => handleSubClick(subItem.path)}
+                      href={subItem.path}
                       className="block px-4 py-2 text-sm text-gray-500 hover:text-red-600 transition-colors duration-200"
                       data-testid={`link-mobile-sub-${subItem.label}`}
                     >

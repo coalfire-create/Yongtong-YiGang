@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, ArrowLeft } from "lucide-react";
 import { PageLayout } from "@/components/layout";
+import { Link } from "wouter";
 
 interface Teacher {
   id: number;
@@ -125,63 +126,152 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
 }
 
 function TeacherCard({ teacher }: { teacher: Teacher }) {
-  const bioLines = teacher.description
+  return (
+    <Link
+      href={`/teachers/${teacher.id}`}
+      className="block"
+      data-testid={`card-teacher-${teacher.id}`}
+    >
+      <div
+        id={`teacher-${teacher.id}`}
+        className="group relative bg-gray-200 overflow-hidden rounded-lg cursor-pointer"
+      >
+        <div className="relative aspect-[3/4] w-full">
+          {teacher.image_url ? (
+            <img
+              src={teacher.image_url}
+              alt={teacher.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+              <svg
+                viewBox="0 0 120 160"
+                className="w-3/5 h-3/5 text-gray-300"
+                fill="currentColor"
+              >
+                <ellipse cx="60" cy="50" rx="28" ry="30" />
+                <path d="M15 160 Q15 105 60 100 Q105 105 105 160 Z" />
+              </svg>
+            </div>
+          )}
+
+          <div className="absolute top-0 left-0 right-0 p-3 sm:p-4">
+            <h3 className="text-sm sm:text-base font-extrabold text-gray-900 drop-shadow-sm" data-testid={`text-teacher-name-${teacher.id}`}>
+              {teacher.name} <span className="text-[#7B2332] font-bold">T</span>
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 mt-0.5" data-testid={`text-teacher-subject-${teacher.id}`}>
+              {teacher.subject}
+            </p>
+          </div>
+
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+            <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[#7B2332] px-4 py-2 rounded-sm">
+              자세히 보기
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export function TeacherDetailPage({ id }: { id: string }) {
+  const { data: teachers = [], isLoading } = useQuery<Teacher[]>({
+    queryKey: ["/api/teachers"],
+  });
+
+  const teacher = teachers.find((t) => t.id === Number(id));
+
+  const bioLines = teacher?.description
     ? teacher.description.split("\n").filter((l) => l.trim())
     : [];
 
   return (
-    <div
-      id={`teacher-${teacher.id}`}
-      className="group relative bg-gray-200 overflow-hidden rounded-lg"
-      data-testid={`card-teacher-${teacher.id}`}
-    >
-      <div className="relative aspect-[3/4] w-full">
-        {teacher.image_url ? (
-          <img
-            src={teacher.image_url}
-            alt={teacher.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-            <svg
-              viewBox="0 0 120 160"
-              className="w-3/5 h-3/5 text-gray-300"
-              fill="currentColor"
-            >
-              <ellipse cx="60" cy="50" rx="28" ry="30" />
-              <path d="M15 160 Q15 105 60 100 Q105 105 105 160 Z" />
-            </svg>
-          </div>
-        )}
-
-        <div className="absolute top-0 left-0 right-0 p-3 sm:p-4">
-          <h3 className="text-sm sm:text-base font-extrabold text-gray-900 drop-shadow-sm" data-testid={`text-teacher-name-${teacher.id}`}>
-            {teacher.name} <span className="text-[#7B2332] font-bold">T</span>
-          </h3>
-          <p className="text-xs sm:text-sm text-gray-600 mt-0.5" data-testid={`text-teacher-subject-${teacher.id}`}>
-            {teacher.subject}
-          </p>
+    <PageLayout>
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <Link
+            href="/teachers"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#7B2332] transition-colors"
+            data-testid="link-back-teachers"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            선생님 목록으로
+          </Link>
         </div>
+      </div>
 
-        {bioLines.length > 0 && (
-          <div className="absolute inset-0 bg-black/70 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="flex-shrink-0 pt-4 px-4 pb-2">
-              <p className="text-white font-bold text-sm sm:text-base">
-                {teacher.name} <span className="text-[#7B2332]">T</span>
-              </p>
-              <p className="text-white/60 text-xs">{teacher.subject}</p>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-0.5">
-              {bioLines.map((line, i) => (
-                <p key={i} className="text-white/90 text-xs sm:text-sm leading-relaxed">
-                  {line}
-                </p>
-              ))}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : !teacher ? (
+        <div className="text-center py-20">
+          <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-sm text-gray-400">선생님 정보를 찾을 수 없습니다.</p>
+        </div>
+      ) : (
+        <div className="bg-gray-100 min-h-[60vh]">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm">
+              <div className="flex flex-col md:flex-row">
+                <div className="md:w-[320px] flex-shrink-0">
+                  {teacher.image_url ? (
+                    <img
+                      src={teacher.image_url}
+                      alt={teacher.name}
+                      className="w-full aspect-[3/4] object-cover"
+                      data-testid="img-teacher-detail"
+                    />
+                  ) : (
+                    <div className="w-full aspect-[3/4] bg-gray-200 flex items-center justify-center">
+                      <svg
+                        viewBox="0 0 120 160"
+                        className="w-2/5 h-2/5 text-gray-300"
+                        fill="currentColor"
+                      >
+                        <ellipse cx="60" cy="50" rx="28" ry="30" />
+                        <path d="M15 160 Q15 105 60 100 Q105 105 105 160 Z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 p-6 sm:p-8">
+                  <div className="mb-6">
+                    <span className="inline-block text-xs font-bold px-3 py-1 bg-[#7B2332] text-white rounded-sm mb-3">
+                      {teacher.subject}
+                    </span>
+                    <h1
+                      className="text-2xl sm:text-3xl font-extrabold text-gray-900"
+                      data-testid="text-teacher-detail-name"
+                    >
+                      {teacher.name} <span className="text-[#7B2332]">T</span>
+                    </h1>
+                    {teacher.division && (
+                      <p className="text-sm text-gray-500 mt-1">{teacher.division}</p>
+                    )}
+                  </div>
+
+                  {bioLines.length > 0 && (
+                    <div className="border-t border-gray-200 pt-6">
+                      <h2 className="text-sm font-bold text-gray-900 mb-4 tracking-wider uppercase">Profile</h2>
+                      <div className="space-y-1.5">
+                        {bioLines.map((line, i) => (
+                          <p key={i} className="text-sm text-gray-600 leading-relaxed" data-testid={`text-bio-line-${i}`}>
+                            {line}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </PageLayout>
   );
 }
