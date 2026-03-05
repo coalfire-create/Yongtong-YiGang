@@ -35,51 +35,39 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
       ? teachers
       : teachers.filter((t) => t.subject === selectedSubject);
 
-  const subjectGroups = selectedSubject === "ALL"
-    ? subjects.filter((s) => filteredTeachers.some((t) => t.subject === s))
-    : [selectedSubject];
+  const tabs = [{ key: "ALL", label: "전체" }, ...subjects.map((s) => ({ key: s, label: s }))];
 
   return (
     <PageLayout>
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 text-center">
+      <div className="bg-white min-h-screen">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1
-            className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight"
+            className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight pt-10 sm:pt-14 pb-6"
             data-testid="text-teacher-intro-title"
           >
-            선생님 소개
+            선생님
           </h1>
-        </div>
-      </div>
-      <div className="bg-gray-100 min-h-screen">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
 
-          <div className="flex flex-wrap justify-center gap-2 mb-10" data-testid="filter-subjects">
-            <button
-              onClick={() => setSelectedSubject("ALL")}
-              className={`px-6 py-2.5 text-sm font-semibold rounded-sm transition-colors ${
-                selectedSubject === "ALL"
-                  ? "bg-[#7B2332] text-white"
-                  : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
-              }`}
-              data-testid="filter-subject-all"
-            >
-              ALL
-            </button>
-            {subjects.map((s) => (
-              <button
-                key={s}
-                onClick={() => setSelectedSubject(s)}
-                className={`px-6 py-2.5 text-sm font-semibold rounded-sm transition-colors ${
-                  selectedSubject === s
-                    ? "bg-[#7B2332] text-white"
-                    : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
-                }`}
-                data-testid={`filter-subject-${s}`}
-              >
-                {s}
-              </button>
-            ))}
+          <div className="border-b border-gray-200 mb-8" data-testid="filter-subjects">
+            <div className="flex gap-0 overflow-x-auto">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setSelectedSubject(tab.key)}
+                  className={`relative px-5 sm:px-7 py-3 text-sm sm:text-[15px] font-semibold whitespace-nowrap transition-colors ${
+                    selectedSubject === tab.key
+                      ? "text-[#7B2332]"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                  data-testid={`filter-subject-${tab.key === "ALL" ? "all" : tab.key}`}
+                >
+                  {tab.label}
+                  {selectedSubject === tab.key && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#7B2332]" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           {isLoading ? (
@@ -92,31 +80,10 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
               <p className="text-sm text-gray-400">등록된 선생님이 없습니다.</p>
             </div>
           ) : (
-            <div className="space-y-12">
-              {subjectGroups.map((subj) => {
-                const groupTeachers = filteredTeachers.filter(
-                  (t) => t.subject === subj
-                );
-                if (groupTeachers.length === 0) return null;
-                return (
-                  <div key={subj}>
-                    <div className="flex items-center gap-2 mb-5">
-                      <div className="w-1 h-5 bg-[#7B2332]" />
-                      <h2
-                        className="text-lg font-extrabold text-gray-900"
-                        data-testid={`text-subject-group-${subj}`}
-                      >
-                        {subj}
-                      </h2>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {groupTeachers.map((teacher) => (
-                        <TeacherCard key={teacher.id} teacher={teacher} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 pb-14">
+              {filteredTeachers.map((teacher) => (
+                <TeacherCard key={teacher.id} teacher={teacher} />
+              ))}
             </div>
           )}
         </div>
@@ -126,6 +93,10 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
 }
 
 function TeacherCard({ teacher }: { teacher: Teacher }) {
+  const bioLines = teacher.description
+    ? teacher.description.split("\n").filter((l) => l.trim()).slice(0, 3)
+    : [];
+
   return (
     <Link
       href={`/teachers/${teacher.id}`}
@@ -134,20 +105,44 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
     >
       <div
         id={`teacher-${teacher.id}`}
-        className="group relative bg-gray-200 overflow-hidden rounded-lg cursor-pointer"
+        className="flex items-stretch border-b border-gray-200 py-6 gap-4 group cursor-pointer"
       >
-        <div className="relative aspect-[3/4] w-full">
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <h3
+            className="text-base sm:text-lg font-extrabold text-gray-900 mb-0.5"
+            data-testid={`text-teacher-subject-${teacher.id}`}
+          >
+            {teacher.subject}
+          </h3>
+          <p
+            className="text-sm text-gray-500 mb-2"
+            data-testid={`text-teacher-name-${teacher.id}`}
+          >
+            {teacher.name} 선생님
+          </p>
+          {bioLines.length > 0 && (
+            <div className="space-y-0.5 mt-1">
+              {bioLines.map((line, i) => (
+                <p key={i} className="text-xs text-gray-400 leading-relaxed truncate">
+                  {line}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-shrink-0 w-[120px] sm:w-[140px]">
           {teacher.image_url ? (
             <img
               src={teacher.image_url}
               alt={teacher.name}
-              className="w-full h-full object-cover"
+              className="w-full h-[150px] sm:h-[175px] object-cover rounded-sm"
             />
           ) : (
-            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <div className="w-full h-[150px] sm:h-[175px] bg-gray-100 rounded-sm flex items-center justify-center">
               <svg
                 viewBox="0 0 120 160"
-                className="w-3/5 h-3/5 text-gray-300"
+                className="w-12 h-16 text-gray-300"
                 fill="currentColor"
               >
                 <ellipse cx="60" cy="50" rx="28" ry="30" />
@@ -155,21 +150,6 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
               </svg>
             </div>
           )}
-
-          <div className="absolute top-0 left-0 right-0 p-3 sm:p-4">
-            <h3 className="text-sm sm:text-base font-extrabold text-gray-900 drop-shadow-sm" data-testid={`text-teacher-name-${teacher.id}`}>
-              {teacher.name} <span className="text-[#7B2332] font-bold">T</span>
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-600 mt-0.5" data-testid={`text-teacher-subject-${teacher.id}`}>
-              {teacher.subject}
-            </p>
-          </div>
-
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
-            <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[#7B2332] px-4 py-2 rounded-sm">
-              자세히 보기
-            </span>
-          </div>
         </div>
       </div>
     </Link>
@@ -189,46 +169,46 @@ export function TeacherDetailPage({ id }: { id: string }) {
 
   return (
     <PageLayout>
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Link
-            href="/teachers"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#7B2332] transition-colors"
-            data-testid="link-back-teachers"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            선생님 목록으로
-          </Link>
+      <div className="bg-white min-h-screen">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="pt-6 pb-4">
+            <Link
+              href="/teachers"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#7B2332] transition-colors"
+              data-testid="link-back-teachers"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              선생님 목록으로
+            </Link>
+          </div>
         </div>
-      </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-        </div>
-      ) : !teacher ? (
-        <div className="text-center py-20">
-          <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-400">선생님 정보를 찾을 수 없습니다.</p>
-        </div>
-      ) : (
-        <div className="bg-gray-100 min-h-[60vh]">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm">
-              <div className="flex flex-col md:flex-row">
-                <div className="md:w-[320px] flex-shrink-0">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+          </div>
+        ) : !teacher ? (
+          <div className="text-center py-20">
+            <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-400">선생님 정보를 찾을 수 없습니다.</p>
+          </div>
+        ) : (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-14">
+            <div className="border-b border-gray-200 pb-8 mb-8">
+              <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
+                <div className="flex-shrink-0 w-full sm:w-[260px]">
                   {teacher.image_url ? (
                     <img
                       src={teacher.image_url}
                       alt={teacher.name}
-                      className="w-full aspect-[3/4] object-cover"
+                      className="w-full aspect-[3/4] object-cover rounded-sm"
                       data-testid="img-teacher-detail"
                     />
                   ) : (
-                    <div className="w-full aspect-[3/4] bg-gray-200 flex items-center justify-center">
+                    <div className="w-full aspect-[3/4] bg-gray-100 rounded-sm flex items-center justify-center">
                       <svg
                         viewBox="0 0 120 160"
-                        className="w-2/5 h-2/5 text-gray-300"
+                        className="w-1/4 h-1/4 text-gray-300"
                         fill="currentColor"
                       >
                         <ellipse cx="60" cy="50" rx="28" ry="30" />
@@ -238,40 +218,38 @@ export function TeacherDetailPage({ id }: { id: string }) {
                   )}
                 </div>
 
-                <div className="flex-1 p-6 sm:p-8">
-                  <div className="mb-6">
-                    <span className="inline-block text-xs font-bold px-3 py-1 bg-[#7B2332] text-white rounded-sm mb-3">
-                      {teacher.subject}
-                    </span>
-                    <h1
-                      className="text-2xl sm:text-3xl font-extrabold text-gray-900"
-                      data-testid="text-teacher-detail-name"
-                    >
-                      {teacher.name} <span className="text-[#7B2332]">T</span>
-                    </h1>
-                    {teacher.division && (
-                      <p className="text-sm text-gray-500 mt-1">{teacher.division}</p>
-                    )}
-                  </div>
-
-                  {bioLines.length > 0 && (
-                    <div className="border-t border-gray-200 pt-6">
-                      <h2 className="text-sm font-bold text-gray-900 mb-4 tracking-wider uppercase">Profile</h2>
-                      <div className="space-y-1.5">
-                        {bioLines.map((line, i) => (
-                          <p key={i} className="text-sm text-gray-600 leading-relaxed" data-testid={`text-bio-line-${i}`}>
-                            {line}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
+                <div className="flex-1 flex flex-col justify-center">
+                  <span className="text-sm font-bold text-[#7B2332] mb-1">
+                    {teacher.subject}
+                  </span>
+                  <h1
+                    className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-1"
+                    data-testid="text-teacher-detail-name"
+                  >
+                    {teacher.name} <span className="text-gray-400 font-medium text-lg sm:text-xl">선생님</span>
+                  </h1>
+                  {teacher.division && (
+                    <p className="text-sm text-gray-400 mt-1">{teacher.division}</p>
                   )}
                 </div>
               </div>
             </div>
+
+            {bioLines.length > 0 && (
+              <div>
+                <h2 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Profile</h2>
+                <div className="space-y-1.5">
+                  {bioLines.map((line, i) => (
+                    <p key={i} className="text-sm text-gray-500 leading-relaxed" data-testid={`text-bio-line-${i}`}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </PageLayout>
   );
 }
