@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { SmsSubscribeButton } from "./sms-subscribe-modal";
-import { AuthHeaderButton } from "./auth-modal";
 import logoImg from "@assets/ikang.png";
 
 const NAV_ITEMS = [
@@ -86,12 +85,7 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
-            <AuthHeaderButton />
-          </div>
-
           <div className="flex items-center gap-2 lg:hidden">
-            <AuthHeaderButton />
             <button
               className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

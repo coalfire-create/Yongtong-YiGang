@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/components/auth-modal";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, Calendar, Clock, BookOpen, User, GraduationCap, ChevronDown, ChevronUp } from "lucide-react";
+import { ReservationModal } from "./reservation-modal";
 
 interface Timetable {
   id: number;
@@ -22,8 +21,8 @@ interface Timetable {
 const SUBJECT_ORDER = ["수학", "국어", "영어", "탐구"];
 
 export function TimetableGallery({ category }: { category: string }) {
-  const { member, openLoginModal } = useAuth();
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [reserveTarget, setReserveTarget] = useState<{ id: number; name: string } | null>(null);
 
   const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables", category],
@@ -33,34 +32,6 @@ export function TimetableGallery({ category }: { category: string }) {
       return res.json();
     },
   });
-
-  const reserveMutation = useMutation({
-    mutationFn: async (timetable_id: number) => {
-      const res = await apiRequest("POST", "/api/reservations", { timetable_id });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "예약 실패");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      alert("예약이 완료되었습니다.");
-    },
-    onError: (err: Error) => {
-      alert(err.message);
-    },
-  });
-
-  const handleReserve = (tt: Timetable) => {
-    if (!member) {
-      alert("로그인이 필요합니다.");
-      openLoginModal();
-      return;
-    }
-    if (confirm(`"${tt.class_name}" 수업을 예약하시겠습니까?`)) {
-      reserveMutation.mutate(tt.id);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -95,66 +66,72 @@ export function TimetableGallery({ category }: { category: string }) {
   const hasGroups = orderedSubjects.length > 0;
 
   return (
-    <div data-testid="timetable-list">
-      {hasGroups ? (
-        <div className="space-y-8">
-          {orderedSubjects.map((subj) => (
-            <div key={subj}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1 h-5 bg-[#7B2332]" />
-                <h3 className="text-lg font-bold text-gray-900" data-testid={`text-subject-group-${subj}`}>{subj}</h3>
-                <span className="text-xs text-gray-400 ml-1">({grouped[subj].length})</span>
+    <>
+      <div data-testid="timetable-list">
+        {hasGroups ? (
+          <div className="space-y-8">
+            {orderedSubjects.map((subj) => (
+              <div key={subj}>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-5 bg-[#7B2332]" />
+                  <h3 className="text-lg font-bold text-gray-900" data-testid={`text-subject-group-${subj}`}>{subj}</h3>
+                  <span className="text-xs text-gray-400 ml-1">({grouped[subj].length})</span>
+                </div>
+                <div className="space-y-3">
+                  {grouped[subj].map((tt) => (
+                    <TimetableCard
+                      key={tt.id}
+                      tt={tt}
+                      expanded={expandedId === tt.id}
+                      onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
+                      onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name })}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="space-y-3">
-                {grouped[subj].map((tt) => (
-                  <TimetableCard
-                    key={tt.id}
-                    tt={tt}
-                    expanded={expandedId === tt.id}
-                    onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                    onReserve={() => handleReserve(tt)}
-                    reservePending={reserveMutation.isPending}
-                  />
-                ))}
+            ))}
+            {ungrouped.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-5 bg-gray-400" />
+                  <h3 className="text-lg font-bold text-gray-900">기타</h3>
+                </div>
+                <div className="space-y-3">
+                  {ungrouped.map((tt) => (
+                    <TimetableCard
+                      key={tt.id}
+                      tt={tt}
+                      expanded={expandedId === tt.id}
+                      onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
+                      onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name })}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-          {ungrouped.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1 h-5 bg-gray-400" />
-                <h3 className="text-lg font-bold text-gray-900">기타</h3>
-              </div>
-              <div className="space-y-3">
-                {ungrouped.map((tt) => (
-                  <TimetableCard
-                    key={tt.id}
-                    tt={tt}
-                    expanded={expandedId === tt.id}
-                    onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                    onReserve={() => handleReserve(tt)}
-                    reservePending={reserveMutation.isPending}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {timetables.map((tt) => (
-            <TimetableCard
-              key={tt.id}
-              tt={tt}
-              expanded={expandedId === tt.id}
-              onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-              onReserve={() => handleReserve(tt)}
-              reservePending={reserveMutation.isPending}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {timetables.map((tt) => (
+              <TimetableCard
+                key={tt.id}
+                tt={tt}
+                expanded={expandedId === tt.id}
+                onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
+                onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name })}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <ReservationModal
+        open={!!reserveTarget}
+        onClose={() => setReserveTarget(null)}
+        timetableId={reserveTarget?.id}
+        className={reserveTarget?.name}
+      />
+    </>
   );
 }
 
@@ -163,13 +140,11 @@ function TimetableCard({
   expanded,
   onToggle,
   onReserve,
-  reservePending,
 }: {
   tt: Timetable;
   expanded: boolean;
   onToggle: () => void;
   onReserve: () => void;
-  reservePending: boolean;
 }) {
   return (
     <div
@@ -238,15 +213,10 @@ function TimetableCard({
             )}
             <button
               onClick={onReserve}
-              disabled={reservePending}
-              className="px-5 py-2.5 bg-[#7B2332] text-white text-sm font-bold hover:bg-[#6B1D2A] disabled:opacity-50 transition-colors"
+              className="px-5 py-2.5 bg-[#7B2332] text-white text-sm font-bold hover:bg-[#6B1D2A] transition-colors"
               data-testid={`button-reserve-${tt.id}`}
             >
-              {reservePending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "수강예약"
-              )}
+              수강예약
             </button>
           </div>
         </div>

@@ -164,11 +164,27 @@ async function ensureReservationsTable() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS reservations (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        timetable_id INTEGER NOT NULL,
+        user_id INTEGER,
+        timetable_id INTEGER,
+        student_name TEXT,
+        student_phone TEXT,
+        parent_phone TEXT,
+        school TEXT,
+        class_name TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    const cols = [
+      { name: "timetable_id", type: "INTEGER" },
+      { name: "student_name", type: "TEXT" },
+      { name: "student_phone", type: "TEXT" },
+      { name: "parent_phone", type: "TEXT" },
+      { name: "school", type: "TEXT" },
+      { name: "class_name", type: "TEXT" },
+    ];
+    for (const col of cols) {
+      await pool.query(`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
+    }
   } catch (err) {
     console.error("Failed to ensure reservations table:", err);
   }
@@ -594,46 +610,49 @@ export async function registerRoutes(
 
   // ========== RESERVATIONS ==========
   app.post("/api/reservations", async (req, res) => {
-    const member = (req.session as any)?.member;
-    if (!member) {
-      return res.status(401).json({ error: "로그인이 필요합니다." });
+    const { timetable_id, student_name, student_phone, parent_phone, school } = req.body;
+
+    if (!student_name || !student_name.trim()) {
+      return res.status(400).json({ error: "학생 이름을 입력해 주세요." });
     }
-    const { timetable_id } = req.body;
-    if (!timetable_id) {
-      return res.status(400).json({ error: "수업을 선택해 주세요." });
+    if (!parent_phone || !parent_phone.trim()) {
+      return res.status(400).json({ error: "부모님 전화번호를 입력해 주세요." });
     }
+    if (!school || !school.trim()) {
+      return res.status(400).json({ error: "재학중인 학교를 입력해 주세요." });
+    }
+
+    const phoneRegex = /^01[0-9]-?\d{3,4}-?\d{4}$/;
+    if (!phoneRegex.test(parent_phone.replace(/\s/g, ""))) {
+      return res.status(400).json({ error: "부모님 전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)" });
+    }
+    if (student_phone && student_phone.trim() && !phoneRegex.test(student_phone.replace(/\s/g, ""))) {
+      return res.status(400).json({ error: "학생 전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)" });
+    }
+
     try {
-      const { rows: existing } = await pool.query(
-        "SELECT id FROM reservations WHERE user_id = $1 AND timetable_id = $2",
-        [member.id, timetable_id]
-      );
-      if (existing.length > 0) {
-        return res.status(400).json({ error: "이미 예약한 수업입니다." });
+      let className = "";
+      if (timetable_id) {
+        const { rows: ttRows } = await pool.query(
+          "SELECT class_name FROM timetables WHERE id = $1",
+          [timetable_id]
+        );
+        if (ttRows[0]) className = ttRows[0].class_name;
       }
+
       const { rows } = await pool.query(
-        "INSERT INTO reservations (user_id, timetable_id) VALUES ($1, $2) RETURNING *",
-        [member.id, timetable_id]
+        `INSERT INTO reservations (timetable_id, student_name, student_phone, parent_phone, school, class_name)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [timetable_id || null, student_name.trim(), (student_phone || "").trim(), parent_phone.trim(), school.trim(), className]
       );
 
-      const { rows: memberRows } = await pool.query(
-        "SELECT student_name, school, grade, student_phone FROM members WHERE id = $1",
-        [member.id]
-      );
-      const { rows: ttRows } = await pool.query(
-        "SELECT class_name FROM timetables WHERE id = $1",
-        [timetable_id]
-      );
-      const m = memberRows[0];
-      const tt = ttRows[0];
-      if (m && tt) {
-        appendReservationRow({
-          studentName: m.student_name || "",
-          school: m.school || "",
-          grade: m.grade || "",
-          phone: m.student_phone || "",
-          className: tt.class_name || "",
-        }).catch(() => {});
-      }
+      appendReservationRow({
+        studentName: student_name.trim(),
+        school: school.trim(),
+        grade: "",
+        phone: parent_phone.trim(),
+        className: className,
+      }).catch(() => {});
 
       res.json(rows[0]);
     } catch (err: any) {
@@ -644,11 +663,10 @@ export async function registerRoutes(
   app.get("/api/admin/reservations", requireAdmin, async (_req, res) => {
     try {
       const { rows } = await pool.query(`
-        SELECT r.id, r.created_at, r.timetable_id, r.user_id,
-               m.student_name, m.student_phone, m.parent_phone, m.school as student_school, m.grade as student_grade,
-               t.class_name, t.teacher_name, t.target_school, t.class_time, t.start_date, t.category
+        SELECT r.id, r.created_at, r.timetable_id,
+               r.student_name, r.student_phone, r.parent_phone, r.school as student_school, r.class_name,
+               t.teacher_name, t.target_school, t.class_time, t.start_date, t.category
         FROM reservations r
-        LEFT JOIN members m ON r.user_id = m.id
         LEFT JOIN timetables t ON r.timetable_id = t.id
         ORDER BY r.created_at DESC
       `);

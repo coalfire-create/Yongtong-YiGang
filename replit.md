@@ -58,17 +58,16 @@ The project is organized into three main directories:
 - **Schema Push:** Use `npm run db:push` (runs `drizzle-kit push`)
 - **Connection:** Requires `DATABASE_URL` environment variable
 
-## User Authentication
+## Reservation System
 
-- **Component:** `client/src/components/auth-modal.tsx` - Login/Register modals with full registration form
-- **Auth Context:** `AuthProvider` wraps the app in `App.tsx`, provides `useAuth()` hook
-- **Header Integration:** `AuthHeaderButton` shows login/register buttons or user info/logout in header
-- **DB Tables:** `members` (id, username, password, member_type, student_name, gender, track, grade, school, student_phone, parent_phone, birthday, subject, email, academy_status, created_at) and `phone_verifications` (id, phone, code, expires_at, verified, created_at) - auto-created on server start
-- **Registration:** Student/Parent type selection, ID with duplicate check, password, student info (name, gender, track, grade, school), phone verification (mock), parent phone, birthday, subject, email, academy status, terms agreement
-- **Auth Routes:** `/api/auth/register`, `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/check-username`, `/api/auth/phone/send`, `/api/auth/phone/verify`
-- **Phone Auth:** `/api/auth/phone/send` (mock - logs code to console) + `/api/auth/phone/verify`
-- **Session:** Member stored as `req.session.member` with `{ id, name, username, memberType }`
-- **Password:** Hashed with bcryptjs
+- **Component:** `client/src/components/reservation-modal.tsx` - Modal form for course reservations
+- **No Login Required:** Reservations are anonymous; no user authentication needed
+- **Form Fields:** Student name (required), student phone (optional), parent phone (required), school (required)
+- **Validation:** Phone numbers validated with Korean format (010-XXXX-XXXX), required fields enforced
+- **DB Table:** `reservations` (id, timetable_id, student_name, student_phone, parent_phone, school, class_name, created_at) - auto-created on server start
+- **API:** `POST /api/reservations` accepts form data directly; `GET /api/admin/reservations` for admin view
+- **Google Sheets Sync:** Reservation data synced to Google Sheets on submission
+- **Auth files preserved:** `client/src/components/auth-modal.tsx` still exists but is no longer used in the app (AuthProvider removed from App.tsx, AuthHeaderButton removed from header)
 
 ## Popup Feature
 
