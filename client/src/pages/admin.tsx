@@ -51,7 +51,7 @@ interface Reservation {
 }
 
 const SUBJECT_OPTIONS: Record<string, string[]> = {
-  "고등관": ["수학", "국어", "영어", "탐구"],
+  "고등관": ["수학", "국어", "영어", "탐구", "논술"],
   "초/중등관": ["수학", "국어", "영어", "탐구"],
 };
 
