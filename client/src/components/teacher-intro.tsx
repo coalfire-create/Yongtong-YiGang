@@ -200,32 +200,31 @@ export function TeacherDetailPage({ id }: { id: string }) {
             <p className="text-sm text-gray-400">선생님 정보를 찾을 수 없습니다.</p>
           </div>
         ) : hasImages ? (
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-14">
-            <div className="mb-6">
-              <span className="text-sm font-bold text-[#7B2332]">{teacher.subject}</span>
-              <h1
-                className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-1"
-                data-testid="text-teacher-detail-name"
-              >
-                {teacher.name} <span className="text-gray-400 font-medium text-lg sm:text-xl">선생님</span>
-              </h1>
-            </div>
-            <div className="space-y-4">
-              {teacherImages.map((img) => (
-                <img
-                  key={img.id}
-                  src={img.image_url}
-                  alt={`${teacher.name} 선생님`}
-                  className="w-full rounded-sm"
-                  data-testid={`img-teacher-detail-${img.id}`}
-                />
-              ))}
-            </div>
+          <div className="pb-0">
+            {teacherImages.map((img) => (
+              <img
+                key={img.id}
+                src={img.image_url}
+                alt={`${teacher.name} 선생님 브로셔`}
+                className="w-full block"
+                data-testid={`img-teacher-detail-${img.id}`}
+              />
+            ))}
           </div>
         ) : (
           <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-14">
             <div className="border-b border-gray-200 pb-8 mb-8">
-              <div className="flex flex-col gap-6 sm:gap-8">
+              <div className={`flex flex-col ${teacher.image_url ? "sm:flex-row" : ""} gap-6 sm:gap-8`}>
+                {teacher.image_url && (
+                  <div className="flex-shrink-0 w-full sm:w-[260px]">
+                    <img
+                      src={teacher.image_url}
+                      alt={teacher.name}
+                      className="w-full aspect-[3/4] object-cover rounded-sm"
+                      data-testid="img-teacher-detail"
+                    />
+                  </div>
+                )}
                 <div className="flex-1 flex flex-col justify-center">
                   <span className="text-sm font-bold text-[#7B2332] mb-1">
                     {teacher.subject}

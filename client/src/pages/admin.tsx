@@ -440,7 +440,7 @@ function TeacherImagesManager({ teacherId, teacherName }: { teacherId: number; t
         data-testid={`button-toggle-images-${teacherId}`}
       >
         <Image className="w-3.5 h-3.5" />
-        상세 사진 관리 ({expanded ? "접기" : "펼치기"})
+        브로셔 관리 ({expanded ? "접기" : "펼치기"})
       </button>
 
       {expanded && (
@@ -463,7 +463,7 @@ function TeacherImagesManager({ teacherId, teacherName }: { teacherId: number; t
               <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
             </div>
           ) : images.length === 0 ? (
-            <p className="text-xs text-gray-400">등록된 상세 사진이 없습니다.</p>
+            <p className="text-xs text-gray-400">등록된 브로셔가 없습니다. 브로셔를 올리면 선생님 클릭 시 브로셔가 화면에 꽉 차게 보입니다.</p>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {images.map((img) => (
