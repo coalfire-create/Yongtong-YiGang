@@ -86,21 +86,23 @@ export function TimetableGallery({ category, filterTabs }: TimetableGalleryProps
   return (
     <>
       {filterTabs && filterTabs.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6" data-testid="filter-tabs">
-          {filterTabs.map((tab, idx) => (
-            <button
-              key={tab.label}
-              onClick={() => { setSelectedFilter(idx); setExpandedId(null); }}
-              className={`px-4 py-2 text-sm font-semibold rounded-sm border transition-colors ${
-                selectedFilter === idx
-                  ? "bg-[#7B2332] text-white border-[#7B2332]"
-                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-              }`}
-              data-testid={`filter-tab-${tab.label}`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="border border-gray-300 mb-8" data-testid="filter-tabs">
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8">
+            {filterTabs.map((tab, idx) => (
+              <button
+                key={tab.label}
+                onClick={() => { setSelectedFilter(idx); setExpandedId(null); }}
+                className={`px-3 py-2.5 text-sm font-medium transition-colors border-r border-b border-gray-300 last:border-r-0 ${
+                  selectedFilter === idx
+                    ? "bg-[#7B2332] text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+                data-testid={`filter-tab-${tab.label}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
