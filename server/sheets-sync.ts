@@ -1,49 +1,6 @@
-import { getUncachableGoogleSheetClient } from "./googleSheets";
-
-let cachedSpreadsheetId: string | null = null;
-
-const SHEET_TITLE = "접수현황";
-const HEADERS = ["신청일시", "구분", "과목명", "강사명", "수업명", "학생이름", "학생전화번호", "부모님전화번호", "재학중인학교"];
-
-function formatDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  const h = String(date.getHours()).padStart(2, "0");
-  const min = String(date.getMinutes()).padStart(2, "0");
-  return `${y}-${m}-${d} ${h}:${min}`;
-}
-
-async function getOrCreateSpreadsheet(): Promise<string> {
-  if (cachedSpreadsheetId) return cachedSpreadsheetId;
-
-  const envId = process.env.GOOGLE_SHEET_ID;
-  if (envId) {
-    cachedSpreadsheetId = envId;
-    return envId;
-  }
-
-  const sheets = await getUncachableGoogleSheetClient();
-  const res = await sheets.spreadsheets.create({
-    requestBody: {
-      properties: { title: "영통이강학원 접수현황" },
-      sheets: [{ properties: { title: SHEET_TITLE } }],
-    },
-  });
-
-  const id = res.data.spreadsheetId!;
-  cachedSpreadsheetId = id;
-  console.log(`[Google Sheets] 새 스프레드시트 생성됨: https://docs.google.com/spreadsheets/d/${id}`);
-
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: id,
-    range: `${SHEET_TITLE}!A1:I1`,
-    valueInputOption: "RAW",
-    requestBody: { values: [HEADERS] },
-  });
-
-  return id;
-}
+const WEBHOOK_URL =
+  process.env.GOOGLE_WEBHOOK_URL ||
+  "https://script.google.com/macros/s/AKfycbyNT3GCAdc0JLSR2qB6ThMWJlSbrejYQfOeviDhd1MedXfm-3u_J3glpiPkKzPc_KY/exec";
 
 export async function appendReservationRow(data: {
   subject: string;
@@ -55,28 +12,26 @@ export async function appendReservationRow(data: {
   school: string;
 }) {
   try {
-    const spreadsheetId = await getOrCreateSpreadsheet();
-    const sheets = await getUncachableGoogleSheetClient();
-    await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: `${SHEET_TITLE}!A:I`,
-      valueInputOption: "RAW",
-      requestBody: {
-        values: [[
-          formatDate(new Date()),
-          "수강예약",
-          data.subject,
-          data.teacherName,
-          data.className,
-          data.studentName,
-          data.studentPhone,
-          data.parentPhone,
-          data.school,
-        ]],
-      },
+    const res = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subject: data.subject,
+        teacherName: data.teacherName,
+        className: data.className,
+        studentName: data.studentName,
+        studentPhone: data.studentPhone,
+        parentPhone: data.parentPhone,
+        school: data.school,
+      }),
     });
+    if (!res.ok) {
+      console.error("[Webhook] 수강예약 전송 실패:", res.status, await res.text());
+    } else {
+      console.log("[Webhook] 수강예약 전송 성공");
+    }
   } catch (err) {
-    console.error("[Google Sheets] 수강예약 기록 실패:", err);
+    console.error("[Webhook] 수강예약 전송 실패:", err);
   }
 }
 
@@ -85,25 +40,21 @@ export async function appendSmsRow(data: {
   phone: string;
 }) {
   try {
-    const spreadsheetId = await getOrCreateSpreadsheet();
-    const sheets = await getUncachableGoogleSheetClient();
-    await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: `${SHEET_TITLE}!A:G`,
-      valueInputOption: "RAW",
-      requestBody: {
-        values: [[
-          formatDate(new Date()),
-          "문자수신",
-          data.name || "-",
-          "-",
-          "-",
-          data.phone,
-          "-",
-        ]],
-      },
+    const res = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "문자수신",
+        name: data.name || "-",
+        phone: data.phone,
+      }),
     });
+    if (!res.ok) {
+      console.error("[Webhook] 문자수신 전송 실패:", res.status, await res.text());
+    } else {
+      console.log("[Webhook] 문자수신 전송 성공");
+    }
   } catch (err) {
-    console.error("[Google Sheets] 문자수신 기록 실패:", err);
+    console.error("[Webhook] 문자수신 전송 실패:", err);
   }
 }
