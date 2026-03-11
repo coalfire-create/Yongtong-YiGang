@@ -131,26 +131,15 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
           )}
         </div>
 
-        <div className="flex-shrink-0 w-[120px] sm:w-[140px]">
-          {teacher.image_url ? (
+        {teacher.image_url && (
+          <div className="flex-shrink-0 w-[120px] sm:w-[140px]">
             <img
               src={teacher.image_url}
               alt={teacher.name}
               className="w-full h-[150px] sm:h-[175px] object-cover rounded-sm"
             />
-          ) : (
-            <div className="w-full h-[150px] sm:h-[175px] bg-gray-100 rounded-sm flex items-center justify-center">
-              <svg
-                viewBox="0 0 120 160"
-                className="w-12 h-16 text-gray-300"
-                fill="currentColor"
-              >
-                <ellipse cx="60" cy="50" rx="28" ry="30" />
-                <path d="M15 160 Q15 105 60 100 Q105 105 105 160 Z" />
-              </svg>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -195,28 +184,17 @@ export function TeacherDetailPage({ id }: { id: string }) {
         ) : (
           <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-14">
             <div className="border-b border-gray-200 pb-8 mb-8">
-              <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
-                <div className="flex-shrink-0 w-full sm:w-[260px]">
-                  {teacher.image_url ? (
+              <div className={`flex flex-col ${teacher.image_url ? "sm:flex-row" : ""} gap-6 sm:gap-8`}>
+                {teacher.image_url && (
+                  <div className="flex-shrink-0 w-full sm:w-[260px]">
                     <img
                       src={teacher.image_url}
                       alt={teacher.name}
                       className="w-full aspect-[3/4] object-cover rounded-sm"
                       data-testid="img-teacher-detail"
                     />
-                  ) : (
-                    <div className="w-full aspect-[3/4] bg-gray-100 rounded-sm flex items-center justify-center">
-                      <svg
-                        viewBox="0 0 120 160"
-                        className="w-1/4 h-1/4 text-gray-300"
-                        fill="currentColor"
-                      >
-                        <ellipse cx="60" cy="50" rx="28" ry="30" />
-                        <path d="M15 160 Q15 105 60 100 Q105 105 105 160 Z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <div className="flex-1 flex flex-col justify-center">
                   <span className="text-sm font-bold text-[#7B2332] mb-1">
