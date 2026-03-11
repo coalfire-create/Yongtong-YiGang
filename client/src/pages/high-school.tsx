@@ -5,6 +5,7 @@ import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 import { BannerCarousel } from "@/components/banner-carousel";
 import { SummaryTimetableSection } from "@/components/summary-timetable";
+import { useQuery } from "@tanstack/react-query";
 
 const HIGH_SCHOOL_SUBJECTS = ["수학", "국어", "영어", "탐구"];
 
@@ -65,7 +66,29 @@ interface FilterTab {
   isSummary?: boolean;
 }
 
-const G1_FILTERS: FilterTab[] = [
+function buildFilterFn(label: string): (tt: any) => boolean {
+  if (label === "요약시간표") return () => false;
+  if (label === "전체시간표" || label === "전체") return () => true;
+  if (label === "수학/탐구") return (tt) => tt.subject === "수학" || tt.subject === "탐구";
+  const SUBJECTS = ["국어", "영어", "수학", "탐구", "생명과학", "사회문화", "생윤", "논술"];
+  if (SUBJECTS.includes(label)) {
+    return (tt) =>
+      (tt.target_school || "") === label ||
+      (tt.subject || "").includes(label) ||
+      (tt.class_name || "").includes(label);
+  }
+  return (tt) => (tt.target_school || "").includes(label);
+}
+
+function buildFilterTabs(apiTabs: { id: number; label: string }[]): FilterTab[] {
+  return apiTabs.map((tab) => ({
+    label: tab.label,
+    filterFn: buildFilterFn(tab.label),
+    isSummary: tab.label === "요약시간표",
+  }));
+}
+
+const G1_FILTERS_DEFAULT: FilterTab[] = [
   { label: "요약시간표", filterFn: () => false, isSummary: true },
   { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => (tt.target_school || "").includes("화성고") },
@@ -77,7 +100,7 @@ const G1_FILTERS: FilterTab[] = [
   { label: "수학/탐구", filterFn: (tt) => tt.subject === "수학" || tt.subject === "탐구" },
 ];
 
-const G2_FILTERS: FilterTab[] = [
+const G2_FILTERS_DEFAULT: FilterTab[] = [
   { label: "요약시간표", filterFn: () => false, isSummary: true },
   { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => (tt.target_school || "").includes("화성고") },
@@ -88,7 +111,7 @@ const G2_FILTERS: FilterTab[] = [
   { label: "수학/탐구", filterFn: (tt) => tt.subject === "수학" || tt.subject === "탐구" },
 ];
 
-const G3_FILTERS: FilterTab[] = [
+const G3_FILTERS_DEFAULT: FilterTab[] = [
   { label: "요약시간표", filterFn: () => false, isSummary: true },
   { label: "전체", filterFn: () => true },
   { label: "국어", filterFn: (tt) => tt.subject === "국어" || (tt.target_school || "") === "국어" },
@@ -100,8 +123,20 @@ const G3_FILTERS: FilterTab[] = [
   { label: "논술", filterFn: (tt) => (tt.target_school || "") === "논술" || (tt.subject || "").includes("논술") || (tt.class_name || "").includes("논술") },
 ];
 
-function SchedulePageLayout({ grade, category, summaryDivision, filterTabs }: { grade: string; category: string; color?: string; summaryDivision?: string; filterTabs?: FilterTab[] }) {
+function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defaultFilterTabs }: { grade: string; category: string; color?: string; summaryDivision?: string; filterTabs?: FilterTab[] }) {
   const [location] = useLocation();
+
+  const { data: apiTabs } = useQuery<{ id: number; label: string; category: string; display_order: number }[]>({
+    queryKey: ["/api/filter-tabs", category],
+    queryFn: async () => {
+      const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(category)}`);
+      if (!res.ok) throw new Error("Failed to fetch filter tabs");
+      return res.json();
+    },
+    enabled: !!category,
+  });
+
+  const filterTabs = apiTabs && apiTabs.length > 0 ? buildFilterTabs(apiTabs) : defaultFilterTabs;
 
   return (
     <PageLayout>
@@ -183,15 +218,15 @@ export function HighSchoolSchedule() {
 }
 
 export function HighSchoolScheduleG1() {
-  return <SchedulePageLayout grade="고1" category="고등관-고1" color="rose" summaryDivision="high-g1" filterTabs={G1_FILTERS} />;
+  return <SchedulePageLayout grade="고1" category="고등관-고1" color="rose" summaryDivision="high-g1" filterTabs={G1_FILTERS_DEFAULT} />;
 }
 
 export function HighSchoolScheduleG2() {
-  return <SchedulePageLayout grade="고2" category="고등관-고2" color="crimson" summaryDivision="high-g2" filterTabs={G2_FILTERS} />;
+  return <SchedulePageLayout grade="고2" category="고등관-고2" color="crimson" summaryDivision="high-g2" filterTabs={G2_FILTERS_DEFAULT} />;
 }
 
 export function HighSchoolScheduleG3() {
-  return <SchedulePageLayout grade="고3" category="고등관-고3" color="maroon" summaryDivision="high-g3" filterTabs={G3_FILTERS} />;
+  return <SchedulePageLayout grade="고3" category="고등관-고3" color="maroon" summaryDivision="high-g3" filterTabs={G3_FILTERS_DEFAULT} />;
 }
 
 export function HighSchoolSummaryTimetable() {

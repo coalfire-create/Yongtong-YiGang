@@ -273,6 +273,44 @@ async function ensureTeacherImagesTable() {
   }
 }
 
+async function ensureFilterTabsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS filter_tabs (
+        id SERIAL PRIMARY KEY,
+        category TEXT NOT NULL,
+        label TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure filter_tabs table:", err);
+  }
+}
+
+const DEFAULT_FILTER_TABS: Record<string, string[]> = {
+  "고등관-고1": ["요약시간표", "전체시간표", "화성고", "가온고", "병점고", "영덕고", "수원고", "청명고", "수학/탐구"],
+  "고등관-고2": ["요약시간표", "전체시간표", "화성고", "가온고", "청명고", "영덕고", "고색고", "수학/탐구"],
+  "고등관-고3": ["요약시간표", "전체", "국어", "영어", "수학", "생명과학", "사회문화", "생윤", "논술"],
+};
+
+async function seedFilterTabs() {
+  try {
+    const { rows } = await pool.query("SELECT COUNT(*) AS cnt FROM filter_tabs");
+    if (parseInt(rows[0].cnt) > 0) return;
+    for (const [category, labels] of Object.entries(DEFAULT_FILTER_TABS)) {
+      for (let i = 0; i < labels.length; i++) {
+        await pool.query(
+          "INSERT INTO filter_tabs (category, label, display_order) VALUES ($1, $2, $3)",
+          [category, labels[i], i]
+        );
+      }
+    }
+  } catch (err) {
+    console.error("Failed to seed filter_tabs:", err);
+  }
+}
+
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
@@ -312,6 +350,8 @@ export async function registerRoutes(
   await ensureSummaryTimetablesTable();
   await ensureBriefingEventsTable();
   await ensureTeacherImagesTable();
+  await ensureFilterTabsTable();
+  await seedFilterTabs();
   try {
     await pool.query(`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
   } catch (err) {
@@ -1030,6 +1070,79 @@ export async function registerRoutes(
         await pool.query("UPDATE summary_timetables SET display_order = $1 WHERE id = $2", [i, ids[i]]);
       }
       res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== FILTER TABS ==========
+  app.get("/api/filter-tabs", async (req, res) => {
+    const category = req.query.category as string | undefined;
+    try {
+      let query = "SELECT * FROM filter_tabs";
+      const params: string[] = [];
+      if (category) {
+        query += " WHERE category = $1";
+        params.push(category);
+      }
+      query += " ORDER BY display_order ASC, id ASC";
+      const { rows } = await pool.query(query, params);
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/filter-tabs/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await pool.query("UPDATE filter_tabs SET display_order = $1 WHERE id = $2", [i, ids[i]]);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/filter-tabs", requireAdmin, async (req, res) => {
+    const { category, label } = req.body;
+    if (!category || !label) return res.status(400).json({ error: "category와 label이 필요합니다." });
+    try {
+      const { rows: maxRows } = await pool.query(
+        "SELECT COALESCE(MAX(display_order), -1) + 1 AS next_order FROM filter_tabs WHERE category = $1",
+        [category]
+      );
+      const nextOrder = maxRows[0].next_order;
+      const { rows } = await pool.query(
+        "INSERT INTO filter_tabs (category, label, display_order) VALUES ($1, $2, $3) RETURNING *",
+        [category, label, nextOrder]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/filter-tabs/:id", requireAdmin, async (req, res) => {
+    try {
+      await pool.query("DELETE FROM filter_tabs WHERE id = $1", [req.params.id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/filter-tabs/:id", requireAdmin, async (req, res) => {
+    const { label } = req.body;
+    if (!label) return res.status(400).json({ error: "label이 필요합니다." });
+    try {
+      const { rows } = await pool.query(
+        "UPDATE filter_tabs SET label = $1 WHERE id = $2 RETURNING *",
+        [label, req.params.id]
+      );
+      res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

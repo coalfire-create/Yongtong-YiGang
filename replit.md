@@ -46,14 +46,14 @@ The project is organized into three main directories:
 - **Additional Tables:** `popups` table (managed via raw pg.Pool, auto-created on server start) for homepage popup announcements
 - **Supabase Tables:** `teachers` table managed via Supabase client with `display_order` column (auto-added on startup); images stored in Supabase Storage
 - **Additional Local Tables:** `timetables` (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order, description, subject), `summary_timetables` (division, image_url, display_order), `reservations`, `banners`, `popups`, `briefings`, `reviews`, `sms_subscriptions`, `teacher_images` (id, teacher_id, image_url, display_order) - auto-created on server start
-- **Teacher Images:** Multiple images per teacher stored in `teacher_images` table; uploaded to Supabase Storage `images/teachers/` bucket; managed via admin "상세 사진 관리"; detail page shows only images when available, otherwise shows bio
+- **Teacher Brochure:** Multiple brochure images per teacher stored in `teacher_images` table; uploaded to Supabase Storage `images/teachers/` bucket; managed via admin "브로셔 관리"; detail page shows full-width brochure when available, otherwise shows photo + bio
 - **Subject Order:** All subject lists across the site use: 수학, 국어, 영어, 탐구 (in this order)
 - **Timetable Subjects:** Timetables are grouped by subject (수학/국어/영어/탐구) on the schedule pages, with expandable "상세보기" for descriptions
-- **Schedule Page Filters:** Each grade schedule page has filter tabs:
-  - 고1: 전체, 화성고, 가온고, 병점고, 영덕고, 수원고, 청명고, 수학/탐구 (filters by `target_school`)
-  - 고2: 전체, 화성고, 가온고, 청명고, 영덕고, 고색고, 수학/탐구 (filters by `target_school`)
-  - 고3: 전체, 국어, 영어, 수학, 생명과학, 사회문화, 생윤, 논술 (filters by `subject`/`class_name`)
-  - Filter definitions in `client/src/pages/high-school.tsx` (G1_FILTERS, G2_FILTERS, G3_FILTERS)
+- **Schedule Page Filters:** Each grade schedule page has filter tabs, stored in `filter_tabs` table (id, category, label, display_order). Admin can add/delete/rename/reorder tabs via "목차 관리" tab
+  - Categories: "고등관-고1", "고등관-고2", "고등관-고3"
+  - Filter tabs are fetched from API (`GET /api/filter-tabs?category=...`) and built dynamically using `buildFilterFn()` in `high-school.tsx`
+  - Fallback to hardcoded defaults (`G1_FILTERS_DEFAULT`, `G2_FILTERS_DEFAULT`, `G3_FILTERS_DEFAULT`) when API returns empty
+  - Reorder API: `PATCH /api/filter-tabs/reorder` accepts `{ ids: number[] }`
   - `TimetableGallery` component accepts optional `filterTabs` prop for client-side filtering
 - **Briefing Events:** `briefing_events` table (id, title, event_date DATE, category TEXT, created_at) for calendar view; categories: 초등, 중등, 고등, 국제학교
 - **Briefing Calendar API:** `GET /api/briefing-events?year=YYYY&month=MM`, `POST/PUT/DELETE /api/briefing-events/:id`

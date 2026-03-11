@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ArrowUp, ArrowDown } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ArrowUp, ArrowDown, ListOrdered, Plus, GripVertical } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
@@ -2417,8 +2417,213 @@ function SummaryTimetablesTab() {
   );
 }
 
+interface FilterTabItem {
+  id: number;
+  category: string;
+  label: string;
+  display_order: number;
+}
+
+const FILTER_TAB_CATEGORIES = [
+  { value: "고등관-고1", label: "고1" },
+  { value: "고등관-고2", label: "고2" },
+  { value: "고등관-고3", label: "고3" },
+];
+
+function FilterTabsTab() {
+  const [selectedCategory, setSelectedCategory] = useState("고등관-고1");
+  const [newLabel, setNewLabel] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingLabel, setEditingLabel] = useState("");
+
+  const { data: tabs = [], isLoading } = useQuery<FilterTabItem[]>({
+    queryKey: ["/api/filter-tabs", selectedCategory],
+    queryFn: async () => {
+      const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(selectedCategory)}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/filter-tabs", { category: selectedCategory, label: newLabel.trim() });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
+      setNewLabel("");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/filter-tabs/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, label }: { id: number; label: string }) => {
+      await apiRequest("PUT", `/api/filter-tabs/${id}`, { label });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
+      setEditingId(null);
+    },
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      await apiRequest("PATCH", "/api/filter-tabs/reorder", { ids });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
+    },
+  });
+
+  const moveTab = (index: number, direction: "up" | "down") => {
+    const newTabs = [...tabs];
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= newTabs.length) return;
+    [newTabs[index], newTabs[swapIndex]] = [newTabs[swapIndex], newTabs[index]];
+    reorderMutation.mutate(newTabs.map((t) => t.id));
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 flex-wrap">
+        {FILTER_TAB_CATEGORIES.map((cat) => (
+          <button
+            key={cat.value}
+            onClick={() => setSelectedCategory(cat.value)}
+            className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
+              selectedCategory === cat.value
+                ? "bg-[#7B2332] text-white"
+                : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
+            }`}
+            data-testid={`filter-category-${cat.value}`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={newLabel}
+          onChange={(e) => setNewLabel(e.target.value)}
+          placeholder="새 목차 이름 입력"
+          className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-[#7B2332] focus:border-transparent"
+          data-testid="input-new-filter-tab"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && newLabel.trim()) addMutation.mutate();
+          }}
+        />
+        <button
+          onClick={() => newLabel.trim() && addMutation.mutate()}
+          disabled={!newLabel.trim() || addMutation.isPending}
+          className="flex items-center gap-1.5 px-4 py-2 bg-[#7B2332] text-white text-sm font-medium rounded hover:bg-[#5a1a25] disabled:opacity-50 transition-colors"
+          data-testid="button-add-filter-tab"
+        >
+          {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          추가
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : tabs.length === 0 ? (
+        <p className="text-sm text-gray-400 py-6 text-center">등록된 목차가 없습니다.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {tabs.map((tab, index) => (
+            <div
+              key={tab.id}
+              className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded group hover:border-gray-300 transition-colors"
+              data-testid={`filter-tab-item-${tab.id}`}
+            >
+              <GripVertical className="w-4 h-4 text-gray-300 flex-shrink-0" />
+              <span className="text-xs text-gray-400 w-6 text-center font-mono">{index + 1}</span>
+
+              {editingId === tab.id ? (
+                <div className="flex-1 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editingLabel}
+                    onChange={(e) => setEditingLabel(e.target.value)}
+                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#7B2332]"
+                    data-testid={`input-edit-filter-tab-${tab.id}`}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && editingLabel.trim()) updateMutation.mutate({ id: tab.id, label: editingLabel.trim() });
+                      if (e.key === "Escape") setEditingId(null);
+                    }}
+                  />
+                  <button
+                    onClick={() => editingLabel.trim() && updateMutation.mutate({ id: tab.id, label: editingLabel.trim() })}
+                    className="p-1 text-green-600 hover:bg-green-50 rounded"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setEditingId(null)}
+                    className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm font-medium text-gray-800">{tab.label}</span>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => moveTab(index, "up")}
+                      disabled={index === 0}
+                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                      data-testid={`button-move-up-${tab.id}`}
+                    >
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => moveTab(index, "down")}
+                      disabled={index === tabs.length - 1}
+                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                      data-testid={`button-move-down-${tab.id}`}
+                    >
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => { setEditingId(tab.id); setEditingLabel(tab.label); }}
+                      className="p-1 text-gray-400 hover:text-[#7B2332]"
+                      data-testid={`button-edit-filter-tab-${tab.id}`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm(`"${tab.label}" 목차를 삭제하시겠습니까?`)) deleteMutation.mutate(tab.id); }}
+                      className="p-1 text-gray-400 hover:text-red-600"
+                      data-testid={`button-delete-filter-tab-${tab.id}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -2482,6 +2687,18 @@ export default function AdminPage() {
           >
             <Calendar className="w-4 h-4" />
             시간표 관리
+          </button>
+          <button
+            onClick={() => setTab("filter-tabs")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "filter-tabs"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-filter-tabs"
+          >
+            <ListOrdered className="w-4 h-4" />
+            목차 관리
           </button>
           <button
             onClick={() => setTab("summary-timetables")}
@@ -2581,7 +2798,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );
