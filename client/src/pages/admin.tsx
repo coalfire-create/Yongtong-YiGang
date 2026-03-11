@@ -367,8 +367,127 @@ function TeachersTab() {
                   </div>
                 </div>
               )}
+              <TeacherImagesManager teacherId={t.id} teacherName={t.name} />
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface TeacherImageItem {
+  id: number;
+  teacher_id: number;
+  image_url: string;
+  display_order: number;
+}
+
+function TeacherImagesManager({ teacherId, teacherName }: { teacherId: number; teacherName: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: images = [], isLoading } = useQuery<TeacherImageItem[]>({
+    queryKey: ["/api/teachers", teacherId, "images"],
+    queryFn: async () => {
+      const res = await fetch(`/api/teachers/${teacherId}/images`);
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: expanded,
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(`/api/teachers/${teacherId}/images`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("업로드 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teachers", teacherId, "images"] });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (imageId: number) => {
+      await apiRequest("DELETE", `/api/teacher-images/${imageId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teachers", teacherId, "images"] });
+    },
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    for (let i = 0; i < files.length; i++) {
+      uploadMutation.mutate(files[i]);
+    }
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-[#7B2332] transition-colors"
+        data-testid={`button-toggle-images-${teacherId}`}
+      >
+        <Image className="w-3.5 h-3.5" />
+        상세 사진 관리 ({expanded ? "접기" : "펼치기"})
+      </button>
+
+      {expanded && (
+        <div className="mt-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-medium file:bg-red-50 file:text-red-600 hover:file:bg-red-100"
+              data-testid={`input-teacher-images-${teacherId}`}
+            />
+            {uploadMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-red-500" />}
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+            </div>
+          ) : images.length === 0 ? (
+            <p className="text-xs text-gray-400">등록된 상세 사진이 없습니다.</p>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {images.map((img) => (
+                <div key={img.id} className="relative group">
+                  <img
+                    src={img.image_url}
+                    alt={teacherName}
+                    className="w-full aspect-square object-cover rounded border border-gray-200"
+                  />
+                  <button
+                    onClick={() => {
+                      if (confirm("이 사진을 삭제하시겠습니까?")) {
+                        deleteMutation.mutate(img.id);
+                      }
+                    }}
+                    className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-testid={`button-delete-image-${img.id}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

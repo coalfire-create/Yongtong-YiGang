@@ -257,6 +257,22 @@ async function ensureSummaryTimetablesTable() {
   }
 }
 
+async function ensureTeacherImagesTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS teacher_images (
+        id SERIAL PRIMARY KEY,
+        teacher_id INTEGER NOT NULL,
+        image_url TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure teacher_images table:", err);
+  }
+}
+
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
@@ -295,6 +311,7 @@ export async function registerRoutes(
   await ensureReservationsTable();
   await ensureSummaryTimetablesTable();
   await ensureBriefingEventsTable();
+  await ensureTeacherImagesTable();
   try {
     await pool.query(`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
   } catch (err) {
@@ -499,6 +516,66 @@ export async function registerRoutes(
       for (let i = 0; i < ids.length; i++) {
         await supabase.from("teachers").update({ display_order: i }).eq("id", ids[i]);
       }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== TEACHER IMAGES (multiple per teacher) ==========
+  app.get("/api/teachers/:id/images", async (req, res) => {
+    const { id } = req.params;
+    try {
+      const result = await pool.query(
+        "SELECT * FROM teacher_images WHERE teacher_id = $1 ORDER BY display_order ASC, id ASC",
+        [id]
+      );
+      res.json(result.rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/teachers/:id/images", requireAdmin, upload.single("image"), async (req, res) => {
+    const { id } = req.params;
+    if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
+
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const fileName = `teachers/${crypto.randomUUID()}${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("images")
+      .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+    if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+    const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+
+    try {
+      const maxOrder = await pool.query(
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM teacher_images WHERE teacher_id = $1",
+        [id]
+      );
+      const nextOrder = (maxOrder.rows[0]?.max_order ?? -1) + 1;
+      const result = await pool.query(
+        "INSERT INTO teacher_images (teacher_id, image_url, display_order) VALUES ($1, $2, $3) RETURNING *",
+        [id, urlData.publicUrl, nextOrder]
+      );
+      res.json(result.rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/teacher-images/:imageId", requireAdmin, async (req, res) => {
+    const { imageId } = req.params;
+    try {
+      const result = await pool.query("SELECT image_url FROM teacher_images WHERE id = $1", [imageId]);
+      if (result.rows.length > 0) {
+        const url = result.rows[0].image_url;
+        const urlParts = url.split("/images/");
+        if (urlParts[1]) {
+          await supabase.storage.from("images").remove([urlParts[1]]);
+        }
+      }
+      await pool.query("DELETE FROM teacher_images WHERE id = $1", [imageId]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

@@ -45,7 +45,8 @@ The project is organized into three main directories:
 - **Current Schema:** A `users` table with `id` (UUID), `username`, and `password` fields
 - **Additional Tables:** `popups` table (managed via raw pg.Pool, auto-created on server start) for homepage popup announcements
 - **Supabase Tables:** `teachers` table managed via Supabase client with `display_order` column (auto-added on startup); images stored in Supabase Storage
-- **Additional Local Tables:** `timetables` (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order, description, subject), `summary_timetables` (division, image_url, display_order), `reservations`, `banners`, `popups`, `briefings`, `reviews`, `sms_subscriptions` - auto-created on server start
+- **Additional Local Tables:** `timetables` (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order, description, subject), `summary_timetables` (division, image_url, display_order), `reservations`, `banners`, `popups`, `briefings`, `reviews`, `sms_subscriptions`, `teacher_images` (id, teacher_id, image_url, display_order) - auto-created on server start
+- **Teacher Images:** Multiple images per teacher stored in `teacher_images` table; uploaded to Supabase Storage `images/teachers/` bucket; managed via admin "상세 사진 관리"; detail page shows only images when available, otherwise shows bio
 - **Subject Order:** All subject lists across the site use: 수학, 국어, 영어, 탐구 (in this order)
 - **Timetable Subjects:** Timetables are grouped by subject (수학/국어/영어/탐구) on the schedule pages, with expandable "상세보기" for descriptions
 - **Schedule Page Filters:** Each grade schedule page has filter tabs:
