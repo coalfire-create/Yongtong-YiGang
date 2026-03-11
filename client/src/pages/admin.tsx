@@ -375,8 +375,14 @@ function TeachersTab() {
   );
 }
 
+const CATEGORY_FILTER_OPTIONS: Record<string, string[]> = {
+  "고등관-고1": ["화성고", "가온고", "병점고", "영덕고", "수원고", "청명고"],
+  "고등관-고2": ["화성고", "가온고", "청명고", "영덕고", "고색고"],
+  "고등관-고3": ["국어", "영어", "수학", "생명과학", "사회문화", "생윤", "논술"],
+};
+
 function TimetablesTab() {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<{
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<{
     category: string;
     subject: string;
     target_school: string;
@@ -386,6 +392,7 @@ function TimetablesTab() {
     teacher_id: string;
     description: string;
   }>();
+  const selectedCategory = watch("category");
   const [teacherImageFile, setTeacherImageFile] = useState<File | null>(null);
   const [teacherImagePreview, setTeacherImagePreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -549,13 +556,32 @@ function TimetablesTab() {
               {errors.class_name && <p className="text-xs text-red-500 mt-1">{errors.class_name.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">대상 학교</label>
-              <input
-                {...register("target_school")}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
-                placeholder="예: 경기고, 단대부고"
-                data-testid="input-timetable-school"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                목차 (필터) {CATEGORY_FILTER_OPTIONS[selectedCategory] ? "*" : ""}
+              </label>
+              {CATEGORY_FILTER_OPTIONS[selectedCategory] ? (
+                <>
+                  <select
+                    {...register("target_school", { required: CATEGORY_FILTER_OPTIONS[selectedCategory] ? "목차를 선택하세요" : false })}
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-white"
+                    data-testid="select-timetable-school"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>목차 선택</option>
+                    {CATEGORY_FILTER_OPTIONS[selectedCategory].map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  {errors.target_school && <p className="text-xs text-red-500 mt-1">{errors.target_school.message}</p>}
+                </>
+              ) : (
+                <input
+                  {...register("target_school")}
+                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                  placeholder="예: 화성고, 가온고"
+                  data-testid="input-timetable-school"
+                />
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

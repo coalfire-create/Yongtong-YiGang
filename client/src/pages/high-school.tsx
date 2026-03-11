@@ -91,13 +91,13 @@ const G2_FILTERS: FilterTab[] = [
 const G3_FILTERS: FilterTab[] = [
   { label: "요약시간표", filterFn: () => false, isSummary: true },
   { label: "전체", filterFn: () => true },
-  { label: "국어", filterFn: (tt) => tt.subject === "국어" },
-  { label: "영어", filterFn: (tt) => tt.subject === "영어" },
-  { label: "수학", filterFn: (tt) => tt.subject === "수학" },
-  { label: "생명과학", filterFn: (tt) => (tt.subject || "").includes("생명") || (tt.class_name || "").includes("생명") },
-  { label: "사회문화", filterFn: (tt) => (tt.subject || "").includes("사회") || (tt.class_name || "").includes("사회문화") },
-  { label: "생윤", filterFn: (tt) => (tt.subject || "").includes("생윤") || (tt.class_name || "").includes("생윤") || (tt.class_name || "").includes("생활과윤리") },
-  { label: "논술", filterFn: (tt) => (tt.subject || "").includes("논술") || (tt.class_name || "").includes("논술") },
+  { label: "국어", filterFn: (tt) => tt.subject === "국어" || (tt.target_school || "") === "국어" },
+  { label: "영어", filterFn: (tt) => tt.subject === "영어" || (tt.target_school || "") === "영어" },
+  { label: "수학", filterFn: (tt) => tt.subject === "수학" || (tt.target_school || "") === "수학" },
+  { label: "생명과학", filterFn: (tt) => (tt.target_school || "") === "생명과학" || (tt.subject || "").includes("생명") || (tt.class_name || "").includes("생명") },
+  { label: "사회문화", filterFn: (tt) => (tt.target_school || "") === "사회문화" || (tt.subject || "").includes("사회") || (tt.class_name || "").includes("사회문화") },
+  { label: "생윤", filterFn: (tt) => (tt.target_school || "") === "생윤" || (tt.subject || "").includes("생윤") || (tt.class_name || "").includes("생윤") || (tt.class_name || "").includes("생활과윤리") },
+  { label: "논술", filterFn: (tt) => (tt.target_school || "") === "논술" || (tt.subject || "").includes("논술") || (tt.class_name || "").includes("논술") },
 ];
 
 function SchedulePageLayout({ grade, category, summaryDivision, filterTabs }: { grade: string; category: string; color?: string; summaryDivision?: string; filterTabs?: FilterTab[] }) {
