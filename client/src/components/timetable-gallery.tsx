@@ -86,13 +86,13 @@ export function TimetableGallery({ category, filterTabs }: TimetableGalleryProps
   return (
     <>
       {filterTabs && filterTabs.length > 0 && (
-        <div className="border border-gray-300 mb-8" data-testid="filter-tabs">
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8">
+        <div className="border border-gray-300 rounded mb-8 overflow-hidden" data-testid="filter-tabs">
+          <div className="flex flex-wrap">
             {filterTabs.map((tab, idx) => (
               <button
                 key={tab.label}
                 onClick={() => { setSelectedFilter(idx); setExpandedId(null); }}
-                className={`px-3 py-2.5 text-sm font-medium transition-colors border-r border-b border-gray-300 last:border-r-0 ${
+                className={`min-w-[120px] flex-1 px-5 py-3 text-sm font-medium transition-colors border-r border-b border-gray-300 ${
                   selectedFilter === idx
                     ? "bg-[#7B2332] text-white"
                     : "bg-white text-gray-600 hover:bg-gray-50"
