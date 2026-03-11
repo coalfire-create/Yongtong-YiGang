@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Calendar, Clock, BookOpen, User, GraduationCap, ChevronDown, ChevronUp } from "lucide-react";
 import { ReservationModal } from "./reservation-modal";
+import { SummaryTimetableSection } from "./summary-timetable";
 
 interface Timetable {
   id: number;
@@ -23,14 +24,17 @@ const SUBJECT_ORDER = ["수학", "국어", "영어", "탐구"];
 interface FilterTab {
   label: string;
   filterFn: (tt: Timetable) => boolean;
+  isSummary?: boolean;
 }
 
 interface TimetableGalleryProps {
   category: string;
   filterTabs?: FilterTab[];
+  summaryDivision?: string;
+  summaryTitle?: string;
 }
 
-export function TimetableGallery({ category, filterTabs }: TimetableGalleryProps) {
+export function TimetableGallery({ category, filterTabs, summaryDivision, summaryTitle }: TimetableGalleryProps) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [reserveTarget, setReserveTarget] = useState<{ id: number; name: string; subject: string; teacherName: string; classTime: string; startDate: string } | null>(null);
@@ -44,9 +48,12 @@ export function TimetableGallery({ category, filterTabs }: TimetableGalleryProps
     },
   });
 
-  const filtered = filterTabs && filterTabs.length > 0
+  const activeTab = filterTabs?.[selectedFilter];
+  const isSummaryView = activeTab?.isSummary === true;
+
+  const filtered = filterTabs && filterTabs.length > 0 && !isSummaryView
     ? timetables.filter(filterTabs[selectedFilter].filterFn)
-    : timetables;
+    : isSummaryView ? [] : timetables;
 
   if (isLoading) {
     return (
@@ -86,88 +93,90 @@ export function TimetableGallery({ category, filterTabs }: TimetableGalleryProps
   return (
     <>
       {filterTabs && filterTabs.length > 0 && (
-        <div className="border border-gray-300 rounded mb-8 overflow-hidden" data-testid="filter-tabs">
-          <div className="flex flex-wrap">
-            {filterTabs.map((tab, idx) => (
-              <button
-                key={tab.label}
-                onClick={() => { setSelectedFilter(idx); setExpandedId(null); }}
-                className={`min-w-[120px] flex-1 px-5 py-3 text-sm font-medium transition-colors border-r border-b border-gray-300 ${
-                  selectedFilter === idx
-                    ? "bg-[#7B2332] text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
-                }`}
-                data-testid={`filter-tab-${tab.label}`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-2 mb-8" data-testid="filter-tabs">
+          {filterTabs.map((tab, idx) => (
+            <button
+              key={tab.label}
+              onClick={() => { setSelectedFilter(idx); setExpandedId(null); }}
+              className={`px-4 py-2 text-sm font-medium rounded-full border transition-colors ${
+                selectedFilter === idx
+                  ? "bg-[#7B2332] text-white border-[#7B2332]"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
+              data-testid={`filter-tab-${tab.label}`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       )}
 
-      <div data-testid="timetable-list">
-        {filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-400">해당 조건의 시간표가 없습니다.</p>
-          </div>
-        ) : hasGroups ? (
-          <div className="space-y-8">
-            {orderedSubjects.map((subj) => (
-              <div key={subj}>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-1 h-5 bg-[#7B2332]" />
-                  <h3 className="text-lg font-bold text-gray-900" data-testid={`text-subject-group-${subj}`}>{subj}</h3>
-                  <span className="text-xs text-gray-400 ml-1">({grouped[subj].length})</span>
+      {isSummaryView && summaryDivision ? (
+        <SummaryTimetableSection division={summaryDivision} title={summaryTitle || "요약시간표"} />
+      ) : (
+        <div data-testid="timetable-list">
+          {filtered.length === 0 ? (
+            <div className="text-center py-16">
+              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-400">해당 조건의 시간표가 없습니다.</p>
+            </div>
+          ) : hasGroups ? (
+            <div className="space-y-8">
+              {orderedSubjects.map((subj) => (
+                <div key={subj}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1 h-5 bg-[#7B2332]" />
+                    <h3 className="text-lg font-bold text-gray-900" data-testid={`text-subject-group-${subj}`}>{subj}</h3>
+                    <span className="text-xs text-gray-400 ml-1">({grouped[subj].length})</span>
+                  </div>
+                  <div className="space-y-3">
+                    {grouped[subj].map((tt) => (
+                      <TimetableCard
+                        key={tt.id}
+                        tt={tt}
+                        expanded={expandedId === tt.id}
+                        onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
+                        onReserve={() => openReserve(tt)}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {grouped[subj].map((tt) => (
-                    <TimetableCard
-                      key={tt.id}
-                      tt={tt}
-                      expanded={expandedId === tt.id}
-                      onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                      onReserve={() => openReserve(tt)}
-                    />
-                  ))}
+              ))}
+              {ungrouped.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1 h-5 bg-gray-400" />
+                    <h3 className="text-lg font-bold text-gray-900">기타</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {ungrouped.map((tt) => (
+                      <TimetableCard
+                        key={tt.id}
+                        tt={tt}
+                        expanded={expandedId === tt.id}
+                        onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
+                        onReserve={() => openReserve(tt)}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {ungrouped.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-1 h-5 bg-gray-400" />
-                  <h3 className="text-lg font-bold text-gray-900">기타</h3>
-                </div>
-                <div className="space-y-3">
-                  {ungrouped.map((tt) => (
-                    <TimetableCard
-                      key={tt.id}
-                      tt={tt}
-                      expanded={expandedId === tt.id}
-                      onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                      onReserve={() => openReserve(tt)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((tt) => (
-              <TimetableCard
-                key={tt.id}
-                tt={tt}
-                expanded={expandedId === tt.id}
-                onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                onReserve={() => openReserve(tt)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((tt) => (
+                <TimetableCard
+                  key={tt.id}
+                  tt={tt}
+                  expanded={expandedId === tt.id}
+                  onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
+                  onReserve={() => openReserve(tt)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <ReservationModal
         open={!!reserveTarget}

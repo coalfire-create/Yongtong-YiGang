@@ -62,10 +62,12 @@ function QuickMenuCard({
 interface FilterTab {
   label: string;
   filterFn: (tt: any) => boolean;
+  isSummary?: boolean;
 }
 
 const G1_FILTERS: FilterTab[] = [
-  { label: "전체", filterFn: () => true },
+  { label: "요약시간표", filterFn: () => false, isSummary: true },
+  { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => (tt.target_school || "").includes("화성고") },
   { label: "가온고", filterFn: (tt) => (tt.target_school || "").includes("가온고") },
   { label: "병점고", filterFn: (tt) => (tt.target_school || "").includes("병점고") },
@@ -76,7 +78,8 @@ const G1_FILTERS: FilterTab[] = [
 ];
 
 const G2_FILTERS: FilterTab[] = [
-  { label: "전체", filterFn: () => true },
+  { label: "요약시간표", filterFn: () => false, isSummary: true },
+  { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => (tt.target_school || "").includes("화성고") },
   { label: "가온고", filterFn: (tt) => (tt.target_school || "").includes("가온고") },
   { label: "청명고", filterFn: (tt) => (tt.target_school || "").includes("청명고") },
@@ -86,6 +89,7 @@ const G2_FILTERS: FilterTab[] = [
 ];
 
 const G3_FILTERS: FilterTab[] = [
+  { label: "요약시간표", filterFn: () => false, isSummary: true },
   { label: "전체", filterFn: () => true },
   { label: "국어", filterFn: (tt) => tt.subject === "국어" },
   { label: "영어", filterFn: (tt) => tt.subject === "영어" },
@@ -135,12 +139,12 @@ function SchedulePageLayout({ grade, category, summaryDivision, filterTabs }: { 
 
       <div className="bg-gray-50 min-h-[50vh]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <TimetableGallery category={category} filterTabs={filterTabs} />
-          {summaryDivision && (
-            <div className="mt-10">
-              <SummaryTimetableSection division={summaryDivision} title={`${grade} 요약시간표`} />
-            </div>
-          )}
+          <TimetableGallery
+            category={category}
+            filterTabs={filterTabs}
+            summaryDivision={summaryDivision}
+            summaryTitle={summaryDivision ? `${grade} 요약시간표` : undefined}
+          />
         </div>
       </div>
     </PageLayout>
