@@ -1683,14 +1683,14 @@ interface BriefingEventItem {
   category: string;
 }
 
-const BRIEFING_CATEGORIES = ["초등", "중등", "고등", "국제학교"];
+const BRIEFING_CATEGORIES = ["초/중등", "고등"];
 
 function BriefingEventsTab() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<BriefingEventItem>>({});
   const [newTitle, setNewTitle] = useState("");
   const [newDate, setNewDate] = useState("");
-  const [newCategory, setNewCategory] = useState("고등");
+  const [newCategory, setNewCategory] = useState("초/중등");
 
   const { data: events = [], isLoading } = useQuery<BriefingEventItem[]>({
     queryKey: ["/api/briefing-events"],
@@ -1708,7 +1708,7 @@ function BriefingEventsTab() {
       queryClient.invalidateQueries({ queryKey: ["/api/briefing-events"] });
       setNewTitle("");
       setNewDate("");
-      setNewCategory("고등");
+      setNewCategory("초/중등");
     },
   });
 
@@ -1743,10 +1743,8 @@ function BriefingEventsTab() {
 
   const catColor = (cat: string) => {
     switch (cat) {
-      case "초등": return "bg-red-100 text-red-700";
-      case "중등": return "bg-green-100 text-green-700";
+      case "초/중등": return "bg-green-100 text-green-700";
       case "고등": return "bg-blue-100 text-blue-700";
-      case "국제학교": return "bg-purple-100 text-purple-700";
       default: return "bg-gray-100 text-gray-600";
     }
   };

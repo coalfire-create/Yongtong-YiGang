@@ -12,13 +12,11 @@ interface BriefingEvent {
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  "초등": { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
-  "중등": { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
+  "초/중등": { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
   "고등": { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
-  "국제학교": { bg: "bg-purple-50", text: "text-purple-700", dot: "bg-purple-500" },
 };
 
-const CATEGORY_LIST = ["초등", "중등", "고등", "국제학교"];
+const CATEGORY_LIST = ["초/중등", "고등"];
 const DAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 function getCalendarDays(year: number, month: number) {
