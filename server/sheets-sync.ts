@@ -3,7 +3,7 @@ import { getUncachableGoogleSheetClient } from "./googleSheets";
 let cachedSpreadsheetId: string | null = null;
 
 const SHEET_TITLE = "접수현황";
-const HEADERS = ["신청일시", "구분", "학생이름", "학교", "학년", "연락처", "신청수업명"];
+const HEADERS = ["신청일시", "구분", "과목명", "강사명", "수업명", "학생이름", "학생전화번호", "부모님전화번호", "재학중인학교"];
 
 function formatDate(date: Date): string {
   const y = date.getFullYear();
@@ -37,7 +37,7 @@ async function getOrCreateSpreadsheet(): Promise<string> {
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: id,
-    range: `${SHEET_TITLE}!A1:G1`,
+    range: `${SHEET_TITLE}!A1:I1`,
     valueInputOption: "RAW",
     requestBody: { values: [HEADERS] },
   });
@@ -46,28 +46,32 @@ async function getOrCreateSpreadsheet(): Promise<string> {
 }
 
 export async function appendReservationRow(data: {
-  studentName: string;
-  school: string;
-  grade: string;
-  phone: string;
+  subject: string;
+  teacherName: string;
   className: string;
+  studentName: string;
+  studentPhone: string;
+  parentPhone: string;
+  school: string;
 }) {
   try {
     const spreadsheetId = await getOrCreateSpreadsheet();
     const sheets = await getUncachableGoogleSheetClient();
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${SHEET_TITLE}!A:G`,
+      range: `${SHEET_TITLE}!A:I`,
       valueInputOption: "RAW",
       requestBody: {
         values: [[
           formatDate(new Date()),
           "수강예약",
-          data.studentName,
-          data.school,
-          data.grade,
-          data.phone,
+          data.subject,
+          data.teacherName,
           data.className,
+          data.studentName,
+          data.studentPhone,
+          data.parentPhone,
+          data.school,
         ]],
       },
     });

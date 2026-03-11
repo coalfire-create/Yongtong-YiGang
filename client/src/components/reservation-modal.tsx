@@ -8,9 +8,11 @@ interface ReservationModalProps {
   onClose: () => void;
   timetableId?: number;
   className?: string;
+  subject?: string;
+  teacherName?: string;
 }
 
-export function ReservationModal({ open, onClose, timetableId, className }: ReservationModalProps) {
+export function ReservationModal({ open, onClose, timetableId, className, subject, teacherName }: ReservationModalProps) {
   const [studentName, setStudentName] = useState("");
   const [studentPhone, setStudentPhone] = useState("");
   const [parentPhone, setParentPhone] = useState("");
@@ -18,7 +20,7 @@ export function ReservationModal({ open, onClose, timetableId, className }: Rese
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const mutation = useMutation({
-    mutationFn: async (data: { timetable_id?: number; student_name: string; student_phone: string; parent_phone: string; school: string }) => {
+    mutationFn: async (data: { timetable_id?: number; student_name: string; student_phone: string; parent_phone: string; school: string; subject?: string; teacher_name?: string }) => {
       const res = await apiRequest("POST", "/api/reservations", data);
       if (!res.ok) {
         const body = await res.json();
@@ -72,6 +74,8 @@ export function ReservationModal({ open, onClose, timetableId, className }: Rese
       student_phone: studentPhone.trim(),
       parent_phone: parentPhone.trim(),
       school: school.trim(),
+      subject: subject || "",
+      teacher_name: teacherName || "",
     });
   };
 

@@ -610,7 +610,7 @@ export async function registerRoutes(
 
   // ========== RESERVATIONS ==========
   app.post("/api/reservations", async (req, res) => {
-    const { timetable_id, student_name, student_phone, parent_phone, school } = req.body;
+    const { timetable_id, student_name, student_phone, parent_phone, school, subject, teacher_name } = req.body;
 
     if (!student_name || !student_name.trim()) {
       return res.status(400).json({ error: "학생 이름을 입력해 주세요." });
@@ -647,11 +647,13 @@ export async function registerRoutes(
       );
 
       appendReservationRow({
-        studentName: student_name.trim(),
-        school: school.trim(),
-        grade: "",
-        phone: parent_phone.trim(),
+        subject: (subject || "").trim(),
+        teacherName: (teacher_name || "").trim(),
         className: className,
+        studentName: student_name.trim(),
+        studentPhone: (student_phone || "").trim(),
+        parentPhone: parent_phone.trim(),
+        school: school.trim(),
       }).catch(() => {});
 
       res.json(rows[0]);
