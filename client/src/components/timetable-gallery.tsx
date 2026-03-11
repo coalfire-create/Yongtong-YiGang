@@ -22,7 +22,7 @@ const SUBJECT_ORDER = ["수학", "국어", "영어", "탐구"];
 
 export function TimetableGallery({ category }: { category: string }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [reserveTarget, setReserveTarget] = useState<{ id: number; name: string; subject: string; teacherName: string } | null>(null);
+  const [reserveTarget, setReserveTarget] = useState<{ id: number; name: string; subject: string; teacherName: string; classTime: string; startDate: string } | null>(null);
 
   const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables", category],
@@ -84,7 +84,7 @@ export function TimetableGallery({ category }: { category: string }) {
                       tt={tt}
                       expanded={expandedId === tt.id}
                       onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                      onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name })}
+                      onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date })}
                     />
                   ))}
                 </div>
@@ -103,7 +103,7 @@ export function TimetableGallery({ category }: { category: string }) {
                       tt={tt}
                       expanded={expandedId === tt.id}
                       onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                      onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name })}
+                      onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date })}
                     />
                   ))}
                 </div>
@@ -118,7 +118,7 @@ export function TimetableGallery({ category }: { category: string }) {
                 tt={tt}
                 expanded={expandedId === tt.id}
                 onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name })}
+                onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date })}
               />
             ))}
           </div>
@@ -132,6 +132,8 @@ export function TimetableGallery({ category }: { category: string }) {
         className={reserveTarget?.name}
         subject={reserveTarget?.subject}
         teacherName={reserveTarget?.teacherName}
+        classTime={reserveTarget?.classTime}
+        startDate={reserveTarget?.startDate}
       />
     </>
   );
