@@ -20,8 +20,19 @@ interface Timetable {
 
 const SUBJECT_ORDER = ["수학", "국어", "영어", "탐구"];
 
-export function TimetableGallery({ category }: { category: string }) {
+interface FilterTab {
+  label: string;
+  filterFn: (tt: Timetable) => boolean;
+}
+
+interface TimetableGalleryProps {
+  category: string;
+  filterTabs?: FilterTab[];
+}
+
+export function TimetableGallery({ category, filterTabs }: TimetableGalleryProps) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState(0);
   const [reserveTarget, setReserveTarget] = useState<{ id: number; name: string; subject: string; teacherName: string; classTime: string; startDate: string } | null>(null);
 
   const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
@@ -33,6 +44,10 @@ export function TimetableGallery({ category }: { category: string }) {
     },
   });
 
+  const filtered = filterTabs && filterTabs.length > 0
+    ? timetables.filter(filterTabs[selectedFilter].filterFn)
+    : timetables;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
@@ -41,7 +56,7 @@ export function TimetableGallery({ category }: { category: string }) {
     );
   }
 
-  if (timetables.length === 0) {
+  if (timetables.length === 0 && (!filterTabs || filterTabs.length === 0)) {
     return (
       <div className="text-center py-16" data-testid="timetable-empty">
         <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -53,7 +68,7 @@ export function TimetableGallery({ category }: { category: string }) {
   const grouped: Record<string, Timetable[]> = {};
   const ungrouped: Timetable[] = [];
 
-  for (const tt of timetables) {
+  for (const tt of filtered) {
     if (tt.subject && SUBJECT_ORDER.includes(tt.subject)) {
       if (!grouped[tt.subject]) grouped[tt.subject] = [];
       grouped[tt.subject].push(tt);
@@ -65,10 +80,37 @@ export function TimetableGallery({ category }: { category: string }) {
   const orderedSubjects = SUBJECT_ORDER.filter((s) => grouped[s]?.length > 0);
   const hasGroups = orderedSubjects.length > 0;
 
+  const openReserve = (tt: Timetable) =>
+    setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date });
+
   return (
     <>
+      {filterTabs && filterTabs.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6" data-testid="filter-tabs">
+          {filterTabs.map((tab, idx) => (
+            <button
+              key={tab.label}
+              onClick={() => { setSelectedFilter(idx); setExpandedId(null); }}
+              className={`px-4 py-2 text-sm font-semibold rounded-sm border transition-colors ${
+                selectedFilter === idx
+                  ? "bg-[#7B2332] text-white border-[#7B2332]"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
+              data-testid={`filter-tab-${tab.label}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div data-testid="timetable-list">
-        {hasGroups ? (
+        {filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-400">해당 조건의 시간표가 없습니다.</p>
+          </div>
+        ) : hasGroups ? (
           <div className="space-y-8">
             {orderedSubjects.map((subj) => (
               <div key={subj}>
@@ -84,7 +126,7 @@ export function TimetableGallery({ category }: { category: string }) {
                       tt={tt}
                       expanded={expandedId === tt.id}
                       onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                      onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date })}
+                      onReserve={() => openReserve(tt)}
                     />
                   ))}
                 </div>
@@ -103,7 +145,7 @@ export function TimetableGallery({ category }: { category: string }) {
                       tt={tt}
                       expanded={expandedId === tt.id}
                       onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                      onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date })}
+                      onReserve={() => openReserve(tt)}
                     />
                   ))}
                 </div>
@@ -112,13 +154,13 @@ export function TimetableGallery({ category }: { category: string }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {timetables.map((tt) => (
+            {filtered.map((tt) => (
               <TimetableCard
                 key={tt.id}
                 tt={tt}
                 expanded={expandedId === tt.id}
                 onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                onReserve={() => setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date })}
+                onReserve={() => openReserve(tt)}
               />
             ))}
           </div>
