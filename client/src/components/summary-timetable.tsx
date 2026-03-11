@@ -40,13 +40,13 @@ export function SummaryTimetableSection({ division, title }: { division: string;
             {title}
           </h2>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-4 flex flex-col items-center">
           {items.map((item) => (
-            <div key={item.id} className="w-full" data-testid={`img-summary-${item.id}`}>
+            <div key={item.id} className="w-full max-w-2xl" data-testid={`img-summary-${item.id}`}>
               <img
                 src={item.image_url}
                 alt={title}
-                className="w-full border border-gray-200"
+                className="w-full border border-gray-200 rounded"
                 loading="lazy"
               />
             </div>
