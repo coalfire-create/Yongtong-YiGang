@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Link } from "wouter";
 
 interface Banner {
@@ -61,6 +61,7 @@ export function BannerCarousel({
   const desktopHeightClass = className || height;
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const touchStartX = useRef<number | null>(null);
 
   const { data: banners = [], isLoading } = useQuery<Banner[]>({
     queryKey: ["/api/banners", division],
@@ -88,6 +89,16 @@ export function BannerCarousel({
 
   const prev = useCallback(() => goTo(current === 0 ? slides.length - 1 : current - 1), [current, goTo, slides.length]);
   const next = useCallback(() => goTo(current === slides.length - 1 ? 0 : current + 1), [current, goTo, slides.length]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(delta) > 40) delta > 0 ? next() : prev();
+    touchStartX.current = null;
+  };
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -130,36 +141,28 @@ export function BannerCarousel({
     </div>
   );
 
-  const arrows = slides.length > 1 && (
-    <>
-      <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors rounded-sm" data-testid={`button-carousel-prev-${division}`} aria-label="이전">
-        <ChevronLeft className="w-5 h-5" />
-      </button>
-      <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors rounded-sm" data-testid={`button-carousel-next-${division}`} aria-label="다음">
-        <ChevronRight className="w-5 h-5" />
-      </button>
-    </>
-  );
-
   return (
-    <div className="relative w-full bg-gray-900" data-testid={`carousel-${division}`}>
-
-      {/* ──────────── 모바일 전용: 이미지 원본 비율 (높이 고정 없음) ──────────── */}
-      <div className="lg:hidden relative w-full overflow-hidden">
+    <div
+      className="relative w-full bg-gray-900"
+      data-testid={`carousel-${division}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* ── 모바일: 이미지 원본 비율 (높이 고정 없음), 스와이프 ── */}
+      <div className="lg:hidden relative w-full overflow-hidden select-none">
         {slides.map((slide, index) => (
           <div
             key={index}
             className={`transition-opacity duration-500 ease-in-out ${
-              index === current
-                ? "relative opacity-100 z-10"
-                : "absolute inset-0 opacity-0 z-0"
+              index === current ? "relative opacity-100 z-10" : "absolute inset-0 opacity-0 z-0"
             }`}
           >
             {slide.image_url ? (
               <img
                 src={slide.image_url}
                 alt={slide.title}
-                className="w-full h-auto block"
+                className="w-full h-auto block pointer-events-none"
+                draggable={false}
                 data-testid={`img-banner-mobile-${division}-${index}`}
               />
             ) : (
@@ -171,11 +174,10 @@ export function BannerCarousel({
             <SlideText slide={slide} division={division} index={index} />
           </div>
         ))}
-        {arrows}
         {dots}
       </div>
 
-      {/* ──────────── 데스크탑 전용: 고정 높이 absolute 레이아웃 ──────────── */}
+      {/* ── 데스크탑: 고정 높이 absolute 레이아웃 ── */}
       <div className={`hidden lg:block relative w-full overflow-hidden ${desktopHeightClass}`}>
         {slides.map((slide, index) => (
           <div
@@ -185,7 +187,7 @@ export function BannerCarousel({
             }`}
           >
             {slide.image_url ? (
-              <img src={slide.image_url} alt={slide.title} className="w-full h-full object-cover" />
+              <img src={slide.image_url} alt={slide.title} className="w-full h-full object-cover pointer-events-none" draggable={false} />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A]">
                 <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: PATTERN }} />
@@ -195,10 +197,8 @@ export function BannerCarousel({
             <SlideText slide={slide} division={division} index={index} />
           </div>
         ))}
-        {arrows}
         {dots}
       </div>
-
     </div>
   );
 }
