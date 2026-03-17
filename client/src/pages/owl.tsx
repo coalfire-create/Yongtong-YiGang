@@ -1,17 +1,134 @@
 import { PageLayout } from "@/components/layout";
 import { Moon, Clock, BookOpen, CheckCircle } from "lucide-react";
-import { BannerCarousel } from "@/components/banner-carousel";
+import { useQuery } from "@tanstack/react-query";
+
+interface Banner {
+  id: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  image_url: string | null;
+  link_url: string | null;
+  is_active: boolean;
+  display_order: number;
+}
+
+function OwlImageSection() {
+  const { data: banners = [] } = useQuery<Banner[]>({
+    queryKey: ["/api/banners", "owl"],
+    queryFn: async () => {
+      const res = await fetch("/api/banners?division=owl");
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+
+  const images = banners.filter((b) => b.is_active && b.image_url);
+  if (images.length === 0) return null;
+
+  if (images.length === 1) {
+    const b = images[0];
+    return (
+      <div className="w-full relative overflow-hidden" style={{ maxHeight: "520px" }} data-testid="owl-hero-image">
+        {b.link_url ? (
+          <a href={b.link_url} target="_blank" rel="noopener noreferrer" className="block">
+            <img
+              src={b.image_url!}
+              alt={b.title || "올빼미 독학관"}
+              className="w-full object-cover"
+              style={{ maxHeight: "520px", objectPosition: "center" }}
+            />
+          </a>
+        ) : (
+          <img
+            src={b.image_url!}
+            alt={b.title || "올빼미 독학관"}
+            className="w-full object-cover"
+            style={{ maxHeight: "520px", objectPosition: "center" }}
+          />
+        )}
+        {(b.title || b.subtitle || b.description) && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent pointer-events-none" />
+        )}
+        {(b.title || b.description) && (
+          <div className="absolute bottom-0 left-0 right-0 px-6 sm:px-10 pb-8 pt-12 pointer-events-none">
+            {b.title && (
+              <h2 className="text-white text-2xl sm:text-3xl font-extrabold tracking-tight drop-shadow-md">
+                {b.title}
+              </h2>
+            )}
+            {b.subtitle && (
+              <p className="text-white/80 text-sm sm:text-base mt-1 font-medium">{b.subtitle}</p>
+            )}
+            {b.description && (
+              <p className="text-white/70 text-sm mt-1">{b.description}</p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (images.length === 2) {
+    return (
+      <div className="grid grid-cols-2 gap-1" data-testid="owl-image-grid-2">
+        {images.map((b) => (
+          <div key={b.id} className="relative overflow-hidden group" style={{ maxHeight: "420px" }}>
+            {b.link_url ? (
+              <a href={b.link_url} target="_blank" rel="noopener noreferrer" className="block h-full">
+                <img src={b.image_url!} alt={b.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ maxHeight: "420px" }} />
+              </a>
+            ) : (
+              <img src={b.image_url!} alt={b.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ maxHeight: "420px" }} />
+            )}
+            {b.title && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pointer-events-none">
+                  <p className="text-white font-bold text-sm drop-shadow">{b.title}</p>
+                  {b.subtitle && <p className="text-white/75 text-xs mt-0.5">{b.subtitle}</p>}
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1" data-testid="owl-image-grid-multi">
+      {images.map((b, idx) => (
+        <div
+          key={b.id}
+          className={`relative overflow-hidden group ${idx === 0 && images.length % 2 !== 0 ? "col-span-2 sm:col-span-1" : ""}`}
+          style={{ maxHeight: "340px" }}
+        >
+          {b.link_url ? (
+            <a href={b.link_url} target="_blank" rel="noopener noreferrer" className="block h-full">
+              <img src={b.image_url!} alt={b.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ maxHeight: "340px" }} />
+            </a>
+          ) : (
+            <img src={b.image_url!} alt={b.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ maxHeight: "340px" }} />
+          )}
+          {b.title && (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pointer-events-none">
+                <p className="text-white font-bold text-sm drop-shadow">{b.title}</p>
+              </div>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function Owl() {
   return (
     <PageLayout>
-      <BannerCarousel
-        division="owl"
-        defaultTitle="올빼미 독학관"
-        defaultSubtitle="자기주도 학습"
-        defaultDescription="조용하고 쾌적한 환경에서 집중 학습이 가능한 공간"
-        className="w-full aspect-[21/7] sm:aspect-[21/6]"
-      />
+      <OwlImageSection />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
@@ -31,7 +148,6 @@ export function Owl() {
             <h2 className="text-lg font-bold text-gray-900 mb-1" data-testid="text-owl-usage-title">이용 방법</h2>
             <p className="text-sm text-gray-500 leading-relaxed">
               "올빼미 장학생 지원 혜택"에 의거 담당자와 상담후 이용 가능합니다. 월~일 1년 365일 무휴로 운영합니다. 단 학기중에는 평일(월~금) 하교후 ~24시 운영이며 내신 시험기간에는 13시~24시 운영합니다.
-              
             </p>
           </div>
         </div>
