@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, User, ArrowLeft } from "lucide-react";
 import { PageLayout } from "@/components/layout";
 import { Link } from "wouter";
+import { ImageLightbox } from "@/components/image-lightbox";
 
 interface Teacher {
   id: number;
@@ -153,6 +154,8 @@ interface TeacherImage {
 }
 
 export function TeacherDetailPage({ id }: { id: string }) {
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
   const { data: teachers = [], isLoading } = useQuery<Teacher[]>({
     queryKey: ["/api/teachers"],
   });
@@ -200,17 +203,28 @@ export function TeacherDetailPage({ id }: { id: string }) {
             <p className="text-sm text-gray-400">선생님 정보를 찾을 수 없습니다.</p>
           </div>
         ) : hasImages ? (
-          <div className="pb-0">
-            {teacherImages.map((img) => (
-              <img
-                key={img.id}
-                src={img.image_url}
+          <>
+            <div className="pb-0">
+              {teacherImages.map((img) => (
+                <img
+                  key={img.id}
+                  src={img.image_url}
+                  alt={`${teacher.name} 선생님 브로셔`}
+                  className="w-full block cursor-zoom-in hover:opacity-95 transition-opacity"
+                  onClick={() => setLightboxSrc(img.image_url)}
+                  data-testid={`img-teacher-detail-${img.id}`}
+                />
+              ))}
+            </div>
+            <p className="text-center text-xs text-gray-400 py-3">터치하면 크게 볼 수 있어요</p>
+            {lightboxSrc && (
+              <ImageLightbox
+                src={lightboxSrc}
                 alt={`${teacher.name} 선생님 브로셔`}
-                className="w-full block"
-                data-testid={`img-teacher-detail-${img.id}`}
+                onClose={() => setLightboxSrc(null)}
               />
-            ))}
-          </div>
+            )}
+          </>
         ) : (
           <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-14">
             <div className="border-b border-gray-200 pb-8 mb-8">

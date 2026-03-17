@@ -30,7 +30,8 @@ export function Owl() {
           <div>
             <h2 className="text-lg font-bold text-gray-900 mb-1" data-testid="text-owl-usage-title">이용 방법</h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              학원 수강생은 무료 이용 가능합니다. 월~토 운영되며, 사전 예약 후 이용해 주세요.
+              "올빼미 장학생 지원 혜택"에 의거 담당자와 상담후 이용 가능합니다. 월~일 1년 365일 무휴로 운영합니다. 단 학기중에는 평일(월~금) 하교후 ~24시 운영이며 
+              
             </p>
           </div>
         </div>
