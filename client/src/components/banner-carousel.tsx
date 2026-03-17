@@ -23,8 +23,42 @@ interface BannerCarouselProps {
   className?: string;
 }
 
-export function BannerCarousel({ division, defaultTitle, defaultSubtitle, defaultDescription, height = "h-[340px] sm:h-[400px]", className }: BannerCarouselProps) {
-  const sizeClass = className || height;
+const PATTERN = "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
+
+function SlideText({ slide, division, index }: {
+  slide: { title: string; subtitle: string; description: string; link_url: string | null };
+  division: string;
+  index: number;
+}) {
+  const hasText = (slide.title?.trim() || slide.subtitle || slide.description);
+  if (!hasText) return null;
+  const content = (
+    <>
+      {slide.title?.trim() && (
+        <h2 className="text-lg sm:text-2xl lg:text-4xl font-extrabold leading-tight drop-shadow" data-testid={`text-banner-title-${division}-${index}`}>
+          {slide.title}
+        </h2>
+      )}
+      {slide.subtitle && <p className="text-base sm:text-xl lg:text-3xl font-extrabold mt-0.5 sm:mt-1 drop-shadow">{slide.subtitle}</p>}
+      {slide.description && <p className="text-xs sm:text-sm lg:text-base mt-2 sm:mt-3 text-white/80 max-w-md">{slide.description}</p>}
+    </>
+  );
+  return (
+    <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:p-10 text-white z-10">
+      {slide.link_url ? <Link href={slide.link_url}>{content}</Link> : content}
+    </div>
+  );
+}
+
+export function BannerCarousel({
+  division,
+  defaultTitle,
+  defaultSubtitle,
+  defaultDescription,
+  height = "h-[340px] sm:h-[440px]",
+  className,
+}: BannerCarouselProps) {
+  const desktopHeightClass = className || height;
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -42,36 +76,22 @@ export function BannerCarousel({ division, defaultTitle, defaultSubtitle, defaul
     : [];
 
   const slides = banners.length > 0
-    ? banners.map((b) => ({
-        title: b.title,
-        subtitle: b.subtitle,
-        description: b.description,
-        image_url: b.image_url,
-        link_url: b.link_url,
-      }))
+    ? banners.map((b) => ({ title: b.title, subtitle: b.subtitle, description: b.description, image_url: b.image_url, link_url: b.link_url }))
     : defaultSlides;
 
-  const goTo = useCallback(
-    (index: number) => {
-      if (isTransitioning) return;
-      setIsTransitioning(true);
-      setCurrent(index);
-      setTimeout(() => setIsTransitioning(false), 500);
-    },
-    [isTransitioning]
-  );
+  const goTo = useCallback((index: number) => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrent(index);
+    setTimeout(() => setIsTransitioning(false), 500);
+  }, [isTransitioning]);
 
-  const prev = useCallback(() => {
-    goTo(current === 0 ? slides.length - 1 : current - 1);
-  }, [current, goTo, slides.length]);
-
-  const next = useCallback(() => {
-    goTo(current === slides.length - 1 ? 0 : current + 1);
-  }, [current, goTo, slides.length]);
+  const prev = useCallback(() => goTo(current === 0 ? slides.length - 1 : current - 1), [current, goTo, slides.length]);
+  const next = useCallback(() => goTo(current === slides.length - 1 ? 0 : current + 1), [current, goTo, slides.length]);
 
   useEffect(() => {
     if (slides.length <= 1) return;
-    const interval = setInterval(() => { next(); }, 5000);
+    const interval = setInterval(next, 5000);
     return () => clearInterval(interval);
   }, [next, slides.length]);
 
@@ -81,7 +101,7 @@ export function BannerCarousel({ division, defaultTitle, defaultSubtitle, defaul
 
   if (isLoading) {
     return (
-      <div className={`relative w-full ${sizeClass} overflow-hidden bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] flex items-center justify-center`}>
+      <div className="relative w-full bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] flex items-center justify-center min-h-[200px]">
         <Loader2 className="w-8 h-8 animate-spin text-white/50" />
       </div>
     );
@@ -89,84 +109,96 @@ export function BannerCarousel({ division, defaultTitle, defaultSubtitle, defaul
 
   if (slides.length === 0) {
     return (
-      <div className={`relative w-full ${sizeClass} overflow-hidden bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A]`}>
-        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
-        <div className="relative flex items-center justify-center h-full text-white/40 text-sm">
-          배너가 등록되지 않았습니다
-        </div>
+      <div className="relative w-full min-h-[200px] bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] flex items-center justify-center">
+        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: PATTERN }} />
+        <span className="text-white/40 text-sm">배너가 등록되지 않았습니다</span>
       </div>
     );
   }
 
-  return (
-    <div className={`relative w-full ${sizeClass} overflow-hidden bg-gray-900`} data-testid={`carousel-${division}`}>
-      {slides.map((slide, index) => (
-        <div
-          key={index}
-          className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
-            index === current ? "opacity-100 z-10" : "opacity-0 z-0"
-          }`}
-        >
-          {slide.image_url ? (
-            <img src={slide.image_url} alt={slide.title} className="w-full h-full object-contain lg:object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A]">
-              <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:p-10 text-white">
-            {slide.link_url ? (
-              <Link href={slide.link_url}>
-                <h2 className="text-lg sm:text-2xl lg:text-4xl font-extrabold leading-tight" data-testid={`text-banner-title-${division}-${index}`}>{slide.title}</h2>
-                {slide.subtitle && <p className="text-base sm:text-xl lg:text-3xl font-extrabold mt-0.5 sm:mt-1">{slide.subtitle}</p>}
-                {slide.description && <p className="text-xs sm:text-sm lg:text-base mt-2 sm:mt-3 text-white/80 max-w-md">{slide.description}</p>}
-              </Link>
-            ) : (
-              <>
-                <h2 className="text-lg sm:text-2xl lg:text-4xl font-extrabold leading-tight" data-testid={`text-banner-title-${division}-${index}`}>{slide.title}</h2>
-                {slide.subtitle && <p className="text-base sm:text-xl lg:text-3xl font-extrabold mt-0.5 sm:mt-1">{slide.subtitle}</p>}
-                {slide.description && <p className="text-xs sm:text-sm lg:text-base mt-2 sm:mt-3 text-white/80 max-w-md">{slide.description}</p>}
-              </>
-            )}
-          </div>
-        </div>
+  const dots = slides.length > 1 && (
+    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2" data-testid={`carousel-dots-${division}`}>
+      {slides.map((_, i) => (
+        <button
+          key={i}
+          onClick={() => goTo(i)}
+          className={`transition-all duration-300 rounded-full ${i === current ? "w-7 h-2.5 bg-white" : "w-2.5 h-2.5 bg-white/50 hover:bg-white/80"}`}
+          data-testid={`button-carousel-dot-${division}-${i}`}
+          aria-label={`슬라이드 ${i + 1}`}
+        />
       ))}
+    </div>
+  );
 
-      {slides.length > 1 && (
-        <>
-          <button
-            onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors duration-200"
-            data-testid={`button-carousel-prev-${division}`}
-            aria-label="이전 슬라이드"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <button
-            onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors duration-200"
-            data-testid={`button-carousel-next-${division}`}
-            aria-label="다음 슬라이드"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
+  const arrows = slides.length > 1 && (
+    <>
+      <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors rounded-sm" data-testid={`button-carousel-prev-${division}`} aria-label="이전">
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+      <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors rounded-sm" data-testid={`button-carousel-next-${division}`} aria-label="다음">
+        <ChevronRight className="w-5 h-5" />
+      </button>
+    </>
+  );
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2" data-testid={`carousel-dots-${division}`}>
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goTo(index)}
-                className={`transition-all duration-300 ${
-                  index === current ? "w-7 h-2.5 bg-white" : "w-2.5 h-2.5 bg-white/50 hover:bg-white/80"
-                }`}
-                data-testid={`button-carousel-dot-${division}-${index}`}
-                aria-label={`슬라이드 ${index + 1}`}
+  return (
+    <div className="relative w-full bg-gray-900" data-testid={`carousel-${division}`}>
+
+      {/* ──────────── 모바일 전용: 이미지 원본 비율 (높이 고정 없음) ──────────── */}
+      <div className="lg:hidden relative w-full overflow-hidden">
+        {slides.map((slide, index) => (
+          <div
+            key={index}
+            className={`transition-opacity duration-500 ease-in-out ${
+              index === current
+                ? "relative opacity-100 z-10"
+                : "absolute inset-0 opacity-0 z-0"
+            }`}
+          >
+            {slide.image_url ? (
+              <img
+                src={slide.image_url}
+                alt={slide.title}
+                className="w-full h-auto block"
+                data-testid={`img-banner-mobile-${division}-${index}`}
               />
-            ))}
+            ) : (
+              <div className="w-full aspect-[16/9] bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A]">
+                <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: PATTERN }} />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+            <SlideText slide={slide} division={division} index={index} />
           </div>
-        </>
-      )}
+        ))}
+        {arrows}
+        {dots}
+      </div>
+
+      {/* ──────────── 데스크탑 전용: 고정 높이 absolute 레이아웃 ──────────── */}
+      <div className={`hidden lg:block relative w-full overflow-hidden ${desktopHeightClass}`}>
+        {slides.map((slide, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
+              index === current ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
+          >
+            {slide.image_url ? (
+              <img src={slide.image_url} alt={slide.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A]">
+                <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: PATTERN }} />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            <SlideText slide={slide} division={division} index={index} />
+          </div>
+        ))}
+        {arrows}
+        {dots}
+      </div>
+
     </div>
   );
 }

@@ -232,7 +232,7 @@ function HeroSection() {
   return (
     <section className="lg:px-6 lg:py-5" data-testid="hero-section">
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] lg:gap-3 lg:h-[calc(100vh-100px)] lg:min-h-[520px] lg:max-h-[720px]">
-        <div className="w-full h-[260px] sm:h-[360px] lg:h-full">
+        <div className="w-full lg:h-full">
           <HeroCarousel />
         </div>
         <div className="px-3 py-3 sm:px-5 lg:px-0 lg:py-0 lg:h-full">
