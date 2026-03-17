@@ -41,11 +41,10 @@ export function Owl() {
             <Clock className="w-5 h-5 text-[#7B2332]" />
             운영 시간
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { day: "평일 (월~금)", time: "14:00 ~ 24:00", highlight: false },
-              { day: "토요일", time: "8:00 ~ 24:00", highlight: false },
-              { day: "일요일·공휴일", time: "정상운영", highlight: false },
+              { day: "토요일/일요일/공휴일", time: "8:00 ~ 24:00", highlight: false },
               { day: "썸머·윈터 방학중", time: "8:00 ~ 24:00", sub: "월~일 365일 무휴", highlight: true },
             ].map((item) => (
               <div
