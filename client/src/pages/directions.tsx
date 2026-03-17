@@ -33,15 +33,15 @@ export function Directions() {
           <Bus className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
             <h3 className="font-bold text-gray-900">대중교통</h3>
-            <p className="text-sm text-gray-600 mt-1">분당선 영통역에서 도보 약 5분</p>
-            <p className="text-sm text-gray-600 mt-1">버스: 13, 13-4, 720-2 영통역 하차</p>
+            <p className="text-sm text-gray-600 mt-1">수인분당선 영통역 8번 출구에서 도보 약 5분</p>
+            <p className="text-sm text-gray-600 mt-1">버스: 2-1 , 3 , 5 , 13-1 , 34 , 34-1 , 203 , 720-3 영통역 하차</p>
           </div>
         </div>
         <div className="flex items-start gap-4 bg-white border border-gray-200 p-6" data-testid="card-transport-car">
           <Car className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
             <h3 className="font-bold text-gray-900">자가용</h3>
-            <p className="text-sm text-gray-600 mt-1">영통IC에서 약 10분 소요. 건물 지하 주차장 이용 가능 (수강생 90수 무료).</p>
+            <p className="text-sm text-gray-600 mt-1">영통IC에서 약 10분 소요. 모던타운 지하 주차장 이용 가능 (수강생 90분 무료).</p>
           </div>
         </div>
       </div>
