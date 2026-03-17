@@ -6,7 +6,7 @@ import logoImg from "@assets/ikang_small.webp";
 
 const NAV_ITEMS = [
   { label: "고등관", path: "/high-school", sub: [{ label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }, { label: "요약 시간표", path: "/high-school/summary" }] },
-  { label: "초/중등관", path: "/junior-school", sub: [{ label: "강의시간표", path: "/junior-school/schedule" }] },
+  { label: "초/중등관", path: "/junior-school", sub: [{ label: "강의시간표", path: "/junior-school/schedule" }, { label: "프리미엄 학습 시스템", path: "/junior-school/premium-system" }] },
   { label: "올빼미", path: "/owl", sub: [{ label: "독학관 안내", path: "/owl/info" }, { label: "이용 방법", path: "/owl/usage" }] },
   { label: "선생님", path: "/teachers", sub: [] },
   { label: "설명회", path: "/briefing", sub: [] },
