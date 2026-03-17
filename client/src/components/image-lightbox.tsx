@@ -118,10 +118,11 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition-colors"
+        className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-black/70 text-white border-2 border-white/60 hover:bg-black/90 hover:border-white transition-all shadow-[0_2px_16px_rgba(0,0,0,0.8)]"
         data-testid="button-lightbox-close"
+        aria-label="닫기"
       >
-        <X className="w-5 h-5" />
+        <X className="w-6 h-6 stroke-[2.5]" />
       </button>
 
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
