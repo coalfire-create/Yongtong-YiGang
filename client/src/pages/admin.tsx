@@ -1386,14 +1386,13 @@ function BannersTab() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">제목 (큰 글씨) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">제목 (큰 글씨)</label>
               <input
-                {...register("title", { required: "제목을 입력하세요" })}
+                {...register("title")}
                 className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 placeholder="예: 2026년 NEW"
                 data-testid="input-banner-title"
               />
-              {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">부제목</label>
@@ -1518,9 +1517,8 @@ function BannersTab() {
                   <form onSubmit={eSubmit(onEditSubmit)} className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">제목 *</label>
-                        <input {...eReg("title", { required: true })} className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" />
-                        {eErrors.title && <p className="text-xs text-red-500 mt-0.5">제목을 입력하세요</p>}
+                        <label className="block text-xs font-medium text-gray-600 mb-1">제목</label>
+                        <input {...eReg("title")} className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" />
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">부제목</label>

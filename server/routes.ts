@@ -1044,9 +1044,6 @@ export async function registerRoutes(
 
   app.post("/api/banners", requireAdmin, upload.single("image"), async (req, res) => {
     const { title, subtitle, description, link_url, display_order, division } = req.body;
-    if (!title) {
-      return res.status(400).json({ error: "제목은 필수입니다." });
-    }
 
     let image_url: string | null = null;
     if (req.file) {
@@ -1066,7 +1063,7 @@ export async function registerRoutes(
     try {
       const { rows } = await pool.query(
         "INSERT INTO banners (title, subtitle, description, image_url, link_url, display_order, division) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
-        [title, subtitle || "", description || "", image_url, link_url || null, parseInt(display_order) || 0, division || "main"]
+        [title || "", subtitle || "", description || "", image_url, link_url || null, parseInt(display_order) || 0, division || "main"]
       );
       res.json(rows[0]);
     } catch (err: any) {
@@ -1077,7 +1074,6 @@ export async function registerRoutes(
   app.put("/api/banners/:id", requireAdmin, upload.single("image"), async (req, res) => {
     const { id } = req.params;
     const { title, subtitle, description, link_url, display_order } = req.body;
-    if (!title) return res.status(400).json({ error: "제목은 필수입니다." });
     try {
       let newImageUrl: string | undefined;
       if (req.file) {
@@ -1089,7 +1085,7 @@ export async function registerRoutes(
         newImageUrl = supabase.storage.from("images").getPublicUrl(fileName).data.publicUrl;
       }
       const sets: string[] = ["title = $1", "subtitle = $2", "description = $3", "link_url = $4", "display_order = $5"];
-      const vals: any[] = [title, subtitle || "", description || "", link_url || null, parseInt(display_order) || 0];
+      const vals: any[] = [title || "", subtitle || "", description || "", link_url || null, parseInt(display_order) || 0];
       if (newImageUrl !== undefined) { sets.push(`image_url = $${vals.length + 1}`); vals.push(newImageUrl); }
       vals.push(id);
       const { rows } = await pool.query(
