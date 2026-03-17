@@ -26,6 +26,7 @@ interface Timetable {
   class_time: string;
   start_date: string;
   teacher_image_url: string;
+  detail_image_url: string | null;
   display_order: number;
   description: string;
   subject: string;
@@ -515,12 +516,18 @@ function TimetablesTab() {
   const [teacherImageFile, setTeacherImageFile] = useState<File | null>(null);
   const [teacherImagePreview, setTeacherImagePreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [detailImageFile, setDetailImageFile] = useState<File | null>(null);
+  const [detailImagePreview, setDetailImagePreview] = useState<string>("");
+  const detailFileInputRef = useRef<HTMLInputElement>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string>("");
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [editDetailImageFile, setEditDetailImageFile] = useState<File | null>(null);
+  const [editDetailImagePreview, setEditDetailImagePreview] = useState<string>("");
+  const editDetailFileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register: editRegister,
@@ -572,6 +579,9 @@ function TimetablesTab() {
       setTeacherImageFile(null);
       setTeacherImagePreview("");
       if (fileInputRef.current) fileInputRef.current.value = "";
+      setDetailImageFile(null);
+      setDetailImagePreview("");
+      if (detailFileInputRef.current) detailFileInputRef.current.value = "";
     },
   });
 
@@ -619,6 +629,9 @@ function TimetablesTab() {
       setEditImageFile(null);
       setEditImagePreview("");
       if (editFileInputRef.current) editFileInputRef.current.value = "";
+      setEditDetailImageFile(null);
+      setEditDetailImagePreview("");
+      if (editDetailFileInputRef.current) editDetailFileInputRef.current.value = "";
     },
   });
 
@@ -627,6 +640,9 @@ function TimetablesTab() {
     setEditImageFile(null);
     setEditImagePreview("");
     if (editFileInputRef.current) editFileInputRef.current.value = "";
+    setEditDetailImageFile(null);
+    setEditDetailImagePreview("");
+    if (editDetailFileInputRef.current) editDetailFileInputRef.current.value = "";
     editReset({
       category: tt.category,
       subject: tt.subject,
@@ -663,6 +679,7 @@ function TimetablesTab() {
     formData.append("start_date", data.start_date || "");
     formData.append("description", data.description || "");
     if (editImageFile) formData.append("teacher_image", editImageFile);
+    if (editDetailImageFile) formData.append("detail_image", editDetailImageFile);
     updateMutation.mutate({ id: editingId, formData });
   };
 
@@ -697,6 +714,7 @@ function TimetablesTab() {
     formData.append("start_date", data.start_date || "");
     formData.append("description", data.description || "");
     if (teacherImageFile) formData.append("teacher_image", teacherImageFile);
+    if (detailImageFile) formData.append("detail_image", detailImageFile);
     addMutation.mutate(formData);
   };
 
@@ -823,20 +841,46 @@ function TimetablesTab() {
               data-testid="textarea-timetable-description"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">선생님 사진 (얼굴)</label>
-            <div className="flex items-center gap-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-red-50 file:text-red-600 hover:file:bg-red-100"
-                data-testid="input-timetable-teacher-image"
-              />
-              {teacherImagePreview && (
-                <img src={teacherImagePreview} alt="미리보기" className="w-12 h-12 rounded-full object-cover border-2 border-gray-200" />
-              )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">선생님 사진 (얼굴)</label>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-red-50 file:text-red-600 hover:file:bg-red-100"
+                  data-testid="input-timetable-teacher-image"
+                />
+                {teacherImagePreview && (
+                  <img src={teacherImagePreview} alt="미리보기" className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 flex-shrink-0" />
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">상세보기 사진</label>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={detailFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setDetailImageFile(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => setDetailImagePreview(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                  data-testid="input-timetable-detail-image"
+                />
+                {detailImagePreview && (
+                  <img src={detailImagePreview} alt="미리보기" className="w-10 h-10 object-cover border-2 border-blue-200 flex-shrink-0" />
+                )}
+              </div>
             </div>
           </div>
           <button
@@ -1036,24 +1080,54 @@ function TimetablesTab() {
                         placeholder="수업 내용, 커리큘럼 등"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">선생님 사진 변경</label>
-                      <div className="flex items-center gap-3">
-                        {(editImagePreview || tt.teacher_image_url) && (
-                          <img
-                            src={editImagePreview || tt.teacher_image_url}
-                            alt="미리보기"
-                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">선생님 사진 변경</label>
+                        <div className="flex items-center gap-3">
+                          {(editImagePreview || tt.teacher_image_url) && (
+                            <img
+                              src={editImagePreview || tt.teacher_image_url}
+                              alt="미리보기"
+                              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                            />
+                          )}
+                          <input
+                            ref={editFileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleEditImageChange}
+                            className="text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                            data-testid={`input-edit-timetable-image-${tt.id}`}
                           />
-                        )}
-                        <input
-                          ref={editFileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleEditImageChange}
-                          className="text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
-                          data-testid={`input-edit-timetable-image-${tt.id}`}
-                        />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">상세보기 사진 변경</label>
+                        <div className="flex items-center gap-3">
+                          {(editDetailImagePreview || tt.detail_image_url) && (
+                            <img
+                              src={editDetailImagePreview || tt.detail_image_url!}
+                              alt="미리보기"
+                              className="w-10 h-10 object-cover border-2 border-blue-200 flex-shrink-0"
+                            />
+                          )}
+                          <input
+                            ref={editDetailFileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setEditDetailImageFile(file);
+                                const reader = new FileReader();
+                                reader.onloadend = () => setEditDetailImagePreview(reader.result as string);
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            className="text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:border-0 file:text-xs file:font-medium file:bg-green-50 file:text-green-600 hover:file:bg-green-100"
+                            data-testid={`input-edit-timetable-detail-image-${tt.id}`}
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 pt-1">
@@ -1068,7 +1142,7 @@ function TimetablesTab() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => { setEditingId(null); setEditImageFile(null); setEditImagePreview(""); }}
+                        onClick={() => { setEditingId(null); setEditImageFile(null); setEditImagePreview(""); setEditDetailImageFile(null); setEditDetailImagePreview(""); }}
                         className="flex items-center gap-1.5 bg-white border border-gray-300 text-gray-600 px-4 py-1.5 text-sm hover:bg-gray-50 transition-colors"
                       >
                         <X className="w-3.5 h-3.5" />

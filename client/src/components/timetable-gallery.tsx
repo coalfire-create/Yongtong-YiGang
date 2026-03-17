@@ -14,6 +14,7 @@ interface Timetable {
   class_time: string;
   start_date: string;
   teacher_image_url: string;
+  detail_image_url: string | null;
   description: string;
   subject: string;
   created_at: string;
@@ -258,7 +259,7 @@ function TimetableCard({
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {tt.description && (
+            {(tt.description || tt.detail_image_url) && (
               <button
                 onClick={onToggle}
                 className="flex items-center gap-1 px-4 py-2.5 border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
@@ -278,11 +279,21 @@ function TimetableCard({
           </div>
         </div>
       </div>
-      {expanded && tt.description && (
+      {expanded && (tt.description || tt.detail_image_url) && (
         <div className="border-t border-gray-100 bg-gray-50 px-5 py-4" data-testid={`detail-${tt.id}`}>
-          <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-            {tt.description}
-          </div>
+          {tt.detail_image_url && (
+            <img
+              src={tt.detail_image_url}
+              alt={`${tt.class_name} 상세`}
+              className="w-full max-w-2xl mx-auto rounded mb-4 object-contain"
+              data-testid={`img-detail-${tt.id}`}
+            />
+          )}
+          {tt.description && (
+            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+              {tt.description}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -154,6 +154,7 @@ async function ensureTimetablesTable() {
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_id INTEGER`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT ''`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS subject TEXT NOT NULL DEFAULT ''`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS detail_image_url TEXT`);
   } catch (err) {
     console.error("Failed to ensure timetables table:", err);
   }
@@ -654,24 +655,23 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/timetables", requireAdmin, upload.single("teacher_image"), async (req, res) => {
+  app.post("/api/timetables", requireAdmin, upload.fields([{ name: "teacher_image", maxCount: 1 }, { name: "detail_image", maxCount: 1 }]), async (req, res) => {
     const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, start_date, description, subject } = req.body;
     const dateValue = start_date || class_date || "";
+    const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, dateValue, subject });
     if (!category || !class_name) {
       return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
     }
     try {
       let teacher_image_url = "";
-      if (req.file) {
-        const ext = path.extname(req.file.originalname) || ".jpg";
+      const teacherFile = files?.["teacher_image"]?.[0];
+      if (teacherFile) {
+        const ext = path.extname(teacherFile.originalname) || ".jpg";
         const fileName = `timetables/${crypto.randomUUID()}${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("images")
-          .upload(fileName, req.file.buffer, {
-            contentType: req.file.mimetype,
-            upsert: false,
-          });
+          .upload(fileName, teacherFile.buffer, { contentType: teacherFile.mimetype, upsert: false });
         if (uploadError) {
           console.error("[POST /api/timetables] Image upload error:", uploadError);
           return res.status(500).json({ error: "이미지 업로드 실패: " + (uploadError.message || JSON.stringify(uploadError)) });
@@ -679,14 +679,29 @@ export async function registerRoutes(
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
         teacher_image_url = urlData.publicUrl;
       }
+      let detail_image_url = "";
+      const detailFile = files?.["detail_image"]?.[0];
+      if (detailFile) {
+        const ext = path.extname(detailFile.originalname) || ".jpg";
+        const fileName = `timetables/detail_${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(fileName, detailFile.buffer, { contentType: detailFile.mimetype, upsert: false });
+        if (uploadError) {
+          console.error("[POST /api/timetables] Detail image upload error:", uploadError);
+          return res.status(500).json({ error: "상세 이미지 업로드 실패: " + uploadError.message });
+        }
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+        detail_image_url = urlData.publicUrl;
+      }
       const countRes = await pool.query(
         "SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM timetables WHERE category = $1",
         [category]
       );
       const next_order = countRes.rows[0].next_order;
       const { rows } = await pool.query(
-        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order, description, subject)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, detail_image_url, display_order, description, subject)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
         [
           class_name || "",
           teacher_id ? Number(teacher_id) : null,
@@ -697,6 +712,7 @@ export async function registerRoutes(
           class_time || "",
           dateValue,
           teacher_image_url || "",
+          detail_image_url || null,
           next_order,
           description || "",
           subject || ""
@@ -709,25 +725,41 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/timetables/:id", requireAdmin, upload.single("teacher_image"), async (req, res) => {
+  app.put("/api/timetables/:id", requireAdmin, upload.fields([{ name: "teacher_image", maxCount: 1 }, { name: "detail_image", maxCount: 1 }]), async (req, res) => {
     const { id } = req.params;
     const { teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, description, subject } = req.body;
+    const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     if (!category || !class_name) {
       return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
     }
     try {
       let teacher_image_url: string | undefined;
-      if (req.file) {
-        const ext = path.extname(req.file.originalname) || ".jpg";
+      const teacherFile = files?.["teacher_image"]?.[0];
+      if (teacherFile) {
+        const ext = path.extname(teacherFile.originalname) || ".jpg";
         const fileName = `timetables/${crypto.randomUUID()}${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("images")
-          .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+          .upload(fileName, teacherFile.buffer, { contentType: teacherFile.mimetype, upsert: false });
         if (uploadError) {
           return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
         }
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
         teacher_image_url = urlData.publicUrl;
+      }
+      let detail_image_url: string | undefined;
+      const detailFile = files?.["detail_image"]?.[0];
+      if (detailFile) {
+        const ext = path.extname(detailFile.originalname) || ".jpg";
+        const fileName = `timetables/detail_${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(fileName, detailFile.buffer, { contentType: detailFile.mimetype, upsert: false });
+        if (uploadError) {
+          return res.status(500).json({ error: "상세 이미지 업로드 실패: " + uploadError.message });
+        }
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+        detail_image_url = urlData.publicUrl;
       }
       const setClauses = [
         "title = $1",
@@ -756,6 +788,10 @@ export async function registerRoutes(
       if (teacher_image_url !== undefined) {
         setClauses.push(`teacher_image_url = $${values.length + 1}`);
         values.push(teacher_image_url);
+      }
+      if (detail_image_url !== undefined) {
+        setClauses.push(`detail_image_url = $${values.length + 1}`);
+        values.push(detail_image_url);
       }
       values.push(id);
       const { rows } = await pool.query(
