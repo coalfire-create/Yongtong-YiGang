@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { SmsSubscribeButton } from "./sms-subscribe-modal";
-import logoImg from "@assets/ikang.png";
+import logoImg from "@assets/ikang_small.webp";
 
 const NAV_ITEMS = [
   { label: "고등관", path: "/high-school", sub: [{ label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }, { label: "요약 시간표", path: "/high-school/summary" }] },
@@ -40,7 +40,7 @@ export function Header() {
             className="flex-shrink-0 flex items-center gap-2 sm:gap-3 mr-auto lg:mr-0 min-w-0"
             data-testid="link-logo"
           >
-            <img src={logoImg} alt="이강학원 로고" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md object-cover flex-shrink-0" data-testid="img-header-logo" />
+            <img src={logoImg} alt="이강학원 로고" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md object-cover flex-shrink-0" data-testid="img-header-logo" fetchpriority="high" />
             <span className="text-base sm:text-xl font-extrabold tracking-tight whitespace-nowrap" style={{ color: "#7B2332" }}>영통이강학원</span>
             {location.startsWith("/high-school") && (
               <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">고등관</span>
@@ -143,7 +143,7 @@ function Footer() {
           {/* 왼쪽: 로고 + 수강문의 */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-8 sm:gap-10 lg:flex-1">
             <div className="flex-shrink-0 flex flex-col items-start gap-3">
-              <img src={logoImg} alt="이강학원 로고" className="h-14 w-14 rounded-lg object-cover" data-testid="img-footer-logo" />
+              <img src={logoImg} alt="이강학원 로고" className="h-14 w-14 rounded-lg object-cover" data-testid="img-footer-logo" fetchpriority="high" />
               <span className="text-lg font-bold tracking-tight">영통이강학원</span>
             </div>
             <div className="flex-1 space-y-4 text-sm text-white/70 leading-relaxed">
