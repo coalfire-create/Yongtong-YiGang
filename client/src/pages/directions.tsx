@@ -41,7 +41,7 @@ export function Directions() {
           <Car className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
             <h3 className="font-bold text-gray-900">자가용</h3>
-            <p className="text-sm text-gray-600 mt-1">영통IC에서 약 10분 소요. 건물 지하 주차장 이용 가능 (수강생 2시간 무료).</p>
+            <p className="text-sm text-gray-600 mt-1">영통IC에서 약 10분 소요. 건물 지하 주차장 이용 가능 (수강생 90수 무료).</p>
           </div>
         </div>
       </div>
