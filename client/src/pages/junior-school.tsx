@@ -56,7 +56,7 @@ export function JuniorSchool() {
     <PageLayout>
       <section className="px-3 sm:px-5 lg:px-6 py-3 lg:py-5" data-testid="hero-section-junior">
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-2.5 sm:gap-3 lg:h-[calc(100vh-100px)] lg:min-h-[520px] lg:max-h-[720px]">
-          <div className="aspect-[16/9] lg:aspect-auto lg:h-full">
+          <div className="h-[260px] sm:h-[360px] lg:h-full lg:aspect-auto">
             <BannerCarousel
               division="junior"
               defaultTitle="초/중등관"

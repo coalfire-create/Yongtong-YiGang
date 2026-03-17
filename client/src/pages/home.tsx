@@ -110,19 +110,19 @@ function HeroCarousel() {
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-10 text-white">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:p-10 text-white">
             {slide.link_url ? (
               <Link href={slide.link_url}>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight" data-testid={`text-banner-title-${index}`}>{slide.title}</h2>
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mt-1">{slide.subtitle}</p>
-                <p className="text-sm sm:text-base mt-3 text-white/80 max-w-md">{slide.description}</p>
+                <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold leading-tight" data-testid={`text-banner-title-${index}`}>{slide.title}</h2>
+                <p className="text-base sm:text-2xl lg:text-4xl font-extrabold mt-0.5 sm:mt-1">{slide.subtitle}</p>
+                <p className="text-xs sm:text-sm lg:text-base mt-2 sm:mt-3 text-white/80 max-w-md">{slide.description}</p>
               </Link>
             ) : (
               <>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight" data-testid={`text-banner-title-${index}`}>{slide.title}</h2>
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mt-1">{slide.subtitle}</p>
-                <p className="text-sm sm:text-base mt-3 text-white/80 max-w-md">{slide.description}</p>
+                <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold leading-tight" data-testid={`text-banner-title-${index}`}>{slide.title}</h2>
+                <p className="text-base sm:text-2xl lg:text-4xl font-extrabold mt-0.5 sm:mt-1">{slide.subtitle}</p>
+                <p className="text-xs sm:text-sm lg:text-base mt-2 sm:mt-3 text-white/80 max-w-md">{slide.description}</p>
               </>
             )}
           </div>
@@ -232,7 +232,7 @@ function HeroSection() {
   return (
     <section className="px-3 sm:px-5 lg:px-6 py-3 lg:py-5" data-testid="hero-section">
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-2.5 sm:gap-3 lg:h-[calc(100vh-100px)] lg:min-h-[520px] lg:max-h-[720px]">
-        <div className="aspect-[16/9] lg:aspect-auto lg:h-full">
+        <div className="h-[260px] sm:h-[360px] lg:h-full lg:aspect-auto">
           <HeroCarousel />
         </div>
         <div className="lg:h-full">
