@@ -106,7 +106,7 @@ function HeroCarousel() {
           }`}
         >
           {slide.image_url ? (
-            <img src={slide.image_url} alt={slide.title} className="w-full h-full object-cover" />
+            <img src={slide.image_url} alt={slide.title} className="w-full h-full object-contain lg:object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
           )}
@@ -230,12 +230,12 @@ function QuickMenuGrid() {
 
 function HeroSection() {
   return (
-    <section className="px-3 sm:px-5 lg:px-6 py-3 lg:py-5" data-testid="hero-section">
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-2.5 sm:gap-3 lg:h-[calc(100vh-100px)] lg:min-h-[520px] lg:max-h-[720px]">
-        <div className="h-[260px] sm:h-[360px] lg:h-full lg:aspect-auto">
+    <section className="lg:px-6 lg:py-5" data-testid="hero-section">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] lg:gap-3 lg:h-[calc(100vh-100px)] lg:min-h-[520px] lg:max-h-[720px]">
+        <div className="w-full h-[260px] sm:h-[360px] lg:h-full">
           <HeroCarousel />
         </div>
-        <div className="lg:h-full">
+        <div className="px-3 py-3 sm:px-5 lg:px-0 lg:py-0 lg:h-full">
           <QuickMenuGrid />
         </div>
       </div>
