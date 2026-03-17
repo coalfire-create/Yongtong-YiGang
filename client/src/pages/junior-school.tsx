@@ -9,8 +9,8 @@ import { SummaryTimetableSection } from "@/components/summary-timetable";
 const JUNIOR_SUBJECTS = ["수학", "국어", "영어", "탐구"];
 
 const QUICK_MENU_ITEMS: { label: string; sub: string; icon: LucideIcon; path: string }[] = [
-  { label: "초/중등부 과정", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
-  { label: "선생님 소개", sub: "자세히 보기 +", icon: Users, path: "/teachers" },
+  { label: "초/중등부 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
+  { label: "프리미엄 학습 시스템", sub: "자세히 보기 +", icon: Users, path: "/teachers" },
 ];
 
 function QuickMenuCard({
