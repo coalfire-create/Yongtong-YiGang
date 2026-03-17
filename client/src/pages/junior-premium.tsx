@@ -43,7 +43,7 @@ export function JuniorPremiumSystem() {
             </div>
             <div>
               <p className="text-xs font-bold tracking-widest text-[#7B2332] uppercase">System 01</p>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">구멍 난 독을 막는 힘, 누적 오답 시스템</h2>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">구멍 난 독을 막는 힘, 누적 오답 테스트</h2>
             </div>
           </div>
           <p className="text-gray-500 text-sm leading-relaxed mb-8">

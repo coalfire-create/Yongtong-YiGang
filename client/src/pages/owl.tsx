@@ -30,7 +30,7 @@ export function Owl() {
           <div>
             <h2 className="text-lg font-bold text-gray-900 mb-1" data-testid="text-owl-usage-title">이용 방법</h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              "올빼미 장학생 지원 혜택"에 의거 담당자와 상담후 이용 가능합니다. 월~일 1년 365일 무휴로 운영합니다. 단 학기중에는 평일(월~금) 하교후 ~24시 운영이며 
+              "올빼미 장학생 지원 혜택"에 의거 담당자와 상담후 이용 가능합니다. 월~일 1년 365일 무휴로 운영합니다. 단 학기중에는 평일(월~금) 하교후 ~24시 운영이며 내신 시험기간에는 13시~24시 운영합니다.
               
             </p>
           </div>
@@ -41,19 +41,21 @@ export function Owl() {
             <Clock className="w-5 h-5 text-[#7B2332]" />
             운영 시간
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { day: "평일 (월~금)", time: "14:00 ~ 24:00" },
-              { day: "토요일", time: "8:00 ~ 24:00" },
-              { day: "일요일·공휴일", time: "정상운영" },
+              { day: "평일 (월~금)", time: "14:00 ~ 24:00", highlight: false },
+              { day: "토요일", time: "8:00 ~ 24:00", highlight: false },
+              { day: "일요일·공휴일", time: "정상운영", highlight: false },
+              { day: "썸머·윈터 방학중", time: "8:00 ~ 24:00", sub: "월~일 365일 무휴", highlight: true },
             ].map((item) => (
               <div
                 key={item.day}
-                className="text-center py-4 px-3 bg-gray-50 rounded"
+                className={`text-center py-4 px-3 rounded ${item.highlight ? "bg-[#7B2332] text-white" : "bg-gray-50"}`}
                 data-testid={`card-time-${item.day}`}
               >
-                <p className="text-sm font-semibold text-gray-900 mb-1">{item.day}</p>
-                <p className="text-sm text-[#7B2332] font-bold">{item.time}</p>
+                <p className={`text-sm font-semibold mb-1 ${item.highlight ? "text-white/90" : "text-gray-900"}`}>{item.day}</p>
+                <p className={`text-sm font-bold ${item.highlight ? "text-white" : "text-[#7B2332]"}`}>{item.time}</p>
+                {item.sub && <p className={`text-xs mt-0.5 ${item.highlight ? "text-white/75" : "text-gray-400"}`}>{item.sub}</p>}
               </div>
             ))}
           </div>
@@ -65,7 +67,7 @@ export function Owl() {
             시설 안내
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2">
-            {["개인 독서실 좌석 80석", "냉·난방 완비", "무료 Wi-Fi", "정수기·간식 코너", "CCTV 안전 관리", "전문 관리 선생님 상주"].map((feat) => (
+            {["개인 독서실 좌석 75석", "냉·난방/가습기/공기청정기 완비", "무료 Wi-Fi(사이트 차단 인강용 wifi)", "냉/온수 정수기", "CCTV 관리", "전문 관리 선생님 상주"].map((feat) => (
               <div key={feat} className="flex items-center gap-2 py-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#7B2332] flex-shrink-0" />
                 <span className="text-sm text-gray-700">{feat}</span>
