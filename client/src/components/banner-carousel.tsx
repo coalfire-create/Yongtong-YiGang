@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 
 interface Banner {
@@ -141,6 +141,17 @@ export function BannerCarousel({
     </div>
   );
 
+  const arrows = slides.length > 1 && (
+    <>
+      <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-black/25 hover:bg-black/45 text-white transition-colors rounded-sm" data-testid={`button-carousel-prev-${division}`} aria-label="이전">
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-black/25 hover:bg-black/45 text-white transition-colors rounded-sm" data-testid={`button-carousel-next-${division}`} aria-label="다음">
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </>
+  );
+
   return (
     <div
       className="relative w-full bg-gray-900 lg:h-full"
@@ -174,6 +185,7 @@ export function BannerCarousel({
             <SlideText slide={slide} division={division} index={index} />
           </div>
         ))}
+        {arrows}
         {dots}
       </div>
 
@@ -197,6 +209,7 @@ export function BannerCarousel({
             <SlideText slide={slide} division={division} index={index} />
           </div>
         ))}
+        {arrows}
         {dots}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Landmark, PenLine, Brain, Award, Megaphone, TrendingUp, Loader2, type LucideIcon } from "lucide-react";
+import { Landmark, PenLine, Brain, Award, Megaphone, TrendingUp, Loader2, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 import { PageLayout } from "@/components/layout";
 import { PopupModal } from "@/components/popup-modal";
@@ -125,6 +125,17 @@ function HeroCarousel() {
     </div>
   );
 
+  const arrows = slides.length > 1 && (
+    <>
+      <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-black/25 hover:bg-black/45 text-white transition-colors rounded-sm" data-testid="button-carousel-prev" aria-label="이전">
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-black/25 hover:bg-black/45 text-white transition-colors rounded-sm" data-testid="button-carousel-next" aria-label="다음">
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </>
+  );
+
   if (isLoading) {
     return <div className="w-full min-h-[200px] bg-gray-900 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-white/50" /></div>;
   }
@@ -143,6 +154,7 @@ function HeroCarousel() {
             {slideText(slide, index)}
           </div>
         ))}
+        {arrows}
         {dots}
       </div>
       {/* 데스크탑: 고정 높이, 스와이프 */}
@@ -157,6 +169,7 @@ function HeroCarousel() {
             {slideText(slide, index)}
           </div>
         ))}
+        {arrows}
         {dots}
       </div>
     </div>
