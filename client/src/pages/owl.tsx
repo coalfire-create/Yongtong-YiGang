@@ -28,43 +28,21 @@ function OwlImageSection() {
 
   if (images.length === 1) {
     const b = images[0];
+    const inner = (
+      <img
+        src={b.image_url!}
+        alt={b.title || "올빼미 독학관"}
+        className="w-full h-auto block"
+        data-testid="owl-hero-image"
+      />
+    );
     return (
-      <div className="w-full relative overflow-hidden" style={{ maxHeight: "520px" }} data-testid="owl-hero-image">
+      <div className="w-full">
         {b.link_url ? (
           <a href={b.link_url} target="_blank" rel="noopener noreferrer" className="block">
-            <img
-              src={b.image_url!}
-              alt={b.title || "올빼미 독학관"}
-              className="w-full object-cover"
-              style={{ maxHeight: "520px", objectPosition: "center" }}
-            />
+            {inner}
           </a>
-        ) : (
-          <img
-            src={b.image_url!}
-            alt={b.title || "올빼미 독학관"}
-            className="w-full object-cover"
-            style={{ maxHeight: "520px", objectPosition: "center" }}
-          />
-        )}
-        {(b.title || b.subtitle || b.description) && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent pointer-events-none" />
-        )}
-        {(b.title || b.description) && (
-          <div className="absolute bottom-0 left-0 right-0 px-6 sm:px-10 pb-8 pt-12 pointer-events-none">
-            {b.title && (
-              <h2 className="text-white text-2xl sm:text-3xl font-extrabold tracking-tight drop-shadow-md">
-                {b.title}
-              </h2>
-            )}
-            {b.subtitle && (
-              <p className="text-white/80 text-sm sm:text-base mt-1 font-medium">{b.subtitle}</p>
-            )}
-            {b.description && (
-              <p className="text-white/70 text-sm mt-1">{b.description}</p>
-            )}
-          </div>
-        )}
+        ) : inner}
       </div>
     );
   }
@@ -73,22 +51,19 @@ function OwlImageSection() {
     return (
       <div className="grid grid-cols-2 gap-1" data-testid="owl-image-grid-2">
         {images.map((b) => (
-          <div key={b.id} className="relative overflow-hidden group" style={{ maxHeight: "420px" }}>
+          <div key={b.id} className="relative overflow-hidden group">
             {b.link_url ? (
-              <a href={b.link_url} target="_blank" rel="noopener noreferrer" className="block h-full">
-                <img src={b.image_url!} alt={b.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ maxHeight: "420px" }} />
+              <a href={b.link_url} target="_blank" rel="noopener noreferrer" className="block">
+                <img src={b.image_url!} alt={b.title || ""} className="w-full h-auto block transition-transform duration-500 group-hover:scale-105" />
               </a>
             ) : (
-              <img src={b.image_url!} alt={b.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ maxHeight: "420px" }} />
+              <img src={b.image_url!} alt={b.title || ""} className="w-full h-auto block transition-transform duration-500 group-hover:scale-105" />
             )}
             {b.title && (
-              <>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-                <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pointer-events-none">
-                  <p className="text-white font-bold text-sm drop-shadow">{b.title}</p>
-                  {b.subtitle && <p className="text-white/75 text-xs mt-0.5">{b.subtitle}</p>}
-                </div>
-              </>
+              <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pointer-events-none">
+                <p className="text-white font-bold text-sm drop-shadow">{b.title}</p>
+                {b.subtitle && <p className="text-white/75 text-xs mt-0.5">{b.subtitle}</p>}
+              </div>
             )}
           </div>
         ))}
@@ -98,26 +73,19 @@ function OwlImageSection() {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-1" data-testid="owl-image-grid-multi">
-      {images.map((b, idx) => (
-        <div
-          key={b.id}
-          className={`relative overflow-hidden group ${idx === 0 && images.length % 2 !== 0 ? "col-span-2 sm:col-span-1" : ""}`}
-          style={{ maxHeight: "340px" }}
-        >
+      {images.map((b) => (
+        <div key={b.id} className="relative overflow-hidden group">
           {b.link_url ? (
-            <a href={b.link_url} target="_blank" rel="noopener noreferrer" className="block h-full">
-              <img src={b.image_url!} alt={b.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ maxHeight: "340px" }} />
+            <a href={b.link_url} target="_blank" rel="noopener noreferrer" className="block">
+              <img src={b.image_url!} alt={b.title || ""} className="w-full h-auto block transition-transform duration-500 group-hover:scale-105" />
             </a>
           ) : (
-            <img src={b.image_url!} alt={b.title || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ maxHeight: "340px" }} />
+            <img src={b.image_url!} alt={b.title || ""} className="w-full h-auto block transition-transform duration-500 group-hover:scale-105" />
           )}
           {b.title && (
-            <>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent pointer-events-none" />
-              <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pointer-events-none">
-                <p className="text-white font-bold text-sm drop-shadow">{b.title}</p>
-              </div>
-            </>
+            <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pointer-events-none">
+              <p className="text-white font-bold text-sm drop-shadow">{b.title}</p>
+            </div>
           )}
         </div>
       ))}
