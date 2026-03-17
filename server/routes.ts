@@ -709,6 +709,67 @@ export async function registerRoutes(
     }
   });
 
+  app.put("/api/timetables/:id", requireAdmin, upload.single("teacher_image"), async (req, res) => {
+    const { id } = req.params;
+    const { teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, description, subject } = req.body;
+    if (!category || !class_name) {
+      return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
+    }
+    try {
+      let teacher_image_url: string | undefined;
+      if (req.file) {
+        const ext = path.extname(req.file.originalname) || ".jpg";
+        const fileName = `timetables/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+        if (uploadError) {
+          return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+        }
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+        teacher_image_url = urlData.publicUrl;
+      }
+      const setClauses = [
+        "title = $1",
+        "teacher_id = $2",
+        "teacher_name = $3",
+        "category = $4",
+        "target_school = $5",
+        "class_name = $6",
+        "class_time = $7",
+        "start_date = $8",
+        "description = $9",
+        "subject = $10",
+      ];
+      const values: any[] = [
+        class_name || "",
+        teacher_id ? Number(teacher_id) : null,
+        teacher_name || "",
+        category || "",
+        target_school || "",
+        class_name || "",
+        class_time || "",
+        start_date || "",
+        description || "",
+        subject || "",
+      ];
+      if (teacher_image_url !== undefined) {
+        setClauses.push(`teacher_image_url = $${values.length + 1}`);
+        values.push(teacher_image_url);
+      }
+      values.push(id);
+      const { rows } = await pool.query(
+        `UPDATE timetables SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING *`,
+        values
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "시간표를 찾을 수 없습니다." });
+      res.json(rows[0]);
+    } catch (err: any) {
+      console.error("[PUT /api/timetables/:id] Error:", err);
+      res.status(500).json({ error: err.message || "수정 중 오류가 발생했습니다." });
+    }
+  });
+
   app.delete("/api/timetables/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {

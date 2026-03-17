@@ -517,6 +517,30 @@ function TimetablesTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string>("");
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    register: editRegister,
+    handleSubmit: editHandleSubmit,
+    reset: editReset,
+    watch: editWatch,
+    setValue: editSetValue,
+    formState: { errors: editErrors },
+  } = useForm<{
+    category: string;
+    subject: string;
+    target_school: string;
+    class_name: string;
+    class_time: string;
+    start_date: string;
+    teacher_id: string;
+    description: string;
+  }>();
+  const editCategory = editWatch("category");
+
   const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables"],
   });
@@ -575,6 +599,72 @@ function TimetablesTab() {
       queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, formData }: { id: number; formData: FormData }) => {
+      const res = await fetch(`/api/timetables/${id}`, {
+        method: "PUT",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "수정 실패");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+      setEditingId(null);
+      setEditImageFile(null);
+      setEditImagePreview("");
+      if (editFileInputRef.current) editFileInputRef.current.value = "";
+    },
+  });
+
+  const handleEditStart = (tt: Timetable) => {
+    setEditingId(tt.id);
+    setEditImageFile(null);
+    setEditImagePreview("");
+    if (editFileInputRef.current) editFileInputRef.current.value = "";
+    editReset({
+      category: tt.category,
+      subject: tt.subject,
+      target_school: tt.target_school || "",
+      class_name: tt.class_name,
+      class_time: tt.class_time || "",
+      start_date: tt.start_date || "",
+      teacher_id: tt.teacher_id ? String(tt.teacher_id) : "",
+      description: tt.description || "",
+    });
+  };
+
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setEditImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const onEditSubmit = (data: any) => {
+    if (!editingId) return;
+    const teacher = teachers.find((t) => String(t.id) === data.teacher_id);
+    const formData = new FormData();
+    if (data.teacher_id) formData.append("teacher_id", data.teacher_id);
+    formData.append("teacher_name", teacher?.name || data.teacher_id || "");
+    formData.append("category", data.category);
+    formData.append("subject", data.subject || "");
+    formData.append("target_school", data.target_school || "");
+    formData.append("class_name", data.class_name);
+    formData.append("class_time", data.class_time || "");
+    formData.append("start_date", data.start_date || "");
+    formData.append("description", data.description || "");
+    if (editImageFile) formData.append("teacher_image", editImageFile);
+    updateMutation.mutate({ id: editingId, formData });
+  };
 
   const handleMove = (index: number, direction: "up" | "down") => {
     const newIndex = direction === "up" ? index - 1 : index + 1;
@@ -786,56 +876,208 @@ function TimetablesTab() {
       ) : (
         <div className="space-y-3">
           {filteredTimetables.map((tt, idx) => (
-            <div key={tt.id} className="flex items-center gap-3 bg-white border border-gray-200 p-4" data-testid={`card-admin-timetable-${tt.id}`}>
-              <div className="flex flex-col gap-0.5 flex-shrink-0">
+            <div key={tt.id} className="border border-gray-200 bg-white" data-testid={`card-admin-timetable-${tt.id}`}>
+              <div className="flex items-center gap-3 p-4">
+                <div className="flex flex-col gap-0.5 flex-shrink-0">
+                  <button
+                    onClick={() => handleMove(idx, "up")}
+                    disabled={idx === 0 || reorderMutation.isPending}
+                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
+                    data-testid={`button-move-up-timetable-${tt.id}`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleMove(idx, "down")}
+                    disabled={idx === filteredTimetables.length - 1 || reorderMutation.isPending}
+                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
+                    data-testid={`button-move-down-timetable-${tt.id}`}
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {tt.teacher_image_url ? (
+                  <img src={tt.teacher_image_url} alt={tt.teacher_name} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200" />
+                ) : (
+                  <div className="w-10 h-10 bg-red-50 flex items-center justify-center flex-shrink-0 rounded-full">
+                    <Calendar className="w-5 h-5 text-red-500" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-gray-900 text-sm">{tt.class_name}</p>
+                    {tt.subject && <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 font-medium">{tt.subject}</span>}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {tt.category}{tt.teacher_name ? ` · ${tt.teacher_name}` : ""}{tt.target_school ? ` · ${tt.target_school}` : ""}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {tt.class_time}{tt.start_date ? ` | 개강: ${tt.start_date}` : ""}
+                  </p>
+                  {tt.description && <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{tt.description}</p>}
+                </div>
                 <button
-                  onClick={() => handleMove(idx, "up")}
-                  disabled={idx === 0 || reorderMutation.isPending}
-                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
-                  data-testid={`button-move-up-timetable-${tt.id}`}
+                  onClick={() => editingId === tt.id ? setEditingId(null) : handleEditStart(tt)}
+                  className="flex-shrink-0 p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  data-testid={`button-edit-timetable-${tt.id}`}
+                  title="수정"
                 >
-                  <ArrowUp className="w-3.5 h-3.5" />
+                  <Pencil className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => handleMove(idx, "down")}
-                  disabled={idx === filteredTimetables.length - 1 || reorderMutation.isPending}
-                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
-                  data-testid={`button-move-down-timetable-${tt.id}`}
+                  onClick={() => {
+                    if (confirm("이 시간표를 삭제하시겠습니까?")) {
+                      deleteMutation.mutate(tt.id);
+                    }
+                  }}
+                  className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  data-testid={`button-delete-timetable-${tt.id}`}
                 >
-                  <ArrowDown className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              {tt.teacher_image_url ? (
-                <img src={tt.teacher_image_url} alt={tt.teacher_name} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200" />
-              ) : (
-                <div className="w-10 h-10 bg-red-50 flex items-center justify-center flex-shrink-0 rounded-full">
-                  <Calendar className="w-5 h-5 text-red-500" />
+
+              {editingId === tt.id && (
+                <div className="border-t border-gray-100 bg-gray-50 p-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">시간표 수정</p>
+                  <form onSubmit={editHandleSubmit(onEditSubmit)} className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">카테고리 *</label>
+                        <select
+                          {...editRegister("category", { required: true })}
+                          className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 bg-white"
+                        >
+                          <option value="고등관">고등관 (전체)</option>
+                          <option value="고등관-고1">고등관 - 고1</option>
+                          <option value="고등관-고2">고등관 - 고2</option>
+                          <option value="고등관-고3">고등관 - 고3</option>
+                          <option value="초/중등관">초/중등관</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">과목 *</label>
+                        <select
+                          {...editRegister("subject", { required: true })}
+                          className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 bg-white"
+                        >
+                          {TIMETABLE_SUBJECT_OPTIONS.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">담당 선생님</label>
+                        <select
+                          {...editRegister("teacher_id")}
+                          className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 bg-white"
+                        >
+                          <option value="">선택 안함</option>
+                          {teachers.map((t) => (
+                            <option key={t.id} value={t.id}>{t.name} ({t.subject})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">수업명 *</label>
+                        <input
+                          {...editRegister("class_name", { required: true })}
+                          className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600"
+                          placeholder="예: 수학 정규반"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">목차 (필터)</label>
+                        {CATEGORY_FILTER_OPTIONS[editCategory] ? (
+                          <select
+                            {...editRegister("target_school")}
+                            className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 bg-white"
+                          >
+                            <option value="">선택 안함</option>
+                            {CATEGORY_FILTER_OPTIONS[editCategory].map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            {...editRegister("target_school")}
+                            className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600"
+                            placeholder="예: 화성고, 가온고"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">수업 시간</label>
+                        <input
+                          {...editRegister("class_time")}
+                          className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600"
+                          placeholder="예: 월/수 18:00~20:00"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">개강일</label>
+                        <input
+                          {...editRegister("start_date")}
+                          className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600"
+                          placeholder="예: 3/3"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">수업 설명</label>
+                      <textarea
+                        {...editRegister("description")}
+                        className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 resize-none"
+                        rows={2}
+                        placeholder="수업 내용, 커리큘럼 등"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">선생님 사진 변경</label>
+                      <div className="flex items-center gap-3">
+                        {(editImagePreview || tt.teacher_image_url) && (
+                          <img
+                            src={editImagePreview || tt.teacher_image_url}
+                            alt="미리보기"
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                          />
+                        )}
+                        <input
+                          ref={editFileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageChange}
+                          className="text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                          data-testid={`input-edit-timetable-image-${tt.id}`}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="submit"
+                        disabled={updateMutation.isPending}
+                        className="flex items-center gap-1.5 bg-[#7B2332] text-white px-4 py-1.5 text-sm font-semibold hover:bg-[#6a1d2b] disabled:opacity-50 transition-colors"
+                        data-testid={`button-save-timetable-${tt.id}`}
+                      >
+                        {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                        저장
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEditingId(null); setEditImageFile(null); setEditImagePreview(""); }}
+                        className="flex items-center gap-1.5 bg-white border border-gray-300 text-gray-600 px-4 py-1.5 text-sm hover:bg-gray-50 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        취소
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-bold text-gray-900 text-sm">{tt.class_name}</p>
-                  {tt.subject && <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 font-medium">{tt.subject}</span>}
-                </div>
-                <p className="text-xs text-gray-500">
-                  {tt.category}{tt.teacher_name ? ` · ${tt.teacher_name}` : ""}{tt.target_school ? ` · ${tt.target_school}` : ""}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {tt.class_time}{tt.start_date ? ` | 개강: ${tt.start_date}` : ""}
-                </p>
-                {tt.description && <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{tt.description}</p>}
-              </div>
-              <button
-                onClick={() => {
-                  if (confirm("이 시간표를 삭제하시겠습니까?")) {
-                    deleteMutation.mutate(tt.id);
-                  }
-                }}
-                className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                data-testid={`button-delete-timetable-${tt.id}`}
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           ))}
         </div>
