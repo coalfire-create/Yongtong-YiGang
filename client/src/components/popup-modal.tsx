@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface Popup {
   id: number;
@@ -27,7 +27,7 @@ function dismissForToday() {
 
 export function PopupModal() {
   const [visible, setVisible] = useState(false);
-  const [current, setCurrent] = useState(0);
+  const [closedIds, setClosedIds] = useState<Set<number>>(new Set());
 
   const { data: popups = [] } = useQuery<Popup[]>({
     queryKey: ["/api/popups"],
@@ -39,7 +39,17 @@ export function PopupModal() {
     }
   }, [popups]);
 
-  const close = useCallback(() => {
+  const activePopups = popups.filter((p) => !closedIds.has(p.id));
+
+  const closeOne = useCallback((id: number) => {
+    setClosedIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const closeAll = useCallback(() => {
     setVisible(false);
   }, []);
 
@@ -48,118 +58,81 @@ export function PopupModal() {
     setVisible(false);
   }, []);
 
-  const prev = useCallback(() => {
-    setCurrent((c) => (c === 0 ? popups.length - 1 : c - 1));
-  }, [popups.length]);
-
-  const next = useCallback(() => {
-    setCurrent((c) => (c === popups.length - 1 ? 0 : c + 1));
-  }, [popups.length]);
+  useEffect(() => {
+    if (visible && activePopups.length === 0) {
+      setVisible(false);
+    }
+  }, [activePopups.length, visible]);
 
   if (!visible || popups.length === 0) return null;
 
-  const popup = popups[current];
-
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center px-4"
       data-testid="popup-modal-overlay"
     >
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={close}
-      />
+      <div className="absolute inset-0 bg-black/60" onClick={closeAll} />
 
-      <div className="relative z-10 flex flex-col items-center w-full max-w-lg mx-4" data-testid="popup-modal-content">
-        <div className="relative w-full">
-          {popups.length > 1 && (
-            <button
-              onClick={prev}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 z-20 w-10 h-10 flex items-center justify-center bg-white/20 text-white hover:bg-white/40 transition-colors rounded-full"
-              data-testid="button-popup-prev"
-              aria-label="이전"
+      <div className="relative z-10 flex flex-col items-center w-full" data-testid="popup-modal-content">
+        <div className="flex flex-wrap justify-center gap-4 max-w-[90vw]">
+          {activePopups.map((popup) => (
+            <div
+              key={popup.id}
+              className="relative flex-shrink-0 w-[320px] sm:w-[360px] shadow-2xl"
+              data-testid={`popup-card-${popup.id}`}
             >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-          )}
+              <button
+                onClick={() => closeOne(popup.id)}
+                className="absolute top-2 right-2 z-20 w-8 h-8 flex items-center justify-center bg-black/50 text-white hover:bg-black/70 transition-colors rounded-full"
+                data-testid={`button-popup-close-${popup.id}`}
+                aria-label="닫기"
+              >
+                <X className="w-4 h-4" />
+              </button>
 
-          {popup.link_url ? (
-            <a
-              href={popup.link_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-              data-testid={`popup-slide-${current}`}
-            >
-              {popup.image_url ? (
-                <img
-                  src={popup.image_url}
-                  alt={popup.title}
-                  className="w-full object-contain max-h-[70vh]"
-                />
+              {popup.link_url ? (
+                <a
+                  href={popup.link_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  {popup.image_url ? (
+                    <img
+                      src={popup.image_url}
+                      alt={popup.title}
+                      className="w-full object-contain max-h-[65vh]"
+                    />
+                  ) : (
+                    <div className="w-full aspect-[4/5] bg-gradient-to-br from-[#7B2332] to-red-700 flex items-center justify-center p-8">
+                      <h3 className="text-2xl font-extrabold text-white text-center leading-tight">
+                        {popup.title}
+                      </h3>
+                    </div>
+                  )}
+                </a>
               ) : (
-                <div className="w-full aspect-[4/5] bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center p-8">
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white text-center leading-tight">
-                    {popup.title}
-                  </h3>
-                </div>
-              )}
-            </a>
-          ) : (
-            <div data-testid={`popup-slide-${current}`}>
-              {popup.image_url ? (
-                <img
-                  src={popup.image_url}
-                  alt={popup.title}
-                  className="w-full object-contain max-h-[70vh]"
-                />
-              ) : (
-                <div className="w-full aspect-[4/5] bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center p-8">
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white text-center leading-tight">
-                    {popup.title}
-                  </h3>
+                <div>
+                  {popup.image_url ? (
+                    <img
+                      src={popup.image_url}
+                      alt={popup.title}
+                      className="w-full object-contain max-h-[65vh]"
+                    />
+                  ) : (
+                    <div className="w-full aspect-[4/5] bg-gradient-to-br from-[#7B2332] to-red-700 flex items-center justify-center p-8">
+                      <h3 className="text-2xl font-extrabold text-white text-center leading-tight">
+                        {popup.title}
+                      </h3>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-
-          {popups.length > 1 && (
-            <button
-              onClick={next}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 z-20 w-10 h-10 flex items-center justify-center bg-white/20 text-white hover:bg-white/40 transition-colors rounded-full"
-              data-testid="button-popup-next"
-              aria-label="다음"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          )}
-
-          <button
-            onClick={close}
-            className="absolute top-2 right-2 z-20 w-8 h-8 flex items-center justify-center bg-black/40 text-white hover:bg-black/60 transition-colors rounded-full"
-            data-testid="button-popup-close-x"
-            aria-label="닫기"
-          >
-            <X className="w-4 h-4" />
-          </button>
-
-          {popups.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
-              {popups.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrent(i)}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    i === current ? "bg-white w-5" : "bg-white/50"
-                  }`}
-                  data-testid={`popup-dot-${i}`}
-                />
-              ))}
-            </div>
-          )}
+          ))}
         </div>
 
-        <div className="flex items-center gap-3 mt-4 w-full justify-center">
+        <div className="flex items-center gap-3 mt-5">
           <button
             onClick={dismissToday}
             className="px-6 py-2.5 text-sm font-medium text-white border border-white/40 hover:bg-white/10 transition-colors rounded"
@@ -168,19 +141,13 @@ export function PopupModal() {
             오늘하루 보지않기
           </button>
           <button
-            onClick={close}
-            className="px-6 py-2.5 text-sm font-bold text-gray-900 bg-red-500 hover:bg-red-600 transition-colors rounded"
+            onClick={closeAll}
+            className="px-6 py-2.5 text-sm font-bold text-white bg-[#7B2332] hover:bg-[#6a1e2b] transition-colors rounded"
             data-testid="button-popup-close"
           >
             닫기
           </button>
         </div>
-
-        {popups.length > 1 && (
-          <p className="text-white/60 text-xs mt-2" data-testid="popup-counter">
-            {current + 1} / {popups.length}
-          </p>
-        )}
       </div>
     </div>
   );
