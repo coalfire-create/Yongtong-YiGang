@@ -2,53 +2,61 @@ import { SectionPage } from "@/components/layout";
 import { MapPin, Clock, Bus, Car } from "lucide-react";
 import mapImage from "@assets/map.png";
 
+const locations = [
+  { label: "고등관 1층", address: "경기도 수원시 영통구 봉영로 1605, 모던타운 102호" },
+  { label: "고등관 5층", address: "경기도 수원시 영통구 봉영로 1605, 모던타운 504호" },
+  { label: "초/중등관", address: "경기도 수원시 영통구 봉영로 1605, 모던타운 505호" },
+  { label: "올빼미 스파르타", address: "경기도 수원시 영통구 봉영로 1605, 모던타운 505호" },
+];
+
+const hours = [
+  { label: "고등관 · 초/중등관", time: "평일 14:00~22:00" },
+  { label: "올빼미 스파르타", time: "평일 14:00~24:00 / 토·일·공휴일 8:00~24:00" },
+];
+
 export function Directions() {
   return (
     <SectionPage title="오시는길" subtitle="영통이강학원 위치 및 교통 안내">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        <div className="bg-white border border-gray-200 p-6 space-y-5" data-testid="card-contact-info">
+        <div className="bg-white border border-gray-200 p-6 space-y-6" data-testid="card-contact-info">
           <div className="flex items-start gap-3">
             <MapPin className="w-5 h-5 text-[#7B2332] flex-shrink-0 mt-0.5" />
-            <div className="space-y-2.5">
-              <p className="font-bold text-gray-900 text-sm">주소</p>
-              <div>
-                <p className="text-xs font-semibold text-[#7B2332]">고등관 1층</p>
-                <p className="text-sm text-gray-600">경기도 수원시 영통구 봉영로 1605, 모던타운 102호</p>
+            <div className="flex-1">
+              <p className="font-bold text-gray-900 text-sm mb-3">주소</p>
+              <div className="space-y-3">
+                {locations.map((loc) => (
+                  <div key={loc.label} className="flex items-start gap-3">
+                    <span className="inline-block text-xs font-semibold text-[#7B2332] bg-red-50 px-2 py-0.5 rounded mt-0.5 whitespace-nowrap flex-shrink-0">{loc.label}</span>
+                    <p className="text-sm text-gray-600 leading-snug">{loc.address}</p>
+                  </div>
+                ))}
               </div>
-              <div>
-                <p className="text-xs font-semibold text-[#7B2332]">고등관 5층</p>
-                <p className="text-sm text-gray-600">경기도 수원시 영통구 봉영로 1605, 모던타운 504호</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-[#7B2332]">초/중등관</p>
-                <p className="text-sm text-gray-600">경기도 수원시 영통구 봉영로 1605, 모던타운 505호</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-[#7B2332]">올빼미 스파르타</p>
-                <p className="text-sm text-gray-600">경기도 수원시 영통구 봉영로 1605, 모던타운 505호</p>
-              </div>
-              <p className="text-xs text-gray-400">영통역에서 도보 5분</p>
             </div>
           </div>
+
+          <div className="border-t border-gray-100" />
+
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 text-[#7B2332] flex-shrink-0 mt-0.5" />
-            <div className="space-y-1.5">
-              <p className="font-bold text-gray-900 text-sm">운영 시간</p>
-              <div>
-                <p className="text-xs font-semibold text-gray-500">고등관 · 초/중등관</p>
-                <p className="text-sm text-gray-600">평일 14:00~22:00 / 주말 8:30~22:00</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500">올빼미 스파르타</p>
-                <p className="text-sm text-gray-600">평일 14:00~24:00 / 토·일·공휴일 8:00~24:00</p>
+            <div className="flex-1">
+              <p className="font-bold text-gray-900 text-sm mb-3">운영 시간</p>
+              <div className="space-y-3">
+                {hours.map((h) => (
+                  <div key={h.label} className="flex items-start gap-3">
+                    <span className="inline-block text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded mt-0.5 whitespace-nowrap flex-shrink-0">{h.label}</span>
+                    <p className="text-sm text-gray-600 leading-snug">{h.time}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
-        <div className="border border-gray-200 overflow-hidden min-h-[250px]" data-testid="map-image">
+
+        <div className="border border-gray-200 overflow-hidden min-h-[280px]" data-testid="map-image">
           <img src={mapImage} alt="영통이강학원 위치 지도" className="w-full h-full object-cover" />
         </div>
       </div>
+
       <h2 className="text-2xl font-bold text-gray-900 mb-6">교통 안내</h2>
       <div className="space-y-4">
         <div className="flex items-start gap-4 bg-white border border-gray-200 p-6" data-testid="card-transport-subway">
