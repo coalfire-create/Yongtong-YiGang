@@ -921,6 +921,32 @@ export async function registerRoutes(
     }
   });
 
+  app.put("/api/popups/:id", requireAdmin, upload.single("image"), async (req, res) => {
+    const { id } = req.params;
+    const { title, link_url, display_order } = req.body;
+    if (!title) return res.status(400).json({ error: "제목은 필수입니다." });
+    try {
+      let newImageUrl: string | undefined;
+      if (req.file) {
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const fileName = `popups/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images").upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+        newImageUrl = supabase.storage.from("images").getPublicUrl(fileName).data.publicUrl;
+      }
+      const sets: string[] = ["title = $1", "link_url = $2", "display_order = $3"];
+      const vals: any[] = [title, link_url || null, parseInt(display_order) || 0];
+      if (newImageUrl !== undefined) { sets.push(`image_url = $${vals.length + 1}`); vals.push(newImageUrl); }
+      vals.push(id);
+      const { rows } = await pool.query(
+        `UPDATE popups SET ${sets.join(", ")} WHERE id = $${vals.length} RETURNING *`, vals
+      );
+      if (!rows.length) return res.status(404).json({ error: "팝업을 찾을 수 없습니다." });
+      res.json(rows[0]);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
   app.patch("/api/popups/:id/toggle", requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -1010,6 +1036,32 @@ export async function registerRoutes(
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
+  });
+
+  app.put("/api/banners/:id", requireAdmin, upload.single("image"), async (req, res) => {
+    const { id } = req.params;
+    const { title, subtitle, description, link_url, display_order } = req.body;
+    if (!title) return res.status(400).json({ error: "제목은 필수입니다." });
+    try {
+      let newImageUrl: string | undefined;
+      if (req.file) {
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const fileName = `banners/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images").upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+        newImageUrl = supabase.storage.from("images").getPublicUrl(fileName).data.publicUrl;
+      }
+      const sets: string[] = ["title = $1", "subtitle = $2", "description = $3", "link_url = $4", "display_order = $5"];
+      const vals: any[] = [title, subtitle || "", description || "", link_url || null, parseInt(display_order) || 0];
+      if (newImageUrl !== undefined) { sets.push(`image_url = $${vals.length + 1}`); vals.push(newImageUrl); }
+      vals.push(id);
+      const { rows } = await pool.query(
+        `UPDATE banners SET ${sets.join(", ")} WHERE id = $${vals.length} RETURNING *`, vals
+      );
+      if (!rows.length) return res.status(404).json({ error: "배너를 찾을 수 없습니다." });
+      res.json(rows[0]);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
 
   app.patch("/api/banners/:id/toggle", requireAdmin, async (req, res) => {

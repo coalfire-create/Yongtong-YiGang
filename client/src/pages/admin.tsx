@@ -1180,14 +1180,17 @@ const BANNER_DIVISIONS = [
 
 function BannersTab() {
   const fileRef = useRef<HTMLInputElement>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [selectedDivision, setSelectedDivision] = useState("main");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string>("");
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{
-    title: string;
-    subtitle: string;
-    description: string;
-    link_url: string;
-    display_order: string;
+    title: string; subtitle: string; description: string; link_url: string; display_order: string;
+  }>();
+  const { register: eReg, handleSubmit: eSubmit, reset: eReset, formState: { errors: eErrors } } = useForm<{
+    title: string; subtitle: string; description: string; link_url: string; display_order: string;
   }>();
 
   const { data: banners = [], isLoading } = useQuery<Banner[]>({
@@ -1217,6 +1220,20 @@ function BannersTab() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, formData }: { id: number; formData: FormData }) => {
+      const res = await fetch(`/api/banners/${id}`, { method: "PUT", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json()).error || "수정 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      invalidateBannerCaches();
+      setEditingId(null);
+      setEditImagePreview("");
+      if (editFileRef.current) editFileRef.current.value = "";
+    },
+  });
+
   const toggleMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("PATCH", `/api/banners/${id}/toggle`);
@@ -1230,6 +1247,26 @@ function BannersTab() {
     },
     onSuccess: invalidateBannerCaches,
   });
+
+  const handleEditStart = (b: Banner) => {
+    setEditingId(b.id);
+    setEditImagePreview("");
+    if (editFileRef.current) editFileRef.current.value = "";
+    eReset({ title: b.title, subtitle: b.subtitle || "", description: b.description || "", link_url: b.link_url || "", display_order: String(b.display_order) });
+  };
+
+  const onEditSubmit = (data: any) => {
+    if (!editingId) return;
+    const fd = new FormData();
+    fd.append("title", data.title);
+    fd.append("subtitle", data.subtitle || "");
+    fd.append("description", data.description || "");
+    fd.append("link_url", data.link_url || "");
+    fd.append("display_order", data.display_order || "0");
+    const file = editFileRef.current?.files?.[0];
+    if (file) fd.append("image", file);
+    updateMutation.mutate({ id: editingId, formData: fd });
+  };
 
   const onSubmit = async (data: { title: string; subtitle: string; description: string; link_url: string; display_order: string }) => {
     setUploading(true);
@@ -1366,47 +1403,97 @@ function BannersTab() {
       ) : (
         <div className="space-y-3">
           {banners.map((b) => (
-            <div key={b.id} className="flex items-center gap-4 bg-white border border-gray-200 p-4" data-testid={`card-admin-banner-${b.id}`}>
-              {b.image_url ? (
-                <img src={b.image_url} alt={b.title} className="w-24 h-14 object-cover flex-shrink-0" />
-              ) : (
-                <div className="w-24 h-14 bg-gray-800 flex items-center justify-center flex-shrink-0">
-                  <Image className="w-6 h-6 text-gray-500" />
+            <div key={b.id} className="border border-gray-200 bg-white" data-testid={`card-admin-banner-${b.id}`}>
+              <div className="flex items-center gap-4 p-4">
+                {b.image_url ? (
+                  <img src={b.image_url} alt={b.title} className="w-24 h-14 object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-24 h-14 bg-gray-800 flex items-center justify-center flex-shrink-0">
+                    <Image className="w-6 h-6 text-gray-500" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 truncate">{b.title}</p>
+                  <p className="text-sm text-gray-500 truncate">
+                    {b.subtitle && <span>{b.subtitle} · </span>}
+                    {b.description || "설명 없음"}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate mt-0.5">
+                    {b.link_url || "링크 없음"} · 순서: {b.display_order}
+                  </p>
+                </div>
+                <button onClick={() => toggleMutation.mutate(b.id)}
+                  className={`flex-shrink-0 p-2 transition-colors ${b.is_active ? "text-green-500 hover:text-green-700 hover:bg-green-50" : "text-gray-300 hover:text-gray-500 hover:bg-gray-50"}`}
+                  title={b.is_active ? "활성 (클릭하면 비활성)" : "비활성 (클릭하면 활성)"} data-testid={`button-toggle-banner-${b.id}`}>
+                  {b.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+                <button onClick={() => editingId === b.id ? setEditingId(null) : handleEditStart(b)}
+                  className="flex-shrink-0 p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  title="수정" data-testid={`button-edit-banner-${b.id}`}>
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button onClick={() => { if (confirm(`"${b.title}" 배너를 삭제하시겠습니까?`)) deleteMutation.mutate(b.id); }}
+                  className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors" data-testid={`button-delete-banner-${b.id}`}>
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {editingId === b.id && (
+                <div className="border-t border-gray-100 bg-gray-50 p-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">배너 수정</p>
+                  <form onSubmit={eSubmit(onEditSubmit)} className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">제목 *</label>
+                        <input {...eReg("title", { required: true })} className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" />
+                        {eErrors.title && <p className="text-xs text-red-500 mt-0.5">제목을 입력하세요</p>}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">부제목</label>
+                        <input {...eReg("subtitle")} className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">설명</label>
+                      <input {...eReg("description")} className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">링크 URL</label>
+                        <input {...eReg("link_url")} className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" placeholder="/high-school" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">순서</label>
+                        <input {...eReg("display_order")} type="number" className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">배경 이미지 변경</label>
+                      <div className="flex items-center gap-3">
+                        {(editImagePreview || b.image_url) && (
+                          <img src={editImagePreview || b.image_url!} alt="미리보기" className="w-20 h-12 object-cover flex-shrink-0 border border-gray-200" />
+                        )}
+                        <input ref={editFileRef} type="file" accept="image/*"
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onloadend = () => setEditImagePreview(r.result as string); r.readAsDataURL(f); } }}
+                          className="text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                          data-testid={`input-edit-banner-image-${b.id}`} />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button type="submit" disabled={updateMutation.isPending}
+                        className="flex items-center gap-1.5 bg-[#7B2332] text-white px-4 py-1.5 text-sm font-semibold hover:bg-[#6a1d2b] disabled:opacity-50 transition-colors"
+                        data-testid={`button-save-banner-${b.id}`}>
+                        {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                        저장
+                      </button>
+                      <button type="button" onClick={() => { setEditingId(null); setEditImagePreview(""); if (editFileRef.current) editFileRef.current.value = ""; }}
+                        className="flex items-center gap-1.5 bg-white border border-gray-300 text-gray-600 px-4 py-1.5 text-sm hover:bg-gray-50 transition-colors">
+                        <X className="w-3.5 h-3.5" />취소
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{b.title}</p>
-                <p className="text-sm text-gray-500 truncate">
-                  {b.subtitle && <span>{b.subtitle} · </span>}
-                  {b.description || "설명 없음"}
-                </p>
-                <p className="text-xs text-gray-400 truncate mt-0.5">
-                  {b.link_url || "링크 없음"} · 순서: {b.display_order}
-                </p>
-              </div>
-              <button
-                onClick={() => toggleMutation.mutate(b.id)}
-                className={`flex-shrink-0 p-2 transition-colors ${
-                  b.is_active
-                    ? "text-green-500 hover:text-green-700 hover:bg-green-50"
-                    : "text-gray-300 hover:text-gray-500 hover:bg-gray-50"
-                }`}
-                title={b.is_active ? "활성 (클릭하면 비활성)" : "비활성 (클릭하면 활성)"}
-                data-testid={`button-toggle-banner-${b.id}`}
-              >
-                {b.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={() => {
-                  if (confirm(`"${b.title}" 배너를 삭제하시겠습니까?`)) {
-                    deleteMutation.mutate(b.id);
-                  }
-                }}
-                className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                data-testid={`button-delete-banner-${b.id}`}
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           ))}
         </div>
@@ -1427,16 +1514,25 @@ interface Popup {
 
 function PopupsTab() {
   const fileRef = useRef<HTMLInputElement>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string>("");
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{
-    title: string;
-    link_url: string;
-    display_order: string;
+    title: string; link_url: string; display_order: string;
+  }>();
+  const { register: eReg, handleSubmit: eSubmit, reset: eReset, formState: { errors: eErrors } } = useForm<{
+    title: string; link_url: string; display_order: string;
   }>();
 
   const { data: popups = [], isLoading } = useQuery<Popup[]>({
     queryKey: ["/api/popups/all"],
   });
+
+  const invalidatePopupCaches = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/popups/all"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/popups"] });
+  };
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -1445,32 +1541,53 @@ function PopupsTab() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/popups/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/popups"] });
+      invalidatePopupCaches();
       reset();
       if (fileRef.current) fileRef.current.value = "";
     },
   });
 
-  const toggleMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("PATCH", `/api/popups/${id}/toggle`);
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, formData }: { id: number; formData: FormData }) => {
+      const res = await fetch(`/api/popups/${id}`, { method: "PUT", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json()).error || "수정 실패");
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/popups/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/popups"] });
+      invalidatePopupCaches();
+      setEditingId(null);
+      setEditImagePreview("");
+      if (editFileRef.current) editFileRef.current.value = "";
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/popups/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/popups/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/popups"] });
-    },
+  const toggleMutation = useMutation({
+    mutationFn: async (id: number) => { await apiRequest("PATCH", `/api/popups/${id}/toggle`); },
+    onSuccess: invalidatePopupCaches,
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => { await apiRequest("DELETE", `/api/popups/${id}`); },
+    onSuccess: invalidatePopupCaches,
+  });
+
+  const handleEditStart = (p: Popup) => {
+    setEditingId(p.id);
+    setEditImagePreview("");
+    if (editFileRef.current) editFileRef.current.value = "";
+    eReset({ title: p.title, link_url: p.link_url || "", display_order: String(p.display_order) });
+  };
+
+  const onEditSubmit = (data: any) => {
+    if (!editingId) return;
+    const fd = new FormData();
+    fd.append("title", data.title);
+    fd.append("link_url", data.link_url || "");
+    fd.append("display_order", data.display_order || "0");
+    const file = editFileRef.current?.files?.[0];
+    if (file) fd.append("image", file);
+    updateMutation.mutate({ id: editingId, formData: fd });
+  };
 
   const onSubmit = async (data: { title: string; link_url: string; display_order: string }) => {
     setUploading(true);
@@ -1565,44 +1682,81 @@ function PopupsTab() {
       ) : (
         <div className="space-y-3">
           {popups.map((p) => (
-            <div key={p.id} className="flex items-center gap-4 bg-white border border-gray-200 p-4" data-testid={`card-admin-popup-${p.id}`}>
-              {p.image_url ? (
-                <img src={p.image_url} alt={p.title} className="w-20 h-14 object-cover flex-shrink-0" />
-              ) : (
-                <div className="w-20 h-14 bg-red-50 flex items-center justify-center flex-shrink-0">
-                  <Megaphone className="w-7 h-7 text-red-500" />
+            <div key={p.id} className="border border-gray-200 bg-white" data-testid={`card-admin-popup-${p.id}`}>
+              <div className="flex items-center gap-4 p-4">
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.title} className="w-20 h-14 object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-20 h-14 bg-red-50 flex items-center justify-center flex-shrink-0">
+                    <Megaphone className="w-7 h-7 text-red-500" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 truncate">{p.title}</p>
+                  <p className="text-xs text-gray-400 truncate">{p.link_url || "링크 없음"}{" · 순서: " + p.display_order}</p>
+                </div>
+                <button onClick={() => toggleMutation.mutate(p.id)}
+                  className={`flex-shrink-0 p-2 transition-colors ${p.is_active ? "text-green-500 hover:text-green-700 hover:bg-green-50" : "text-gray-300 hover:text-gray-500 hover:bg-gray-50"}`}
+                  title={p.is_active ? "활성 (클릭하면 비활성)" : "비활성 (클릭하면 활성)"} data-testid={`button-toggle-popup-${p.id}`}>
+                  {p.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+                <button onClick={() => editingId === p.id ? setEditingId(null) : handleEditStart(p)}
+                  className="flex-shrink-0 p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  title="수정" data-testid={`button-edit-popup-${p.id}`}>
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button onClick={() => { if (confirm(`"${p.title}" 팝업을 삭제하시겠습니까?`)) deleteMutation.mutate(p.id); }}
+                  className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors" data-testid={`button-delete-popup-${p.id}`}>
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {editingId === p.id && (
+                <div className="border-t border-gray-100 bg-gray-50 p-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">팝업 수정</p>
+                  <form onSubmit={eSubmit(onEditSubmit)} className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">제목 *</label>
+                        <input {...eReg("title", { required: true })} className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" />
+                        {eErrors.title && <p className="text-xs text-red-500 mt-0.5">제목을 입력하세요</p>}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">링크 URL</label>
+                        <input {...eReg("link_url")} className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" placeholder="https://..." />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">순서</label>
+                        <input {...eReg("display_order")} type="number" className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">이미지 변경</label>
+                      <div className="flex items-center gap-3">
+                        {(editImagePreview || p.image_url) && (
+                          <img src={editImagePreview || p.image_url!} alt="미리보기" className="w-16 h-12 object-cover flex-shrink-0 border border-gray-200" />
+                        )}
+                        <input ref={editFileRef} type="file" accept="image/*"
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onloadend = () => setEditImagePreview(r.result as string); r.readAsDataURL(f); } }}
+                          className="text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                          data-testid={`input-edit-popup-image-${p.id}`} />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button type="submit" disabled={updateMutation.isPending}
+                        className="flex items-center gap-1.5 bg-[#7B2332] text-white px-4 py-1.5 text-sm font-semibold hover:bg-[#6a1d2b] disabled:opacity-50 transition-colors"
+                        data-testid={`button-save-popup-${p.id}`}>
+                        {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                        저장
+                      </button>
+                      <button type="button" onClick={() => { setEditingId(null); setEditImagePreview(""); if (editFileRef.current) editFileRef.current.value = ""; }}
+                        className="flex items-center gap-1.5 bg-white border border-gray-300 text-gray-600 px-4 py-1.5 text-sm hover:bg-gray-50 transition-colors">
+                        <X className="w-3.5 h-3.5" />취소
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{p.title}</p>
-                <p className="text-xs text-gray-400 truncate">
-                  {p.link_url || "링크 없음"}
-                  {" · 순서: " + p.display_order}
-                </p>
-              </div>
-              <button
-                onClick={() => toggleMutation.mutate(p.id)}
-                className={`flex-shrink-0 p-2 transition-colors ${
-                  p.is_active
-                    ? "text-green-500 hover:text-green-700 hover:bg-green-50"
-                    : "text-gray-300 hover:text-gray-500 hover:bg-gray-50"
-                }`}
-                title={p.is_active ? "활성 (클릭하면 비활성)" : "비활성 (클릭하면 활성)"}
-                data-testid={`button-toggle-popup-${p.id}`}
-              >
-                {p.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={() => {
-                  if (confirm(`"${p.title}" 팝업을 삭제하시겠습니까?`)) {
-                    deleteMutation.mutate(p.id);
-                  }
-                }}
-                className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                data-testid={`button-delete-popup-${p.id}`}
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           ))}
         </div>
