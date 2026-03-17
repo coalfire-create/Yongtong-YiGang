@@ -42,8 +42,8 @@ export function Owl() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { day: "평일 (월~금)", time: "15:00 ~ 22:00" },
-              { day: "토요일", time: "10:00 ~ 18:00" },
+              { day: "평일 (월~금)", time: "14:00 ~ 24:00" },
+              { day: "토요일", time: "8:00 ~ 24:00" },
               { day: "일요일·공휴일", time: "정상운영" },
             ].map((item) => (
               <div
