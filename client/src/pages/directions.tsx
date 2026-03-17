@@ -1,6 +1,5 @@
 import { SectionPage } from "@/components/layout";
-import { MapPin, Clock, Bus, Car } from "lucide-react";
-import mapImage from "@assets/map.png";
+import { MapPin, Clock, Bus, Car, ExternalLink } from "lucide-react";
 
 const locations = [
   { label: "고등관 1층", address: "경기도 수원시 영통구 봉영로 1605, 모던타운 102호" },
@@ -10,9 +9,14 @@ const locations = [
 ];
 
 const hours = [
-  { label: "고등관 · 초/중등관", time: "평일 14:00~22:00 / 토·일·공휴일 8:30~22:00" },
+  { label: "고등관 · 초/중등관", time: "평일 14:00~22:00" },
   { label: "올빼미 스파르타", time: "평일 14:00~24:00 / 토·일·공휴일 8:00~24:00" },
 ];
+
+const MAPS_EMBED =
+  "https://maps.google.com/maps?q=%EA%B2%BD%EA%B8%B0%EB%8F%84+%EC%88%98%EC%9B%90%EC%8B%9C+%EC%98%81%ED%86%B5%EA%B5%AC+%EB%B4%89%EC%98%81%EB%A1%9C+1605+%EB%AA%A8%EB%8D%98%ED%83%80%EC%9A%B4&hl=ko&z=17&output=embed";
+const MAPS_LINK =
+  "https://maps.google.com/maps?q=%EA%B2%BD%EA%B8%B0%EB%8F%84+%EC%88%98%EC%9B%90%EC%8B%9C+%EC%98%81%ED%86%B5%EA%B5%AC+%EB%B4%89%EC%98%81%EB%A1%9C+1605+%EB%AA%A8%EB%8D%98%ED%83%80%EC%9A%B4";
 
 export function Directions() {
   return (
@@ -52,13 +56,22 @@ export function Directions() {
           </div>
         </div>
 
-        <div className="border border-gray-200 overflow-hidden min-h-[280px]" data-testid="map-image">
-          <img src={mapImage} alt="영통이강학원 위치 지도" className="w-full h-full object-cover" />
+        <div className="border border-gray-200 overflow-hidden min-h-[280px]" data-testid="map-embed-top">
+          <iframe
+            src={MAPS_EMBED}
+            width="100%"
+            height="100%"
+            style={{ border: 0, minHeight: "280px" }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="영통이강학원 지도"
+          />
         </div>
       </div>
 
       <h2 className="text-2xl font-bold text-gray-900 mb-6">교통 안내</h2>
-      <div className="space-y-4">
+      <div className="space-y-4 mb-10">
         <div className="flex items-start gap-4 bg-white border border-gray-200 p-6" data-testid="card-transport-subway">
           <Bus className="w-6 h-6 text-[#7B2332] flex-shrink-0 mt-0.5" />
           <div>
@@ -74,6 +87,35 @@ export function Directions() {
             <p className="text-sm text-gray-600 mt-1">영통IC에서 약 10분 소요. 모던타운 지하 주차장 이용 가능 (수강생 90분 무료).</p>
           </div>
         </div>
+      </div>
+
+      <div className="border border-gray-200 overflow-hidden" data-testid="map-embed-full">
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-[#7B2332]" />
+            <span className="text-sm font-semibold text-gray-700">경기도 수원시 영통구 봉영로 1605, 모던타운</span>
+          </div>
+          <a
+            href={MAPS_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-[#7B2332] hover:underline font-medium"
+            data-testid="link-maps-open"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            크게 보기
+          </a>
+        </div>
+        <iframe
+          src={MAPS_EMBED}
+          width="100%"
+          height="450"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          title="영통이강학원 상세 지도"
+        />
       </div>
     </SectionPage>
   );
