@@ -130,7 +130,7 @@ function HeroCarousel() {
   }
 
   return (
-    <div className="relative w-full bg-gray-900" data-testid="carousel" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div className="relative w-full bg-gray-900 lg:h-full" data-testid="carousel" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {/* 모바일: 이미지 원본 비율, 스와이프 */}
       <div className="lg:hidden relative w-full overflow-hidden select-none">
         {slides.map((slide, index) => (

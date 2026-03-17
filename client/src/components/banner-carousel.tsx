@@ -143,7 +143,7 @@ export function BannerCarousel({
 
   return (
     <div
-      className="relative w-full bg-gray-900"
+      className="relative w-full bg-gray-900 lg:h-full"
       data-testid={`carousel-${division}`}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
