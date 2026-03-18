@@ -27,8 +27,14 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
     ? `/api/teachers?division=${encodeURIComponent(division)}`
     : "/api/teachers";
 
-  const { data: teachers = [], isLoading } = useQuery<Teacher[]>({
+  const { data: raw = [], isLoading } = useQuery<Teacher[]>({
     queryKey: [queryKey],
+  });
+
+  const teachers = [...raw].sort((a, b) => {
+    if (a.name === "정승준") return -1;
+    if (b.name === "정승준") return 1;
+    return a.name.localeCompare(b.name, "ko");
   });
 
   const filteredTeachers =
