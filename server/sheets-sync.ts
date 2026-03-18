@@ -38,6 +38,8 @@ export async function appendReservationRow(data: {
 export async function appendSmsRow(data: {
   name: string;
   phone: string;
+  school?: string;
+  grade?: string;
 }) {
   try {
     const res = await fetch(WEBHOOK_URL, {
@@ -47,6 +49,8 @@ export async function appendSmsRow(data: {
         type: "문자수신",
         name: data.name || "-",
         phone: data.phone,
+        school: data.school || "-",
+        grade: data.grade || "-",
       }),
     });
     if (!res.ok) {
@@ -56,5 +60,33 @@ export async function appendSmsRow(data: {
     }
   } catch (err) {
     console.error("[Webhook] 문자수신 전송 실패:", err);
+  }
+}
+
+export async function appendLevelTestRow(data: {
+  name: string;
+  phone: string;
+  school?: string;
+  grade?: string;
+}) {
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "수학레벨테스트",
+        name: data.name,
+        phone: data.phone,
+        school: data.school || "-",
+        grade: data.grade || "-",
+      }),
+    });
+    if (!res.ok) {
+      console.error("[Webhook] 수학레벨테스트 전송 실패:", res.status, await res.text());
+    } else {
+      console.log("[Webhook] 수학레벨테스트 전송 성공");
+    }
+  } catch (err) {
+    console.error("[Webhook] 수학레벨테스트 전송 실패:", err);
   }
 }

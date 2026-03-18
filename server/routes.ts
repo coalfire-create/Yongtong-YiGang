@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { supabase } from "./supabase";
-import { appendReservationRow, appendSmsRow } from "./sheets-sync";
+import { appendReservationRow, appendSmsRow, appendLevelTestRow } from "./sheets-sync";
 import multer from "multer";
 import path from "path";
 import crypto from "crypto";
@@ -1548,7 +1548,7 @@ export async function registerRoutes(
         [name || "", cleaned, school || "", grade || ""]
       );
 
-      appendSmsRow({ name: name || "", phone: cleaned }).catch(() => {});
+      appendSmsRow({ name: name || "", phone: cleaned, school: school || "", grade: grade || "" }).catch(() => {});
 
       res.json(rows[0]);
     } catch (err: any) {
@@ -1591,6 +1591,9 @@ export async function registerRoutes(
         "INSERT INTO level_test_registrations (name, phone, school, grade) VALUES ($1, $2, $3, $4) RETURNING *",
         [name, cleaned, school || "", grade || ""]
       );
+
+      appendLevelTestRow({ name, phone: cleaned, school: school || "", grade: grade || "" }).catch(() => {});
+
       res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
