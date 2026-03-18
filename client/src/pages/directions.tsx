@@ -1,5 +1,5 @@
 import { SectionPage } from "@/components/layout";
-import { MapPin, Clock, Bus, Car, ExternalLink } from "lucide-react";
+import { MapPin, Clock, Bus, Car } from "lucide-react";
 
 const locations = [
   { label: "고등관 1층", address: "경기도 수원시 영통구 봉영로 1605, 모던타운 102호" },
@@ -15,8 +15,6 @@ const hours = [
 
 const MAPS_EMBED =
   "https://maps.google.com/maps?q=%EA%B2%BD%EA%B8%B0%EB%8F%84+%EC%88%98%EC%9B%90%EC%8B%9C+%EC%98%81%ED%86%B5%EA%B5%AC+%EB%B4%89%EC%98%81%EB%A1%9C+1605+%EB%AA%A8%EB%8D%98%ED%83%80%EC%9A%B4&hl=ko&z=17&output=embed";
-const MAPS_LINK =
-  "https://maps.google.com/maps?q=%EA%B2%BD%EA%B8%B0%EB%8F%84+%EC%88%98%EC%9B%90%EC%8B%9C+%EC%98%81%ED%86%B5%EA%B5%AC+%EB%B4%89%EC%98%81%EB%A1%9C+1605+%EB%AA%A8%EB%8D%98%ED%83%80%EC%9A%B4";
 
 export function Directions() {
   return (
@@ -89,34 +87,6 @@ export function Directions() {
         </div>
       </div>
 
-      <div className="border border-gray-200 overflow-hidden" data-testid="map-embed-full">
-        <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-[#7B2332]" />
-            <span className="text-sm font-semibold text-gray-700">경기도 수원시 영통구 봉영로 1605, 모던타운</span>
-          </div>
-          <a
-            href={MAPS_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-[#7B2332] hover:underline font-medium"
-            data-testid="link-maps-open"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            크게 보기
-          </a>
-        </div>
-        <iframe
-          src={MAPS_EMBED}
-          width="100%"
-          height="450"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          title="영통이강학원 상세 지도"
-        />
-      </div>
     </SectionPage>
   );
 }
