@@ -46,6 +46,23 @@ async function ensureSmsSubscriptionsTable() {
   }
 }
 
+async function ensureLevelTestTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS level_test_registrations (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        school TEXT NOT NULL DEFAULT '',
+        grade TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure level_test_registrations table:", err);
+  }
+}
+
 async function ensureMembersTable() {
   try {
     await pool.query(`
@@ -343,6 +360,7 @@ export async function registerRoutes(
   await ensureBannersTable();
   await ensureBriefingsTable();
   await ensureSmsSubscriptionsTable();
+  await ensureLevelTestTable();
   await ensureMembersTable();
   await ensurePhoneVerificationsTable();
   await ensureReviewsTable();
@@ -1401,6 +1419,47 @@ export async function registerRoutes(
     const { id } = req.params;
     try {
       await pool.query("DELETE FROM sms_subscriptions WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== LEVEL TEST REGISTRATIONS ==========
+
+  app.post("/api/level-test-registrations", async (req, res) => {
+    const { name, phone, school, grade } = req.body;
+    if (!name || !phone) {
+      return res.status(400).json({ error: "이름과 전화번호는 필수입니다." });
+    }
+    const cleaned = phone.replace(/[^0-9-]/g, "");
+    if (cleaned.length < 10) {
+      return res.status(400).json({ error: "올바른 전화번호를 입력하세요." });
+    }
+    try {
+      const { rows } = await pool.query(
+        "INSERT INTO level_test_registrations (name, phone, school, grade) VALUES ($1, $2, $3, $4) RETURNING *",
+        [name, cleaned, school || "", grade || ""]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/level-test-registrations", requireAdmin, async (_req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM level_test_registrations ORDER BY created_at DESC");
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/level-test-registrations/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      await pool.query("DELETE FROM level_test_registrations WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

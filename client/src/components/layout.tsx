@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
-import { SmsSubscribeButton } from "./sms-subscribe-modal";
+import { FloatingSidebar } from "./floating-sidebar";
 import logoImg from "@assets/ikang_small.webp";
 
 const NAV_ITEMS = [
@@ -191,7 +191,7 @@ export function PageLayout({ children }: { children: React.ReactNode }) {
       <Header />
       <div className="flex-1">{children}</div>
       <Footer />
-      <SmsSubscribeButton />
+      <FloatingSidebar />
     </div>
   );
 }
