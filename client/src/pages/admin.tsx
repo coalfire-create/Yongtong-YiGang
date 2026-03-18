@@ -596,6 +596,36 @@ function TimetablesTab() {
     },
   });
 
+  const uploadIndividualPhotoMutation = useMutation({
+    mutationFn: async ({ timetableId, file }: { timetableId: number; file: File }) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(`/api/timetables/${timetableId}/photo`, {
+        method: "PATCH",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "업로드 실패"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+    },
+  });
+
+  const deleteIndividualPhotoMutation = useMutation({
+    mutationFn: async (timetableId: number) => {
+      const res = await fetch(`/api/timetables/${timetableId}/photo`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "삭제 실패"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+    },
+  });
+
+  const cardPhotoRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
   const filteredTimetables = filterCategory === "all"
     ? timetables
     : timetables.filter((tt) => tt.category === filterCategory);
@@ -820,13 +850,37 @@ function TimetablesTab() {
           ><ArrowDown className="w-3.5 h-3.5" /></button>
         </div>
 
-        {tt.teacher_image_url ? (
-          <img src={tt.teacher_image_url} alt={tt.teacher_name} className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-gray-200" />
-        ) : (
-          <div className="w-9 h-9 bg-gray-100 flex items-center justify-center flex-shrink-0 rounded-full">
-            <User className="w-4 h-4 text-gray-400" />
+        <label
+          className="relative flex-shrink-0 cursor-pointer group"
+          title="클릭하여 사진 변경"
+          data-testid={`label-card-photo-${tt.id}`}
+        >
+          {tt.teacher_image_url ? (
+            <img src={tt.teacher_image_url} alt={tt.teacher_name} className="w-10 h-10 rounded-full object-cover border border-gray-200 group-hover:opacity-70 transition-opacity" />
+          ) : (
+            <div className="w-10 h-10 bg-gray-100 flex items-center justify-center rounded-full group-hover:bg-gray-200 transition-colors">
+              <User className="w-4 h-4 text-gray-400" />
+            </div>
+          )}
+          <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {uploadIndividualPhotoMutation.isPending && uploadIndividualPhotoMutation.variables?.timetableId === tt.id
+              ? <Loader2 className="w-4 h-4 text-white animate-spin drop-shadow" />
+              : <Upload className="w-3.5 h-3.5 text-white drop-shadow" />
+            }
           </div>
-        )}
+          <input
+            ref={(el) => { cardPhotoRefs.current[tt.id] = el; }}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              uploadIndividualPhotoMutation.mutate({ timetableId: tt.id, file });
+              if (cardPhotoRefs.current[tt.id]) cardPhotoRefs.current[tt.id]!.value = "";
+            }}
+          />
+        </label>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

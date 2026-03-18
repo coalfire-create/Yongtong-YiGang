@@ -692,14 +692,11 @@ export async function registerRoutes(
 
         for (const row of rows as any[]) {
           if (!row.teacher_id) continue;
-          // Timetable-specific photo takes priority; fall back to Supabase profile photo
-          const overrideUrl = timetablePhotoMap.get(row.teacher_id);
-          const profileUrl = profileMap.get(row.teacher_id);
-          if (overrideUrl) {
-            row.teacher_image_url = overrideUrl;
-          } else if (profileUrl) {
-            row.teacher_image_url = profileUrl;
-          }
+          // Priority: 1) individual timetable photo (DB), 2) teacher-level bulk photo, 3) Supabase profile
+          const individualUrl = row.teacher_image_url || null;
+          const bulkUrl = timetablePhotoMap.get(row.teacher_id) || null;
+          const profileUrl = profileMap.get(row.teacher_id) || null;
+          row.teacher_image_url = individualUrl || bulkUrl || profileUrl || "";
         }
       }
 
@@ -717,6 +714,41 @@ export async function registerRoutes(
       for (let i = 0; i < ids.length; i++) {
         await pool.query("UPDATE timetables SET display_order = $1 WHERE id = $2", [i, ids[i]]);
       }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // --- Individual timetable photo upload ---
+  app.patch("/api/timetables/:id/photo", requireAdmin, upload.single("image"), async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 id" });
+    if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
+
+    const ext = req.file.originalname.split(".").pop() || "jpg";
+    const fileName = `teachers/timetable-individual/${id}_${Date.now()}.${ext}`;
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("images")
+        .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+      if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+
+      const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+      const imageUrl = urlData.publicUrl;
+
+      await pool.query("UPDATE timetables SET teacher_image_url = $1 WHERE id = $2", [imageUrl, id]);
+      res.json({ success: true, image_url: imageUrl });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/timetables/:id/photo", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 id" });
+    try {
+      await pool.query("UPDATE timetables SET teacher_image_url = '' WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
