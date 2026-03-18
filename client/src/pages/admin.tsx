@@ -521,6 +521,9 @@ function TimetablesTab() {
   const detailFileInputRef = useRef<HTMLInputElement>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showPhotoManager, setShowPhotoManager] = useState(false);
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<number | null>(null);
+  const photoFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
@@ -555,6 +558,42 @@ function TimetablesTab() {
 
   const { data: teachers = [] } = useQuery<Teacher[]>({
     queryKey: ["/api/teachers"],
+  });
+
+  const { data: timetablePhotos = [] } = useQuery<{ teacher_id: number; teacher_name: string; image_url: string }[]>({
+    queryKey: ["/api/teacher-timetable-photos"],
+  });
+
+  const uploadTimetablePhotoMutation = useMutation({
+    mutationFn: async ({ teacherId, teacherName, file }: { teacherId: number; teacherName: string; file: File }) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("teacher_name", teacherName);
+      const res = await fetch(`/api/teacher-timetable-photos/${teacherId}`, {
+        method: "PUT",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "업로드 실패"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher-timetable-photos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+      setUploadingPhotoFor(null);
+    },
+  });
+
+  const deleteTimetablePhotoMutation = useMutation({
+    mutationFn: async (teacherId: number) => {
+      const res = await fetch(`/api/teacher-timetable-photos/${teacherId}`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "삭제 실패"); }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher-timetable-photos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+    },
   });
 
   const filteredTimetables = filterCategory === "all"
@@ -719,6 +758,17 @@ function TimetablesTab() {
     if (detailImageFile) formData.append("detail_image", detailImageFile);
     addMutation.mutate(formData);
   };
+
+  // Photo manager: unique teachers with timetables
+  const uniqueTeacherMap = new Map<number, { id: number; name: string; profileUrl: string }>();
+  for (const tt of timetables) {
+    if (tt.teacher_id && tt.teacher_name && !uniqueTeacherMap.has(tt.teacher_id)) {
+      const teacher = teachers.find((t) => t.id === tt.teacher_id);
+      uniqueTeacherMap.set(tt.teacher_id, { id: tt.teacher_id, name: tt.teacher_name, profileUrl: teacher?.image_url || "" });
+    }
+  }
+  const uniqueTeachersForPhoto = [...uniqueTeacherMap.values()];
+  const timetablePhotoMap = new Map(timetablePhotos.map((p) => [p.teacher_id, p.image_url]));
 
   const CATEGORY_TABS = [
     { value: "all", label: "전체" },
@@ -907,14 +957,104 @@ function TimetablesTab() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-lg font-bold text-gray-900">시간표 관리 <span className="text-sm font-normal text-gray-400">({filteredTimetables.length}개)</span></h3>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded transition-colors ${showAddForm ? "bg-gray-200 text-gray-700 hover:bg-gray-300" : "bg-[#7B2332] text-white hover:bg-[#6a1d2b]"}`}
-          data-testid="button-toggle-add-timetable"
-        >
-          {showAddForm ? <><X className="w-4 h-4" />닫기</> : <><Plus className="w-4 h-4" />시간표 추가</>}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setShowPhotoManager(!showPhotoManager); if (showAddForm) setShowAddForm(false); }}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded border transition-colors ${showPhotoManager ? "bg-gray-100 text-gray-700 border-gray-300" : "bg-white text-gray-700 border-gray-300 hover:border-[#7B2332] hover:text-[#7B2332]"}`}
+            data-testid="button-toggle-photo-manager"
+          >
+            <Image className="w-4 h-4" />사진 관리
+          </button>
+          <button
+            onClick={() => { setShowAddForm(!showAddForm); if (showPhotoManager) setShowPhotoManager(false); }}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded transition-colors ${showAddForm ? "bg-gray-200 text-gray-700 hover:bg-gray-300" : "bg-[#7B2332] text-white hover:bg-[#6a1d2b]"}`}
+            data-testid="button-toggle-add-timetable"
+          >
+            {showAddForm ? <><X className="w-4 h-4" />닫기</> : <><Plus className="w-4 h-4" />시간표 추가</>}
+          </button>
+        </div>
       </div>
+
+      {/* Photo Manager Panel */}
+      {showPhotoManager && (
+        <div className="bg-white border border-gray-200 rounded-lg p-5 mb-5" data-testid="panel-photo-manager">
+          <div className="flex items-center gap-2 mb-1">
+            <Image className="w-4 h-4 text-[#7B2332]" />
+            <h4 className="text-sm font-bold text-gray-800">시간표 사진 관리</h4>
+          </div>
+          <p className="text-xs text-gray-400 mb-4">
+            선생님별로 시간표에 표시되는 사진을 설정합니다. (선생님 소개 페이지 사진과 별도로 관리됩니다)
+          </p>
+          {uniqueTeachersForPhoto.length === 0 ? (
+            <p className="text-sm text-gray-400">담당 선생님이 연결된 시간표가 없습니다.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {uniqueTeachersForPhoto.map((teacher) => {
+                const timetablePhotoUrl = timetablePhotoMap.get(teacher.id);
+                const isUploading = uploadingPhotoFor === teacher.id && uploadTimetablePhotoMutation.isPending;
+                return (
+                  <div key={teacher.id} className="border border-gray-100 rounded-lg p-3 flex items-center gap-3 bg-gray-50" data-testid={`card-teacher-photo-${teacher.id}`}>
+                    <div className="relative flex-shrink-0">
+                      {timetablePhotoUrl ? (
+                        <img src={timetablePhotoUrl} alt={teacher.name} className="w-14 h-14 rounded-full object-cover border-2 border-[#7B2332]" />
+                      ) : teacher.profileUrl ? (
+                        <img src={teacher.profileUrl} alt={teacher.name} className="w-14 h-14 rounded-full object-cover border-2 border-dashed border-gray-300" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-300">
+                          <User className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                      {timetablePhotoUrl && (
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#7B2332] rounded-full flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{teacher.name}</p>
+                      <p className="text-xs text-gray-400 mb-2">
+                        {timetablePhotoUrl ? "전용 사진 설정됨" : "프로필 사진 사용 중"}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <label
+                          className={`cursor-pointer flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded border transition-colors ${isUploading ? "opacity-50 cursor-not-allowed" : "bg-[#7B2332] text-white border-[#7B2332] hover:bg-[#6a1d2b]"}`}
+                          data-testid={`label-upload-photo-${teacher.id}`}
+                        >
+                          {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                          {timetablePhotoUrl ? "변경" : "설정"}
+                          <input
+                            ref={(el) => { photoFileRefs.current[teacher.id] = el; }}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={isUploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setUploadingPhotoFor(teacher.id);
+                              uploadTimetablePhotoMutation.mutate({ teacherId: teacher.id, teacherName: teacher.name, file });
+                              if (photoFileRefs.current[teacher.id]) photoFileRefs.current[teacher.id]!.value = "";
+                            }}
+                          />
+                        </label>
+                        {timetablePhotoUrl && (
+                          <button
+                            onClick={() => { if (confirm(`${teacher.name} 선생님의 시간표 전용 사진을 삭제하시겠습니까?`)) deleteTimetablePhotoMutation.mutate(teacher.id); }}
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-500 border border-gray-300 rounded hover:text-red-500 hover:border-red-300 transition-colors"
+                            data-testid={`button-delete-photo-${teacher.id}`}
+                          >
+                            <Trash2 className="w-3 h-3" />삭제
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Collapsible Add Form */}
       {showAddForm && (

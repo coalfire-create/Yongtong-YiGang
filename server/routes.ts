@@ -50,6 +50,21 @@ async function ensureSmsSubscriptionsTable() {
   }
 }
 
+async function ensureTeacherTimetablePhotosTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS teacher_timetable_photos (
+        teacher_id INTEGER PRIMARY KEY,
+        teacher_name TEXT,
+        image_url TEXT NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure teacher_timetable_photos table:", err);
+  }
+}
+
 async function ensureLevelTestTable() {
   try {
     await pool.query(`
@@ -364,6 +379,7 @@ export async function registerRoutes(
   await ensureBannersTable();
   await ensureBriefingsTable();
   await ensureSmsSubscriptionsTable();
+  await ensureTeacherTimetablePhotosTable();
   await ensureLevelTestTable();
   await ensureMembersTable();
   await ensurePhoneVerificationsTable();
@@ -658,19 +674,31 @@ export async function registerRoutes(
       sql += " ORDER BY display_order ASC, created_at DESC";
       const { rows } = await pool.query(sql, params);
 
-      // Fetch teacher profile images from Supabase and apply to all their timetables
+      // Fetch teacher profile images from Supabase as fallback
       const teacherIds = [...new Set(rows.map((r: any) => r.teacher_id).filter(Boolean))];
       if (teacherIds.length > 0) {
         const { data: teachers } = await supabase
           .from("teachers")
           .select("id, image_url")
           .in("id", teacherIds);
-        if (teachers && teachers.length > 0) {
-          const teacherMap = new Map(teachers.map((t: any) => [t.id, t.image_url]));
-          for (const row of rows as any[]) {
-            if (row.teacher_id && teacherMap.has(row.teacher_id) && teacherMap.get(row.teacher_id)) {
-              row.teacher_image_url = teacherMap.get(row.teacher_id);
-            }
+        const profileMap = new Map((teachers ?? []).map((t: any) => [t.id, t.image_url]));
+
+        // Fetch timetable-specific photos (override) from local DB
+        const { rows: timetablePhotos } = await pool.query(
+          "SELECT teacher_id, image_url FROM teacher_timetable_photos WHERE teacher_id = ANY($1)",
+          [teacherIds]
+        );
+        const timetablePhotoMap = new Map(timetablePhotos.map((r: any) => [r.teacher_id, r.image_url]));
+
+        for (const row of rows as any[]) {
+          if (!row.teacher_id) continue;
+          // Timetable-specific photo takes priority; fall back to Supabase profile photo
+          const overrideUrl = timetablePhotoMap.get(row.teacher_id);
+          const profileUrl = profileMap.get(row.teacher_id);
+          if (overrideUrl) {
+            row.teacher_image_url = overrideUrl;
+          } else if (profileUrl) {
+            row.teacher_image_url = profileUrl;
           }
         }
       }
@@ -689,6 +717,58 @@ export async function registerRoutes(
       for (let i = 0; i < ids.length; i++) {
         await pool.query("UPDATE timetables SET display_order = $1 WHERE id = $2", [i, ids[i]]);
       }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // --- Teacher Timetable Photos (separate from profile) ---
+  app.get("/api/teacher-timetable-photos", requireAdmin, async (_req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM teacher_timetable_photos ORDER BY teacher_id ASC");
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/teacher-timetable-photos/:teacherId", requireAdmin, upload.single("image"), async (req, res) => {
+    const teacherId = parseInt(req.params.teacherId);
+    if (isNaN(teacherId)) return res.status(400).json({ error: "유효하지 않은 teacher_id" });
+    if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
+
+    const { teacher_name } = req.body;
+    const ext = req.file.originalname.split(".").pop() || "jpg";
+    const fileName = `teachers/timetable/${teacherId}_${Date.now()}.${ext}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("images")
+        .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+      if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+
+      const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+      const imageUrl = urlData.publicUrl;
+
+      await pool.query(
+        `INSERT INTO teacher_timetable_photos (teacher_id, teacher_name, image_url, updated_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (teacher_id) DO UPDATE SET image_url = $3, teacher_name = $2, updated_at = NOW()`,
+        [teacherId, teacher_name || null, imageUrl]
+      );
+
+      res.json({ success: true, image_url: imageUrl });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/teacher-timetable-photos/:teacherId", requireAdmin, async (req, res) => {
+    const teacherId = parseInt(req.params.teacherId);
+    if (isNaN(teacherId)) return res.status(400).json({ error: "유효하지 않은 teacher_id" });
+    try {
+      await pool.query("DELETE FROM teacher_timetable_photos WHERE teacher_id = $1", [teacherId]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
