@@ -674,29 +674,45 @@ export async function registerRoutes(
       sql += " ORDER BY display_order ASC, created_at DESC";
       const { rows } = await pool.query(sql, params);
 
-      // Fetch teacher profile images from Supabase as fallback
-      const teacherIds = [...new Set(rows.map((r: any) => r.teacher_id).filter(Boolean))];
-      if (teacherIds.length > 0) {
-        const { data: teachers } = await supabase
-          .from("teachers")
-          .select("id, image_url")
-          .in("id", teacherIds);
-        const profileMap = new Map((teachers ?? []).map((t: any) => [t.id, t.image_url]));
+      // Fetch ALL teachers from Supabase (for ID-based and name-based matching)
+      const { data: allTeachers } = await supabase
+        .from("teachers")
+        .select("id, name, image_url");
+      const profileMap = new Map((allTeachers ?? []).map((t: any) => [t.id, t.image_url]));
+      const nameToTeacher = new Map((allTeachers ?? []).map((t: any) => [t.name?.trim(), t]));
 
-        // Fetch timetable-specific photos (override) from local DB
+      // Fetch timetable-specific bulk photos from local DB
+      const allTeacherIds = [...new Set((allTeachers ?? []).map((t: any) => t.id))];
+      const timetablePhotoMap = new Map<number, string>();
+      if (allTeacherIds.length > 0) {
         const { rows: timetablePhotos } = await pool.query(
           "SELECT teacher_id, image_url FROM teacher_timetable_photos WHERE teacher_id = ANY($1)",
-          [teacherIds]
+          [allTeacherIds]
         );
-        const timetablePhotoMap = new Map(timetablePhotos.map((r: any) => [r.teacher_id, r.image_url]));
+        timetablePhotos.forEach((r: any) => timetablePhotoMap.set(r.teacher_id, r.image_url));
+      }
 
-        for (const row of rows as any[]) {
-          if (!row.teacher_id) continue;
+      for (const row of rows as any[]) {
+        let effectiveTeacherId = row.teacher_id || null;
+
+        // Auto-match by name if teacher_id is not set
+        if (!effectiveTeacherId && row.teacher_name) {
+          const matched = nameToTeacher.get(row.teacher_name?.trim());
+          if (matched) {
+            effectiveTeacherId = matched.id;
+          }
+        }
+
+        if (effectiveTeacherId) {
           // Priority: 1) individual timetable photo (DB), 2) teacher-level bulk photo, 3) Supabase profile
           const individualUrl = row.teacher_image_url || null;
-          const bulkUrl = timetablePhotoMap.get(row.teacher_id) || null;
-          const profileUrl = profileMap.get(row.teacher_id) || null;
+          const bulkUrl = timetablePhotoMap.get(effectiveTeacherId) || null;
+          const profileUrl = profileMap.get(effectiveTeacherId) || null;
           row.teacher_image_url = individualUrl || bulkUrl || profileUrl || "";
+          // Expose the effective teacher_id so frontend can use it
+          if (!row.teacher_id && effectiveTeacherId) {
+            row.effective_teacher_id = effectiveTeacherId;
+          }
         }
       }
 

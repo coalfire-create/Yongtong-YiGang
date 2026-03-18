@@ -19,6 +19,7 @@ interface Teacher {
 interface Timetable {
   id: number;
   teacher_id: number | null;
+  effective_teacher_id?: number;
   teacher_name: string;
   category: string;
   target_school: string;
@@ -789,12 +790,13 @@ function TimetablesTab() {
     addMutation.mutate(formData);
   };
 
-  // Photo manager: unique teachers with timetables
+  // Photo manager: unique teachers with timetables (including name-matched ones)
   const uniqueTeacherMap = new Map<number, { id: number; name: string; profileUrl: string }>();
   for (const tt of timetables) {
-    if (tt.teacher_id && tt.teacher_name && !uniqueTeacherMap.has(tt.teacher_id)) {
-      const teacher = teachers.find((t) => t.id === tt.teacher_id);
-      uniqueTeacherMap.set(tt.teacher_id, { id: tt.teacher_id, name: tt.teacher_name, profileUrl: teacher?.image_url || "" });
+    const effectiveId = tt.teacher_id || tt.effective_teacher_id || null;
+    if (effectiveId && tt.teacher_name && !uniqueTeacherMap.has(effectiveId)) {
+      const teacher = teachers.find((t) => t.id === effectiveId);
+      uniqueTeacherMap.set(effectiveId, { id: effectiveId, name: tt.teacher_name, profileUrl: teacher?.image_url || "" });
     }
   }
   const uniqueTeachersForPhoto = [...uniqueTeacherMap.values()];
@@ -885,7 +887,14 @@ function TimetablesTab() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-gray-900 text-sm">{tt.class_name}</p>
-            {tt.teacher_name && <span className="text-xs text-gray-500">{tt.teacher_name}</span>}
+            {tt.teacher_name && (
+              <span className="text-xs text-gray-500 flex items-center gap-1">
+                {tt.teacher_name}
+                {!tt.teacher_id && tt.effective_teacher_id && (
+                  <span className="text-[10px] bg-blue-100 text-blue-600 px-1 py-0.5 rounded font-medium">자동</span>
+                )}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {tt.target_school && <span className="text-xs text-gray-400">{tt.target_school}</span>}
