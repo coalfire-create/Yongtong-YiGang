@@ -38,9 +38,13 @@ async function ensureSmsSubscriptionsTable() {
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL DEFAULT '',
         phone TEXT NOT NULL,
+        school TEXT NOT NULL DEFAULT '',
+        grade TEXT NOT NULL DEFAULT '',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    await pool.query(`ALTER TABLE sms_subscriptions ADD COLUMN IF NOT EXISTS school TEXT NOT NULL DEFAULT ''`);
+    await pool.query(`ALTER TABLE sms_subscriptions ADD COLUMN IF NOT EXISTS grade TEXT NOT NULL DEFAULT ''`);
   } catch (err) {
     console.error("Failed to ensure sms_subscriptions table:", err);
   }
@@ -1384,18 +1388,18 @@ export async function registerRoutes(
 
   // ========== SMS SUBSCRIPTIONS ==========
   app.post("/api/sms-subscriptions", async (req, res) => {
-    const { name, phone } = req.body;
+    const { name, phone, school, grade } = req.body;
     if (!phone) {
       return res.status(400).json({ error: "전화번호는 필수입니다." });
     }
-    const cleaned = phone.replace(/[^0-9-]/g, "");
+    const cleaned = phone.replace(/[^0-9]/g, "");
     if (cleaned.length < 10) {
       return res.status(400).json({ error: "올바른 전화번호를 입력하세요." });
     }
     try {
       const { rows } = await pool.query(
-        "INSERT INTO sms_subscriptions (name, phone) VALUES ($1, $2) RETURNING *",
-        [name || "", cleaned]
+        "INSERT INTO sms_subscriptions (name, phone, school, grade) VALUES ($1, $2, $3, $4) RETURNING *",
+        [name || "", cleaned, school || "", grade || ""]
       );
 
       appendSmsRow({ name: name || "", phone: cleaned }).catch(() => {});
