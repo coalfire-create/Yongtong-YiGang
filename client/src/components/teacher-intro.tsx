@@ -210,17 +210,19 @@ export function TeacherDetailPage({ id }: { id: string }) {
           </div>
         ) : hasImages ? (
           <>
-            <div className="pb-0">
-              {teacherImages.map((img) => (
-                <img
-                  key={img.id}
-                  src={img.image_url}
-                  alt={`${teacher.name} 선생님 브로셔`}
-                  className="w-full block cursor-zoom-in hover:opacity-95 transition-opacity"
-                  onClick={() => setLightboxSrc(img.image_url)}
-                  data-testid={`img-teacher-detail-${img.id}`}
-                />
-              ))}
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-4 pt-2">
+              <div className={`grid gap-3 ${teacherImages.length === 1 ? "grid-cols-1" : teacherImages.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+                {teacherImages.map((img) => (
+                  <img
+                    key={img.id}
+                    src={img.image_url}
+                    alt={`${teacher.name} 선생님 브로셔`}
+                    className="w-full block rounded cursor-zoom-in hover:opacity-90 transition-opacity"
+                    onClick={() => setLightboxSrc(img.image_url)}
+                    data-testid={`img-teacher-detail-${img.id}`}
+                  />
+                ))}
+              </div>
             </div>
             <p className="text-center text-xs text-gray-400 py-3">터치하면 크게 볼 수 있어요</p>
             {lightboxSrc && (
