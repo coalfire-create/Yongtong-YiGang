@@ -50,6 +50,60 @@ async function ensureSmsSubscriptionsTable() {
   }
 }
 
+async function ensureSupabaseApplicationTables() {
+  const createSmsSQL = `
+    CREATE TABLE IF NOT EXISTS sms_subscriptions (
+      id BIGSERIAL PRIMARY KEY,
+      name TEXT NOT NULL DEFAULT '',
+      phone TEXT NOT NULL,
+      school TEXT NOT NULL DEFAULT '',
+      grade TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+  const createLevelTestSQL = `
+    CREATE TABLE IF NOT EXISTS level_test_registrations (
+      id BIGSERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      school TEXT NOT NULL DEFAULT '',
+      grade TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+  const supabaseUrl = process.env.SUPABASE_URL!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  for (const [label, sql] of [
+    ["sms_subscriptions", createSmsSQL],
+    ["level_test_registrations", createLevelTestSQL],
+  ] as [string, string][]) {
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
+        method: "POST",
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ sql }),
+      });
+      if (!res.ok) {
+        const { data, error } = await supabase.from(label).select("id").limit(1);
+        if (error && error.code === "42P01") {
+          console.warn(`[Supabase] '${label}' 테이블이 없습니다. Supabase SQL 에디터에서 아래 SQL을 실행해 주세요:\n${sql}`);
+        }
+      } else {
+        console.log(`[Supabase] '${label}' 테이블 준비 완료`);
+      }
+    } catch {
+      const { error } = await supabase.from(label).select("id").limit(1);
+      if (error && (error.code === "42P01" || error.message?.includes("does not exist"))) {
+        console.warn(`[Supabase] '${label}' 테이블이 없습니다. Supabase SQL 에디터에서 아래 SQL을 실행해 주세요:\n${sql}`);
+      }
+    }
+  }
+}
+
 async function ensureTeacherTimetablePhotosTable() {
   try {
     await pool.query(`
@@ -377,6 +431,7 @@ export async function registerRoutes(
 
   await ensurePopupsTable();
   await ensureBannersTable();
+  await ensureSupabaseApplicationTables();
   await ensureBriefingsTable();
   await ensureSmsSubscriptionsTable();
   await ensureTeacherTimetablePhotosTable();
@@ -1550,6 +1605,16 @@ export async function registerRoutes(
 
       appendSmsRow({ name: name || "", phone: cleaned, school: school || "", grade: grade || "" }).catch(() => {});
 
+      supabase.from("sms_subscriptions").insert({
+        name: name || "",
+        phone: cleaned,
+        school: school || "",
+        grade: grade || "",
+      }).then(({ error }) => {
+        if (error) console.error("[Supabase] 문자수신 저장 실패:", error.message);
+        else console.log("[Supabase] 문자수신 저장 성공");
+      });
+
       res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -1593,6 +1658,16 @@ export async function registerRoutes(
       );
 
       appendLevelTestRow({ name, phone: cleaned, school: school || "", grade: grade || "" }).catch(() => {});
+
+      supabase.from("level_test_registrations").insert({
+        name,
+        phone: cleaned,
+        school: school || "",
+        grade: grade || "",
+      }).then(({ error }) => {
+        if (error) console.error("[Supabase] 레벨테스트 저장 실패:", error.message);
+        else console.log("[Supabase] 레벨테스트 저장 성공");
+      });
 
       res.json(rows[0]);
     } catch (err: any) {
