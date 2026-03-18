@@ -657,6 +657,24 @@ export async function registerRoutes(
       }
       sql += " ORDER BY display_order ASC, created_at DESC";
       const { rows } = await pool.query(sql, params);
+
+      // Fetch teacher profile images from Supabase and apply to all their timetables
+      const teacherIds = [...new Set(rows.map((r: any) => r.teacher_id).filter(Boolean))];
+      if (teacherIds.length > 0) {
+        const { data: teachers } = await supabase
+          .from("teachers")
+          .select("id, image_url")
+          .in("id", teacherIds);
+        if (teachers && teachers.length > 0) {
+          const teacherMap = new Map(teachers.map((t: any) => [t.id, t.image_url]));
+          for (const row of rows as any[]) {
+            if (row.teacher_id && teacherMap.has(row.teacher_id) && teacherMap.get(row.teacher_id)) {
+              row.teacher_image_url = teacherMap.get(row.teacher_id);
+            }
+          }
+        }
+      }
+
       res.json(rows);
     } catch (err: any) {
       console.error("[GET /api/timetables] Error:", err);
