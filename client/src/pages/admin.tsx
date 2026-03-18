@@ -819,17 +819,16 @@ function TimetablesTab() {
     논술: "bg-pink-50 text-pink-700 border-pink-200",
   };
 
-  const ALL_SUBJECTS = ["수학", "국어", "영어", "탐구", "논술"];
-  const groupedBySubject = ALL_SUBJECTS.map((subj) => ({
-    subject: subj,
-    items: filteredTimetables
-      .map((tt, idx) => ({ tt, idx }))
-      .filter(({ tt }) => tt.subject === subj),
-  })).filter((g) => g.items.length > 0);
-
-  const ungrouped = filteredTimetables
-    .map((tt, idx) => ({ tt, idx }))
-    .filter(({ tt }) => !ALL_SUBJECTS.includes(tt.subject));
+  // Group by teacher name (preserving display_order within each group)
+  const teacherGroupMap = new Map<string, { teacherName: string; photoUrl: string; items: { tt: Timetable; idx: number }[] }>();
+  filteredTimetables.forEach((tt, idx) => {
+    const key = tt.teacher_name?.trim() || "담당 없음";
+    if (!teacherGroupMap.has(key)) {
+      teacherGroupMap.set(key, { teacherName: key, photoUrl: tt.teacher_image_url || "", items: [] });
+    }
+    teacherGroupMap.get(key)!.items.push({ tt, idx });
+  });
+  const groupedByTeacher = [...teacherGroupMap.values()];
 
   const inputCls = "w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#7B2332] bg-white rounded";
   const labelCls = "block text-xs font-semibold text-gray-600 mb-1";
@@ -887,13 +886,13 @@ function TimetablesTab() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-gray-900 text-sm">{tt.class_name}</p>
-            {tt.teacher_name && (
-              <span className="text-xs text-gray-500 flex items-center gap-1">
-                {tt.teacher_name}
-                {!tt.teacher_id && tt.effective_teacher_id && (
-                  <span className="text-[10px] bg-blue-100 text-blue-600 px-1 py-0.5 rounded font-medium">자동</span>
-                )}
+            {tt.subject && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${SUBJECT_COLORS[tt.subject] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                {tt.subject}
               </span>
+            )}
+            {!tt.teacher_id && tt.effective_teacher_id && (
+              <span className="text-[10px] bg-blue-100 text-blue-600 px-1 py-0.5 rounded font-medium">자동</span>
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -1242,12 +1241,17 @@ function TimetablesTab() {
         </div>
       ) : (
         <div className="space-y-6">
-          {groupedBySubject.map(({ subject, items }) => (
-            <div key={subject}>
+          {groupedByTeacher.map(({ teacherName, photoUrl, items }) => (
+            <div key={teacherName}>
               <div className="flex items-center gap-2 mb-2">
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${SUBJECT_COLORS[subject] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                  {subject}
-                </span>
+                {photoUrl ? (
+                  <img src={photoUrl} alt={teacherName} className="w-7 h-7 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <User className="w-3.5 h-3.5 text-gray-400" />
+                  </div>
+                )}
+                <span className="text-sm font-bold text-gray-800">{teacherName}</span>
                 <span className="text-xs text-gray-400">{items.length}개</span>
                 <div className="flex-1 h-px bg-gray-100" />
               </div>
@@ -1256,17 +1260,6 @@ function TimetablesTab() {
               </div>
             </div>
           ))}
-          {ungrouped.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full border bg-gray-100 text-gray-600 border-gray-200">기타</span>
-                <div className="flex-1 h-px bg-gray-100" />
-              </div>
-              <div className="space-y-2">
-                {ungrouped.map(({ tt, idx }) => <TimetableCard key={tt.id} tt={tt} idx={idx} />)}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
