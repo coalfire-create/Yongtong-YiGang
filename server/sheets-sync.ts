@@ -1,6 +1,6 @@
 const WEBHOOK_URL =
   process.env.GOOGLE_WEBHOOK_URL ||
-  "https://script.google.com/macros/s/AKfycbyNT3GCAdc0JLSR2qB6ThMWJlSbrejYQfOeviDhd1MedXfm-3u_J3glpiPkKzPc_KY/exec";
+  "https://script.google.com/macros/s/AKfycbyEjqeijDOVs1VgmWvXedh4u1WWepfbnECBfOg_rmnFFbD3ISIY1vFy8cw9UkpvWHQJ/exec";
 
 export async function appendReservationRow(data: {
   subject: string;
