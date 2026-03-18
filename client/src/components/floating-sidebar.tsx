@@ -228,6 +228,7 @@ function LevelTestModal({ onClose }: { onClose: () => void }) {
   const [phone, setPhone] = useState("");
   const [school, setSchool] = useState("");
   const [grade, setGrade] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [done, setDone] = useState(false);
 
   const mutation = useMutation({
@@ -246,6 +247,9 @@ function LevelTestModal({ onClose }: { onClose: () => void }) {
     onSuccess: () => setDone(true),
   });
 
+  const inputCls = "w-full border border-gray-300 rounded-md px-4 py-3 text-sm bg-gray-50 focus:outline-none focus:border-[#7B2332] focus:bg-white transition-colors";
+  const labelCls = "block text-sm font-semibold text-gray-800 mb-1.5";
+
   return (
     <div
       className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
@@ -253,7 +257,7 @@ function LevelTestModal({ onClose }: { onClose: () => void }) {
       data-testid="modal-level-test"
     >
       <div
-        className="bg-white w-full max-w-sm relative"
+        className="bg-white w-full max-w-sm rounded-xl shadow-2xl relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-[#7B2332] text-white px-6 py-5">
@@ -265,7 +269,7 @@ function LevelTestModal({ onClose }: { onClose: () => void }) {
             <X className="w-5 h-5" />
           </button>
           <h2 className="text-lg font-bold">수학 레벨테스트 신청</h2>
-          <p className="text-sm text-white/60 mt-1">학생에게 맞는 수준을 진단합니다</p>
+          <p className="text-sm text-white/70 mt-0.5">학생에게 맞는 수준을 진단합니다</p>
         </div>
 
         {done ? (
@@ -277,7 +281,7 @@ function LevelTestModal({ onClose }: { onClose: () => void }) {
             <p className="text-sm text-gray-500 mt-2">빠른 시간 내에 연락드리겠습니다.</p>
             <button
               onClick={onClose}
-              className="mt-6 bg-[#7B2332] text-white px-6 py-2.5 text-sm font-semibold hover:bg-[#8B3040] transition-colors"
+              className="mt-6 bg-[#7B2332] text-white px-6 py-2.5 text-sm font-semibold hover:bg-[#8B3040] transition-colors rounded-md"
               data-testid="button-level-done"
             >
               확인
@@ -286,69 +290,97 @@ function LevelTestModal({ onClose }: { onClose: () => void }) {
         ) : (
           <form
             onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}
-            className="px-6 py-6 space-y-4"
+            className="px-6 py-5 space-y-4"
           >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={labelCls}>
                 학생 이름 <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#7B2332]"
-                placeholder="이름을 입력하세요"
+                className={inputCls}
+                placeholder="이름을 입력해 주세요."
                 required
                 data-testid="input-level-name"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                연락처 <span className="text-red-500">*</span>
+              <label className={labelCls}>
+                학년 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                required
+                className={inputCls + " appearance-none cursor-pointer"}
+                data-testid="select-level-grade"
+              >
+                <option value="">선택</option>
+                <option value="초4">초4</option>
+                <option value="초5">초5</option>
+                <option value="초6">초6</option>
+                <option value="중1">중1</option>
+                <option value="중2">중2</option>
+                <option value="중3">중3</option>
+                <option value="고1">고1</option>
+                <option value="고2">고2</option>
+                <option value="고3">고3</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>
+                학교 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={school}
+                onChange={(e) => setSchool(e.target.value)}
+                required
+                className={inputCls}
+                placeholder="학교명을 입력해 주세요."
+                data-testid="input-level-school"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>
+                부모님 휴대폰 번호 <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#7B2332]"
-                placeholder="010-0000-0000"
+                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
                 required
+                maxLength={11}
+                className={inputCls}
+                placeholder="(-) 없이 숫자만 입력"
                 data-testid="input-level-phone"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">학교</label>
+
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-2">
+              <label className="flex items-start gap-2.5 cursor-pointer" data-testid="label-level-agree">
                 <input
-                  type="text"
-                  value={school}
-                  onChange={(e) => setSchool(e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#7B2332]"
-                  placeholder="학교명"
-                  data-testid="input-level-school"
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-[#7B2332] flex-shrink-0"
+                  data-testid="checkbox-level-agree"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">학년</label>
-                <select
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-[#7B2332] bg-white"
-                  data-testid="select-level-grade"
-                >
-                  <option value="">선택</option>
-                  <option value="초4">초4</option>
-                  <option value="초5">초5</option>
-                  <option value="초6">초6</option>
-                  <option value="중1">중1</option>
-                  <option value="중2">중2</option>
-                  <option value="중3">중3</option>
-                  <option value="고1">고1</option>
-                  <option value="고2">고2</option>
-                  <option value="고3">고3</option>
-                </select>
+                <span className="text-sm font-semibold text-gray-800">
+                  개인정보 수집 및 이용동의{" "}
+                  <span className="text-red-500">(필수)</span>
+                </span>
+              </label>
+              <div className="text-xs text-gray-500 space-y-1 pl-6 leading-relaxed">
+                <p>[수집 목적] 수학 레벨테스트 일정 안내 및 결과 상담 연락</p>
+                <p>[수집 항목] 이름, 학교, 학년, 학부모 휴대폰 번호</p>
+                <p>[수집 기한] 3년</p>
+                <p>신청자는 개인정보 수집에 동의하지 않을 수 있으나, 레벨테스트 신청을 하실 수 없습니다.</p>
               </div>
             </div>
+
             {mutation.isError && (
               <p className="text-xs text-red-500" data-testid="text-level-error">
                 {(mutation.error as Error).message}
@@ -356,15 +388,12 @@ function LevelTestModal({ onClose }: { onClose: () => void }) {
             )}
             <button
               type="submit"
-              disabled={mutation.isPending || !name.trim() || !phone.trim()}
-              className="w-full bg-[#7B2332] text-white py-2.5 text-sm font-bold hover:bg-[#8B3040] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              disabled={mutation.isPending || !name.trim() || !phone.trim() || !grade || !school.trim() || !agreed}
+              className="w-full bg-[#7B2332] text-white py-3.5 text-sm font-bold hover:bg-[#8B3040] disabled:opacity-40 transition-colors flex items-center justify-center gap-2 rounded-md"
               data-testid="button-level-submit"
             >
-              {mutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" />신청 중...</> : "레벨테스트 신청"}
+              {mutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" />신청 중...</> : "신청하기"}
             </button>
-            <p className="text-xs text-gray-400 text-center">
-              입력하신 정보는 레벨테스트 안내 목적으로만 사용됩니다.
-            </p>
           </form>
         )}
       </div>
