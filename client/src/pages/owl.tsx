@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PageLayout } from "@/components/layout";
-import { Moon, Clock, BookOpen, CheckCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Moon, Clock, BookOpen, CheckCircle, ChevronLeft, ChevronRight, X, MessageSquare, UserCheck, CalendarCheck, Wifi, Thermometer, Camera, Smartphone, Droplets } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 interface Banner {
@@ -228,72 +228,124 @@ export function Owl() {
     <PageLayout>
       <OwlHeroSection />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-          <div className="flex items-start gap-4 bg-white border border-gray-200 p-6 rounded-sm">
-            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-red-50 rounded-full">
-              <Moon className="w-5 h-5 text-[#7B2332]" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-gray-900 mb-2" data-testid="text-owl-info-title">독학관 안내</h2>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                조용하고 쾌적한 환경에서 집중 학습이 가능한 자습 공간입니다. 전문 관리 선생님이 상주하여 학습 분위기를 유지합니다.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-4 bg-white border border-gray-200 p-6 rounded-sm">
-            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-red-50 rounded-full">
-              <BookOpen className="w-5 h-5 text-[#7B2332]" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-gray-900 mb-2" data-testid="text-owl-usage-title">이용 방법</h2>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                "올빼미 장학생 지원 혜택"에 의거 담당자와 상담후 이용 가능합니다. 월~일 1년 365일 무휴로 운영합니다. 단 학기중에는 평일(월~금) 하교후 ~24시 운영이며 내신 시험기간에는 13시~24시 운영합니다.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-200 pt-8 mb-10">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2" data-testid="text-owl-hours-title">
-            <Clock className="w-5 h-5 text-[#7B2332]" />
-            운영 시간
+      {/* 안내 배너 */}
+      <div className="bg-[#1a1a2e] text-white py-10 px-4">
+        <div className="max-w-5xl mx-auto text-center">
+          <p className="text-xs font-semibold tracking-widest text-[#c0a878] uppercase mb-3">올빼미 스파르타 학습관</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3" data-testid="text-owl-info-title">
+            365일 · 24시간 운영하는 프리미엄 자습 공간
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <p className="text-sm text-white/60 max-w-xl mx-auto leading-relaxed">
+            전담 관리 선생님이 상주하는 쾌적한 독서실 환경에서<br className="hidden sm:block" /> 오직 공부에만 집중하세요.
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+
+        {/* 이용 방법 */}
+        <section className="mb-16" data-testid="text-owl-usage-title">
+          <p className="text-xs font-bold tracking-widest text-[#7B2332] uppercase mb-6">이용 방법</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-0 relative">
+            {/* 연결선 (데스크톱) */}
+            <div className="hidden sm:block absolute top-8 left-[calc(16.66%+1rem)] right-[calc(16.66%+1rem)] h-px bg-gray-200 z-0" />
             {[
-              { day: "평일 (월~금)", time: "14:00 ~ 24:00", highlight: false },
-              { day: "토요일/일요일/공휴일", time: "8:00 ~ 24:00", highlight: false },
-              { day: "썸머·윈터 방학중", time: "8:00 ~ 24:00", sub: "월~일 365일 무휴", highlight: true },
-            ].map((item) => (
+              {
+                step: "01",
+                icon: MessageSquare,
+                title: "상담 신청",
+                desc: "전화 또는 방문으로 올빼미 장학생 혜택을 상담받으세요.",
+              },
+              {
+                step: "02",
+                icon: UserCheck,
+                title: "자격 확인 & 등록",
+                desc: "장학생 지원 자격 확인 후 담당자와 등록 절차를 진행합니다.",
+              },
+              {
+                step: "03",
+                icon: CalendarCheck,
+                title: "바로 이용 시작",
+                desc: "등록 즉시 좌석을 배정받고 학습관을 이용할 수 있습니다.",
+              },
+            ].map(({ step, icon: Icon, title, desc }, i) => (
+              <div key={step} className="relative z-10 flex flex-col items-center text-center px-6 py-6 sm:py-0 sm:pb-0">
+                {/* 모바일: 왼쪽 선 */}
+                {i < 2 && (
+                  <div className="sm:hidden absolute left-8 top-[4.5rem] bottom-0 w-px bg-gray-200" />
+                )}
+                <div className="w-16 h-16 rounded-full bg-white border-2 border-[#7B2332] flex items-center justify-center mb-4 shadow-sm">
+                  <Icon className="w-6 h-6 text-[#7B2332]" />
+                </div>
+                <p className="text-[10px] font-bold tracking-widest text-[#7B2332] mb-1">STEP {step}</p>
+                <h3 className="text-base font-bold text-gray-900 mb-2">{title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed max-w-[200px]">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 운영 시간 */}
+        <section className="mb-16" data-testid="text-owl-hours-title">
+          <p className="text-xs font-bold tracking-widest text-[#7B2332] uppercase mb-6">운영 시간</p>
+          <div className="overflow-hidden border border-gray-200">
+            {[
+              { day: "평일 (월 ~ 금)", time: "14:00 ~ 24:00", note: "하교 후 이용", highlight: false },
+              { day: "토 · 일 · 공휴일", time: "08:00 ~ 24:00", note: "", highlight: false },
+              { day: "내신 시험 기간", time: "13:00 ~ 24:00", note: "학기중 특별 운영", highlight: false },
+              { day: "방학 (썸머 · 윈터)", time: "08:00 ~ 24:00", note: "연중무휴 365일", highlight: true },
+            ].map((item, i) => (
               <div
                 key={item.day}
-                className={`text-center py-5 px-3 rounded-sm ${item.highlight ? "bg-[#7B2332] text-white" : "bg-white border border-gray-200"}`}
+                className={`flex items-center justify-between px-6 py-4 ${
+                  i < 3 ? "border-b border-gray-100" : ""
+                } ${item.highlight ? "bg-[#7B2332]" : i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
                 data-testid={`card-time-${item.day}`}
               >
-                <p className={`text-sm font-semibold mb-1.5 ${item.highlight ? "text-white/90" : "text-gray-600"}`}>{item.day}</p>
-                <p className={`text-lg font-bold ${item.highlight ? "text-white" : "text-[#7B2332]"}`}>{item.time}</p>
-                {item.sub && <p className={`text-xs mt-1 ${item.highlight ? "text-white/75" : "text-gray-400"}`}>{item.sub}</p>}
+                <div className="flex items-center gap-3">
+                  <Clock className={`w-4 h-4 flex-shrink-0 ${item.highlight ? "text-white/70" : "text-gray-400"}`} />
+                  <span className={`text-sm font-medium ${item.highlight ? "text-white/90" : "text-gray-700"}`}>{item.day}</span>
+                  {item.note && (
+                    <span className={`hidden sm:inline-block text-xs px-2 py-0.5 rounded-full ${item.highlight ? "bg-white/20 text-white/80" : "bg-gray-100 text-gray-500"}`}>
+                      {item.note}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-base font-bold tabular-nums ${item.highlight ? "text-white" : "text-[#7B2332]"}`}>
+                  {item.time}
+                </span>
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="border-t border-gray-200 pt-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2" data-testid="text-owl-facilities-title">
-            <CheckCircle className="w-5 h-5 text-[#7B2332]" />
-            시설 안내
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
-            {["개인 독서실 좌석 75석", "냉·난방/가습기/공기청정기 완비", "무료 Wi-Fi (사이트 차단 인강용 wifi)", "냉/온수 정수기", "CCTV 실시간 모니터링", "전문 관리 선생님 상주", "핸드폰 보관함 운영", "출석 체크 시스템"].map((feat) => (
-              <div key={feat} className="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#7B2332] flex-shrink-0" />
-                <span className="text-sm text-gray-700">{feat}</span>
+        {/* 시설 안내 */}
+        <section data-testid="text-owl-facilities-title">
+          <p className="text-xs font-bold tracking-widest text-[#7B2332] uppercase mb-6">시설 안내</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { icon: Moon,         label: "독서실 좌석 75석" },
+              { icon: Thermometer,  label: "냉·난방 완비" },
+              { icon: Wifi,         label: "인강용 무료 Wi-Fi" },
+              { icon: Droplets,     label: "냉·온수 정수기" },
+              { icon: Camera,       label: "CCTV 실시간 모니터링" },
+              { icon: UserCheck,    label: "전담 관리 선생님" },
+              { icon: Smartphone,   label: "핸드폰 보관함" },
+              { icon: CalendarCheck,label: "출석 체크 시스템" },
+            ].map(({ icon: Icon, label }) => (
+              <div
+                key={label}
+                className="flex flex-col items-center gap-2 py-5 px-3 bg-white border border-gray-100 hover:border-[#7B2332]/30 hover:shadow-sm transition-all text-center"
+              >
+                <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-[#7B2332]" />
+                </div>
+                <span className="text-xs font-medium text-gray-700 leading-snug">{label}</span>
               </div>
             ))}
           </div>
-        </div>
+        </section>
+
       </div>
     </PageLayout>
   );
