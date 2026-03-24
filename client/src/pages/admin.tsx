@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ArrowUp, ArrowDown, ListOrdered, Plus, GripVertical } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, GripVertical } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
@@ -126,11 +126,16 @@ function TeachersTab() {
     },
   });
 
-  const handleTeacherMove = (index: number, direction: "up" | "down") => {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= filteredTeachers.length) return;
+  const dragTeacherIdxRef = useRef<number | null>(null);
+  const [dragTeacherOverIdx, setDragTeacherOverIdx] = useState<number | null>(null);
+  const handleTeacherDrop = (toIdx: number) => {
+    const fromIdx = dragTeacherIdxRef.current;
+    dragTeacherIdxRef.current = null;
+    setDragTeacherOverIdx(null);
+    if (fromIdx === null || fromIdx === toIdx) return;
     const newList = [...filteredTeachers];
-    [newList[index], newList[newIndex]] = [newList[newIndex], newList[index]];
+    const [moved] = newList.splice(fromIdx, 1);
+    newList.splice(toIdx, 0, moved);
     reorderMutation.mutate(newList.map((t) => t.id));
   };
 
@@ -272,25 +277,23 @@ function TeachersTab() {
       ) : (
         <div className="space-y-3">
           {filteredTeachers.map((t, idx) => (
-            <div key={t.id} className="bg-white border border-gray-200 p-4" data-testid={`card-admin-teacher-${t.id}`}>
+            <div
+              key={t.id}
+              className={`bg-white border p-4 transition-colors ${dragTeacherOverIdx === idx ? "border-[#7B2332] bg-red-50/30" : "border-gray-200"}`}
+              data-testid={`card-admin-teacher-${t.id}`}
+              onDragOver={(e) => { e.preventDefault(); setDragTeacherOverIdx(idx); }}
+              onDragLeave={() => setDragTeacherOverIdx(null)}
+              onDrop={() => handleTeacherDrop(idx)}
+            >
               <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-0.5 flex-shrink-0">
-                  <button
-                    onClick={() => handleTeacherMove(idx, "up")}
-                    disabled={idx === 0 || reorderMutation.isPending}
-                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
-                    data-testid={`button-move-up-teacher-${t.id}`}
-                  >
-                    <ArrowUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleTeacherMove(idx, "down")}
-                    disabled={idx === filteredTeachers.length - 1 || reorderMutation.isPending}
-                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
-                    data-testid={`button-move-down-teacher-${t.id}`}
-                  >
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  </button>
+                <div
+                  className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 px-0.5 py-2"
+                  draggable
+                  onDragStart={() => { dragTeacherIdxRef.current = idx; }}
+                  onDragEnd={() => { dragTeacherIdxRef.current = null; setDragTeacherOverIdx(null); }}
+                  title="드래그하여 순서 변경"
+                >
+                  <GripVertical className="w-4 h-4" />
                 </div>
                 {t.image_url ? (
                   <img src={t.image_url} alt={t.name} className="w-14 h-14 object-cover flex-shrink-0" />
@@ -755,11 +758,16 @@ function TimetablesTab() {
     updateMutation.mutate({ id: editingId, formData });
   };
 
-  const handleMove = (index: number, direction: "up" | "down") => {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= filteredTimetables.length) return;
+  const dragTTIdxRef = useRef<number | null>(null);
+  const [dragTTOverIdx, setDragTTOverIdx] = useState<number | null>(null);
+  const handleTTDrop = (toIdx: number) => {
+    const fromIdx = dragTTIdxRef.current;
+    dragTTIdxRef.current = null;
+    setDragTTOverIdx(null);
+    if (fromIdx === null || fromIdx === toIdx) return;
     const newList = [...filteredTimetables];
-    [newList[index], newList[newIndex]] = [newList[newIndex], newList[index]];
+    const [moved] = newList.splice(fromIdx, 1);
+    newList.splice(toIdx, 0, moved);
     reorderMutation.mutate(newList.map((t) => t.id));
   };
 
@@ -834,21 +842,23 @@ function TimetablesTab() {
   const labelCls = "block text-xs font-semibold text-gray-600 mb-1";
 
   const TimetableCard = ({ tt, idx }: { tt: Timetable; idx: number }) => (
-    <div key={tt.id} className="border border-gray-200 bg-white rounded-lg overflow-hidden" data-testid={`card-admin-timetable-${tt.id}`}>
+    <div
+      key={tt.id}
+      className={`border bg-white rounded-lg overflow-hidden transition-colors ${dragTTOverIdx === idx ? "border-[#7B2332] bg-red-50/30" : "border-gray-200"}`}
+      data-testid={`card-admin-timetable-${tt.id}`}
+      onDragOver={(e) => { e.preventDefault(); setDragTTOverIdx(idx); }}
+      onDragLeave={() => setDragTTOverIdx(null)}
+      onDrop={() => handleTTDrop(idx)}
+    >
       <div className="flex items-center gap-3 p-3">
-        <div className="flex flex-col gap-0.5 flex-shrink-0">
-          <button
-            onClick={() => handleMove(idx, "up")}
-            disabled={idx === 0 || reorderMutation.isPending}
-            className="p-1 text-gray-300 hover:text-gray-600 disabled:opacity-20 transition-colors"
-            data-testid={`button-move-up-timetable-${tt.id}`}
-          ><ArrowUp className="w-3.5 h-3.5" /></button>
-          <button
-            onClick={() => handleMove(idx, "down")}
-            disabled={idx === filteredTimetables.length - 1 || reorderMutation.isPending}
-            className="p-1 text-gray-300 hover:text-gray-600 disabled:opacity-20 transition-colors"
-            data-testid={`button-move-down-timetable-${tt.id}`}
-          ><ArrowDown className="w-3.5 h-3.5" /></button>
+        <div
+          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 px-0.5 py-2"
+          draggable
+          onDragStart={() => { dragTTIdxRef.current = idx; }}
+          onDragEnd={() => { dragTTIdxRef.current = null; setDragTTOverIdx(null); }}
+          title="드래그하여 순서 변경"
+        >
+          <GripVertical className="w-4 h-4" />
         </div>
 
         <label
@@ -2868,11 +2878,16 @@ function SummaryTimetablesTab() {
     },
   });
 
-  const handleMove = (index: number, direction: "up" | "down") => {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= items.length) return;
+  const dragSumIdxRef = useRef<number | null>(null);
+  const [dragSumOverIdx, setDragSumOverIdx] = useState<number | null>(null);
+  const handleSumDrop = (toIdx: number) => {
+    const fromIdx = dragSumIdxRef.current;
+    dragSumIdxRef.current = null;
+    setDragSumOverIdx(null);
+    if (fromIdx === null || fromIdx === toIdx) return;
     const newList = [...items];
-    [newList[index], newList[newIndex]] = [newList[newIndex], newList[index]];
+    const [moved] = newList.splice(fromIdx, 1);
+    newList.splice(toIdx, 0, moved);
     reorderMutation.mutate(newList.map((t) => t.id));
   };
 
@@ -2953,24 +2968,22 @@ function SummaryTimetablesTab() {
         ) : (
           <div className="space-y-3">
             {items.map((item, idx) => (
-              <div key={item.id} className="flex items-start gap-3 border border-gray-200 p-3" data-testid={`card-summary-${item.id}`}>
-                <div className="flex flex-col gap-0.5 flex-shrink-0 pt-2">
-                  <button
-                    onClick={() => handleMove(idx, "up")}
-                    disabled={idx === 0 || reorderMutation.isPending}
-                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
-                    data-testid={`button-move-up-summary-${item.id}`}
-                  >
-                    <ArrowUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleMove(idx, "down")}
-                    disabled={idx === items.length - 1 || reorderMutation.isPending}
-                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 transition-colors"
-                    data-testid={`button-move-down-summary-${item.id}`}
-                  >
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  </button>
+              <div
+                key={item.id}
+                className={`flex items-start gap-3 border p-3 transition-colors ${dragSumOverIdx === idx ? "border-[#7B2332] bg-red-50/30" : "border-gray-200"}`}
+                data-testid={`card-summary-${item.id}`}
+                onDragOver={(e) => { e.preventDefault(); setDragSumOverIdx(idx); }}
+                onDragLeave={() => setDragSumOverIdx(null)}
+                onDrop={() => handleSumDrop(idx)}
+              >
+                <div
+                  className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 px-0.5 pt-3"
+                  draggable
+                  onDragStart={() => { dragSumIdxRef.current = idx; }}
+                  onDragEnd={() => { dragSumIdxRef.current = null; setDragSumOverIdx(null); }}
+                  title="드래그하여 순서 변경"
+                >
+                  <GripVertical className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <img src={item.image_url} alt="요약시간표" className="w-full max-w-sm border border-gray-200" />
@@ -3057,11 +3070,16 @@ function FilterTabsTab() {
     },
   });
 
-  const moveTab = (index: number, direction: "up" | "down") => {
+  const dragTabIdxRef = useRef<number | null>(null);
+  const [dragTabOverIdx, setDragTabOverIdx] = useState<number | null>(null);
+  const handleTabDrop = (toIdx: number) => {
+    const fromIdx = dragTabIdxRef.current;
+    dragTabIdxRef.current = null;
+    setDragTabOverIdx(null);
+    if (fromIdx === null || fromIdx === toIdx) return;
     const newTabs = [...tabs];
-    const swapIndex = direction === "up" ? index - 1 : index + 1;
-    if (swapIndex < 0 || swapIndex >= newTabs.length) return;
-    [newTabs[index], newTabs[swapIndex]] = [newTabs[swapIndex], newTabs[index]];
+    const [moved] = newTabs.splice(fromIdx, 1);
+    newTabs.splice(toIdx, 0, moved);
     reorderMutation.mutate(newTabs.map((t) => t.id));
   };
 
@@ -3118,10 +3136,21 @@ function FilterTabsTab() {
           {tabs.map((tab, index) => (
             <div
               key={tab.id}
-              className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded group hover:border-gray-300 transition-colors"
+              className={`flex items-center gap-2 px-3 py-2.5 bg-white border rounded group transition-colors ${dragTabOverIdx === index ? "border-[#7B2332] bg-red-50/30" : "border-gray-200 hover:border-gray-300"}`}
               data-testid={`filter-tab-item-${tab.id}`}
+              onDragOver={(e) => { e.preventDefault(); setDragTabOverIdx(index); }}
+              onDragLeave={() => setDragTabOverIdx(null)}
+              onDrop={() => handleTabDrop(index)}
             >
-              <GripVertical className="w-4 h-4 text-gray-300 flex-shrink-0" />
+              <div
+                className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0"
+                draggable
+                onDragStart={() => { dragTabIdxRef.current = index; }}
+                onDragEnd={() => { dragTabIdxRef.current = null; setDragTabOverIdx(null); }}
+                title="드래그하여 순서 변경"
+              >
+                <GripVertical className="w-4 h-4" />
+              </div>
               <span className="text-xs text-gray-400 w-6 text-center font-mono">{index + 1}</span>
 
               {editingId === tab.id ? (
@@ -3155,22 +3184,6 @@ function FilterTabsTab() {
                 <>
                   <span className="flex-1 text-sm font-medium text-gray-800">{tab.label}</span>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => moveTab(index, "up")}
-                      disabled={index === 0}
-                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                      data-testid={`button-move-up-${tab.id}`}
-                    >
-                      <ArrowUp className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => moveTab(index, "down")}
-                      disabled={index === tabs.length - 1}
-                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                      data-testid={`button-move-down-${tab.id}`}
-                    >
-                      <ArrowDown className="w-3.5 h-3.5" />
-                    </button>
                     <button
                       onClick={() => { setEditingId(tab.id); setEditingLabel(tab.label); }}
                       className="p-1 text-gray-400 hover:text-[#7B2332]"
