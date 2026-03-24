@@ -29,6 +29,10 @@ const FACILITY_PHOTOS: LightboxPhoto[] = [
   { src: "/owl-phoneboxes.jpeg",  label: "핸드폰 보관함" },
 ];
 
+const STATIC_POSTERS: LightboxPhoto[] = [
+  { src: "/owl-poster-scholarship.jpeg", label: "영통이강 올빼미 장학생 1기 모집" },
+];
+
 function FadeImage({
   src,
   alt,
@@ -50,7 +54,6 @@ function FadeImage({
         src={src}
         alt={alt}
         loading={eager ? "eager" : "lazy"}
-        fetchPriority={eager ? "high" : "auto"}
         onLoad={() => setLoaded(true)}
         className={`${className ?? ""} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
       />
@@ -127,11 +130,12 @@ function OwlHeroSection() {
   const [facilityLightbox, setFacilityLightbox] = useState<number | null>(null);
   const [posterLightbox, setPosterLightbox] = useState<number | null>(null);
 
-  const posterPhotos = banners.filter((b) => b.is_active && b.image_url);
-  const posterLightboxPhotos: LightboxPhoto[] = posterPhotos.map((b) => ({
-    src: b.image_url!,
-    label: b.title || "올빼미 포스터",
-  }));
+  const apiBannerPosters: LightboxPhoto[] = banners
+    .filter((b) => b.is_active && b.image_url)
+    .map((b) => ({ src: b.image_url!, label: b.title || "올빼미 포스터" }));
+
+  const posterLightboxPhotos: LightboxPhoto[] = [...STATIC_POSTERS, ...apiBannerPosters];
+  const allPosters = posterLightboxPhotos;
 
   return (
     <>
@@ -152,23 +156,23 @@ function OwlHeroSection() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
 
-        {posterPhotos.length > 0 && (
+        {allPosters.length > 0 && (
           <section className="mb-10" data-testid="section-owl-posters">
             <h2 className="text-base font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
               <span className="w-6 h-0.5 bg-[#7B2332] inline-block" />
               홍보 포스터
             </h2>
-            <div className={`grid gap-4 ${posterPhotos.length === 1 ? "grid-cols-1 max-w-xs" : posterPhotos.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
-              {posterPhotos.map((b, i) => (
+            <div className={`grid gap-4 ${allPosters.length === 1 ? "grid-cols-1 max-w-xs" : allPosters.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+              {allPosters.map((p, i) => (
                 <button
-                  key={b.id}
+                  key={p.src}
                   onClick={() => setPosterLightbox(i)}
                   className="group relative overflow-hidden rounded-sm shadow-sm border border-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7B2332] text-left min-h-[120px]"
-                  data-testid={`button-owl-poster-${b.id}`}
+                  data-testid={`button-owl-poster-${i}`}
                 >
                   <FadeImage
-                    src={b.image_url!}
-                    alt={b.title || "올빼미 포스터"}
+                    src={p.src}
+                    alt={p.label}
                     eager={i === 0}
                     className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
                   />
