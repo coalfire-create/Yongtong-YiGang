@@ -69,8 +69,11 @@ interface Reservation {
   created_at: string;
 }
 
-// Stable empty array - avoids React infinite loop from useEffect([teachers])
+// Stable empty arrays - avoids React infinite loop from useEffect([data])
 const EMPTY_TEACHERS: Teacher[] = [];
+const EMPTY_TIMETABLES: Timetable[] = [];
+const EMPTY_SUMMARY_TT: { id: number; division: string; image_url: string; display_order: number }[] = [];
+const EMPTY_FILTER_TABS: { id: number; category: string; label: string; display_order: number }[] = [];
 
 const SUBJECT_OPTIONS: Record<string, string[]> = {
   "고등관": ["수학", "국어", "영어", "탐구", "논술"],
@@ -770,9 +773,23 @@ function TimetablesTab() {
   }>();
   const editCategory = editWatch("category");
 
-  const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
+  const { data: timetables = EMPTY_TIMETABLES, isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables"],
   });
+
+  const [localTimetables, setLocalTimetables] = useState<Timetable[]>(EMPTY_TIMETABLES);
+  useEffect(() => {
+    setLocalTimetables(prev => {
+      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
+      const newKey = timetables.map(t => `${t.id}:${t.display_order}`).join(",");
+      return prevKey === newKey ? prev : timetables;
+    });
+  }, [timetables]);
+
+  const ttSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const { data: teachers = [] } = useQuery<Teacher[]>({
     queryKey: ["/api/teachers"],
@@ -845,8 +862,8 @@ function TimetablesTab() {
   const cardPhotoRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const filteredTimetables = filterCategory === "all"
-    ? timetables
-    : timetables.filter((tt) => tt.category === filterCategory);
+    ? localTimetables
+    : localTimetables.filter((tt) => tt.category === filterCategory);
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -885,19 +902,41 @@ function TimetablesTab() {
 
   const reorderMutation = useMutation({
     mutationFn: async (ids: number[]) => {
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
       const res = await fetch("/api/timetables/reorder", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ ids }),
         credentials: "include",
       });
       if (!res.ok) throw new Error("순서 변경 실패");
       return res.json();
     },
-    onSuccess: () => {
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
     },
   });
+
+  function handleDragEndTimetables(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = filteredTimetables.findIndex(t => t.id === Number(active.id));
+    const newIdx = filteredTimetables.findIndex(t => t.id === Number(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    const newFiltered = arrayMove(filteredTimetables, oldIdx, newIdx);
+    const filteredIdSet = new Set(filteredTimetables.map(t => t.id));
+    setLocalTimetables(prev => {
+      const result = [...prev];
+      let fi = 0;
+      for (let i = 0; i < result.length; i++) {
+        if (filteredIdSet.has(result[i].id)) result[i] = newFiltered[fi++];
+      }
+      return result;
+    });
+    reorderMutation.mutate(newFiltered.map(t => t.id));
+  }
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, formData }: { id: number; formData: FormData }) => {
@@ -972,13 +1011,6 @@ function TimetablesTab() {
     updateMutation.mutate({ id: editingId, formData });
   };
 
-  const moveTT = (idx: number, dir: "up" | "down") => {
-    const newList = [...filteredTimetables];
-    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= newList.length) return;
-    [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
-    reorderMutation.mutate(newList.map((t) => t.id));
-  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1050,31 +1082,30 @@ function TimetablesTab() {
   const inputCls = "w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#7B2332] bg-white rounded";
   const labelCls = "block text-xs font-semibold text-gray-600 mb-1";
 
-  const TimetableCard = ({ tt, idx }: { tt: Timetable; idx: number }) => (
+  const TimetableCard = ({ tt }: { tt: Timetable }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tt.id });
+    const cardStyle: React.CSSProperties = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+      zIndex: isDragging ? 999 : undefined,
+    };
+    return (
     <div
-      key={tt.id}
+      ref={setNodeRef}
+      style={cardStyle}
       className="border border-gray-200 bg-white rounded-lg overflow-hidden"
       data-testid={`card-admin-timetable-${tt.id}`}
     >
       <div className="flex items-center gap-3 p-3">
-        <div className="flex flex-col gap-0.5 flex-shrink-0">
-          <button
-            onClick={() => moveTT(idx, "up")}
-            disabled={idx === 0 || reorderMutation.isPending}
-            className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            data-testid={`button-up-tt-${tt.id}`}
-          >
-            <ArrowUp className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => moveTT(idx, "down")}
-            disabled={idx === filteredTimetables.length - 1 || reorderMutation.isPending}
-            className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            data-testid={`button-down-tt-${tt.id}`}
-          >
-            <ArrowDown className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <button
+          {...attributes}
+          {...listeners}
+          className="flex-shrink-0 cursor-grab active:cursor-grabbing p-1 text-gray-300 hover:text-gray-500 transition-colors touch-none"
+          data-testid={`button-drag-tt-${tt.id}`}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
 
         <label
           className="relative flex-shrink-0 cursor-pointer group"
@@ -1238,6 +1269,7 @@ function TimetablesTab() {
       )}
     </div>
   );
+  };
 
   return (
     <div>
@@ -1465,27 +1497,31 @@ function TimetablesTab() {
           <p className="text-sm">등록된 시간표가 없습니다.</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {groupedByTeacher.map(({ teacherName, photoUrl, items }) => (
-            <div key={teacherName}>
-              <div className="flex items-center gap-2 mb-2">
-                {photoUrl ? (
-                  <img src={photoUrl} alt={teacherName} className="w-7 h-7 rounded-full object-cover border border-gray-200 flex-shrink-0" />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <User className="w-3.5 h-3.5 text-gray-400" />
+        <DndContext sensors={ttSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndTimetables}>
+          <SortableContext items={filteredTimetables.map(t => t.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-6">
+              {groupedByTeacher.map(({ teacherName, photoUrl, items }) => (
+                <div key={teacherName}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {photoUrl ? (
+                      <img src={photoUrl} alt={teacherName} className="w-7 h-7 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <User className="w-3.5 h-3.5 text-gray-400" />
+                      </div>
+                    )}
+                    <span className="text-sm font-bold text-gray-800">{teacherName}</span>
+                    <span className="text-xs text-gray-400">{items.length}개</span>
+                    <div className="flex-1 h-px bg-gray-100" />
                   </div>
-                )}
-                <span className="text-sm font-bold text-gray-800">{teacherName}</span>
-                <span className="text-xs text-gray-400">{items.length}개</span>
-                <div className="flex-1 h-px bg-gray-100" />
-              </div>
-              <div className="space-y-2">
-                {items.map(({ tt, idx }) => <TimetableCard key={tt.id} tt={tt} idx={idx} />)}
-              </div>
+                  <div className="space-y-2">
+                    {items.map(({ tt }) => <TimetableCard key={tt.id} tt={tt} />)}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
@@ -3041,6 +3077,37 @@ const SUMMARY_DIVISIONS = [
   { value: "junior", label: "초/중등관" },
 ] as const;
 
+function SortableSummaryCard({ item, onDelete }: { item: SummaryTimetable; onDelete: (id: number) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-start gap-3 border border-gray-200 p-3 bg-white"
+      data-testid={`card-summary-${item.id}`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 pt-2 cursor-grab active:cursor-grabbing text-gray-300 hover:text-[#7B2332] transition-colors"
+      >
+        <GripVertical className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <img src={item.image_url} alt="요약시간표" className="w-full max-w-sm border border-gray-200" />
+      </div>
+      <button
+        onClick={() => onDelete(item.id)}
+        className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+        data-testid={`button-delete-summary-${item.id}`}
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 function SummaryTimetablesTab() {
   const [selectedDivision, setSelectedDivision] = useState<string>("high-g1");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -3049,7 +3116,7 @@ function SummaryTimetablesTab() {
 
   const divisionLabel = SUMMARY_DIVISIONS.find((d) => d.value === selectedDivision)?.label || selectedDivision;
 
-  const { data: items = [], isLoading } = useQuery<SummaryTimetable[]>({
+  const { data: items = EMPTY_SUMMARY_TT as SummaryTimetable[], isLoading } = useQuery<SummaryTimetable[]>({
     queryKey: ["/api/summary-timetables", selectedDivision],
     queryFn: async () => {
       const res = await fetch(`/api/summary-timetables?division=${selectedDivision}`, { credentials: "include" });
@@ -3057,6 +3124,20 @@ function SummaryTimetablesTab() {
       return res.json();
     },
   });
+
+  const [localItems, setLocalItems] = useState<SummaryTimetable[]>([]);
+  useEffect(() => {
+    setLocalItems(prev => {
+      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
+      const newKey = items.map(t => `${t.id}:${t.display_order}`).join(",");
+      return prevKey === newKey ? prev : items;
+    });
+  }, [items]);
+
+  const sumSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -3083,9 +3164,12 @@ function SummaryTimetablesTab() {
 
   const reorderMutation = useMutation({
     mutationFn: async (ids: number[]) => {
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
       const res = await fetch("/api/summary-timetables/reorder", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ ids }),
         credentials: "include",
       });
@@ -3095,15 +3179,21 @@ function SummaryTimetablesTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/summary-timetables", selectedDivision] });
     },
+    onError: () => {
+      setLocalItems(items);
+    },
   });
 
-  const moveSum = (idx: number, dir: "up" | "down") => {
-    const newList = [...items];
-    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= newList.length) return;
-    [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
-    reorderMutation.mutate(newList.map((t) => t.id));
-  };
+  function handleDragEndSummary(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = localItems.findIndex(t => t.id === Number(active.id));
+    const newIdx = localItems.findIndex(t => t.id === Number(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    const newList = arrayMove(localItems, oldIdx, newIdx);
+    setLocalItems(newList);
+    reorderMutation.mutate(newList.map(t => t.id));
+  }
 
   const handleUpload = () => {
     if (imageFiles.length === 0) return;
@@ -3177,47 +3267,22 @@ function SummaryTimetablesTab() {
         </h3>
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
-        ) : items.length === 0 ? (
+        ) : localItems.length === 0 ? (
           <p className="text-sm text-gray-400 py-4">등록된 요약시간표가 없습니다.</p>
         ) : (
-          <div className="space-y-3">
-            {items.map((item, idx) => (
-              <div
-                key={item.id}
-                className="flex items-start gap-3 border border-gray-200 p-3"
-                data-testid={`card-summary-${item.id}`}
-              >
-                <div className="flex flex-col gap-0.5 flex-shrink-0 pt-2">
-                  <button
-                    onClick={() => moveSum(idx, "up")}
-                    disabled={idx === 0 || reorderMutation.isPending}
-                    className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    data-testid={`button-up-summary-${item.id}`}
-                  >
-                    <ArrowUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => moveSum(idx, "down")}
-                    disabled={idx === items.length - 1 || reorderMutation.isPending}
-                    className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    data-testid={`button-down-summary-${item.id}`}
-                  >
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <img src={item.image_url} alt="요약시간표" className="w-full max-w-sm border border-gray-200" />
-                </div>
-                <button
-                  onClick={() => { if (confirm("삭제하시겠습니까?")) deleteMutation.mutate(item.id); }}
-                  className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                  data-testid={`button-delete-summary-${item.id}`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+          <DndContext sensors={sumSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndSummary}>
+            <SortableContext items={localItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-3">
+                {localItems.map((item) => (
+                  <SortableSummaryCard
+                    key={item.id}
+                    item={item}
+                    onDelete={(id) => { if (confirm("삭제하시겠습니까?")) deleteMutation.mutate(id); }}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>
@@ -3237,6 +3302,93 @@ const FILTER_TAB_CATEGORIES = [
   { value: "고등관-고3", label: "고3" },
 ];
 
+function SortableFilterTabRow({
+  tab,
+  index,
+  editingId,
+  editingLabel,
+  setEditingLabel,
+  onEditStart,
+  onEditCancel,
+  onEditSave,
+  onDelete,
+  isUpdatePending,
+}: {
+  tab: FilterTabItem;
+  index: number;
+  editingId: number | null;
+  editingLabel: string;
+  setEditingLabel: (v: string) => void;
+  onEditStart: (tab: FilterTabItem) => void;
+  onEditCancel: () => void;
+  onEditSave: (id: number, label: string) => void;
+  onDelete: (id: number, label: string) => void;
+  isUpdatePending: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tab.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const isEditing = editingId === tab.id;
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded group hover:border-gray-300 transition-colors"
+      data-testid={`filter-tab-item-${tab.id}`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-[#7B2332] transition-colors"
+      >
+        <GripVertical className="w-4 h-4" />
+      </div>
+      <span className="text-xs text-gray-400 w-6 text-center font-mono">{index + 1}</span>
+      {isEditing ? (
+        <div className="flex-1 flex items-center gap-2">
+          <input
+            type="text"
+            value={editingLabel}
+            onChange={(e) => setEditingLabel(e.target.value)}
+            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#7B2332]"
+            data-testid={`input-edit-filter-tab-${tab.id}`}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && editingLabel.trim()) onEditSave(tab.id, editingLabel.trim());
+              if (e.key === "Escape") onEditCancel();
+            }}
+          />
+          <button onClick={() => editingLabel.trim() && onEditSave(tab.id, editingLabel.trim())} className="p-1 text-green-600 hover:bg-green-50 rounded">
+            <Check className="w-4 h-4" />
+          </button>
+          <button onClick={onEditCancel} className="p-1 text-gray-400 hover:bg-gray-100 rounded">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <>
+          <span className="flex-1 text-sm font-medium text-gray-800">{tab.label}</span>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onEditStart(tab)}
+              className="p-1 text-gray-400 hover:text-[#7B2332]"
+              data-testid={`button-edit-filter-tab-${tab.id}`}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => onDelete(tab.id, tab.label)}
+              className="p-1 text-gray-400 hover:text-red-600"
+              data-testid={`button-delete-filter-tab-${tab.id}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function FilterTabsTab() {
   const [selectedCategory, setSelectedCategory] = useState("고등관-고1");
   const [newLabel, setNewLabel] = useState("");
@@ -3251,6 +3403,20 @@ function FilterTabsTab() {
       return res.json();
     },
   });
+
+  const [localTabs, setLocalTabs] = useState<FilterTabItem[]>([]);
+  useEffect(() => {
+    setLocalTabs(prev => {
+      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
+      const newKey = tabs.map(t => `${t.id}:${t.display_order}`).join(",");
+      return prevKey === newKey ? prev : tabs;
+    });
+  }, [tabs]);
+
+  const filterSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const addMutation = useMutation({
     mutationFn: async () => {
@@ -3283,20 +3449,36 @@ function FilterTabsTab() {
 
   const reorderMutation = useMutation({
     mutationFn: async (ids: number[]) => {
-      await apiRequest("PATCH", "/api/filter-tabs/reorder", { ids });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/filter-tabs/reorder", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ ids }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("순서 변경 실패");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
     },
+    onError: () => {
+      setLocalTabs(tabs);
+    },
   });
 
-  const moveTab = (idx: number, dir: "up" | "down") => {
-    const newTabs = [...tabs];
-    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= newTabs.length) return;
-    [newTabs[idx], newTabs[swapIdx]] = [newTabs[swapIdx], newTabs[idx]];
-    reorderMutation.mutate(newTabs.map((t) => t.id));
-  };
+  function handleDragEndFilter(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = localTabs.findIndex(t => t.id === Number(active.id));
+    const newIdx = localTabs.findIndex(t => t.id === Number(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    const newList = arrayMove(localTabs, oldIdx, newIdx);
+    setLocalTabs(newList);
+    reorderMutation.mutate(newList.map(t => t.id));
+  }
 
   return (
     <div className="space-y-6">
@@ -3344,87 +3526,30 @@ function FilterTabsTab() {
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
-      ) : tabs.length === 0 ? (
+      ) : localTabs.length === 0 ? (
         <p className="text-sm text-gray-400 py-6 text-center">등록된 목차가 없습니다.</p>
       ) : (
-        <div className="space-y-1.5">
-          {tabs.map((tab, index) => (
-            <div
-              key={tab.id}
-              className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded group hover:border-gray-300 transition-colors"
-              data-testid={`filter-tab-item-${tab.id}`}
-            >
-              <div className="flex flex-col gap-0.5 flex-shrink-0">
-                <button
-                  onClick={() => moveTab(index, "up")}
-                  disabled={index === 0 || reorderMutation.isPending}
-                  className="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  data-testid={`button-up-tab-${tab.id}`}
-                >
-                  <ArrowUp className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() => moveTab(index, "down")}
-                  disabled={index === tabs.length - 1 || reorderMutation.isPending}
-                  className="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  data-testid={`button-down-tab-${tab.id}`}
-                >
-                  <ArrowDown className="w-3 h-3" />
-                </button>
-              </div>
-              <span className="text-xs text-gray-400 w-6 text-center font-mono">{index + 1}</span>
-
-              {editingId === tab.id ? (
-                <div className="flex-1 flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={editingLabel}
-                    onChange={(e) => setEditingLabel(e.target.value)}
-                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#7B2332]"
-                    data-testid={`input-edit-filter-tab-${tab.id}`}
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && editingLabel.trim()) updateMutation.mutate({ id: tab.id, label: editingLabel.trim() });
-                      if (e.key === "Escape") setEditingId(null);
-                    }}
-                  />
-                  <button
-                    onClick={() => editingLabel.trim() && updateMutation.mutate({ id: tab.id, label: editingLabel.trim() })}
-                    className="p-1 text-green-600 hover:bg-green-50 rounded"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setEditingId(null)}
-                    className="p-1 text-gray-400 hover:bg-gray-100 rounded"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <span className="flex-1 text-sm font-medium text-gray-800">{tab.label}</span>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => { setEditingId(tab.id); setEditingLabel(tab.label); }}
-                      className="p-1 text-gray-400 hover:text-[#7B2332]"
-                      data-testid={`button-edit-filter-tab-${tab.id}`}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => { if (confirm(`"${tab.label}" 목차를 삭제하시겠습니까?`)) deleteMutation.mutate(tab.id); }}
-                      className="p-1 text-gray-400 hover:text-red-600"
-                      data-testid={`button-delete-filter-tab-${tab.id}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </>
-              )}
+        <DndContext sensors={filterSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndFilter}>
+          <SortableContext items={localTabs.map(t => t.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-1.5">
+              {localTabs.map((tab, index) => (
+                <SortableFilterTabRow
+                  key={tab.id}
+                  tab={tab}
+                  index={index}
+                  editingId={editingId}
+                  editingLabel={editingLabel}
+                  setEditingLabel={setEditingLabel}
+                  onEditStart={(t) => { setEditingId(t.id); setEditingLabel(t.label); }}
+                  onEditCancel={() => setEditingId(null)}
+                  onEditSave={(id, label) => updateMutation.mutate({ id, label })}
+                  onDelete={(id, label) => { if (confirm(`"${label}" 목차를 삭제하시겠습니까?`)) deleteMutation.mutate(id); }}
+                  isUpdatePending={updateMutation.isPending}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
