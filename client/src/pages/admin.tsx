@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, GripVertical } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown } from "lucide-react";
 import { Link } from "wouter";
 
 interface Teacher {
@@ -126,16 +126,11 @@ function TeachersTab() {
     },
   });
 
-  const dragTeacherIdxRef = useRef<number | null>(null);
-  const [dragTeacherOverIdx, setDragTeacherOverIdx] = useState<number | null>(null);
-  const handleTeacherDrop = (toIdx: number) => {
-    const fromIdx = dragTeacherIdxRef.current;
-    dragTeacherIdxRef.current = null;
-    setDragTeacherOverIdx(null);
-    if (fromIdx === null || fromIdx === toIdx) return;
+  const moveTeacher = (idx: number, dir: "up" | "down") => {
     const newList = [...filteredTeachers];
-    const [moved] = newList.splice(fromIdx, 1);
-    newList.splice(toIdx, 0, moved);
+    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= newList.length) return;
+    [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
     reorderMutation.mutate(newList.map((t) => t.id));
   };
 
