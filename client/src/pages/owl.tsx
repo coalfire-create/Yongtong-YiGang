@@ -21,9 +21,9 @@ interface LightboxPhoto {
 
 const FACILITY_PHOTOS: LightboxPhoto[] = [
   { src: "/owl-entrance.jpeg",    label: "올빼미 스파르타 입구" },
-  { src: "/owl-reception.jpeg",   label: "프런트 & 접수" },
   { src: "/owl-boys-seats.jpeg",  label: "남학생 좌석" },
   { src: "/owl-girls-seats.jpeg", label: "여학생 좌석" },
+  { src: "/owl-reception.jpeg",   label: "프런트 & 접수" },
   { src: "/owl-cctv.jpeg",        label: "CCTV 실시간 모니터" },
   { src: "/owl-checkin.jpeg",     label: "출석 체크 시스템" },
   { src: "/owl-phoneboxes.jpeg",  label: "핸드폰 보관함" },
@@ -198,8 +198,10 @@ function OwlHeroSection() {
               <button
                 key={photo.src}
                 onClick={() => setFacilityLightbox(i)}
-                className={`group relative overflow-hidden rounded-sm bg-gray-200 aspect-[4/3] focus:outline-none focus:ring-2 focus:ring-[#7B2332] ${
-                  i === 0 ? "col-span-2 aspect-square sm:aspect-[4/3]" : ""
+                className={`group relative overflow-hidden rounded-sm bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7B2332] ${
+                  i === 0
+                    ? "col-span-2 sm:col-span-3 lg:col-span-2 aspect-[4/3] sm:aspect-[21/9] lg:aspect-[4/3]"
+                    : "aspect-[4/3]"
                 }`}
                 data-testid={`button-owl-photo-${i}`}
               >
