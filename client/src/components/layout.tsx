@@ -105,7 +105,7 @@ export function Header() {
         }`}
         data-testid="nav-mobile"
       >
-        <nav className="flex flex-col p-6 gap-1">
+        <nav className="flex flex-col p-6 gap-1 overflow-y-auto h-full pb-16">
           {NAV_ITEMS.map((item) => (
             <div key={item.label}>
               <Link
