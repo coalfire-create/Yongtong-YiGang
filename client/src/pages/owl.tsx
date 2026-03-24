@@ -29,6 +29,35 @@ const FACILITY_PHOTOS: LightboxPhoto[] = [
   { src: "/owl-phoneboxes.jpeg",  label: "핸드폰 보관함" },
 ];
 
+function FadeImage({
+  src,
+  alt,
+  className,
+  eager,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  eager?: boolean;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
+        onLoad={() => setLoaded(true)}
+        className={`${className ?? ""} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+      />
+    </>
+  );
+}
+
 function PhotoLightbox({ photos, initialIndex, onClose }: {
   photos: LightboxPhoto[];
   initialIndex: number;
@@ -134,16 +163,15 @@ function OwlHeroSection() {
                 <button
                   key={b.id}
                   onClick={() => setPosterLightbox(i)}
-                  className="group relative overflow-hidden rounded-sm shadow-sm border border-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7B2332] text-left"
+                  className="group relative overflow-hidden rounded-sm shadow-sm border border-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7B2332] text-left min-h-[120px]"
                   data-testid={`button-owl-poster-${b.id}`}
                 >
-                  <div className="overflow-hidden">
-                    <img
-                      src={b.image_url!}
-                      alt={b.title || "올빼미 포스터"}
-                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
+                  <FadeImage
+                    src={b.image_url!}
+                    alt={b.title || "올빼미 포스터"}
+                    eager={i === 0}
+                    className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-800 shadow">
                       크게 보기
@@ -166,16 +194,16 @@ function OwlHeroSection() {
               <button
                 key={photo.src}
                 onClick={() => setFacilityLightbox(i)}
-                className={`group relative overflow-hidden rounded-sm bg-gray-100 aspect-[4/3] focus:outline-none focus:ring-2 focus:ring-[#7B2332] ${
+                className={`group relative overflow-hidden rounded-sm bg-gray-200 aspect-[4/3] focus:outline-none focus:ring-2 focus:ring-[#7B2332] ${
                   i === 0 ? "col-span-2 aspect-square sm:aspect-[4/3]" : ""
                 }`}
                 data-testid={`button-owl-photo-${i}`}
               >
-                <img
+                <FadeImage
                   src={photo.src}
                   alt={photo.label}
+                  eager={i < 2}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300" />
                 <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/60 to-transparent">
