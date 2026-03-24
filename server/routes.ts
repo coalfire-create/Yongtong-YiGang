@@ -533,6 +533,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/status", (req, res) => {
+    res.set("Cache-Control", "no-store");
     res.json({ isAdmin: !!(req.session as any)?.isAdmin });
   });
 
@@ -608,6 +609,19 @@ export async function registerRoutes(
     });
   });
 
+  app.patch("/api/teachers/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await supabase.from("teachers").update({ display_order: i }).eq("id", ids[i]);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.patch("/api/teachers/:id/photo", requireAdmin, upload.single("image"), async (req, res) => {
     const { id } = req.params;
     if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
@@ -661,19 +675,6 @@ export async function registerRoutes(
     const { error } = await supabase.from("teachers").delete().eq("id", id);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true });
-  });
-
-  app.patch("/api/teachers/reorder", requireAdmin, async (req, res) => {
-    const { ids } = req.body;
-    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
-    try {
-      for (let i = 0; i < ids.length; i++) {
-        await supabase.from("teachers").update({ display_order: i }).eq("id", ids[i]);
-      }
-      res.json({ success: true });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
   });
 
   // ========== TEACHER IMAGES (multiple per teacher) ==========
