@@ -1,9 +1,26 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
 import { Link } from "wouter";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Teacher {
   id: number;
@@ -59,6 +76,166 @@ const SUBJECT_OPTIONS: Record<string, string[]> = {
 
 const TIMETABLE_SUBJECT_OPTIONS = ["수학", "국어", "영어", "탐구"];
 
+interface SortableModalRowProps {
+  teacher: Teacher;
+  isUploading: boolean;
+  photoFileRefs: { current: Record<number, HTMLInputElement | null> };
+  onPhotoChange: (id: number, file: File) => void;
+}
+
+function SortableModalRow({ teacher: t, isUploading, photoFileRefs, onPhotoChange }: SortableModalRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: t.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-3 border border-gray-100 rounded-lg px-3 py-2.5 bg-gray-50" data-testid={`row-photo-teacher-${t.id}`}>
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 touch-none flex-shrink-0">
+        <GripVertical className="w-5 h-5" />
+      </div>
+      <label className="relative flex-shrink-0 cursor-pointer group" title="클릭하여 사진 변경">
+        {t.image_url ? (
+          <img src={t.image_url} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-[#7B2332] group-hover:opacity-70 transition-opacity" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-gray-200 border-2 border-dashed border-gray-300 flex items-center justify-center group-hover:bg-gray-300 transition-colors">
+            <Users className="w-5 h-5 text-gray-400" />
+          </div>
+        )}
+        {isUploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
+            <Loader2 className="w-4 h-4 animate-spin text-[#7B2332]" />
+          </div>
+        )}
+        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#7B2332] rounded-full flex items-center justify-center">
+          <Upload className="w-2.5 h-2.5 text-white" />
+        </div>
+        <input
+          ref={(el) => { photoFileRefs.current[t.id] = el; }}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          disabled={isUploading}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            onPhotoChange(t.id, file);
+            if (photoFileRefs.current[t.id]) photoFileRefs.current[t.id]!.value = "";
+          }}
+        />
+      </label>
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-gray-900 text-sm truncate">{t.name}</p>
+        <p className="text-xs text-gray-400 truncate">{t.division ? `${t.division} · ` : ""}{t.subject}</p>
+      </div>
+    </div>
+  );
+}
+
+interface SortableTeacherCardProps {
+  teacher: Teacher;
+  onDelete: (id: number, name: string) => void;
+  onEditBio: (id: number, bio: string) => void;
+  editingBioId: number | null;
+  editBioText: string;
+  onBioTextChange: (text: string) => void;
+  onBioSave: (id: number) => void;
+  onBioCancelEdit: () => void;
+  bioMutationPending: boolean;
+  divisionLabel: Record<string, string>;
+}
+
+function SortableTeacherCard({ teacher: t, onDelete, onEditBio, editingBioId, editBioText, onBioTextChange, onBioSave, onBioCancelEdit, bioMutationPending, divisionLabel }: SortableTeacherCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: t.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="bg-white border border-gray-200 p-4" data-testid={`card-admin-teacher-${t.id}`}>
+      <div className="flex items-center gap-3">
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 touch-none flex-shrink-0" data-testid={`drag-handle-teacher-${t.id}`}>
+          <GripVertical className="w-5 h-5" />
+        </div>
+        {t.image_url ? (
+          <img src={t.image_url} alt={t.name} className="w-14 h-14 object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-14 h-14 bg-red-50 flex items-center justify-center flex-shrink-0">
+            <Users className="w-7 h-7 text-red-500" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-gray-900 truncate">{t.name}</p>
+          <p className="text-sm text-gray-500 truncate">
+            <span className="text-red-600 font-medium">{divisionLabel[t.division] || t.division}</span>
+            {t.division && " · "}
+            {t.subject}
+          </p>
+          {editingBioId !== t.id && (
+            <p className="text-xs text-gray-400 mt-1 line-clamp-2" data-testid={`text-teacher-bio-${t.id}`}>
+              {t.description || "약력 미등록"}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => onEditBio(t.id, t.description || "")}
+          className="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+          title="약력 편집"
+          data-testid={`button-edit-bio-${t.id}`}
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onDelete(t.id, t.name)}
+          className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+          data-testid={`button-delete-teacher-${t.id}`}
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+      {editingBioId === t.id && (
+        <div className="mt-3 pt-3 border-t border-gray-100" data-testid={`form-edit-bio-${t.id}`}>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            약력 (줄바꿈으로 항목 구분, 마우스 오버 시 표시됨)
+          </label>
+          <textarea
+            value={editBioText}
+            onChange={(e) => onBioTextChange(e.target.value)}
+            rows={4}
+            className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
+            placeholder={"대성마이맥 출강\n전 SNT 고등관 국어, 두각\n전 대형"}
+            data-testid={`textarea-bio-${t.id}`}
+          />
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              onClick={() => onBioSave(t.id)}
+              disabled={bioMutationPending}
+              className="flex items-center gap-1 bg-red-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+              data-testid={`button-save-bio-${t.id}`}
+            >
+              {bioMutationPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+              저장
+            </button>
+            <button
+              onClick={onBioCancelEdit}
+              className="flex items-center gap-1 text-gray-500 px-4 py-1.5 text-xs font-semibold border border-gray-200 hover:bg-gray-50 transition-colors"
+              data-testid={`button-cancel-bio-${t.id}`}
+            >
+              <X className="w-3 h-3" />
+              취소
+            </button>
+          </div>
+        </div>
+      )}
+      <TeacherImagesManager teacherId={t.id} teacherName={t.name} />
+    </div>
+  );
+}
+
 function TeachersTab() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -74,9 +251,17 @@ function TeachersTab() {
     queryKey: ["/api/teachers"],
   });
 
-  const filteredTeachers = filterSubject === "all"
-    ? teachers
-    : teachers.filter((t) => t.subject === filterSubject);
+  const [localTeachers, setLocalTeachers] = useState<Teacher[]>([]);
+  useEffect(() => { setLocalTeachers(teachers); }, [teachers]);
+
+  const localFilteredTeachers = filterSubject === "all"
+    ? localTeachers
+    : localTeachers.filter((t) => t.subject === filterSubject);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -124,23 +309,38 @@ function TeachersTab() {
     onSuccess: () => {
       invalidateTeachers();
     },
+    onError: () => {
+      setLocalTeachers(teachers);
+    },
   });
 
-  const moveTeacher = (idx: number, dir: "up" | "down") => {
-    const newList = [...filteredTeachers];
-    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= newList.length) return;
-    [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
+  function handleDragEndModal(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = localTeachers.findIndex((t) => t.id === active.id);
+    const newIdx = localTeachers.findIndex((t) => t.id === over.id);
+    const newList = arrayMove(localTeachers, oldIdx, newIdx);
+    setLocalTeachers(newList);
     reorderMutation.mutate(newList.map((t) => t.id));
-  };
+  }
 
-  const moveTeacherInAll = (idx: number, dir: "up" | "down") => {
-    const newList = [...teachers];
-    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= newList.length) return;
-    [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
-    reorderMutation.mutate(newList.map((t) => t.id));
-  };
+  function handleDragEndList(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const filtered = filterSubject === "all" ? localTeachers : localTeachers.filter((t) => t.subject === filterSubject);
+    const oldIdx = filtered.findIndex((t) => t.id === active.id);
+    const newIdx = filtered.findIndex((t) => t.id === over.id);
+    const newFiltered = arrayMove(filtered, oldIdx, newIdx);
+    const newAll = [...localTeachers];
+    let fi = 0;
+    for (let i = 0; i < newAll.length; i++) {
+      if (filterSubject === "all" || newAll[i].subject === filterSubject) {
+        newAll[i] = newFiltered[fi++];
+      }
+    }
+    setLocalTeachers(newAll);
+    reorderMutation.mutate(newAll.map((t) => t.id));
+  }
 
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<number | null>(null);
@@ -279,88 +479,40 @@ function TeachersTab() {
       {/* Photo & Order Modal */}
       {showPhotoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" data-testid="modal-teacher-photo">
-          <div className="bg-white w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg shadow-xl mx-4">
+          <div className="bg-white w-full max-w-lg max-h-[90vh] flex flex-col rounded-lg shadow-xl mx-4">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
               <div>
                 <h3 className="text-base font-bold text-gray-900">사진 · 순서 관리</h3>
-                <p className="text-xs text-gray-400 mt-0.5">사진을 클릭하면 변경, ↑↓ 버튼으로 순서 변경</p>
+                <p className="text-xs text-gray-400 mt-0.5">≡ 잡고 드래그하여 순서 변경 · 사진 클릭으로 변경</p>
               </div>
               <button onClick={() => setShowPhotoModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" data-testid="button-close-photo-modal">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="overflow-y-auto flex-1 p-5">
+            <div className="overflow-y-auto flex-1 p-4">
               {isLoading ? (
                 <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
-              ) : teachers.length === 0 ? (
+              ) : localTeachers.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-10">등록된 선생님이 없습니다.</p>
               ) : (
-                <div className="space-y-2">
-                  {teachers.map((t, idx) => {
-                    const isUploading = uploadingPhotoFor === t.id && updatePhotoMutation.isPending;
-                    return (
-                      <div key={t.id} className="flex items-center gap-4 border border-gray-100 rounded-lg px-4 py-3 bg-gray-50" data-testid={`row-photo-teacher-${t.id}`}>
-                        {/* Photo (click to change) */}
-                        <label className="relative flex-shrink-0 cursor-pointer group" title="클릭하여 사진 변경" data-testid={`label-photo-${t.id}`}>
-                          {t.image_url ? (
-                            <img src={t.image_url} alt={t.name} className="w-16 h-16 rounded-full object-cover border-2 border-[#7B2332] group-hover:opacity-70 transition-opacity" />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-gray-200 border-2 border-dashed border-gray-300 flex items-center justify-center group-hover:bg-gray-300 transition-colors">
-                              <Users className="w-7 h-7 text-gray-400" />
-                            </div>
-                          )}
-                          {isUploading && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
-                              <Loader2 className="w-5 h-5 animate-spin text-[#7B2332]" />
-                            </div>
-                          )}
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#7B2332] rounded-full flex items-center justify-center group-hover:opacity-100 opacity-80 transition-opacity">
-                            <Upload className="w-3 h-3 text-white" />
-                          </div>
-                          <input
-                            ref={(el) => { photoFileRefs.current[t.id] = el; }}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            disabled={isUploading}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              setUploadingPhotoFor(t.id);
-                              updatePhotoMutation.mutate({ id: t.id, file });
-                              if (photoFileRefs.current[t.id]) photoFileRefs.current[t.id]!.value = "";
-                            }}
-                          />
-                        </label>
-                        {/* Name & Subject */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 truncate">{t.name}</p>
-                          <p className="text-xs text-gray-400 truncate">{t.division ? `${t.division} · ` : ""}{t.subject}</p>
-                          <p className="text-xs text-[#7B2332] mt-1">클릭하여 사진 변경</p>
-                        </div>
-                        {/* Up/Down Buttons */}
-                        <div className="flex flex-col gap-1 flex-shrink-0">
-                          <button
-                            onClick={() => moveTeacherInAll(idx, "up")}
-                            disabled={idx === 0 || reorderMutation.isPending}
-                            className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-500 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            data-testid={`button-up-modal-${t.id}`}
-                          >
-                            <ArrowUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => moveTeacherInAll(idx, "down")}
-                            disabled={idx === teachers.length - 1 || reorderMutation.isPending}
-                            className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-500 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            data-testid={`button-down-modal-${t.id}`}
-                          >
-                            <ArrowDown className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndModal}>
+                  <SortableContext items={localTeachers.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2">
+                      {localTeachers.map((t) => (
+                        <SortableModalRow
+                          key={t.id}
+                          teacher={t}
+                          isUploading={uploadingPhotoFor === t.id && updatePhotoMutation.isPending}
+                          photoFileRefs={photoFileRefs}
+                          onPhotoChange={(id, file) => {
+                            setUploadingPhotoFor(id);
+                            updatePhotoMutation.mutate({ id, file });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </div>
           </div>
@@ -368,7 +520,7 @@ function TeachersTab() {
       )}
 
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900">등록된 선생님 ({filteredTeachers.length}명)</h3>
+        <h3 className="text-lg font-bold text-gray-900">등록된 선생님 ({localFilteredTeachers.length}명)</h3>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowPhotoModal(true)}
@@ -395,116 +547,37 @@ function TeachersTab() {
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
-      ) : filteredTeachers.length === 0 ? (
+      ) : localFilteredTeachers.length === 0 ? (
         <p className="text-sm text-gray-400 py-6 text-center">등록된 선생님이 없습니다.</p>
       ) : (
-        <div className="space-y-3">
-          {filteredTeachers.map((t, idx) => (
-            <div
-              key={t.id}
-              className="bg-white border border-gray-200 p-4 transition-colors"
-              data-testid={`card-admin-teacher-${t.id}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-0.5 flex-shrink-0">
-                  <button
-                    onClick={() => moveTeacher(idx, "up")}
-                    disabled={idx === 0 || reorderMutation.isPending}
-                    className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    data-testid={`button-up-teacher-${t.id}`}
-                  >
-                    <ArrowUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => moveTeacher(idx, "down")}
-                    disabled={idx === filteredTeachers.length - 1 || reorderMutation.isPending}
-                    className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    data-testid={`button-down-teacher-${t.id}`}
-                  >
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                {t.image_url ? (
-                  <img src={t.image_url} alt={t.name} className="w-14 h-14 object-cover flex-shrink-0" />
-                ) : (
-                  <div className="w-14 h-14 bg-red-50 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-7 h-7 text-red-500" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-900 truncate">{t.name}</p>
-                  <p className="text-sm text-gray-500 truncate">
-                    <span className="text-red-600 font-medium">{divisionLabel[t.division] || t.division}</span>
-                    {t.division && " · "}
-                    {t.subject}
-                  </p>
-                  {editingBioId !== t.id && (
-                    <p className="text-xs text-gray-400 mt-1 line-clamp-2" data-testid={`text-teacher-bio-${t.id}`}>
-                      {t.description || "약력 미등록"}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => {
-                    setEditingBioId(editingBioId === t.id ? null : t.id);
-                    setEditBioText(t.description || "");
-                  }}
-                  className="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                  title="약력 편집"
-                  data-testid={`button-edit-bio-${t.id}`}
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`"${t.name}" 선생님을 삭제하시겠습니까?`)) {
-                      deleteMutation.mutate(t.id);
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndList}>
+          <SortableContext items={localFilteredTeachers.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-3">
+              {localFilteredTeachers.map((t) => (
+                <SortableTeacherCard
+                  key={t.id}
+                  teacher={t}
+                  onDelete={(id, name) => {
+                    if (confirm(`"${name}" 선생님을 삭제하시겠습니까?`)) {
+                      deleteMutation.mutate(id);
                     }
                   }}
-                  className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                  data-testid={`button-delete-teacher-${t.id}`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              {editingBioId === t.id && (
-                <div className="mt-3 pt-3 border-t border-gray-100" data-testid={`form-edit-bio-${t.id}`}>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    약력 (줄바꿈으로 항목 구분, 마우스 오버 시 표시됨)
-                  </label>
-                  <textarea
-                    value={editBioText}
-                    onChange={(e) => setEditBioText(e.target.value)}
-                    rows={4}
-                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
-                    placeholder={"대성마이맥 출강\n전 SNT 고등관 국어, 두각\n전 대형"}
-                    data-testid={`textarea-bio-${t.id}`}
-                  />
-                  <div className="flex items-center gap-2 mt-2">
-                    <button
-                      onClick={() => bioMutation.mutate({ id: t.id, bio: editBioText })}
-                      disabled={bioMutation.isPending}
-                      className="flex items-center gap-1 bg-red-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
-                      data-testid={`button-save-bio-${t.id}`}
-                    >
-                      {bioMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                      저장
-                    </button>
-                    <button
-                      onClick={() => setEditingBioId(null)}
-                      className="flex items-center gap-1 text-gray-500 px-4 py-1.5 text-xs font-semibold border border-gray-200 hover:bg-gray-50 transition-colors"
-                      data-testid={`button-cancel-bio-${t.id}`}
-                    >
-                      <X className="w-3 h-3" />
-                      취소
-                    </button>
-                  </div>
-                </div>
-              )}
-              <TeacherImagesManager teacherId={t.id} teacherName={t.name} />
+                  onEditBio={(id, bio) => {
+                    setEditingBioId(editingBioId === id ? null : id);
+                    setEditBioText(bio);
+                  }}
+                  editingBioId={editingBioId}
+                  editBioText={editBioText}
+                  onBioTextChange={setEditBioText}
+                  onBioSave={(id) => bioMutation.mutate({ id, bio: editBioText })}
+                  onBioCancelEdit={() => setEditingBioId(null)}
+                  bioMutationPending={bioMutation.isPending}
+                  divisionLabel={divisionLabel}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
