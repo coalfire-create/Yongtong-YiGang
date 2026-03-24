@@ -608,6 +608,26 @@ export async function registerRoutes(
     });
   });
 
+  app.patch("/api/teachers/:id/photo", requireAdmin, upload.single("image"), async (req, res) => {
+    const { id } = req.params;
+    if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
+    const { data: existing } = await supabase.from("teachers").select("image_url").eq("id", id).single();
+    if (existing?.image_url) {
+      const urlParts = existing.image_url.split("/images/");
+      if (urlParts[1]) await supabase.storage.from("images").remove([urlParts[1]]);
+    }
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const fileName = `teachers/${crypto.randomUUID()}${ext}`;
+    const { error: uploadError } = await supabase.storage.from("images").upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+    if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+    const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+    const image_url = urlData.publicUrl;
+    const { data, error } = await supabase.from("teachers").update({ image_url }).eq("id", id).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    const parts = (data.subject || "").split("::");
+    res.json({ ...data, division: parts.length > 1 ? parts[0] : "", subject: parts.length > 1 ? parts[1] : data.subject });
+  });
+
   app.patch("/api/teachers/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { bio } = req.body;

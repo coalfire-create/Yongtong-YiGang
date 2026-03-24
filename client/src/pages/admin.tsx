@@ -134,6 +134,33 @@ function TeachersTab() {
     reorderMutation.mutate(newList.map((t) => t.id));
   };
 
+  const moveTeacherInAll = (idx: number, dir: "up" | "down") => {
+    const newList = [...teachers];
+    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= newList.length) return;
+    [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
+    reorderMutation.mutate(newList.map((t) => t.id));
+  };
+
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<number | null>(null);
+  const photoFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  const updatePhotoMutation = useMutation({
+    mutationFn: async ({ id, file }: { id: number; file: File }) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(`/api/teachers/${id}/photo`, { method: "PATCH", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json()).error || "업로드 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      invalidateTeachers();
+      setUploadingPhotoFor(null);
+    },
+    onError: () => setUploadingPhotoFor(null),
+  });
+
   const [editingBioId, setEditingBioId] = useState<number | null>(null);
   const [editBioText, setEditBioText] = useState("");
 
@@ -249,19 +276,120 @@ function TeachersTab() {
         </form>
       </div>
 
+      {/* Photo & Order Modal */}
+      {showPhotoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" data-testid="modal-teacher-photo">
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg shadow-xl mx-4">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">사진 · 순서 관리</h3>
+                <p className="text-xs text-gray-400 mt-0.5">사진을 클릭하면 변경, ↑↓ 버튼으로 순서 변경</p>
+              </div>
+              <button onClick={() => setShowPhotoModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" data-testid="button-close-photo-modal">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-5">
+              {isLoading ? (
+                <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+              ) : teachers.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-10">등록된 선생님이 없습니다.</p>
+              ) : (
+                <div className="space-y-2">
+                  {teachers.map((t, idx) => {
+                    const isUploading = uploadingPhotoFor === t.id && updatePhotoMutation.isPending;
+                    return (
+                      <div key={t.id} className="flex items-center gap-4 border border-gray-100 rounded-lg px-4 py-3 bg-gray-50" data-testid={`row-photo-teacher-${t.id}`}>
+                        {/* Photo (click to change) */}
+                        <label className="relative flex-shrink-0 cursor-pointer group" title="클릭하여 사진 변경" data-testid={`label-photo-${t.id}`}>
+                          {t.image_url ? (
+                            <img src={t.image_url} alt={t.name} className="w-16 h-16 rounded-full object-cover border-2 border-[#7B2332] group-hover:opacity-70 transition-opacity" />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-gray-200 border-2 border-dashed border-gray-300 flex items-center justify-center group-hover:bg-gray-300 transition-colors">
+                              <Users className="w-7 h-7 text-gray-400" />
+                            </div>
+                          )}
+                          {isUploading && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
+                              <Loader2 className="w-5 h-5 animate-spin text-[#7B2332]" />
+                            </div>
+                          )}
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#7B2332] rounded-full flex items-center justify-center group-hover:opacity-100 opacity-80 transition-opacity">
+                            <Upload className="w-3 h-3 text-white" />
+                          </div>
+                          <input
+                            ref={(el) => { photoFileRefs.current[t.id] = el; }}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={isUploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setUploadingPhotoFor(t.id);
+                              updatePhotoMutation.mutate({ id: t.id, file });
+                              if (photoFileRefs.current[t.id]) photoFileRefs.current[t.id]!.value = "";
+                            }}
+                          />
+                        </label>
+                        {/* Name & Subject */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-900 truncate">{t.name}</p>
+                          <p className="text-xs text-gray-400 truncate">{t.division ? `${t.division} · ` : ""}{t.subject}</p>
+                          <p className="text-xs text-[#7B2332] mt-1">클릭하여 사진 변경</p>
+                        </div>
+                        {/* Up/Down Buttons */}
+                        <div className="flex flex-col gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => moveTeacherInAll(idx, "up")}
+                            disabled={idx === 0 || reorderMutation.isPending}
+                            className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-500 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            data-testid={`button-up-modal-${t.id}`}
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => moveTeacherInAll(idx, "down")}
+                            disabled={idx === teachers.length - 1 || reorderMutation.isPending}
+                            className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-500 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            data-testid={`button-down-modal-${t.id}`}
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-gray-900">등록된 선생님 ({filteredTeachers.length}명)</h3>
-        <select
-          value={filterSubject}
-          onChange={(e) => setFilterSubject(e.target.value)}
-          className="border border-gray-300 px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-red-600"
-          data-testid="select-teacher-filter"
-        >
-          <option value="all">전체 과목</option>
-          {allSubjects.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowPhotoModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-[#7B2332] text-[#7B2332] hover:bg-red-50 rounded transition-colors"
+            data-testid="button-open-photo-modal"
+          >
+            <Image className="w-4 h-4" />
+            사진 · 순서 관리
+          </button>
+          <select
+            value={filterSubject}
+            onChange={(e) => setFilterSubject(e.target.value)}
+            className="border border-gray-300 px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-red-600"
+            data-testid="select-teacher-filter"
+          >
+            <option value="all">전체 과목</option>
+            {allSubjects.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
       </div>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
@@ -274,21 +402,27 @@ function TeachersTab() {
           {filteredTeachers.map((t, idx) => (
             <div
               key={t.id}
-              className={`bg-white border p-4 transition-colors ${dragTeacherOverIdx === idx ? "border-[#7B2332] bg-red-50/30" : "border-gray-200"}`}
+              className="bg-white border border-gray-200 p-4 transition-colors"
               data-testid={`card-admin-teacher-${t.id}`}
-              onDragOver={(e) => { e.preventDefault(); setDragTeacherOverIdx(idx); }}
-              onDragLeave={() => setDragTeacherOverIdx(null)}
-              onDrop={() => handleTeacherDrop(idx)}
             >
               <div className="flex items-center gap-3">
-                <div
-                  className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 px-0.5 py-2"
-                  draggable
-                  onDragStart={() => { dragTeacherIdxRef.current = idx; }}
-                  onDragEnd={() => { dragTeacherIdxRef.current = null; setDragTeacherOverIdx(null); }}
-                  title="드래그하여 순서 변경"
-                >
-                  <GripVertical className="w-4 h-4" />
+                <div className="flex flex-col gap-0.5 flex-shrink-0">
+                  <button
+                    onClick={() => moveTeacher(idx, "up")}
+                    disabled={idx === 0 || reorderMutation.isPending}
+                    className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    data-testid={`button-up-teacher-${t.id}`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => moveTeacher(idx, "down")}
+                    disabled={idx === filteredTeachers.length - 1 || reorderMutation.isPending}
+                    className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    data-testid={`button-down-teacher-${t.id}`}
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
                 </div>
                 {t.image_url ? (
                   <img src={t.image_url} alt={t.name} className="w-14 h-14 object-cover flex-shrink-0" />
@@ -753,16 +887,11 @@ function TimetablesTab() {
     updateMutation.mutate({ id: editingId, formData });
   };
 
-  const dragTTIdxRef = useRef<number | null>(null);
-  const [dragTTOverIdx, setDragTTOverIdx] = useState<number | null>(null);
-  const handleTTDrop = (toIdx: number) => {
-    const fromIdx = dragTTIdxRef.current;
-    dragTTIdxRef.current = null;
-    setDragTTOverIdx(null);
-    if (fromIdx === null || fromIdx === toIdx) return;
+  const moveTT = (idx: number, dir: "up" | "down") => {
     const newList = [...filteredTimetables];
-    const [moved] = newList.splice(fromIdx, 1);
-    newList.splice(toIdx, 0, moved);
+    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= newList.length) return;
+    [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
     reorderMutation.mutate(newList.map((t) => t.id));
   };
 
@@ -839,21 +968,27 @@ function TimetablesTab() {
   const TimetableCard = ({ tt, idx }: { tt: Timetable; idx: number }) => (
     <div
       key={tt.id}
-      className={`border bg-white rounded-lg overflow-hidden transition-colors ${dragTTOverIdx === idx ? "border-[#7B2332] bg-red-50/30" : "border-gray-200"}`}
+      className="border border-gray-200 bg-white rounded-lg overflow-hidden"
       data-testid={`card-admin-timetable-${tt.id}`}
-      onDragOver={(e) => { e.preventDefault(); setDragTTOverIdx(idx); }}
-      onDragLeave={() => setDragTTOverIdx(null)}
-      onDrop={() => handleTTDrop(idx)}
     >
       <div className="flex items-center gap-3 p-3">
-        <div
-          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 px-0.5 py-2"
-          draggable
-          onDragStart={() => { dragTTIdxRef.current = idx; }}
-          onDragEnd={() => { dragTTIdxRef.current = null; setDragTTOverIdx(null); }}
-          title="드래그하여 순서 변경"
-        >
-          <GripVertical className="w-4 h-4" />
+        <div className="flex flex-col gap-0.5 flex-shrink-0">
+          <button
+            onClick={() => moveTT(idx, "up")}
+            disabled={idx === 0 || reorderMutation.isPending}
+            className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            data-testid={`button-up-tt-${tt.id}`}
+          >
+            <ArrowUp className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => moveTT(idx, "down")}
+            disabled={idx === filteredTimetables.length - 1 || reorderMutation.isPending}
+            className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            data-testid={`button-down-tt-${tt.id}`}
+          >
+            <ArrowDown className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         <label
@@ -2873,16 +3008,11 @@ function SummaryTimetablesTab() {
     },
   });
 
-  const dragSumIdxRef = useRef<number | null>(null);
-  const [dragSumOverIdx, setDragSumOverIdx] = useState<number | null>(null);
-  const handleSumDrop = (toIdx: number) => {
-    const fromIdx = dragSumIdxRef.current;
-    dragSumIdxRef.current = null;
-    setDragSumOverIdx(null);
-    if (fromIdx === null || fromIdx === toIdx) return;
+  const moveSum = (idx: number, dir: "up" | "down") => {
     const newList = [...items];
-    const [moved] = newList.splice(fromIdx, 1);
-    newList.splice(toIdx, 0, moved);
+    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= newList.length) return;
+    [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
     reorderMutation.mutate(newList.map((t) => t.id));
   };
 
@@ -2965,20 +3095,26 @@ function SummaryTimetablesTab() {
             {items.map((item, idx) => (
               <div
                 key={item.id}
-                className={`flex items-start gap-3 border p-3 transition-colors ${dragSumOverIdx === idx ? "border-[#7B2332] bg-red-50/30" : "border-gray-200"}`}
+                className="flex items-start gap-3 border border-gray-200 p-3"
                 data-testid={`card-summary-${item.id}`}
-                onDragOver={(e) => { e.preventDefault(); setDragSumOverIdx(idx); }}
-                onDragLeave={() => setDragSumOverIdx(null)}
-                onDrop={() => handleSumDrop(idx)}
               >
-                <div
-                  className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 px-0.5 pt-3"
-                  draggable
-                  onDragStart={() => { dragSumIdxRef.current = idx; }}
-                  onDragEnd={() => { dragSumIdxRef.current = null; setDragSumOverIdx(null); }}
-                  title="드래그하여 순서 변경"
-                >
-                  <GripVertical className="w-4 h-4" />
+                <div className="flex flex-col gap-0.5 flex-shrink-0 pt-2">
+                  <button
+                    onClick={() => moveSum(idx, "up")}
+                    disabled={idx === 0 || reorderMutation.isPending}
+                    className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    data-testid={`button-up-summary-${item.id}`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => moveSum(idx, "down")}
+                    disabled={idx === items.length - 1 || reorderMutation.isPending}
+                    className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded bg-white text-gray-400 hover:text-[#7B2332] hover:border-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    data-testid={`button-down-summary-${item.id}`}
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
                 </div>
                 <div className="flex-1 min-w-0">
                   <img src={item.image_url} alt="요약시간표" className="w-full max-w-sm border border-gray-200" />
@@ -3065,16 +3201,11 @@ function FilterTabsTab() {
     },
   });
 
-  const dragTabIdxRef = useRef<number | null>(null);
-  const [dragTabOverIdx, setDragTabOverIdx] = useState<number | null>(null);
-  const handleTabDrop = (toIdx: number) => {
-    const fromIdx = dragTabIdxRef.current;
-    dragTabIdxRef.current = null;
-    setDragTabOverIdx(null);
-    if (fromIdx === null || fromIdx === toIdx) return;
+  const moveTab = (idx: number, dir: "up" | "down") => {
     const newTabs = [...tabs];
-    const [moved] = newTabs.splice(fromIdx, 1);
-    newTabs.splice(toIdx, 0, moved);
+    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= newTabs.length) return;
+    [newTabs[idx], newTabs[swapIdx]] = [newTabs[swapIdx], newTabs[idx]];
     reorderMutation.mutate(newTabs.map((t) => t.id));
   };
 
@@ -3131,20 +3262,26 @@ function FilterTabsTab() {
           {tabs.map((tab, index) => (
             <div
               key={tab.id}
-              className={`flex items-center gap-2 px-3 py-2.5 bg-white border rounded group transition-colors ${dragTabOverIdx === index ? "border-[#7B2332] bg-red-50/30" : "border-gray-200 hover:border-gray-300"}`}
+              className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded group hover:border-gray-300 transition-colors"
               data-testid={`filter-tab-item-${tab.id}`}
-              onDragOver={(e) => { e.preventDefault(); setDragTabOverIdx(index); }}
-              onDragLeave={() => setDragTabOverIdx(null)}
-              onDrop={() => handleTabDrop(index)}
             >
-              <div
-                className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0"
-                draggable
-                onDragStart={() => { dragTabIdxRef.current = index; }}
-                onDragEnd={() => { dragTabIdxRef.current = null; setDragTabOverIdx(null); }}
-                title="드래그하여 순서 변경"
-              >
-                <GripVertical className="w-4 h-4" />
+              <div className="flex flex-col gap-0.5 flex-shrink-0">
+                <button
+                  onClick={() => moveTab(index, "up")}
+                  disabled={index === 0 || reorderMutation.isPending}
+                  className="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  data-testid={`button-up-tab-${tab.id}`}
+                >
+                  <ArrowUp className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => moveTab(index, "down")}
+                  disabled={index === tabs.length - 1 || reorderMutation.isPending}
+                  className="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-[#7B2332] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  data-testid={`button-down-tab-${tab.id}`}
+                >
+                  <ArrowDown className="w-3 h-3" />
+                </button>
               </div>
               <span className="text-xs text-gray-400 w-6 text-center font-mono">{index + 1}</span>
 
