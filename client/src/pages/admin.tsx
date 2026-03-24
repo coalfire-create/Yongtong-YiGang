@@ -69,6 +69,9 @@ interface Reservation {
   created_at: string;
 }
 
+// Stable empty array - avoids React infinite loop from useEffect([teachers])
+const EMPTY_TEACHERS: Teacher[] = [];
+
 const SUBJECT_OPTIONS: Record<string, string[]> = {
   "고등관": ["수학", "국어", "영어", "탐구", "논술"],
   "초/중등관": ["수학", "국어", "영어", "탐구"],
@@ -247,12 +250,18 @@ function TeachersTab() {
     description: string;
   }>();
 
-  const { data: teachers = [], isLoading } = useQuery<Teacher[]>({
+  const { data: teachers = EMPTY_TEACHERS, isLoading } = useQuery<Teacher[]>({
     queryKey: ["/api/teachers"],
   });
 
-  const [localTeachers, setLocalTeachers] = useState<Teacher[]>([]);
-  useEffect(() => { setLocalTeachers(teachers); }, [teachers]);
+  const [localTeachers, setLocalTeachers] = useState<Teacher[]>(EMPTY_TEACHERS);
+  useEffect(() => {
+    setLocalTeachers(prev => {
+      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
+      const newKey = teachers.map(t => `${t.id}:${t.display_order}`).join(",");
+      return prevKey === newKey ? prev : teachers;
+    });
+  }, [teachers]);
 
   const localFilteredTeachers = filterSubject === "all"
     ? localTeachers
@@ -297,9 +306,12 @@ function TeachersTab() {
 
   const reorderMutation = useMutation({
     mutationFn: async (ids: number[]) => {
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
       const res = await fetch("/api/teachers/reorder", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ ids }),
         credentials: "include",
       });
@@ -2176,6 +2188,10 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
         const data = await res.json();
         setError(data.error || "로그인 실패");
         return;
+      }
+      const data = await res.json();
+      if (data.adminToken) {
+        localStorage.setItem("adminToken", data.adminToken);
       }
       onLogin();
     } catch {

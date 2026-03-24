@@ -418,9 +418,14 @@ const upload = multer({
 });
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
+// In-memory admin token - works across all request types including iframe context
+const ADMIN_SESSION_TOKEN = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if ((req.session as any)?.isAdmin) return next();
+  // Also accept token from header (works in iframe/cross-site contexts where cookies may be blocked)
+  const headerToken = req.headers["x-admin-token"] as string | undefined;
+  if (headerToken && headerToken === ADMIN_SESSION_TOKEN) return next();
   return res.status(401).json({ error: "관리자 인증이 필요합니다." });
 }
 
@@ -525,7 +530,7 @@ export async function registerRoutes(
           console.error("Session save error:", err);
           return res.status(500).json({ error: "세션 저장 실패" });
         }
-        return res.json({ success: true });
+        return res.json({ success: true, adminToken: ADMIN_SESSION_TOKEN });
       });
       return;
     }

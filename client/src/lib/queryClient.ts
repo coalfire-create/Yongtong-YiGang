@@ -7,14 +7,22 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+function getAdminHeaders(extra?: Record<string, string>): Record<string, string> {
+  const token = localStorage.getItem("adminToken");
+  const headers: Record<string, string> = { ...extra };
+  if (token) headers["X-Admin-Token"] = token;
+  return headers;
+}
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  const baseHeaders: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: getAdminHeaders(baseHeaders),
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -29,8 +37,12 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    const token = localStorage.getItem("adminToken");
+    const headers: Record<string, string> = {};
+    if (token) headers["X-Admin-Token"] = token;
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
