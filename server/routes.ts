@@ -196,6 +196,7 @@ async function ensureBriefingsTable() {
       )
     `);
     await pool.query(`ALTER TABLE briefings ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
+    await pool.query(`ALTER TABLE briefings ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true`);
   } catch (err) {
     console.error("Failed to ensure briefings table:", err);
   }
