@@ -235,7 +235,7 @@ export function Owl() {
         <div className="max-w-5xl mx-auto text-center">
           <p className="text-xs font-semibold tracking-widest text-[#c0a878] uppercase mb-3">올빼미 스파르타 학습관</p>
           <h2 className="text-2xl sm:text-3xl font-bold mb-3" data-testid="text-owl-info-title">
-            365일 · 24시간 운영하는 프리미엄 자습 공간
+            365일 운영하는 프리미엄 자습 공간
           </h2>
           <p className="text-sm text-white/60 max-w-xl mx-auto leading-relaxed">
             전담 관리 선생님이 상주하는 쾌적한 독서실 환경에서<br className="hidden sm:block" /> 오직 공부에만 집중하세요.
