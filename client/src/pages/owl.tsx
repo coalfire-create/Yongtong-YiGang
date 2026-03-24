@@ -14,24 +14,31 @@ interface Banner {
   display_order: number;
 }
 
-const FACILITY_PHOTOS = [
-  { src: "/owl-entrance.jpeg",    label: "올빼미 스파르타 입구",  span: "col-span-1 row-span-1" },
-  { src: "/owl-reception.jpeg",   label: "프런트 &amp; 접수",       span: "col-span-1 row-span-1" },
-  { src: "/owl-boys-seats.jpeg",  label: "남학생 좌석",            span: "col-span-1 row-span-1" },
-  { src: "/owl-girls-seats.jpeg", label: "여학생 좌석",            span: "col-span-1 row-span-1" },
-  { src: "/owl-cctv.jpeg",        label: "CCTV 실시간 모니터",     span: "col-span-1 row-span-1" },
-  { src: "/owl-checkin.jpeg",     label: "출석 체크 시스템",       span: "col-span-1 row-span-1" },
-  { src: "/owl-phoneboxes.jpeg",  label: "핸드폰 보관함",          span: "col-span-1 row-span-1" },
+interface LightboxPhoto {
+  src: string;
+  label: string;
+}
+
+const FACILITY_PHOTOS: LightboxPhoto[] = [
+  { src: "/owl-entrance.jpeg",    label: "올빼미 스파르타 입구" },
+  { src: "/owl-reception.jpeg",   label: "프런트 & 접수" },
+  { src: "/owl-boys-seats.jpeg",  label: "남학생 좌석" },
+  { src: "/owl-girls-seats.jpeg", label: "여학생 좌석" },
+  { src: "/owl-cctv.jpeg",        label: "CCTV 실시간 모니터" },
+  { src: "/owl-checkin.jpeg",     label: "출석 체크 시스템" },
+  { src: "/owl-phoneboxes.jpeg",  label: "핸드폰 보관함" },
 ];
 
 function PhotoLightbox({ photos, initialIndex, onClose }: {
-  photos: typeof FACILITY_PHOTOS;
+  photos: LightboxPhoto[];
   initialIndex: number;
   onClose: () => void;
 }) {
   const [idx, setIdx] = useState(initialIndex);
   const prev = () => setIdx((i) => (i - 1 + photos.length) % photos.length);
   const next = () => setIdx((i) => (i + 1) % photos.length);
+  const showNav = photos.length > 1;
+
   return (
     <div
       className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center"
@@ -39,35 +46,41 @@ function PhotoLightbox({ photos, initialIndex, onClose }: {
       data-testid="lightbox-overlay"
     >
       <button
-        className="absolute top-4 right-4 text-white/80 hover:text-white p-2"
+        className="absolute top-4 right-4 text-white/80 hover:text-white p-2 transition-colors"
         onClick={onClose}
         data-testid="button-lightbox-close"
       >
         <X className="w-7 h-7" />
       </button>
-      <button
-        className="absolute left-3 sm:left-6 text-white/70 hover:text-white p-2"
-        onClick={(e) => { e.stopPropagation(); prev(); }}
-        data-testid="button-lightbox-prev"
-      >
-        <ChevronLeft className="w-8 h-8" />
-      </button>
-      <div className="px-16 max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+      {showNav && (
+        <button
+          className="absolute left-3 sm:left-6 text-white/70 hover:text-white p-2 transition-colors"
+          onClick={(e) => { e.stopPropagation(); prev(); }}
+          data-testid="button-lightbox-prev"
+        >
+          <ChevronLeft className="w-8 h-8" />
+        </button>
+      )}
+      <div className="px-4 sm:px-16 max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
         <img
           src={photos[idx].src}
           alt={photos[idx].label}
           className="w-full max-h-[80vh] object-contain"
         />
-        <p className="text-white/80 text-center text-sm mt-3" dangerouslySetInnerHTML={{ __html: photos[idx].label }} />
-        <p className="text-white/40 text-center text-xs mt-1">{idx + 1} / {photos.length}</p>
+        <p className="text-white/80 text-center text-sm mt-3">{photos[idx].label}</p>
+        {showNav && (
+          <p className="text-white/40 text-center text-xs mt-1">{idx + 1} / {photos.length}</p>
+        )}
       </div>
-      <button
-        className="absolute right-3 sm:right-6 text-white/70 hover:text-white p-2"
-        onClick={(e) => { e.stopPropagation(); next(); }}
-        data-testid="button-lightbox-next"
-      >
-        <ChevronRight className="w-8 h-8" />
-      </button>
+      {showNav && (
+        <button
+          className="absolute right-3 sm:right-6 text-white/70 hover:text-white p-2 transition-colors"
+          onClick={(e) => { e.stopPropagation(); next(); }}
+          data-testid="button-lightbox-next"
+        >
+          <ChevronRight className="w-8 h-8" />
+        </button>
+      )}
     </div>
   );
 }
@@ -82,24 +95,29 @@ function OwlHeroSection() {
     },
   });
 
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [facilityLightbox, setFacilityLightbox] = useState<number | null>(null);
+  const [posterLightbox, setPosterLightbox] = useState<number | null>(null);
 
-  const posters = banners.filter((b) => b.is_active && b.image_url);
-  const allPhotos = [
-    ...FACILITY_PHOTOS,
-    ...posters.map((b) => ({ src: b.image_url!, label: b.title || "올빼미", span: "col-span-1 row-span-1", link: b.link_url })),
-  ];
-
-  const facilityPhotos = FACILITY_PHOTOS;
-  const posterPhotos = posters;
+  const posterPhotos = banners.filter((b) => b.is_active && b.image_url);
+  const posterLightboxPhotos: LightboxPhoto[] = posterPhotos.map((b) => ({
+    src: b.image_url!,
+    label: b.title || "올빼미 포스터",
+  }));
 
   return (
     <>
-      {lightboxIdx !== null && (
+      {facilityLightbox !== null && (
         <PhotoLightbox
-          photos={facilityPhotos}
-          initialIndex={lightboxIdx}
-          onClose={() => setLightboxIdx(null)}
+          photos={FACILITY_PHOTOS}
+          initialIndex={facilityLightbox}
+          onClose={() => setFacilityLightbox(null)}
+        />
+      )}
+      {posterLightbox !== null && (
+        <PhotoLightbox
+          photos={posterLightboxPhotos}
+          initialIndex={posterLightbox}
+          onClose={() => setPosterLightbox(null)}
         />
       )}
 
@@ -111,24 +129,28 @@ function OwlHeroSection() {
               <span className="w-6 h-0.5 bg-[#7B2332] inline-block" />
               홍보 포스터
             </h2>
-            <div className={`grid gap-4 ${posterPhotos.length === 1 ? "grid-cols-1 max-w-sm" : posterPhotos.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
-              {posterPhotos.map((b) => {
-                const img = (
-                  <img
-                    src={b.image_url!}
-                    alt={b.title || "올빼미 포스터"}
-                    className="w-full h-auto object-cover rounded-sm"
-                    data-testid={`owl-poster-${b.id}`}
-                  />
-                );
-                return (
-                  <div key={b.id} className="overflow-hidden rounded-sm shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                    {b.link_url
-                      ? <a href={b.link_url} target="_blank" rel="noopener noreferrer">{img}</a>
-                      : img}
+            <div className={`grid gap-4 ${posterPhotos.length === 1 ? "grid-cols-1 max-w-xs" : posterPhotos.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+              {posterPhotos.map((b, i) => (
+                <button
+                  key={b.id}
+                  onClick={() => setPosterLightbox(i)}
+                  className="group relative overflow-hidden rounded-sm shadow-sm border border-gray-100 focus:outline-none focus:ring-2 focus:ring-[#7B2332] text-left"
+                  data-testid={`button-owl-poster-${b.id}`}
+                >
+                  <div className="overflow-hidden">
+                    <img
+                      src={b.image_url!}
+                      alt={b.title || "올빼미 포스터"}
+                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
                   </div>
-                );
-              })}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-800 shadow">
+                      크게 보기
+                    </div>
+                  </div>
+                </button>
+              ))}
             </div>
           </section>
         )}
@@ -140,12 +162,12 @@ function OwlHeroSection() {
           </h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {facilityPhotos.map((photo, i) => (
+            {FACILITY_PHOTOS.map((photo, i) => (
               <button
                 key={photo.src}
-                onClick={() => setLightboxIdx(i)}
+                onClick={() => setFacilityLightbox(i)}
                 className={`group relative overflow-hidden rounded-sm bg-gray-100 aspect-[4/3] focus:outline-none focus:ring-2 focus:ring-[#7B2332] ${
-                  i === 0 ? "col-span-2 row-span-2 aspect-square sm:aspect-auto" : ""
+                  i === 0 ? "col-span-2 aspect-square sm:aspect-[4/3]" : ""
                 }`}
                 data-testid={`button-owl-photo-${i}`}
               >
@@ -157,10 +179,7 @@ function OwlHeroSection() {
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300" />
                 <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/60 to-transparent">
-                  <p
-                    className="text-white text-xs font-semibold leading-snug"
-                    dangerouslySetInnerHTML={{ __html: photo.label }}
-                  />
+                  <p className="text-white text-xs font-semibold leading-snug">{photo.label}</p>
                 </div>
               </button>
             ))}
