@@ -11,6 +11,7 @@ import { JuniorPremiumSystem } from "@/pages/junior-premium";
 import { Owl, OwlInfo, OwlUsage } from "@/pages/owl";
 import { Briefing, BriefingReservation, BriefingSchedule } from "@/pages/briefing";
 import { Admissions, AdmissionsResults, AdmissionsReviews } from "@/pages/admissions";
+import { About } from "@/pages/about";
 import { Directions } from "@/pages/directions";
 import TeachersPage, { TeacherDetail } from "@/pages/teachers";
 import AdminPage from "@/pages/admin";
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/admissions" component={Admissions} />
       <Route path="/admissions/results" component={AdmissionsResults} />
       <Route path="/admissions/reviews" component={AdmissionsReviews} />
+      <Route path="/about" component={About} />
       <Route path="/directions" component={Directions} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
