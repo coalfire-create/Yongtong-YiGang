@@ -1,5 +1,6 @@
 import { SectionPage } from "@/components/layout";
 import { BookOpen, Target, Users, Trophy, GraduationCap, Lightbulb } from "lucide-react";
+const principalImg = "/principal.png";
 
 const FEATURES = [
   {
@@ -62,6 +63,7 @@ export function About() {
   return (
     <SectionPage title="학원소개">
       <div className="space-y-16">
+
         <section data-testid="section-about-intro">
           <div className="bg-[#7B2332] text-white p-8 sm:p-12 text-center">
             <p className="text-sm font-semibold tracking-widest mb-4 opacity-80">YEONGTONG IGANG ACADEMY</p>
@@ -69,9 +71,48 @@ export function About() {
               영통에서 가장 많은<br />입시 합격생을 배출한 학원
             </h2>
             <p className="text-sm sm:text-base opacity-90 max-w-xl mx-auto leading-relaxed">
-              영통이강학원은 2010년 개원 이후 수원 영통 지역 최고의 입시 성과를 기록하며,
+              영통이강학원은 2024년 개원 이후 수원 영통 지역 최고의 입시 성과를 기록하며,
               수학·국어·영어·탐구 전 과목 전문 강사진이 고등관·초중등관·올빼미 스파르타를 운영하고 있습니다.
             </p>
+          </div>
+        </section>
+
+        <section data-testid="section-about-greeting">
+          <h2 className="text-xl font-extrabold text-gray-900 mb-6 pb-3 border-b-2 border-[#7B2332]">원장님 인사말</h2>
+          <div className="bg-white border border-gray-200 overflow-hidden">
+            <div className="flex flex-col md:flex-row">
+              <div className="flex-1 p-8 sm:p-10 flex flex-col justify-center">
+                <p className="text-xs font-bold tracking-widest text-[#7B2332] uppercase mb-4">Director's Greeting</p>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-6 leading-snug">
+                  안녕하세요,<br />영통이강학원 원장 정승준입니다.
+                </h3>
+                <div className="space-y-4 text-sm sm:text-base text-gray-600 leading-relaxed">
+                  <p>
+                    저는 학생 한 명 한 명의 가능성을 믿습니다. 어떤 출발점에서 시작하더라도, 올바른 방향과 꾸준한 노력이 더해지면 반드시 원하는 결과에 닿을 수 있습니다.
+                  </p>
+                  <p>
+                    영통이강학원은 단순히 점수를 올리는 곳이 아닙니다. 학생 스스로 공부하는 힘을 기르고, 자신의 목표를 향해 나아갈 수 있도록 옆에서 함께하는 학원입니다.
+                  </p>
+                  <p>
+                    학부모님과 학생 여러분의 소중한 선택에 항상 최선으로 보답하겠습니다.
+                  </p>
+                </div>
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <p className="text-base font-bold text-gray-900">영통이강학원 원장</p>
+                  <p className="text-2xl font-black text-[#7B2332] mt-1">정승준</p>
+                </div>
+              </div>
+
+              <div className="md:w-[340px] lg:w-[400px] flex-shrink-0 bg-gray-50 flex items-end justify-center overflow-hidden" style={{ minHeight: "420px" }}>
+                <img
+                  src={principalImg}
+                  alt="원장 정승준"
+                  className="w-full h-full object-cover object-top"
+                  style={{ maxHeight: "520px" }}
+                  data-testid="img-principal"
+                />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -119,6 +160,7 @@ export function About() {
             })}
           </div>
         </section>
+
       </div>
     </SectionPage>
   );
