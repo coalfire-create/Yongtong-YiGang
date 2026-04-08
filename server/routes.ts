@@ -997,7 +997,7 @@ export async function registerRoutes(
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
         teacher_image_url = urlData.publicUrl;
       }
-      let detail_image_url: string | undefined;
+      let detail_image_url: string | null | undefined;
       const detailFile = files?.["detail_image"]?.[0];
       if (detailFile) {
         const ext = path.extname(detailFile.originalname) || ".jpg";
@@ -1010,6 +1010,8 @@ export async function registerRoutes(
         }
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
         detail_image_url = urlData.publicUrl;
+      } else if (req.body.delete_detail_image === "true") {
+        detail_image_url = null;
       }
       const setClauses = [
         "title = $1",

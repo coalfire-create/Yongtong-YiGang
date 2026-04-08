@@ -752,6 +752,7 @@ function TimetablesTab() {
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const [editDetailImageFile, setEditDetailImageFile] = useState<File | null>(null);
   const [editDetailImagePreview, setEditDetailImagePreview] = useState<string>("");
+  const [editDetailImageDeleted, setEditDetailImageDeleted] = useState(false);
   const editDetailFileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -959,6 +960,7 @@ function TimetablesTab() {
       if (editFileInputRef.current) editFileInputRef.current.value = "";
       setEditDetailImageFile(null);
       setEditDetailImagePreview("");
+      setEditDetailImageDeleted(false);
       if (editDetailFileInputRef.current) editDetailFileInputRef.current.value = "";
     },
   });
@@ -970,6 +972,7 @@ function TimetablesTab() {
     if (editFileInputRef.current) editFileInputRef.current.value = "";
     setEditDetailImageFile(null);
     setEditDetailImagePreview("");
+    setEditDetailImageDeleted(false);
     if (editDetailFileInputRef.current) editDetailFileInputRef.current.value = "";
     editReset({
       category: tt.category,
@@ -1008,6 +1011,7 @@ function TimetablesTab() {
     formData.append("description", data.description || "");
     if (editImageFile) formData.append("teacher_image", editImageFile);
     if (editDetailImageFile) formData.append("detail_image", editDetailImageFile);
+    if (editDetailImageDeleted && !editDetailImageFile) formData.append("delete_detail_image", "true");
     updateMutation.mutate({ id: editingId, formData });
   };
 
@@ -1232,9 +1236,29 @@ function TimetablesTab() {
             </div>
             <div>
               <label className={labelCls}>상세보기 사진 변경</label>
-              <div className="flex items-center gap-3">
-                {(editDetailImagePreview || tt.detail_image_url) && (
-                  <img src={editDetailImagePreview || tt.detail_image_url!} alt="미리보기" className="w-12 h-12 object-cover border border-gray-200 rounded flex-shrink-0" />
+              <div className="flex items-center gap-3 flex-wrap">
+                {(editDetailImagePreview || (tt.detail_image_url && !editDetailImageDeleted)) && (
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={editDetailImagePreview || tt.detail_image_url!}
+                      alt="미리보기"
+                      className="w-14 h-14 object-cover border border-gray-200 rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditDetailImageFile(null);
+                        setEditDetailImagePreview("");
+                        setEditDetailImageDeleted(true);
+                        if (editDetailFileInputRef.current) editDetailFileInputRef.current.value = "";
+                      }}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      data-testid={`button-delete-detail-image-${tt.id}`}
+                      title="사진 삭제"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 )}
                 <input
                   ref={editDetailFileInputRef}
@@ -1242,12 +1266,21 @@ function TimetablesTab() {
                   accept="image/*"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) { setEditDetailImageFile(file); const r = new FileReader(); r.onloadend = () => setEditDetailImagePreview(r.result as string); r.readAsDataURL(file); }
+                    if (file) {
+                      setEditDetailImageFile(file);
+                      setEditDetailImageDeleted(false);
+                      const r = new FileReader();
+                      r.onloadend = () => setEditDetailImagePreview(r.result as string);
+                      r.readAsDataURL(file);
+                    }
                   }}
                   className="text-sm text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-600 hover:file:bg-gray-200 file:rounded"
                   data-testid={`input-edit-timetable-detail-image-${tt.id}`}
                 />
               </div>
+              {editDetailImageDeleted && !editDetailImageFile && (
+                <p className="text-xs text-red-500 mt-1">저장 시 사진이 삭제됩니다.</p>
+              )}
             </div>
             <div className="flex items-center gap-2 pt-1">
               <button type="submit" disabled={updateMutation.isPending}

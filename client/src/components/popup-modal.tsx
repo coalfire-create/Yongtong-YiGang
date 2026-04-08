@@ -68,17 +68,20 @@ export function PopupModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center px-4"
+      className="fixed inset-0 z-[9999] overflow-y-auto"
       data-testid="popup-modal-overlay"
     >
       <div className="absolute inset-0 bg-black/60" onClick={closeAll} />
 
-      <div className="relative z-10 flex flex-col items-center w-full" data-testid="popup-modal-content">
-        <div className="flex flex-wrap justify-center gap-4 max-w-[90vw]">
+      <div className="relative z-10 flex flex-col items-center justify-start sm:justify-center min-h-full w-full py-6 px-4">
+        <div
+          className="flex flex-col sm:flex-row sm:flex-wrap justify-center items-center gap-4 w-full sm:max-w-[90vw]"
+          data-testid="popup-modal-content"
+        >
           {activePopups.map((popup) => (
             <div
               key={popup.id}
-              className="relative flex-shrink-0 w-[320px] sm:w-[360px] shadow-2xl"
+              className="relative w-full max-w-[340px] sm:w-[360px] sm:flex-shrink-0 shadow-2xl"
               data-testid={`popup-card-${popup.id}`}
             >
               <button
@@ -101,7 +104,7 @@ export function PopupModal() {
                     <img
                       src={popup.image_url}
                       alt={popup.title}
-                      className="w-full object-contain max-h-[65vh]"
+                      className="w-full object-contain max-h-[70vh]"
                     />
                   ) : (
                     <div className="w-full aspect-[4/5] bg-gradient-to-br from-[#7B2332] to-red-700 flex items-center justify-center p-8">
@@ -117,7 +120,7 @@ export function PopupModal() {
                     <img
                       src={popup.image_url}
                       alt={popup.title}
-                      className="w-full object-contain max-h-[65vh]"
+                      className="w-full object-contain max-h-[70vh]"
                     />
                   ) : (
                     <div className="w-full aspect-[4/5] bg-gradient-to-br from-[#7B2332] to-red-700 flex items-center justify-center p-8">
@@ -132,10 +135,10 @@ export function PopupModal() {
           ))}
         </div>
 
-        <div className="flex items-center gap-3 mt-5">
+        <div className="flex items-center gap-3 mt-5 sticky bottom-4">
           <button
             onClick={dismissToday}
-            className="px-6 py-2.5 text-sm font-medium text-white border border-white/40 hover:bg-white/10 transition-colors rounded"
+            className="px-6 py-2.5 text-sm font-medium text-white border border-white/40 hover:bg-white/10 transition-colors rounded backdrop-blur-sm bg-black/30"
             data-testid="button-popup-dismiss-today"
           >
             오늘하루 보지않기
