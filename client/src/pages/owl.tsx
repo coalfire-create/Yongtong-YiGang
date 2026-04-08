@@ -21,8 +21,8 @@ interface LightboxPhoto {
 
 const FACILITY_PHOTOS: LightboxPhoto[] = [
   { src: "/owl-entrance.jpeg",    label: "올빼미 스파르타 입구" },
-  { src: "/owl-boys-seats.jpeg",  label: "남학생 좌석" },
-  { src: "/owl-girls-seats.jpeg", label: "여학생 좌석" },
+  { src: "/owl-girls-seats.jpeg", label: "남학생 좌석" },
+  { src: "/owl-boys-seats.jpeg",  label: "여학생 좌석" },
   { src: "/owl-reception.jpeg",   label: "프런트 & 접수" },
   { src: "/owl-cctv.jpeg",        label: "CCTV 실시간 모니터" },
   { src: "/owl-checkin.jpeg",     label: "출석 체크 시스템" },
