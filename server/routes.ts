@@ -910,8 +910,8 @@ export async function registerRoutes(
     const dateValue = start_date || class_date || "";
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, dateValue, subject });
-    if (!category || !class_name) {
-      return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
+    if (!class_name) {
+      return res.status(400).json({ error: "수업명은 필수입니다." });
     }
     try {
       let teacher_image_url = "";
@@ -979,8 +979,8 @@ export async function registerRoutes(
     const { id } = req.params;
     const { teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, description, subject } = req.body;
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
-    if (!category || !class_name) {
-      return res.status(400).json({ error: "카테고리와 수업명은 필수입니다." });
+    if (!class_name) {
+      return res.status(400).json({ error: "수업명은 필수입니다." });
     }
     try {
       let teacher_image_url: string | undefined;

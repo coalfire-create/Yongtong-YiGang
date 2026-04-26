@@ -1182,8 +1182,8 @@ function TimetablesTab() {
           <form onSubmit={editHandleSubmit(onEditSubmit)} className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className={labelCls}>카테고리 *</label>
-                <select {...editRegister("category", { required: true })} className={inputCls}>
+                <label className={labelCls}>카테고리</label>
+                <select {...editRegister("category")} className={inputCls}>
                   <option value="고등관">고등관 (전체)</option>
                   <option value="고등관-고1">고등관 - 고1</option>
                   <option value="고등관-고2">고등관 - 고2</option>
@@ -1415,8 +1415,8 @@ function TimetablesTab() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className={labelCls}>카테고리 *</label>
-                <select {...register("category", { required: "카테고리를 선택하세요" })} className={inputCls} defaultValue="" data-testid="select-timetable-category">
+                <label className={labelCls}>카테고리</label>
+                <select {...register("category")} className={inputCls} defaultValue="" data-testid="select-timetable-category">
                   <option value="" disabled>선택</option>
                   <option value="고등관">고등관 (전체)</option>
                   <option value="고등관-고1">고등관 - 고1</option>
