@@ -1442,15 +1442,12 @@ function TimetablesTab() {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>목차 (필터) {CATEGORY_FILTER_OPTIONS[selectedCategory] ? "*" : ""}</label>
+                <label className={labelCls}>목차 (필터)</label>
                 {CATEGORY_FILTER_OPTIONS[selectedCategory] ? (
-                  <>
-                    <select {...register("target_school", { required: "목차를 선택하세요" })} className={inputCls} defaultValue="" data-testid="select-timetable-school">
-                      <option value="" disabled>선택</option>
-                      {CATEGORY_FILTER_OPTIONS[selectedCategory].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                    {errors.target_school && <p className="text-xs text-red-500 mt-1">{errors.target_school.message}</p>}
-                  </>
+                  <select {...register("target_school")} className={inputCls} defaultValue="" data-testid="select-timetable-school">
+                    <option value="">선택 안함</option>
+                    {CATEGORY_FILTER_OPTIONS[selectedCategory].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
                 ) : (
                   <input {...register("target_school")} className={inputCls} placeholder="예: 화성고, 가온고" data-testid="input-timetable-school" />
                 )}
