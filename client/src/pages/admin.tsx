@@ -741,6 +741,7 @@ function TimetablesTab() {
   const [detailImagePreview, setDetailImagePreview] = useState<string>("");
   const detailFileInputRef = useRef<HTMLInputElement>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterSchool, setFilterSchool] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPhotoManager, setShowPhotoManager] = useState(false);
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<number | null>(null);
@@ -862,9 +863,24 @@ function TimetablesTab() {
 
   const cardPhotoRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
-  const filteredTimetables = filterCategory === "all"
+  const categoryFiltered = filterCategory === "all"
     ? localTimetables
-    : localTimetables.filter((tt) => tt.category === filterCategory);
+    : localTimetables.filter((tt) => {
+        if (tt.category === filterCategory) return true;
+        // 상위 카테고리 포함: 고등관-고1을 선택하면 고등관도 포함
+        const dashIdx = filterCategory.indexOf("-");
+        if (dashIdx !== -1) {
+          const parent = filterCategory.substring(0, dashIdx);
+          return tt.category === parent;
+        }
+        return false;
+      });
+
+  const filteredTimetables = filterSchool === "all"
+    ? categoryFiltered
+    : categoryFiltered.filter((tt) => (tt.target_school || "").includes(filterSchool));
+
+  const schoolFilterOptions = CATEGORY_FILTER_OPTIONS[filterCategory] ?? [];
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -1501,11 +1517,11 @@ function TimetablesTab() {
       )}
 
       {/* Category Tabs */}
-      <div className="flex gap-2 mb-5 flex-wrap" data-testid="timetable-category-tabs">
+      <div className="flex gap-2 mb-3 flex-wrap" data-testid="timetable-category-tabs">
         {CATEGORY_TABS.map((tab) => (
           <button
             key={tab.value}
-            onClick={() => setFilterCategory(tab.value)}
+            onClick={() => { setFilterCategory(tab.value); setFilterSchool("all"); }}
             className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-colors ${
               filterCategory === tab.value
                 ? "bg-[#7B2332] text-white border-[#7B2332]"
@@ -1517,6 +1533,37 @@ function TimetablesTab() {
           </button>
         ))}
       </div>
+
+      {/* School Filter Tabs (학교별 필터) */}
+      {schoolFilterOptions.length > 0 && (
+        <div className="flex gap-2 mb-5 flex-wrap" data-testid="timetable-school-tabs">
+          <button
+            onClick={() => setFilterSchool("all")}
+            className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+              filterSchool === "all"
+                ? "bg-gray-700 text-white border-gray-700"
+                : "bg-white text-gray-500 border-gray-300 hover:border-gray-500 hover:text-gray-700"
+            }`}
+            data-testid="tab-school-all"
+          >
+            전체
+          </button>
+          {schoolFilterOptions.map((school) => (
+            <button
+              key={school}
+              onClick={() => setFilterSchool(school)}
+              className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+                filterSchool === school
+                  ? "bg-gray-700 text-white border-gray-700"
+                  : "bg-white text-gray-500 border-gray-300 hover:border-gray-500 hover:text-gray-700"
+              }`}
+              data-testid={`tab-school-${school}`}
+            >
+              {school}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Timetable List */}
       {isLoading ? (
