@@ -880,7 +880,18 @@ function TimetablesTab() {
     ? categoryFiltered
     : categoryFiltered.filter((tt) => (tt.target_school || "").includes(filterSchool));
 
-  const schoolFilterOptions = CATEGORY_FILTER_OPTIONS[filterCategory] ?? [];
+  // 실제 시간표 데이터에서 학교 목록을 동적으로 생성
+  // 순서: 기존 정의된 순서 우선, 새 학교는 뒤에 추가, 시간표 없는 학교는 제외
+  const ORDERED_SCHOOLS = CATEGORY_FILTER_OPTIONS[filterCategory] ?? [];
+  const actualSchools = new Set(
+    categoryFiltered.map((tt) => tt.target_school).filter(Boolean)
+  );
+  const schoolFilterOptions = filterCategory === "all"
+    ? []
+    : [
+        ...ORDERED_SCHOOLS.filter((s) => actualSchools.has(s)),
+        ...[...actualSchools].filter((s) => !ORDERED_SCHOOLS.includes(s)).sort(),
+      ];
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
