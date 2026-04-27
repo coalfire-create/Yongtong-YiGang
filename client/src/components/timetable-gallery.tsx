@@ -56,6 +56,18 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
     ? timetables.filter(filterTabs[selectedFilter].filterFn)
     : isSummaryView ? [] : timetables;
 
+  // 어느 학교 필터에도 속하지 않는 "공통반" 시간표 계산
+  const SPECIAL_LABELS = ["요약시간표", "전체시간표", "전체", "수학/탐구"];
+  const schoolFilterFns = (filterTabs ?? [])
+    .filter((tab) => !SPECIAL_LABELS.includes(tab.label) && !tab.isSummary)
+    .map((tab) => tab.filterFn);
+  const isSchoolFilterActive = activeTab
+    ? !SPECIAL_LABELS.includes(activeTab.label) && !activeTab.isSummary
+    : false;
+  const commonTimetables = isSchoolFilterActive
+    ? timetables.filter((tt) => !schoolFilterFns.some((fn) => fn(tt)))
+    : [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
@@ -116,7 +128,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         <SummaryTimetableSection division={summaryDivision} title={summaryTitle || "요약시간표"} />
       ) : (
         <div data-testid="timetable-list">
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && commonTimetables.length === 0 ? (
             <div className="text-center py-16">
               <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-sm text-gray-400">해당 조건의 시간표가 없습니다.</p>
@@ -174,6 +186,28 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                   onReserve={() => openReserve(tt)}
                 />
               ))}
+            </div>
+          )}
+
+          {/* 어느 학교 필터에도 속하지 않는 공통반 시간표 */}
+          {isSchoolFilterActive && commonTimetables.length > 0 && (
+            <div className="mt-8" data-testid="common-timetables">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-5 bg-gray-400" />
+                <h3 className="text-lg font-bold text-gray-700">공통반</h3>
+                <span className="text-xs text-gray-400 ml-1">({commonTimetables.length})</span>
+              </div>
+              <div className="space-y-3">
+                {commonTimetables.map((tt) => (
+                  <TimetableCard
+                    key={tt.id}
+                    tt={tt}
+                    expanded={expandedId === tt.id}
+                    onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
+                    onReserve={() => openReserve(tt)}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>

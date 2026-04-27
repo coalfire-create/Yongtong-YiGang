@@ -750,8 +750,17 @@ export async function registerRoutes(
       let sql = "SELECT * FROM timetables";
       const params: string[] = [];
       if (category) {
-        sql += " WHERE category = $1";
-        params.push(category);
+        const dashIdx = category.indexOf("-");
+        if (dashIdx !== -1) {
+          // 하위 카테고리 (예: 고등관-고1) → 정확히 일치 OR 상위 카테고리 (예: 고등관) 포함
+          const parent = category.substring(0, dashIdx);
+          sql += " WHERE (category = $1 OR category = $2)";
+          params.push(category, parent);
+        } else {
+          // 상위 카테고리 (예: 고등관) → 해당 카테고리와 모든 하위 카테고리 포함
+          sql += " WHERE category LIKE $1";
+          params.push(category + "%");
+        }
       }
       sql += " ORDER BY display_order ASC, created_at DESC";
       const { rows } = await pool.query(sql, params);
