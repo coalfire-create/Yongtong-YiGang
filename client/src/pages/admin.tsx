@@ -718,7 +718,7 @@ function TeacherImagesManager({ teacherId, teacherName }: { teacherId: number; t
 
 const CATEGORY_FILTER_OPTIONS: Record<string, string[]> = {
   "고등관-고1": ["화성고", "가온고", "병점고", "영덕고", "수원고", "청명고"],
-  "고등관-고2": ["화성고", "가온고", "청명고", "영덕고", "고색고"],
+  "고등관-고2": ["화성고", "가온고", "청명고", "영덕고", "수원고", "고색고"],
   "고등관-고3": ["국어", "영어", "수학", "생명과학", "사회문화", "생윤", "논술"],
 };
 

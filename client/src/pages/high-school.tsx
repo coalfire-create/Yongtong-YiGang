@@ -107,6 +107,7 @@ const G2_FILTERS_DEFAULT: FilterTab[] = [
   { label: "가온고", filterFn: (tt) => (tt.target_school || "").includes("가온고") },
   { label: "청명고", filterFn: (tt) => (tt.target_school || "").includes("청명고") },
   { label: "영덕고", filterFn: (tt) => (tt.target_school || "").includes("영덕고") },
+  { label: "수원고", filterFn: (tt) => (tt.target_school || "").includes("수원고") },
   { label: "고색고", filterFn: (tt) => (tt.target_school || "").includes("고색고") },
   { label: "수학/탐구", filterFn: (tt) => tt.subject === "수학" || tt.subject === "탐구" },
 ];

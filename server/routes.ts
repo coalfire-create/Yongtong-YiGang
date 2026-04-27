@@ -382,20 +382,46 @@ async function ensureFilterTabsTable() {
 
 const DEFAULT_FILTER_TABS: Record<string, string[]> = {
   "고등관-고1": ["요약시간표", "전체시간표", "화성고", "가온고", "병점고", "영덕고", "수원고", "청명고", "수학/탐구"],
-  "고등관-고2": ["요약시간표", "전체시간표", "화성고", "가온고", "청명고", "영덕고", "고색고", "수학/탐구"],
+  "고등관-고2": ["요약시간표", "전체시간표", "화성고", "가온고", "청명고", "영덕고", "수원고", "고색고", "수학/탐구"],
   "고등관-고3": ["요약시간표", "전체", "국어", "영어", "수학", "생명과학", "사회문화", "생윤", "논술"],
 };
 
 async function seedFilterTabs() {
   try {
-    const { rows } = await pool.query("SELECT COUNT(*) AS cnt FROM filter_tabs");
-    if (parseInt(rows[0].cnt) > 0) return;
-    for (const [category, labels] of Object.entries(DEFAULT_FILTER_TABS)) {
-      for (let i = 0; i < labels.length; i++) {
-        await pool.query(
-          "INSERT INTO filter_tabs (category, label, display_order) VALUES ($1, $2, $3)",
-          [category, labels[i], i]
-        );
+    // 기존 탭 목록 조회
+    const { rows: existing } = await pool.query(
+      "SELECT category, label FROM filter_tabs"
+    );
+    const existingSet = new Set(existing.map((r: any) => `${r.category}::${r.label}`));
+
+    if (existingSet.size === 0) {
+      // 최초 시드: 전체 삽입
+      for (const [category, labels] of Object.entries(DEFAULT_FILTER_TABS)) {
+        for (let i = 0; i < labels.length; i++) {
+          await pool.query(
+            "INSERT INTO filter_tabs (category, label, display_order) VALUES ($1, $2, $3)",
+            [category, labels[i], i]
+          );
+        }
+      }
+    } else {
+      // 이미 시드된 경우: 누락된 탭만 추가
+      for (const [category, labels] of Object.entries(DEFAULT_FILTER_TABS)) {
+        for (const label of labels) {
+          if (!existingSet.has(`${category}::${label}`)) {
+            // 해당 카테고리에서 현재 최대 display_order 조회 후 삽입
+            const { rows: maxRows } = await pool.query(
+              "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM filter_tabs WHERE category = $1",
+              [category]
+            );
+            const nextOrder = parseInt(maxRows[0].max_order) + 1;
+            await pool.query(
+              "INSERT INTO filter_tabs (category, label, display_order) VALUES ($1, $2, $3)",
+              [category, label, nextOrder]
+            );
+            console.log(`[seedFilterTabs] 누락 탭 추가: ${category} - ${label}`);
+          }
+        }
       }
     }
   } catch (err) {
