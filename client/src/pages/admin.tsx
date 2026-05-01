@@ -3643,8 +3643,194 @@ function FilterTabsTab() {
   );
 }
 
+interface Notice {
+  id: number;
+  title: string;
+  content: string;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+}
+
+function formatNoticeDate(dateStr: string) {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function NoticesTab() {
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [newContent, setNewContent] = useState("");
+
+  const { data: notices = [], isLoading } = useQuery<Notice[]>({
+    queryKey: ["/api/notices?admin=1"],
+    queryFn: () => fetch("/api/notices?admin=1").then((r) => r.json()),
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/notices?admin=1"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/notices"] });
+  };
+
+  const addMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/notices", { title: newTitle, content: newContent }),
+    onSuccess: () => { setNewTitle(""); setNewContent(""); invalidate(); },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("PUT", `/api/notices/${id}`, { title: editTitle, content: editContent }),
+    onSuccess: () => { setEditingId(null); invalidate(); },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("PATCH", `/api/notices/${id}/toggle`, {}),
+    onSuccess: invalidate,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/notices/${id}`, {}),
+    onSuccess: invalidate,
+  });
+
+  const startEdit = (notice: Notice) => {
+    setEditingId(notice.id);
+    setEditTitle(notice.title);
+    setEditContent(notice.content);
+  };
+
+  return (
+    <div className="p-6 max-w-3xl">
+      <h2 className="text-lg font-bold text-gray-800 mb-5">공지사항 관리</h2>
+
+      {/* 새 공지 등록 */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+        <p className="text-sm font-semibold text-gray-700 mb-3">새 공지 등록</p>
+        <input
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-2 focus:outline-none focus:border-[#7B2332]"
+          placeholder="제목 *"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          data-testid="input-notice-title"
+        />
+        <textarea
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-3 focus:outline-none focus:border-[#7B2332] resize-none"
+          placeholder="내용"
+          rows={4}
+          value={newContent}
+          onChange={(e) => setNewContent(e.target.value)}
+          data-testid="input-notice-content"
+        />
+        <button
+          onClick={() => newTitle.trim() && addMutation.mutate()}
+          disabled={addMutation.isPending || !newTitle.trim()}
+          className="flex items-center gap-2 px-4 py-2 bg-[#7B2332] text-white text-sm font-semibold rounded hover:bg-[#6a1e2b] disabled:opacity-50 transition-colors"
+          data-testid="button-add-notice"
+        >
+          {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          등록하기
+        </button>
+      </div>
+
+      {/* 공지 목록 */}
+      {isLoading ? (
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />)}
+        </div>
+      ) : notices.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-10">등록된 공지사항이 없습니다.</p>
+      ) : (
+        <div className="space-y-3">
+          {notices.map((notice) => (
+            <div key={notice.id} className={`border rounded-lg overflow-hidden ${notice.is_active ? "border-gray-200" : "border-gray-200 opacity-60"}`} data-testid={`admin-notice-${notice.id}`}>
+              {editingId === notice.id ? (
+                <div className="p-4 bg-white">
+                  <input
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-2 focus:outline-none focus:border-[#7B2332]"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    data-testid={`input-edit-title-${notice.id}`}
+                  />
+                  <textarea
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-3 focus:outline-none focus:border-[#7B2332] resize-none"
+                    rows={4}
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    data-testid={`input-edit-content-${notice.id}`}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => editMutation.mutate(notice.id)}
+                      disabled={editMutation.isPending}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-[#7B2332] text-white text-xs font-semibold rounded hover:bg-[#6a1e2b] transition-colors"
+                      data-testid={`button-save-notice-${notice.id}`}
+                    >
+                      {editMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                      저장
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-semibold rounded hover:bg-gray-200 transition-colors"
+                      data-testid={`button-cancel-notice-${notice.id}`}
+                    >
+                      <X className="w-3 h-3" />
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-white flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${notice.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
+                        {notice.is_active ? "공개" : "비공개"}
+                      </span>
+                      <span className="text-xs text-gray-400">{formatNoticeDate(notice.created_at)}</span>
+                    </div>
+                    <p className="font-semibold text-gray-800 text-sm truncate" data-testid={`text-admin-notice-title-${notice.id}`}>{notice.title}</p>
+                    {notice.content && (
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 whitespace-pre-wrap">{notice.content}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => toggleMutation.mutate(notice.id)}
+                      className="p-1.5 text-gray-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors"
+                      title={notice.is_active ? "비공개로 전환" : "공개로 전환"}
+                      data-testid={`button-toggle-notice-${notice.id}`}
+                    >
+                      {notice.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => startEdit(notice)}
+                      className="p-1.5 text-gray-400 hover:text-[#7B2332] rounded hover:bg-red-50 transition-colors"
+                      title="수정"
+                      data-testid={`button-edit-notice-${notice.id}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm("이 공지사항을 삭제하시겠습니까?")) deleteMutation.mutate(notice.id); }}
+                      className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors"
+                      title="삭제"
+                      data-testid={`button-delete-notice-${notice.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -3817,9 +4003,21 @@ export default function AdminPage() {
             <MessageSquare className="w-4 h-4" />
             문자 수신
           </button>
+          <button
+            onClick={() => setTab("notices")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "notices"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-notices"
+          >
+            <Megaphone className="w-4 h-4" />
+            공지사항
+          </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );

@@ -301,6 +301,23 @@ async function ensureReviewsTable() {
   }
 }
 
+async function ensureNoticesTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notices (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL DEFAULT '',
+        content TEXT NOT NULL DEFAULT '',
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure notices table:", err);
+  }
+}
+
 async function ensureBannersTable() {
   try {
     await pool.query(`
@@ -478,6 +495,7 @@ export async function registerRoutes(
   await ensureTeacherImagesTable();
   await ensureFilterTabsTable();
   await seedFilterTabs();
+  await ensureNoticesTable();
   try {
     await pool.query(`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
   } catch (err) {
@@ -2029,6 +2047,75 @@ export async function registerRoutes(
   app.delete("/api/briefing-events/:id", requireAdmin, async (req, res) => {
     try {
       await pool.query("DELETE FROM briefing_events WHERE id = $1", [req.params.id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== NOTICES ==========
+  app.get("/api/notices", async (req, res) => {
+    try {
+      const adminOnly = req.query.admin === "1";
+      const query = adminOnly
+        ? "SELECT * FROM notices ORDER BY display_order ASC, created_at DESC"
+        : "SELECT * FROM notices WHERE is_active = true ORDER BY display_order ASC, created_at DESC";
+      const { rows } = await pool.query(query);
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/notices", requireAdmin, async (req, res) => {
+    try {
+      const { title, content } = req.body;
+      if (!title || !title.trim()) return res.status(400).json({ error: "제목은 필수입니다." });
+      const { rows: maxRows } = await pool.query("SELECT COALESCE(MAX(display_order), -1) AS mo FROM notices");
+      const nextOrder = parseInt(maxRows[0].mo) + 1;
+      const { rows } = await pool.query(
+        "INSERT INTO notices (title, content, is_active, display_order) VALUES ($1, $2, true, $3) RETURNING *",
+        [title.trim(), (content || "").trim(), nextOrder]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/notices/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, content } = req.body;
+      if (!title || !title.trim()) return res.status(400).json({ error: "제목은 필수입니다." });
+      const { rows } = await pool.query(
+        "UPDATE notices SET title=$1, content=$2 WHERE id=$3 RETURNING *",
+        [title.trim(), (content || "").trim(), id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Not found" });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/notices/:id/toggle", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { rows } = await pool.query(
+        "UPDATE notices SET is_active = NOT is_active WHERE id=$1 RETURNING *",
+        [id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "Not found" });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/notices/:id", requireAdmin, async (req, res) => {
+    try {
+      await pool.query("DELETE FROM notices WHERE id=$1", [req.params.id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

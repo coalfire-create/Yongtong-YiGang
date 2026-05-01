@@ -60,6 +60,7 @@ The project is organized into three main directories:
 - **Briefing Page Layout:** Tabbed layout with "설명회 예약" (/briefing) and "설명회 일정" (/briefing/schedule) tabs; schedule shows color-coded monthly calendar
 - **Summary Timetable Divisions:** 'high-g1' (고1), 'high-g2' (고2), 'high-g3' (고3), 'junior' (초/중등관)
 - **Reorder APIs:** `PATCH /api/timetables/reorder`, `PATCH /api/summary-timetables/reorder`, and `PATCH /api/teachers/reorder` accept `{ ids: number[] }` to set display_order
+- **Notices Table:** `notices` (id, title, content, is_active, display_order, created_at) - auto-created on server start; public page shows active notices only; admin can add/edit/delete/toggle visibility
 - **Google Sheets Webhook:** Reservations and SMS subscriptions are sent to Google Apps Script webhook via plain `fetch` (`server/sheets-sync.ts`). Webhook URL is hardcoded but can be overridden with `GOOGLE_WEBHOOK_URL` env var. `server/googleSheets.ts` is preserved but no longer imported/used
 - **Migrations:** Output to `./migrations` directory
 - **Schema Push:** Use `npm run db:push` (runs `drizzle-kit push`)

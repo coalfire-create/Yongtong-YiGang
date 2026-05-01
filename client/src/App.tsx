@@ -13,6 +13,7 @@ import { Briefing, BriefingReservation, BriefingSchedule } from "@/pages/briefin
 import { Admissions, AdmissionsResults, AdmissionsReviews } from "@/pages/admissions";
 import { About } from "@/pages/about";
 import { Directions } from "@/pages/directions";
+import { Notices } from "@/pages/notices";
 import TeachersPage, { TeacherDetail } from "@/pages/teachers";
 import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/admissions/reviews" component={AdmissionsReviews} />
       <Route path="/about" component={About} />
       <Route path="/directions" component={Directions} />
+      <Route path="/notices" component={Notices} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>

@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { label: "설명회", path: "/briefing", sub: [] },
   { label: "입시", path: "/admissions", sub: [{ label: "입시 실적", path: "/admissions/results" }, { label: "합격 후기", path: "/admissions/reviews" }] },
   { label: "오시는길", path: "/directions", sub: [] },
+  { label: "공지사항", path: "/notices", sub: [] },
 ];
 
 export function Header() {
