@@ -315,6 +315,25 @@ async function ensureNoticesTable() {
       )
     `);
     await pool.query(`ALTER TABLE notices ADD COLUMN IF NOT EXISTS image_url TEXT`);
+    // notice_images: 다중 이미지 지원
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notice_images (
+        id SERIAL PRIMARY KEY,
+        notice_id INTEGER NOT NULL REFERENCES notices(id) ON DELETE CASCADE,
+        image_url TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+    // 기존 image_url 데이터를 notice_images로 마이그레이션 (중복 방지)
+    await pool.query(`
+      INSERT INTO notice_images (notice_id, image_url, display_order)
+      SELECT n.id, n.image_url, 0
+      FROM notices n
+      WHERE n.image_url IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM notice_images ni WHERE ni.notice_id = n.id
+        )
+    `);
   } catch (err) {
     console.error("Failed to ensure notices table:", err);
   }
@@ -2056,87 +2075,132 @@ export async function registerRoutes(
   });
 
   // ========== NOTICES ==========
+  // 공지 목록 — notice_images 포함
   app.get("/api/notices", async (req, res) => {
     try {
       const adminOnly = req.query.admin === "1";
-      const query = adminOnly
-        ? "SELECT * FROM notices ORDER BY display_order ASC, created_at DESC"
-        : "SELECT * FROM notices WHERE is_active = true ORDER BY display_order ASC, created_at DESC";
-      const { rows } = await pool.query(query);
+      const whereClause = adminOnly ? "" : "WHERE n.is_active = true";
+      const { rows } = await pool.query(`
+        SELECT n.*,
+          COALESCE(
+            json_agg(
+              json_build_object('id', ni.id, 'image_url', ni.image_url, 'display_order', ni.display_order)
+              ORDER BY ni.display_order ASC, ni.id ASC
+            ) FILTER (WHERE ni.id IS NOT NULL),
+            '[]'
+          ) AS images
+        FROM notices n
+        LEFT JOIN notice_images ni ON ni.notice_id = n.id
+        ${whereClause}
+        GROUP BY n.id
+        ORDER BY n.display_order ASC, n.created_at DESC
+      `);
       res.json(rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
   });
 
-  app.post("/api/notices", requireAdmin, upload.single("image"), async (req, res) => {
+  // 공지 등록 — 다중 이미지
+  app.post("/api/notices", requireAdmin, upload.array("images", 20), async (req, res) => {
     try {
       const { title, content } = req.body;
       if (!title || !title.trim()) return res.status(400).json({ error: "제목은 필수입니다." });
 
-      let image_url: string | null = null;
-      if (req.file) {
-        const ext = path.extname(req.file.originalname).toLowerCase();
-        const fileName = `notices/${crypto.randomUUID()}${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from("images")
-          .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
-        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
-        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-        image_url = urlData.publicUrl;
-      }
-
       const { rows: maxRows } = await pool.query("SELECT COALESCE(MAX(display_order), -1) AS mo FROM notices");
       const nextOrder = parseInt(maxRows[0].mo) + 1;
       const { rows } = await pool.query(
-        "INSERT INTO notices (title, content, image_url, is_active, display_order) VALUES ($1, $2, $3, true, $4) RETURNING *",
-        [title.trim(), (content || "").trim(), image_url, nextOrder]
+        "INSERT INTO notices (title, content, is_active, display_order) VALUES ($1, $2, true, $3) RETURNING *",
+        [title.trim(), (content || "").trim(), nextOrder]
       );
-      res.json(rows[0]);
+      const noticeId = rows[0].id;
+
+      // 이미지 업로드
+      const files = (req.files as Express.Multer.File[]) || [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = path.extname(file.originalname).toLowerCase();
+        const fileName = `notices/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
+        if (uploadError) continue;
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+        await pool.query(
+          "INSERT INTO notice_images (notice_id, image_url, display_order) VALUES ($1, $2, $3)",
+          [noticeId, urlData.publicUrl, i]
+        );
+      }
+
+      // 최종 데이터 반환
+      const { rows: final } = await pool.query(`
+        SELECT n.*,
+          COALESCE(json_agg(json_build_object('id', ni.id, 'image_url', ni.image_url, 'display_order', ni.display_order) ORDER BY ni.display_order ASC, ni.id ASC) FILTER (WHERE ni.id IS NOT NULL), '[]') AS images
+        FROM notices n LEFT JOIN notice_images ni ON ni.notice_id = n.id
+        WHERE n.id=$1 GROUP BY n.id
+      `, [noticeId]);
+      res.json(final[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
   });
 
-  app.put("/api/notices/:id", requireAdmin, upload.single("image"), async (req, res) => {
+  // 공지 수정 — 다중 이미지
+  app.put("/api/notices/:id", requireAdmin, upload.array("images", 20), async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, content, delete_image } = req.body;
+      const { title, content, delete_image_ids } = req.body;
       if (!title || !title.trim()) return res.status(400).json({ error: "제목은 필수입니다." });
 
-      // 기존 공지 조회
-      const { rows: existing } = await pool.query("SELECT image_url FROM notices WHERE id=$1", [id]);
+      const { rows: existing } = await pool.query("SELECT id FROM notices WHERE id=$1", [id]);
       if (existing.length === 0) return res.status(404).json({ error: "Not found" });
-      let image_url: string | null = existing[0].image_url;
 
-      // 이미지 삭제 요청
-      if (delete_image === "true" && image_url) {
-        const parts = image_url.split("/images/");
-        if (parts[1]) await supabase.storage.from("images").remove([parts[1]]);
-        image_url = null;
+      // 개별 이미지 삭제
+      if (delete_image_ids) {
+        let ids: number[] = [];
+        try { ids = JSON.parse(delete_image_ids); } catch { ids = []; }
+        for (const imgId of ids) {
+          const { rows: imgRows } = await pool.query("SELECT image_url FROM notice_images WHERE id=$1 AND notice_id=$2", [imgId, id]);
+          if (imgRows[0]?.image_url) {
+            const parts = imgRows[0].image_url.split("/images/");
+            if (parts[1]) await supabase.storage.from("images").remove([parts[1]]);
+          }
+          await pool.query("DELETE FROM notice_images WHERE id=$1", [imgId]);
+        }
       }
 
-      // 새 이미지 업로드
-      if (req.file) {
-        if (image_url) {
-          const parts = image_url.split("/images/");
-          if (parts[1]) await supabase.storage.from("images").remove([parts[1]]);
-        }
-        const ext = path.extname(req.file.originalname).toLowerCase();
+      // 새 이미지 추가
+      const files = (req.files as Express.Multer.File[]) || [];
+      const { rows: orderRows } = await pool.query(
+        "SELECT COALESCE(MAX(display_order), -1) AS mo FROM notice_images WHERE notice_id=$1", [id]
+      );
+      let nextOrder = parseInt(orderRows[0].mo) + 1;
+      for (const file of files) {
+        const ext = path.extname(file.originalname).toLowerCase();
         const fileName = `notices/${crypto.randomUUID()}${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("images")
-          .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
-        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+          .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
+        if (uploadError) continue;
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-        image_url = urlData.publicUrl;
+        await pool.query(
+          "INSERT INTO notice_images (notice_id, image_url, display_order) VALUES ($1, $2, $3)",
+          [id, urlData.publicUrl, nextOrder++]
+        );
       }
 
-      const { rows } = await pool.query(
-        "UPDATE notices SET title=$1, content=$2, image_url=$3 WHERE id=$4 RETURNING *",
-        [title.trim(), (content || "").trim(), image_url, id]
+      await pool.query(
+        "UPDATE notices SET title=$1, content=$2 WHERE id=$3",
+        [title.trim(), (content || "").trim(), id]
       );
-      res.json(rows[0]);
+
+      const { rows: final } = await pool.query(`
+        SELECT n.*,
+          COALESCE(json_agg(json_build_object('id', ni.id, 'image_url', ni.image_url, 'display_order', ni.display_order) ORDER BY ni.display_order ASC, ni.id ASC) FILTER (WHERE ni.id IS NOT NULL), '[]') AS images
+        FROM notices n LEFT JOIN notice_images ni ON ni.notice_id = n.id
+        WHERE n.id=$1 GROUP BY n.id
+      `, [id]);
+      res.json(final[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -2158,11 +2222,13 @@ export async function registerRoutes(
 
   app.delete("/api/notices/:id", requireAdmin, async (req, res) => {
     try {
-      const { rows } = await pool.query("SELECT image_url FROM notices WHERE id=$1", [req.params.id]);
-      if (rows[0]?.image_url) {
-        const parts = rows[0].image_url.split("/images/");
+      // notice_images 삭제 (Supabase Storage 포함)
+      const { rows: imgRows } = await pool.query("SELECT image_url FROM notice_images WHERE notice_id=$1", [req.params.id]);
+      for (const row of imgRows) {
+        const parts = row.image_url.split("/images/");
         if (parts[1]) await supabase.storage.from("images").remove([parts[1]]);
       }
+      // ON DELETE CASCADE 이므로 notices 삭제하면 notice_images도 삭제됨
       await pool.query("DELETE FROM notices WHERE id=$1", [req.params.id]);
       res.json({ success: true });
     } catch (err: any) {

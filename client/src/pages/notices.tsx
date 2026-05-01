@@ -3,11 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { PageLayout } from "@/components/layout";
 import { Bell } from "lucide-react";
 
+interface NoticeImage {
+  id: number;
+  image_url: string;
+  display_order: number;
+}
+
 interface Notice {
   id: number;
   title: string;
   content: string;
-  image_url: string | null;
+  images: NoticeImage[];
   is_active: boolean;
   display_order: number;
   created_at: string;
@@ -26,6 +32,7 @@ function NoticeCard({ notice }: { notice: Notice }) {
   const displayContent = isLong && !expanded
     ? notice.content.slice(0, CONTENT_LIMIT).trimEnd() + "…"
     : notice.content;
+  const hasImages = notice.images && notice.images.length > 0;
 
   return (
     <div
@@ -50,8 +57,8 @@ function NoticeCard({ notice }: { notice: Notice }) {
         </div>
       </div>
 
-      {/* 내용 */}
-      {(notice.content || notice.image_url) && (
+      {/* 내용 + 이미지 */}
+      {(notice.content || hasImages) && (
         <div className="pl-[52px]">
           {notice.content && (
             <>
@@ -72,14 +79,17 @@ function NoticeCard({ notice }: { notice: Notice }) {
               )}
             </>
           )}
-          {notice.image_url && (
-            <div className="mt-3">
-              <img
-                src={notice.image_url}
-                alt="공지 이미지"
-                className="w-full rounded-lg object-contain max-h-[480px] bg-gray-50 border border-gray-100"
-                data-testid={`img-notice-${notice.id}`}
-              />
+          {hasImages && (
+            <div className={`mt-3 ${notice.images.length > 1 ? "grid grid-cols-2 gap-2" : ""}`}>
+              {notice.images.map((img) => (
+                <img
+                  key={img.id}
+                  src={img.image_url}
+                  alt="공지 이미지"
+                  className="w-full rounded-lg object-contain max-h-[480px] bg-gray-50 border border-gray-100"
+                  data-testid={`img-notice-${notice.id}-${img.id}`}
+                />
+              ))}
             </div>
           )}
         </div>

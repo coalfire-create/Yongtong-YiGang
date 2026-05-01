@@ -3643,11 +3643,17 @@ function FilterTabsTab() {
   );
 }
 
+interface NoticeImage {
+  id: number;
+  image_url: string;
+  display_order: number;
+}
+
 interface Notice {
   id: number;
   title: string;
   content: string;
-  image_url: string | null;
+  images: NoticeImage[];
   is_active: boolean;
   display_order: number;
   created_at: string;
@@ -3662,14 +3668,12 @@ function NoticesTab() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
-  const [editImageFile, setEditImageFile] = useState<File | null>(null);
-  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
-  const [editImageDeleted, setEditImageDeleted] = useState(false);
+  const [editNewFiles, setEditNewFiles] = useState<{ file: File; preview: string }[]>([]);
+  const [editDeletedIds, setEditDeletedIds] = useState<Set<number>>(new Set());
 
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
-  const [newImageFile, setNewImageFile] = useState<File | null>(null);
-  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [newFiles, setNewFiles] = useState<{ file: File; preview: string }[]>([]);
   const newFileRef = useRef<HTMLInputElement>(null);
   const editFileRef = useRef<HTMLInputElement>(null);
 
@@ -3688,14 +3692,13 @@ function NoticesTab() {
       const fd = new FormData();
       fd.append("title", newTitle);
       fd.append("content", newContent);
-      if (newImageFile) fd.append("image", newImageFile);
+      newFiles.forEach(({ file }) => fd.append("images", file));
       const res = await fetch("/api/notices", { method: "POST", body: fd, credentials: "include" });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
     onSuccess: () => {
-      setNewTitle(""); setNewContent("");
-      setNewImageFile(null); setNewImagePreview(null);
+      setNewTitle(""); setNewContent(""); setNewFiles([]);
       if (newFileRef.current) newFileRef.current.value = "";
       invalidate();
     },
@@ -3706,15 +3709,15 @@ function NoticesTab() {
       const fd = new FormData();
       fd.append("title", editTitle);
       fd.append("content", editContent);
-      if (editImageDeleted) fd.append("delete_image", "true");
-      if (editImageFile) fd.append("image", editImageFile);
+      fd.append("delete_image_ids", JSON.stringify(Array.from(editDeletedIds)));
+      editNewFiles.forEach(({ file }) => fd.append("images", file));
       const res = await fetch(`/api/notices/${id}`, { method: "PUT", body: fd, credentials: "include" });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
     onSuccess: () => {
-      setEditingId(null);
-      setEditImageFile(null); setEditImagePreview(null); setEditImageDeleted(false);
+      setEditingId(null); setEditNewFiles([]); setEditDeletedIds(new Set());
+      if (editFileRef.current) editFileRef.current.value = "";
       invalidate();
     },
   });
@@ -3733,25 +3736,44 @@ function NoticesTab() {
     setEditingId(notice.id);
     setEditTitle(notice.title);
     setEditContent(notice.content);
-    setEditImageFile(null);
-    setEditImagePreview(null);
-    setEditImageDeleted(false);
+    setEditNewFiles([]);
+    setEditDeletedIds(new Set());
     if (editFileRef.current) editFileRef.current.value = "";
   };
 
-  const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setNewImageFile(file);
-    setNewImagePreview(URL.createObjectURL(file));
+  const handleNewFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setNewFiles((prev) => [
+      ...prev,
+      ...files.map((f) => ({ file: f, preview: URL.createObjectURL(f) })),
+    ]);
+    if (newFileRef.current) newFileRef.current.value = "";
   };
 
-  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setEditImageFile(file);
-    setEditImagePreview(URL.createObjectURL(file));
-    setEditImageDeleted(false);
+  const handleEditFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setEditNewFiles((prev) => [
+      ...prev,
+      ...files.map((f) => ({ file: f, preview: URL.createObjectURL(f) })),
+    ]);
+    if (editFileRef.current) editFileRef.current.value = "";
+  };
+
+  const removeNewFile = (idx: number) => {
+    setNewFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const removeEditNewFile = (idx: number) => {
+    setEditNewFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const toggleDeletedId = (imgId: number) => {
+    setEditDeletedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(imgId)) next.delete(imgId);
+      else next.add(imgId);
+      return next;
+    });
   };
 
   return (
@@ -3781,26 +3803,31 @@ function NoticesTab() {
           data-testid="input-notice-content"
         />
 
-        {/* 이미지 업로드 영역 */}
+        {/* 다중 이미지 미리보기 */}
         <div className="mb-3">
-          <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 첨부 (선택사항)</label>
-          {newImagePreview ? (
-            <div className="relative inline-block">
-              <img src={newImagePreview} alt="미리보기" className="max-h-40 rounded-lg border border-gray-200 object-contain bg-gray-50" />
-              <button
-                onClick={() => { setNewImageFile(null); setNewImagePreview(null); if (newFileRef.current) newFileRef.current.value = ""; }}
-                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-              >
-                <X className="w-3 h-3" />
-              </button>
+          <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+            이미지 첨부 <span className="text-gray-400 font-normal">(여러 장 동시 선택 가능)</span>
+          </label>
+          {newFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {newFiles.map((f, idx) => (
+                <div key={idx} className="relative group">
+                  <img src={f.preview} alt="" className="w-20 h-20 object-cover rounded-lg border border-gray-200 bg-gray-50" />
+                  <button
+                    onClick={() => removeNewFile(idx)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
             </div>
-          ) : (
-            <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#7B2332] hover:bg-[#7B2332]/5 transition-colors w-fit">
-              <Upload className="w-4 h-4 text-gray-400" />
-              <span className="text-xs text-gray-500">이미지 선택</span>
-              <input ref={newFileRef} type="file" accept="image/*" className="hidden" onChange={handleNewImageChange} data-testid="input-notice-image" />
-            </label>
           )}
+          <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#7B2332] hover:bg-[#7B2332]/5 transition-colors w-fit">
+            <Upload className="w-4 h-4 text-gray-400" />
+            <span className="text-xs text-gray-500">이미지 선택 (복수 선택 가능)</span>
+            <input ref={newFileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleNewFilesChange} data-testid="input-notice-images" />
+          </label>
         </div>
 
         <button
@@ -3854,35 +3881,61 @@ function NoticesTab() {
 
                   {/* 이미지 수정 영역 */}
                   <div className="mb-3">
-                    <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지</label>
-                    {editImagePreview ? (
-                      <div className="relative inline-block">
-                        <img src={editImagePreview} alt="새 이미지" className="max-h-36 rounded-lg border border-gray-200 object-contain bg-gray-50" />
-                        <button
-                          onClick={() => { setEditImageFile(null); setEditImagePreview(null); if (editFileRef.current) editFileRef.current.value = ""; }}
-                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 관리</label>
+
+                    {/* 기존 이미지 */}
+                    {notice.images.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {notice.images.map((img) => {
+                          const isDeleted = editDeletedIds.has(img.id);
+                          return (
+                            <div key={img.id} className="relative group">
+                              <img
+                                src={img.image_url}
+                                alt=""
+                                className={`w-20 h-20 object-cover rounded-lg border ${isDeleted ? "opacity-30 border-red-300" : "border-gray-200"} bg-gray-50`}
+                              />
+                              <button
+                                onClick={() => toggleDeletedId(img.id)}
+                                className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs ${isDeleted ? "bg-gray-400 hover:bg-gray-500" : "bg-red-500 hover:bg-red-600"}`}
+                                title={isDeleted ? "삭제 취소" : "이미지 삭제"}
+                              >
+                                {isDeleted ? <Plus className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                              </button>
+                              {isDeleted && (
+                                <div className="absolute inset-0 flex items-center justify-center rounded-lg">
+                                  <span className="text-[10px] font-bold text-red-500 bg-white/80 px-1 rounded">삭제예정</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                    ) : notice.image_url && !editImageDeleted ? (
-                      <div className="flex items-start gap-3">
-                        <img src={notice.image_url} alt="현재 이미지" className="max-h-36 rounded-lg border border-gray-200 object-contain bg-gray-50" />
-                        <button
-                          onClick={() => setEditImageDeleted(true)}
-                          className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium mt-1"
-                          data-testid={`button-delete-notice-image-${notice.id}`}
-                        >
-                          <Trash2 className="w-3 h-3" /> 이미지 삭제
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#7B2332] hover:bg-[#7B2332]/5 transition-colors w-fit">
-                        <Upload className="w-4 h-4 text-gray-400" />
-                        <span className="text-xs text-gray-500">{editImageDeleted ? "새 이미지 선택" : "이미지 선택"}</span>
-                        <input ref={editFileRef} type="file" accept="image/*" className="hidden" onChange={handleEditImageChange} data-testid={`input-edit-notice-image-${notice.id}`} />
-                      </label>
                     )}
+
+                    {/* 새로 추가할 이미지 미리보기 */}
+                    {editNewFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {editNewFiles.map((f, idx) => (
+                          <div key={idx} className="relative group">
+                            <img src={f.preview} alt="" className="w-20 h-20 object-cover rounded-lg border border-blue-200 bg-blue-50" />
+                            <div className="absolute bottom-0 left-0 right-0 text-center text-[9px] font-bold text-blue-600 bg-white/80 rounded-b-lg py-0.5">새 사진</div>
+                            <button
+                              onClick={() => removeEditNewFile(idx)}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#7B2332] hover:bg-[#7B2332]/5 transition-colors w-fit">
+                      <Upload className="w-4 h-4 text-gray-400" />
+                      <span className="text-xs text-gray-500">이미지 추가 (복수 선택 가능)</span>
+                      <input ref={editFileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleEditFilesChange} data-testid={`input-edit-notice-images-${notice.id}`} />
+                    </label>
                   </div>
 
                   <div className="flex gap-2">
@@ -3918,9 +3971,11 @@ function NoticesTab() {
                           {notice.content}
                         </p>
                       )}
-                      {notice.image_url && (
-                        <div className="mt-2">
-                          <img src={notice.image_url} alt="첨부 이미지" className="max-h-24 rounded-lg border border-gray-100 object-contain bg-gray-50" />
+                      {notice.images?.length > 0 && (
+                        <div className="flex gap-1.5 mt-2 flex-wrap">
+                          {notice.images.map((img) => (
+                            <img key={img.id} src={img.image_url} alt="" className="w-14 h-14 object-cover rounded-lg border border-gray-100 bg-gray-50" />
+                          ))}
                         </div>
                       )}
                       <p className="text-[11px] text-gray-400 mt-1.5">{formatNoticeDate(notice.created_at)}</p>
