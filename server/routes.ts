@@ -308,11 +308,13 @@ async function ensureNoticesTable() {
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL DEFAULT '',
         content TEXT NOT NULL DEFAULT '',
+        image_url TEXT,
         is_active BOOLEAN NOT NULL DEFAULT true,
         display_order INTEGER NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    await pool.query(`ALTER TABLE notices ADD COLUMN IF NOT EXISTS image_url TEXT`);
   } catch (err) {
     console.error("Failed to ensure notices table:", err);
   }
@@ -2067,15 +2069,28 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/notices", requireAdmin, async (req, res) => {
+  app.post("/api/notices", requireAdmin, upload.single("image"), async (req, res) => {
     try {
       const { title, content } = req.body;
       if (!title || !title.trim()) return res.status(400).json({ error: "제목은 필수입니다." });
+
+      let image_url: string | null = null;
+      if (req.file) {
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const fileName = `notices/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+        image_url = urlData.publicUrl;
+      }
+
       const { rows: maxRows } = await pool.query("SELECT COALESCE(MAX(display_order), -1) AS mo FROM notices");
       const nextOrder = parseInt(maxRows[0].mo) + 1;
       const { rows } = await pool.query(
-        "INSERT INTO notices (title, content, is_active, display_order) VALUES ($1, $2, true, $3) RETURNING *",
-        [title.trim(), (content || "").trim(), nextOrder]
+        "INSERT INTO notices (title, content, image_url, is_active, display_order) VALUES ($1, $2, $3, true, $4) RETURNING *",
+        [title.trim(), (content || "").trim(), image_url, nextOrder]
       );
       res.json(rows[0]);
     } catch (err: any) {
@@ -2083,16 +2098,44 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/notices/:id", requireAdmin, async (req, res) => {
+  app.put("/api/notices/:id", requireAdmin, upload.single("image"), async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, content } = req.body;
+      const { title, content, delete_image } = req.body;
       if (!title || !title.trim()) return res.status(400).json({ error: "제목은 필수입니다." });
+
+      // 기존 공지 조회
+      const { rows: existing } = await pool.query("SELECT image_url FROM notices WHERE id=$1", [id]);
+      if (existing.length === 0) return res.status(404).json({ error: "Not found" });
+      let image_url: string | null = existing[0].image_url;
+
+      // 이미지 삭제 요청
+      if (delete_image === "true" && image_url) {
+        const parts = image_url.split("/images/");
+        if (parts[1]) await supabase.storage.from("images").remove([parts[1]]);
+        image_url = null;
+      }
+
+      // 새 이미지 업로드
+      if (req.file) {
+        if (image_url) {
+          const parts = image_url.split("/images/");
+          if (parts[1]) await supabase.storage.from("images").remove([parts[1]]);
+        }
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const fileName = `notices/${crypto.randomUUID()}${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+        image_url = urlData.publicUrl;
+      }
+
       const { rows } = await pool.query(
-        "UPDATE notices SET title=$1, content=$2 WHERE id=$3 RETURNING *",
-        [title.trim(), (content || "").trim(), id]
+        "UPDATE notices SET title=$1, content=$2, image_url=$3 WHERE id=$4 RETURNING *",
+        [title.trim(), (content || "").trim(), image_url, id]
       );
-      if (rows.length === 0) return res.status(404).json({ error: "Not found" });
       res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -2115,6 +2158,11 @@ export async function registerRoutes(
 
   app.delete("/api/notices/:id", requireAdmin, async (req, res) => {
     try {
+      const { rows } = await pool.query("SELECT image_url FROM notices WHERE id=$1", [req.params.id]);
+      if (rows[0]?.image_url) {
+        const parts = rows[0].image_url.split("/images/");
+        if (parts[1]) await supabase.storage.from("images").remove([parts[1]]);
+      }
       await pool.query("DELETE FROM notices WHERE id=$1", [req.params.id]);
       res.json({ success: true });
     } catch (err: any) {

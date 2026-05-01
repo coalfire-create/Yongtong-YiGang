@@ -7,6 +7,7 @@ interface Notice {
   id: number;
   title: string;
   content: string;
+  image_url: string | null;
   is_active: boolean;
   display_order: number;
   created_at: string;
@@ -50,22 +51,36 @@ function NoticeCard({ notice }: { notice: Notice }) {
       </div>
 
       {/* 내용 */}
-      {notice.content && (
+      {(notice.content || notice.image_url) && (
         <div className="pl-[52px]">
-          <p
-            className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap"
-            data-testid={`text-notice-content-${notice.id}`}
-          >
-            {displayContent}
-          </p>
-          {isLong && (
-            <button
-              className="mt-1.5 text-xs font-semibold text-[#7B2332] hover:underline"
-              onClick={() => setExpanded((v) => !v)}
-              data-testid={`button-notice-expand-${notice.id}`}
-            >
-              {expanded ? "접기" : "더보기"}
-            </button>
+          {notice.content && (
+            <>
+              <p
+                className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap"
+                data-testid={`text-notice-content-${notice.id}`}
+              >
+                {displayContent}
+              </p>
+              {isLong && (
+                <button
+                  className="mt-1.5 text-xs font-semibold text-[#7B2332] hover:underline"
+                  onClick={() => setExpanded((v) => !v)}
+                  data-testid={`button-notice-expand-${notice.id}`}
+                >
+                  {expanded ? "접기" : "더보기"}
+                </button>
+              )}
+            </>
+          )}
+          {notice.image_url && (
+            <div className="mt-3">
+              <img
+                src={notice.image_url}
+                alt="공지 이미지"
+                className="w-full rounded-lg object-contain max-h-[480px] bg-gray-50 border border-gray-100"
+                data-testid={`img-notice-${notice.id}`}
+              />
+            </div>
           )}
         </div>
       )}

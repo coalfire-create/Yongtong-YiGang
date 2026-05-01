@@ -3647,6 +3647,7 @@ interface Notice {
   id: number;
   title: string;
   content: string;
+  image_url: string | null;
   is_active: boolean;
   display_order: number;
   created_at: string;
@@ -3661,8 +3662,16 @@ function NoticesTab() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [editImageDeleted, setEditImageDeleted] = useState(false);
+
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const newFileRef = useRef<HTMLInputElement>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
 
   const { data: notices = [], isLoading } = useQuery<Notice[]>({
     queryKey: ["/api/notices?admin=1"],
@@ -3675,13 +3684,39 @@ function NoticesTab() {
   };
 
   const addMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/notices", { title: newTitle, content: newContent }),
-    onSuccess: () => { setNewTitle(""); setNewContent(""); invalidate(); },
+    mutationFn: async () => {
+      const fd = new FormData();
+      fd.append("title", newTitle);
+      fd.append("content", newContent);
+      if (newImageFile) fd.append("image", newImageFile);
+      const res = await fetch("/api/notices", { method: "POST", body: fd, credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    onSuccess: () => {
+      setNewTitle(""); setNewContent("");
+      setNewImageFile(null); setNewImagePreview(null);
+      if (newFileRef.current) newFileRef.current.value = "";
+      invalidate();
+    },
   });
 
   const editMutation = useMutation({
-    mutationFn: (id: number) => apiRequest("PUT", `/api/notices/${id}`, { title: editTitle, content: editContent }),
-    onSuccess: () => { setEditingId(null); invalidate(); },
+    mutationFn: async (id: number) => {
+      const fd = new FormData();
+      fd.append("title", editTitle);
+      fd.append("content", editContent);
+      if (editImageDeleted) fd.append("delete_image", "true");
+      if (editImageFile) fd.append("image", editImageFile);
+      const res = await fetch(`/api/notices/${id}`, { method: "PUT", body: fd, credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    onSuccess: () => {
+      setEditingId(null);
+      setEditImageFile(null); setEditImagePreview(null); setEditImageDeleted(false);
+      invalidate();
+    },
   });
 
   const toggleMutation = useMutation({
@@ -3698,6 +3733,25 @@ function NoticesTab() {
     setEditingId(notice.id);
     setEditTitle(notice.title);
     setEditContent(notice.content);
+    setEditImageFile(null);
+    setEditImagePreview(null);
+    setEditImageDeleted(false);
+    if (editFileRef.current) editFileRef.current.value = "";
+  };
+
+  const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNewImageFile(file);
+    setNewImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditImageFile(file);
+    setEditImagePreview(URL.createObjectURL(file));
+    setEditImageDeleted(false);
   };
 
   return (
@@ -3726,6 +3780,29 @@ function NoticesTab() {
           onChange={(e) => setNewContent(e.target.value)}
           data-testid="input-notice-content"
         />
+
+        {/* 이미지 업로드 영역 */}
+        <div className="mb-3">
+          <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 첨부 (선택사항)</label>
+          {newImagePreview ? (
+            <div className="relative inline-block">
+              <img src={newImagePreview} alt="미리보기" className="max-h-40 rounded-lg border border-gray-200 object-contain bg-gray-50" />
+              <button
+                onClick={() => { setNewImageFile(null); setNewImagePreview(null); if (newFileRef.current) newFileRef.current.value = ""; }}
+                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#7B2332] hover:bg-[#7B2332]/5 transition-colors w-fit">
+              <Upload className="w-4 h-4 text-gray-400" />
+              <span className="text-xs text-gray-500">이미지 선택</span>
+              <input ref={newFileRef} type="file" accept="image/*" className="hidden" onChange={handleNewImageChange} data-testid="input-notice-image" />
+            </label>
+          )}
+        </div>
+
         <button
           onClick={() => newTitle.trim() && addMutation.mutate()}
           disabled={addMutation.isPending || !newTitle.trim()}
@@ -3774,6 +3851,40 @@ function NoticesTab() {
                     onChange={(e) => setEditContent(e.target.value)}
                     data-testid={`input-edit-content-${notice.id}`}
                   />
+
+                  {/* 이미지 수정 영역 */}
+                  <div className="mb-3">
+                    <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지</label>
+                    {editImagePreview ? (
+                      <div className="relative inline-block">
+                        <img src={editImagePreview} alt="새 이미지" className="max-h-36 rounded-lg border border-gray-200 object-contain bg-gray-50" />
+                        <button
+                          onClick={() => { setEditImageFile(null); setEditImagePreview(null); if (editFileRef.current) editFileRef.current.value = ""; }}
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : notice.image_url && !editImageDeleted ? (
+                      <div className="flex items-start gap-3">
+                        <img src={notice.image_url} alt="현재 이미지" className="max-h-36 rounded-lg border border-gray-200 object-contain bg-gray-50" />
+                        <button
+                          onClick={() => setEditImageDeleted(true)}
+                          className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium mt-1"
+                          data-testid={`button-delete-notice-image-${notice.id}`}
+                        >
+                          <Trash2 className="w-3 h-3" /> 이미지 삭제
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#7B2332] hover:bg-[#7B2332]/5 transition-colors w-fit">
+                        <Upload className="w-4 h-4 text-gray-400" />
+                        <span className="text-xs text-gray-500">{editImageDeleted ? "새 이미지 선택" : "이미지 선택"}</span>
+                        <input ref={editFileRef} type="file" accept="image/*" className="hidden" onChange={handleEditImageChange} data-testid={`input-edit-notice-image-${notice.id}`} />
+                      </label>
+                    )}
+                  </div>
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => editMutation.mutate(notice.id)}
@@ -3807,12 +3918,16 @@ function NoticesTab() {
                           {notice.content}
                         </p>
                       )}
+                      {notice.image_url && (
+                        <div className="mt-2">
+                          <img src={notice.image_url} alt="첨부 이미지" className="max-h-24 rounded-lg border border-gray-100 object-contain bg-gray-50" />
+                        </div>
+                      )}
                       <p className="text-[11px] text-gray-400 mt-1.5">{formatNoticeDate(notice.created_at)}</p>
                     </div>
 
                     {/* 액션 버튼 */}
                     <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
-                      {/* 공개/비공개 토글 버튼 */}
                       <button
                         onClick={() => toggleMutation.mutate(notice.id)}
                         disabled={toggleMutation.isPending}
