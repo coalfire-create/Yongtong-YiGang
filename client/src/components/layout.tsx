@@ -7,12 +7,14 @@ import logoImg from "@assets/ikang_small.webp";
 const NAV_ITEMS = [
   { label: "학원소개", path: "/about", sub: [{ label: "학원소개", path: "/about" }, { label: "오시는길", path: "/directions" }] },
   { label: "고등관", path: "/high-school", sub: [{ label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }, { label: "요약 시간표", path: "/high-school/summary" }] },
+  { label: "중3", path: "/middle-school", sub: [] },
   { label: "초/중등관", path: "/junior-school", sub: [{ label: "강의시간표", path: "/junior-school/schedule" }, { label: "프리미엄 학습 시스템", path: "/junior-school/premium-system" }] },
+  { label: "썸머", path: "/summer", sub: [] },
+  { label: "수학스쿨", path: "/math-school", sub: [] },
   { label: "올빼미", path: "/owl", sub: [{ label: "독학관 안내", path: "/owl/info" }, { label: "이용 방법", path: "/owl/usage" }] },
   { label: "선생님", path: "/teachers", sub: [] },
   { label: "설명회", path: "/briefing", sub: [] },
   { label: "입시", path: "/admissions", sub: [{ label: "입시 실적", path: "/admissions/results" }, { label: "합격 후기", path: "/admissions/reviews" }] },
-  { label: "오시는길", path: "/directions", sub: [] },
   { label: "공지사항", path: "/notices", sub: [] },
 ];
 

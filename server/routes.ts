@@ -1186,7 +1186,7 @@ export async function registerRoutes(
         [timetable_id || null, student_name.trim(), (student_phone || "").trim(), parent_phone.trim(), school.trim(), className]
       );
 
-      appendReservationRow({
+      await appendReservationRow({
         subject: (subject || "").trim(),
         teacherName: (teacher_name || "").trim(),
         className: className,
@@ -1194,7 +1194,9 @@ export async function registerRoutes(
         studentPhone: (student_phone || "").trim(),
         parentPhone: parent_phone.trim(),
         school: school.trim(),
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error("[SheetsSync Error] 수강예약:", err);
+      });
 
       res.json(rows[0]);
     } catch (err: any) {
@@ -1706,7 +1708,9 @@ export async function registerRoutes(
         [name || "", cleaned, school || "", grade || ""]
       );
 
-      appendSmsRow({ name: name || "", phone: cleaned, school: school || "", grade: grade || "" }).catch(() => {});
+      await appendSmsRow({ name: name || "", phone: cleaned, school: school || "", grade: grade || "" }).catch((err) => {
+        console.error("[SheetsSync Error] 문자수신:", err);
+      });
 
       supabase.from("sms_subscriptions").insert({
         name: name || "",
@@ -1760,7 +1764,9 @@ export async function registerRoutes(
         [name, cleaned, school || "", grade || ""]
       );
 
-      appendLevelTestRow({ name, phone: cleaned, school: school || "", grade: grade || "" }).catch(() => {});
+      await appendLevelTestRow({ name, phone: cleaned, school: school || "", grade: grade || "" }).catch((err) => {
+        console.error("[SheetsSync Error] 수학레벨테스트:", err);
+      });
 
       supabase.from("level_test_registrations").insert({
         name,

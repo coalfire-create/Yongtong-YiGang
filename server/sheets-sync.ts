@@ -11,11 +11,14 @@ export async function appendReservationRow(data: {
   parentPhone: string;
   school: string;
 }) {
+  const timestamp = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
   try {
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        type: "수강예약",
+        timestamp,
         subject: data.subject,
         teacherName: data.teacherName,
         className: data.className,
@@ -28,7 +31,7 @@ export async function appendReservationRow(data: {
     if (!res.ok) {
       console.error("[Webhook] 수강예약 전송 실패:", res.status, await res.text());
     } else {
-      console.log("[Webhook] 수강예약 전송 성공");
+      console.log("[Webhook] 수강예약 전송 성공:", data.studentName);
     }
   } catch (err) {
     console.error("[Webhook] 수강예약 전송 실패:", err);
@@ -41,12 +44,14 @@ export async function appendSmsRow(data: {
   school?: string;
   grade?: string;
 }) {
+  const timestamp = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
   try {
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "문자수신",
+        timestamp,
         name: data.name || "-",
         phone: data.phone,
         school: data.school || "-",
@@ -56,7 +61,7 @@ export async function appendSmsRow(data: {
     if (!res.ok) {
       console.error("[Webhook] 문자수신 전송 실패:", res.status, await res.text());
     } else {
-      console.log("[Webhook] 문자수신 전송 성공");
+      console.log("[Webhook] 문자수신 전송 성공:", data.name);
     }
   } catch (err) {
     console.error("[Webhook] 문자수신 전송 실패:", err);
@@ -69,12 +74,14 @@ export async function appendLevelTestRow(data: {
   school?: string;
   grade?: string;
 }) {
+  const timestamp = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
   try {
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "수학레벨테스트",
+        timestamp,
         name: data.name,
         phone: data.phone,
         school: data.school || "-",
@@ -84,7 +91,7 @@ export async function appendLevelTestRow(data: {
     if (!res.ok) {
       console.error("[Webhook] 수학레벨테스트 전송 실패:", res.status, await res.text());
     } else {
-      console.log("[Webhook] 수학레벨테스트 전송 성공");
+      console.log("[Webhook] 수학레벨테스트 전송 성공:", data.name);
     }
   } catch (err) {
     console.error("[Webhook] 수학레벨테스트 전송 실패:", err);
