@@ -1172,12 +1172,19 @@ export async function registerRoutes(
 
     try {
       let className = "";
+      let fetchedSubject = subject || "";
+      let fetchedTeacher = teacher_name || "";
+
       if (timetable_id) {
         const { rows: ttRows } = await pool.query(
-          "SELECT class_name FROM timetables WHERE id = $1",
+          "SELECT class_name, target_school, subject, teacher_name FROM timetables WHERE id = $1",
           [timetable_id]
         );
-        if (ttRows[0]) className = ttRows[0].class_name;
+        if (ttRows[0]) {
+          className = ttRows[0].class_name || ttRows[0].target_school || "";
+          if (!fetchedSubject) fetchedSubject = ttRows[0].subject || "";
+          if (!fetchedTeacher) fetchedTeacher = ttRows[0].teacher_name || "";
+        }
       }
 
       const { rows } = await pool.query(
@@ -1187,8 +1194,8 @@ export async function registerRoutes(
       );
 
       await appendReservationRow({
-        subject: (subject || "").trim(),
-        teacherName: (teacher_name || "").trim(),
+        subject: (fetchedSubject || "").trim(),
+        teacherName: (fetchedTeacher || "").trim(),
         className: className,
         studentName: student_name.trim(),
         studentPhone: (student_phone || "").trim(),

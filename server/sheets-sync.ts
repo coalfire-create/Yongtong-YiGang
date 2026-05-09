@@ -11,22 +11,39 @@ export async function appendReservationRow(data: {
   parentPhone: string;
   school: string;
 }) {
-  const timestamp = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+  const timestamp = new Date().toLocaleString("ko-KR", { 
+    timeZone: "Asia/Seoul",
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\. /g, '-').replace('.', '');
+
   try {
+    const payload = {
+      type: "수강예약",
+      timestamp,
+      subject: data.subject,
+      teacherName: data.teacherName,
+      teacher_name: data.teacherName,
+      className: data.className,
+      class_name: data.className,
+      studentName: data.studentName,
+      student_name: data.studentName,
+      studentPhone: data.studentPhone,
+      student_phone: data.studentPhone,
+      parentPhone: data.parentPhone,
+      parent_phone: data.parentPhone,
+      school: data.school,
+    };
+
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "수강예약",
-        timestamp,
-        subject: data.subject,
-        teacherName: data.teacherName,
-        className: data.className,
-        studentName: data.studentName,
-        studentPhone: data.studentPhone,
-        parentPhone: data.parentPhone,
-        school: data.school,
-      }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       console.error("[Webhook] 수강예약 전송 실패:", res.status, await res.text());
@@ -44,19 +61,31 @@ export async function appendSmsRow(data: {
   school?: string;
   grade?: string;
 }) {
-  const timestamp = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+  const timestamp = new Date().toLocaleString("ko-KR", { 
+    timeZone: "Asia/Seoul",
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\. /g, '-').replace('.', '');
+
   try {
+    const payload = {
+      type: "문자수신",
+      timestamp,
+      name: data.name || "-",
+      phone: data.phone,
+      school: data.school || "-",
+      grade: data.grade || "-",
+    };
+
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "문자수신",
-        timestamp,
-        name: data.name || "-",
-        phone: data.phone,
-        school: data.school || "-",
-        grade: data.grade || "-",
-      }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       console.error("[Webhook] 문자수신 전송 실패:", res.status, await res.text());
@@ -74,19 +103,31 @@ export async function appendLevelTestRow(data: {
   school?: string;
   grade?: string;
 }) {
-  const timestamp = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+  const timestamp = new Date().toLocaleString("ko-KR", { 
+    timeZone: "Asia/Seoul",
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\. /g, '-').replace('.', '');
+
   try {
+    const payload = {
+      type: "수학레벨테스트",
+      timestamp,
+      name: data.name,
+      phone: data.phone,
+      school: data.school || "-",
+      grade: data.grade || "-",
+    };
+
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "수학레벨테스트",
-        timestamp,
-        name: data.name,
-        phone: data.phone,
-        school: data.school || "-",
-        grade: data.grade || "-",
-      }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       console.error("[Webhook] 수학레벨테스트 전송 실패:", res.status, await res.text());
