@@ -24,29 +24,28 @@ export async function appendReservationRow(data: {
 
   try {
     const payload = {
-      type: "수강예약",
       timestamp,
-      subject: data.subject,
-      teacherName: data.teacherName,
-      teacher_name: data.teacherName,
-      className: data.className,
-      class_name: data.className,
-      studentName: data.studentName,
-      student_name: data.studentName,
-      studentPhone: data.studentPhone,
-      student_phone: data.studentPhone,
-      parentPhone: data.parentPhone,
-      parent_phone: data.parentPhone,
-      school: data.school,
+      type: "수강예약",
+      subject: data.subject || "-",
+      teacher_name: data.teacherName || "-",
+      class_name: data.className || "-",
+      student_name: data.studentName || "-",
+      student_phone: data.studentPhone || "-",
+      parent_phone: data.parentPhone || "-",
+      school: data.school || "-",
     };
+
+    console.log("[SheetsSync] Sending Reservation:", JSON.stringify(payload, null, 2));
 
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    
     if (!res.ok) {
-      console.error("[Webhook] 수강예약 전송 실패:", res.status, await res.text());
+      const errorText = await res.text();
+      console.error("[Webhook] 수강예약 전송 실패:", res.status, errorText);
     } else {
       console.log("[Webhook] 수강예약 전송 성공:", data.studentName);
     }
@@ -74,21 +73,25 @@ export async function appendSmsRow(data: {
 
   try {
     const payload = {
-      type: "문자수신",
       timestamp,
+      type: "문자수신",
       name: data.name || "-",
-      phone: data.phone,
+      phone: data.phone || "-",
       school: data.school || "-",
       grade: data.grade || "-",
     };
+
+    console.log("[SheetsSync] Sending SMS Sub:", JSON.stringify(payload, null, 2));
 
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    
     if (!res.ok) {
-      console.error("[Webhook] 문자수신 전송 실패:", res.status, await res.text());
+      const errorText = await res.text();
+      console.error("[Webhook] 문자수신 전송 실패:", res.status, errorText);
     } else {
       console.log("[Webhook] 문자수신 전송 성공:", data.name);
     }
@@ -116,21 +119,25 @@ export async function appendLevelTestRow(data: {
 
   try {
     const payload = {
-      type: "수학레벨테스트",
       timestamp,
-      name: data.name,
-      phone: data.phone,
+      type: "수학레벨테스트",
+      name: data.name || "-",
+      phone: data.phone || "-",
       school: data.school || "-",
       grade: data.grade || "-",
     };
+
+    console.log("[SheetsSync] Sending Level Test:", JSON.stringify(payload, null, 2));
 
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    
     if (!res.ok) {
-      console.error("[Webhook] 수학레벨테스트 전송 실패:", res.status, await res.text());
+      const errorText = await res.text();
+      console.error("[Webhook] 수학레벨테스트 전송 실패:", res.status, errorText);
     } else {
       console.log("[Webhook] 수학레벨테스트 전송 성공:", data.name);
     }
