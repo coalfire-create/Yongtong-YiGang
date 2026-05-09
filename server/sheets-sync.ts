@@ -26,13 +26,22 @@ export async function appendReservationRow(data: {
     const payload = {
       timestamp,
       type: "수강예약",
+      // Redundant keys for maximum compatibility
       subject: data.subject || "-",
+      teacherName: data.teacherName || "-",
       teacher_name: data.teacherName || "-",
+      className: data.className || "-",
       class_name: data.className || "-",
+      studentName: data.studentName || "-",
       student_name: data.studentName || "-",
+      name: data.studentName || "-", // Common alias
+      studentPhone: data.studentPhone || "-",
       student_phone: data.studentPhone || "-",
+      parentPhone: data.parentPhone || "-",
       parent_phone: data.parentPhone || "-",
+      phone: data.studentPhone || data.parentPhone || "-", // Common alias
       school: data.school || "-",
+      grade: "-", // Ensure field exists
     };
 
     console.log("[SheetsSync] Sending Reservation:", JSON.stringify(payload, null, 2));
@@ -76,7 +85,11 @@ export async function appendSmsRow(data: {
       timestamp,
       type: "문자수신",
       name: data.name || "-",
+      studentName: data.name || "-",
+      student_name: data.name || "-",
       phone: data.phone || "-",
+      studentPhone: data.phone || "-",
+      student_phone: data.phone || "-",
       school: data.school || "-",
       grade: data.grade || "-",
     };
@@ -122,7 +135,11 @@ export async function appendLevelTestRow(data: {
       timestamp,
       type: "수학레벨테스트",
       name: data.name || "-",
+      studentName: data.name || "-",
+      student_name: data.name || "-",
       phone: data.phone || "-",
+      studentPhone: data.phone || "-",
+      student_phone: data.phone || "-",
       school: data.school || "-",
       grade: data.grade || "-",
     };
@@ -145,3 +162,4 @@ export async function appendLevelTestRow(data: {
     console.error("[Webhook] 수학레벨테스트 전송 실패:", err);
   }
 }
+
