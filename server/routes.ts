@@ -1193,7 +1193,7 @@ export async function registerRoutes(
         [timetable_id || null, student_name.trim(), (student_phone || "").trim(), parent_phone.trim(), school.trim(), className]
       );
 
-      await appendReservationRow({
+      appendReservationRow({
         subject: (fetchedSubject || "").trim(),
         teacherName: (fetchedTeacher || "").trim(),
         className: className,
@@ -1715,7 +1715,7 @@ export async function registerRoutes(
         [name || "", cleaned, school || "", grade || ""]
       );
 
-      await appendSmsRow({ name: name || "", phone: cleaned, school: school || "", grade: grade || "" }).catch((err) => {
+      appendSmsRow({ name: name || "", phone: cleaned, school: school || "", grade: grade || "" }).catch((err) => {
         console.error("[SheetsSync Error] 문자수신:", err);
       });
 
@@ -1771,7 +1771,7 @@ export async function registerRoutes(
         [name, cleaned, school || "", grade || ""]
       );
 
-      await appendLevelTestRow({ name, phone: cleaned, school: school || "", grade: grade || "" }).catch((err) => {
+      appendLevelTestRow({ name, phone: cleaned, school: school || "", grade: grade || "" }).catch((err) => {
         console.error("[SheetsSync Error] 수학레벨테스트:", err);
       });
 
