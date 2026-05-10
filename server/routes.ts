@@ -1182,9 +1182,21 @@ export async function registerRoutes(
         );
         if (ttRows[0]) {
           className = ttRows[0].class_name || ttRows[0].target_school || "";
-          if (!fetchedSubject) fetchedSubject = ttRows[0].subject || "";
-          if (!fetchedTeacher) fetchedTeacher = ttRows[0].teacher_name || "";
+          if (!fetchedSubject || fetchedSubject.trim() === "") {
+            fetchedSubject = ttRows[0].subject || "";
+          }
+          if (!fetchedTeacher || fetchedTeacher.trim() === "") {
+            fetchedTeacher = ttRows[0].teacher_name || "";
+          }
         }
+      }
+
+      // Final fallbacks if still empty
+      if (!fetchedSubject || fetchedSubject.trim() === "") {
+        fetchedSubject = className || "기타";
+      }
+      if (!fetchedTeacher || fetchedTeacher.trim() === "") {
+        fetchedTeacher = "-";
       }
 
       const { rows } = await pool.query(
@@ -1192,6 +1204,7 @@ export async function registerRoutes(
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
         [timetable_id || null, student_name.trim(), (student_phone || "").trim(), parent_phone.trim(), school.trim(), className]
       );
+
 
       appendReservationRow({
         subject: (fetchedSubject || "").trim(),

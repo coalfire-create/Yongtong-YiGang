@@ -23,21 +23,20 @@ export async function appendReservationRow(data: {
   }).replace(/\. /g, '-').replace('.', '');
 
   try {
-    // DO NOT add extra keys here, as it shifts the columns in the Google Sheet.
-    // The Sheet expects exactly these 9 columns in this order.
+    // Strictly ordered payload to match Google Sheet columns A-I
     const payload = {
-      timestamp,
-      type: "수강예약",
-      subject: data.subject || "-",
-      teacher_name: data.teacherName || "-",
-      class_name: data.className || "-",
-      student_name: data.studentName || "-",
-      student_phone: data.studentPhone || "-",
-      parent_phone: data.parentPhone || "-",
-      school: data.school || "-",
+      timestamp: timestamp, // A: 신청일시
+      type: "수강예약",       // B: 구분
+      subject: data.subject.trim() || "-",       // C: 과목명
+      teacher_name: data.teacherName.trim() || "-", // D: 강사명
+      class_name: data.className.trim() || "-",     // E: 수업명
+      student_name: data.studentName.trim() || "-", // F: 학생 이름
+      student_phone: data.studentPhone.trim() || "-", // G: 학생 전화번호
+      parent_phone: data.parentPhone.trim() || "-",   // H: 부모님 전화번호
+      school: data.school.trim() || "-",              // I: 재학중인 학교
     };
 
-    console.log("[SheetsSync] Sending Reservation:", JSON.stringify(payload, null, 2));
+    console.log("[SheetsSync] Sending Reservation Payload:", JSON.stringify(payload, null, 2));
 
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
@@ -55,6 +54,7 @@ export async function appendReservationRow(data: {
     console.error("[Webhook] 수강예약 전송 실패:", err);
   }
 }
+
 
 export async function appendSmsRow(data: {
   name: string;
