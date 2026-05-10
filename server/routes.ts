@@ -1185,20 +1185,27 @@ export async function registerRoutes(
 
       if (timetable_id) {
         const { rows: ttRows } = await pool.query(
-          "SELECT class_name, target_school, subject, teacher_name, category FROM timetables WHERE id = $1",
+          `SELECT t.class_name, t.target_school, t.subject, t.teacher_name, t.category, tr.name as teacher_real_name
+           FROM timetables t
+           LEFT JOIN teachers tr ON t.teacher_id = tr.id
+           WHERE t.id = $1`,
           [timetable_id]
         );
         if (ttRows[0]) {
           className = ttRows[0].class_name || ttRows[0].target_school || "";
+          
+          // Use 'subject' if available, otherwise fallback to 'category'
           if (!fetchedSubject || fetchedSubject.trim() === "") {
-            // Use 'subject' if available, otherwise fallback to 'category'
             fetchedSubject = ttRows[0].subject || ttRows[0].category || "";
           }
+          
+          // Use 'teacher_name' if available, otherwise fallback to 'teacher_real_name' from JOIN
           if (!fetchedTeacher || fetchedTeacher.trim() === "") {
-            fetchedTeacher = ttRows[0].teacher_name || "";
+            fetchedTeacher = ttRows[0].teacher_name || ttRows[0].teacher_real_name || "";
           }
         }
       }
+
 
 
       // Final fallbacks if still empty
