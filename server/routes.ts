@@ -1170,6 +1170,14 @@ export async function registerRoutes(
       return res.status(400).json({ error: "학생 전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)" });
     }
 
+    const COMMON_SUBJECTS = ["수학", "국어", "영어", "과학", "사회", "논술", "입시", "상담"];
+    function tryExtractSubject(text: string) {
+      for (const s of COMMON_SUBJECTS) {
+        if (text.includes(s)) return s;
+      }
+      return "";
+    }
+
     try {
       let className = "";
       let fetchedSubject = subject || "";
@@ -1193,10 +1201,12 @@ export async function registerRoutes(
 
       // Final fallbacks if still empty
       if (!fetchedSubject || fetchedSubject.trim() === "") {
-        fetchedSubject = className || "기타";
+        fetchedSubject = tryExtractSubject(className) || "기타";
       }
       if (!fetchedTeacher || fetchedTeacher.trim() === "") {
-        fetchedTeacher = "-";
+        // Try to find teacher pattern like "(홍길동T)" or "홍길동 선생님"
+        const teacherMatch = className.match(/([가-힣]{2,4})(T|선생님)/);
+        fetchedTeacher = teacherMatch ? teacherMatch[1] : "-";
       }
 
       const { rows } = await pool.query(

@@ -24,19 +24,21 @@ export async function appendReservationRow(data: {
 
   try {
     // Strictly ordered payload to match Google Sheet columns A-I
+    // Ensuring no field is truly empty by using explicit fallbacks
     const payload = {
       timestamp: timestamp, // A: 신청일시
       type: "수강예약",       // B: 구분
-      subject: data.subject.trim() || "-",       // C: 과목명
-      teacher_name: data.teacherName.trim() || "-", // D: 강사명
-      class_name: data.className.trim() || "-",     // E: 수업명
-      student_name: data.studentName.trim() || "-", // F: 학생 이름
-      student_phone: data.studentPhone.trim() || "-", // G: 학생 전화번호
-      parent_phone: data.parentPhone.trim() || "-",   // H: 부모님 전화번호
-      school: data.school.trim() || "-",              // I: 재학중인 학교
+      subject: (data.subject && data.subject.trim()) ? data.subject.trim() : "-",       // C: 과목명
+      teacher_name: (data.teacherName && data.teacherName.trim()) ? data.teacherName.trim() : "-", // D: 강사명
+      class_name: (data.className && data.className.trim()) ? data.className.trim() : "-",     // E: 수업명
+      student_name: (data.studentName && data.studentName.trim()) ? data.studentName.trim() : "-", // F: 학생 이름
+      student_phone: (data.studentPhone && data.studentPhone.trim()) ? data.studentPhone.trim() : "-", // G: 학생 전화번호
+      parent_phone: (data.parentPhone && data.parentPhone.trim()) ? data.parentPhone.trim() : "-",   // H: 부모님 전화번호
+      school: (data.school && data.school.trim()) ? data.school.trim() : "-",              // I: 재학중인 학교
     };
 
-    console.log("[SheetsSync] Sending Reservation Payload:", JSON.stringify(payload, null, 2));
+    console.log("[SheetsSync] Final Payload for Google Sheets:", JSON.stringify(payload, null, 2));
+
 
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",

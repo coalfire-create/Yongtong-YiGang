@@ -90,14 +90,34 @@ export function ReservationModal({ open, onClose, timetableId, className, subjec
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+
+    // Aggressive extraction for missing subject/teacher in frontend
+    let finalSubject = subject || "";
+    let finalTeacher = teacherName || "";
+
+    if (!finalSubject && className) {
+      const COMMON_SUBJECTS = ["수학", "국어", "영어", "과학", "사회", "논술", "입시", "상담"];
+      for (const s of COMMON_SUBJECTS) {
+        if (className.includes(s)) {
+          finalSubject = s;
+          break;
+        }
+      }
+    }
+
+    if (!finalTeacher && className) {
+      const teacherMatch = className.match(/([가-힣]{2,4})(T|선생님)/);
+      if (teacherMatch) finalTeacher = teacherMatch[1];
+    }
+
     mutation.mutate({
       timetable_id: timetableId,
       student_name: studentName.trim(),
       student_phone: studentPhone.trim(),
       parent_phone: parentPhone.trim(),
       school: school.trim(),
-      subject: subject || "",
-      teacher_name: teacherName || "",
+      subject: finalSubject,
+      teacher_name: finalTeacher,
     });
   };
 
