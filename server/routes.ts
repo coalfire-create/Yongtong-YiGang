@@ -1185,19 +1185,21 @@ export async function registerRoutes(
 
       if (timetable_id) {
         const { rows: ttRows } = await pool.query(
-          "SELECT class_name, target_school, subject, teacher_name FROM timetables WHERE id = $1",
+          "SELECT class_name, target_school, subject, teacher_name, category FROM timetables WHERE id = $1",
           [timetable_id]
         );
         if (ttRows[0]) {
           className = ttRows[0].class_name || ttRows[0].target_school || "";
           if (!fetchedSubject || fetchedSubject.trim() === "") {
-            fetchedSubject = ttRows[0].subject || "";
+            // Use 'subject' if available, otherwise fallback to 'category'
+            fetchedSubject = ttRows[0].subject || ttRows[0].category || "";
           }
           if (!fetchedTeacher || fetchedTeacher.trim() === "") {
             fetchedTeacher = ttRows[0].teacher_name || "";
           }
         }
       }
+
 
       // Final fallbacks if still empty
       if (!fetchedSubject || fetchedSubject.trim() === "") {
