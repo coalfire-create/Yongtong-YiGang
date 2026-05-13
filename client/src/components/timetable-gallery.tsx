@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Calendar, Clock, BookOpen, User, GraduationCap, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Calendar, Clock, BookOpen, User, GraduationCap, ChevronDown, ChevronUp, Users, School } from "lucide-react";
 import { ReservationModal } from "./reservation-modal";
 import { SummaryTimetableSection } from "./summary-timetable";
 
@@ -299,6 +299,8 @@ function GroupCard({
             <div className="w-12 h-12 rounded bg-[#7B2332]/5 flex items-center justify-center border border-[#7B2332]/10 overflow-hidden">
               {firstTt.school_logo_url ? (
                 <img src={firstTt.school_logo_url} alt={title} className="w-full h-full object-contain" />
+              ) : title === "연합반" ? (
+                <Users className="w-6 h-6 text-blue-600" />
               ) : (
                 <GraduationCap className="w-6 h-6 text-[#7B2332]" />
               )}
@@ -316,8 +318,14 @@ function GroupCard({
           <div key={tt.id} className="p-4 sm:p-5 hover:bg-gray-50/30 transition-colors">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-1 min-w-0 space-y-2">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#7B2332] flex-shrink-0" />
+                <div className="flex items-center gap-3">
+                  {tt.teacher_image_url ? (
+                    <img src={tt.teacher_image_url} alt={tt.teacher_name} className="w-8 h-8 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 flex-shrink-0">
+                      <User className="w-4 h-4 text-gray-400" />
+                    </div>
+                  )}
                   <h3 className="text-sm sm:text-base font-bold text-gray-900">{tt.class_name}</h3>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-500">
