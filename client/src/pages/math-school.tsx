@@ -1,7 +1,9 @@
 import { PageLayout } from "@/components/layout";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { Link } from "wouter";
 import { CheckCircle2, Trophy, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, Star, TrendingUp, ShieldCheck, ArrowRight } from "lucide-react";
+import { MathLevelTestModal } from "@/components/math-level-test-modal";
 
 const HIGHLIGHTS = [
   {
@@ -49,6 +51,7 @@ const SYSTEM_STEPS = [
 ];
 
 export default function MathSchool() {
+  const [showLevelTestModal, setShowLevelTestModal] = useState(false);
   return (
     <PageLayout>
       <div className="bg-[#7B2332] text-white overflow-hidden relative">
@@ -298,16 +301,15 @@ export default function MathSchool() {
               2년의 결과가 증명합니다. 이제는 당신의 차례입니다.
             </p>
             <div className="pt-4">
-              <a href="#sms-apply">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-8 py-4 bg-yellow-400 text-gray-900 text-lg font-black rounded-full shadow-xl shadow-yellow-400/20 flex items-center gap-2 mx-auto hover:bg-yellow-300 transition-colors"
-                >
-                  수학 레벨테스트 신청하기
-                  <ArrowRight className="w-5 h-5" />
-                </motion.button>
-              </a>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowLevelTestModal(true)}
+                className="px-8 py-4 bg-yellow-400 text-gray-900 text-lg font-black rounded-full shadow-xl shadow-yellow-400/20 flex items-center gap-2 mx-auto hover:bg-yellow-300 transition-colors"
+              >
+                수학 레벨테스트 신청하기
+                <ArrowRight className="w-5 h-5" />
+              </motion.button>
             </div>
           </div>
           
@@ -334,6 +336,11 @@ export default function MathSchool() {
           </div>
         </section>
       </div>
+      
+      <MathLevelTestModal 
+        open={showLevelTestModal} 
+        onClose={() => setShowLevelTestModal(false)}
+      />
     </PageLayout>
   );
 }
