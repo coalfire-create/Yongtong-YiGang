@@ -298,7 +298,7 @@ export default function MathSchool() {
               2년의 결과가 증명합니다. 이제는 당신의 차례입니다.
             </p>
             <div className="pt-4">
-              <Link href="/briefing">
+              <a href="#sms-apply">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -307,11 +307,11 @@ export default function MathSchool() {
                   수학 레벨테스트 신청하기
                   <ArrowRight className="w-5 h-5" />
                 </motion.button>
-              </Link>
+              </a>
             </div>
           </div>
           
-          <div className="relative flex flex-col sm:flex-row justify-center items-center gap-12 pt-8">
+          <div className="relative flex flex-col sm:flex-row justify-center items-center gap-12 pt-8" id="sms-apply">
             <div className="space-y-4">
               <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center text-white mx-auto group-hover:bg-white/10 transition-colors">
                 <Phone className="w-8 h-8 text-yellow-400" />
