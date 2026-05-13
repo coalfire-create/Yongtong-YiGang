@@ -246,6 +246,7 @@ async function ensureTimetablesTable() {
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT ''`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS subject TEXT NOT NULL DEFAULT ''`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS detail_image_url TEXT`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS is_visible BOOLEAN NOT NULL DEFAULT true`);
   } catch (err) {
     console.error("Failed to ensure timetables table:", err);
   }
@@ -903,22 +904,32 @@ export async function registerRoutes(
 
   // ========== TIMETABLES (text-based) ==========
   app.get("/api/timetables", async (req, res) => {
-    const category = req.query.category as string | undefined;
+    const isAdmin = !!(req.session as any)?.isAdmin || (req.headers["x-admin-token"] === ADMIN_SESSION_TOKEN);
     try {
       let sql = "SELECT * FROM timetables";
-      const params: string[] = [];
+      const params: any[] = [];
+      const whereClauses: string[] = [];
+
+      if (!isAdmin) {
+        whereClauses.push("is_visible = true");
+      }
+
       if (category) {
         const dashIdx = category.indexOf("-");
         if (dashIdx !== -1) {
           // 하위 카테고리 (예: 고등관-고1) → 정확히 일치 OR 상위 카테고리 (예: 고등관) 포함
           const parent = category.substring(0, dashIdx);
-          sql += " WHERE (category = $1 OR category = $2)";
+          whereClauses.push("(category = $" + (params.length + 1) + " OR category = $" + (params.length + 2) + ")");
           params.push(category, parent);
         } else {
           // 상위 카테고리 (예: 고등관) → 해당 카테고리와 모든 하위 카테고리 포함
-          sql += " WHERE category LIKE $1";
+          whereClauses.push("category LIKE $" + (params.length + 1));
           params.push(category + "%");
         }
+      }
+
+      if (whereClauses.length > 0) {
+        sql += " WHERE " + whereClauses.join(" AND ");
       }
       sql += " ORDER BY display_order ASC, created_at DESC";
       const { rows } = await pool.query(sql, params);
@@ -979,6 +990,20 @@ export async function registerRoutes(
       for (let i = 0; i < ids.length; i++) {
         await pool.query("UPDATE timetables SET display_order = $1 WHERE id = $2", [i, ids[i]]);
       }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/timetables/bulk-visibility", requireAdmin, async (req, res) => {
+    const { ids, is_visible } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      await pool.query(
+        "UPDATE timetables SET is_visible = $1 WHERE id = ANY($2)",
+        [is_visible, ids]
+      );
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -1073,7 +1098,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/timetables", requireAdmin, upload.fields([{ name: "teacher_image", maxCount: 1 }, { name: "detail_image", maxCount: 1 }]), async (req, res) => {
-    const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, start_date, description, subject } = req.body;
+    const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, start_date, description, subject, is_visible } = req.body;
     const dateValue = start_date || class_date || "";
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, dateValue, subject });
@@ -1117,8 +1142,8 @@ export async function registerRoutes(
       );
       const next_order = countRes.rows[0].next_order;
       const { rows } = await pool.query(
-        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, detail_image_url, display_order, description, subject)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, detail_image_url, display_order, description, subject, is_visible)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
         [
           class_name || "",
           teacher_id ? Number(teacher_id) : null,
@@ -1132,7 +1157,8 @@ export async function registerRoutes(
           detail_image_url || null,
           next_order,
           description || "",
-          subject || ""
+          subject || "",
+          is_visible !== undefined ? is_visible === "true" || is_visible === true : true
         ]
       );
       res.json(rows[0]);
@@ -1144,7 +1170,7 @@ export async function registerRoutes(
 
   app.put("/api/timetables/:id", requireAdmin, upload.fields([{ name: "teacher_image", maxCount: 1 }, { name: "detail_image", maxCount: 1 }]), async (req, res) => {
     const { id } = req.params;
-    const { teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, description, subject } = req.body;
+    const { teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, description, subject, is_visible } = req.body;
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     if (!class_name) {
       return res.status(400).json({ error: "수업명은 필수입니다." });
@@ -1191,6 +1217,7 @@ export async function registerRoutes(
         "start_date = $8",
         "description = $9",
         "subject = $10",
+        "is_visible = $11",
       ];
       const values: any[] = [
         class_name || "",
@@ -1203,6 +1230,7 @@ export async function registerRoutes(
         start_date || "",
         description || "",
         subject || "",
+        is_visible !== undefined ? is_visible === "true" || is_visible === true : true,
       ];
       if (teacher_image_url !== undefined) {
         setClauses.push(`teacher_image_url = $${values.length + 1}`);

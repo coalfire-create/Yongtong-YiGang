@@ -48,6 +48,7 @@ interface Timetable {
   display_order: number;
   description: string;
   subject: string;
+  is_visible: boolean;
   created_at: string;
 }
 
@@ -772,8 +773,21 @@ function TimetablesTab() {
     start_date: string;
     teacher_id: string;
     description: string;
+    is_visible: boolean;
   }>();
   const editCategory = editWatch("category");
+
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const bulkVisibilityMutation = useMutation({
+    mutationFn: async ({ ids, is_visible }: { ids: number[]; is_visible: boolean }) => {
+      await apiRequest("PATCH", "/api/timetables/bulk-visibility", { ids, is_visible });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+      setSelectedIds(new Set());
+    },
+  });
 
   const { data: timetables = EMPTY_TIMETABLES, isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables"],
@@ -1010,6 +1024,7 @@ function TimetablesTab() {
       start_date: tt.start_date || "",
       teacher_id: tt.teacher_id ? String(tt.teacher_id) : "",
       description: tt.description || "",
+      is_visible: tt.is_visible ?? true,
     });
   };
 
@@ -1036,6 +1051,7 @@ function TimetablesTab() {
     formData.append("class_time", data.class_time || "");
     formData.append("start_date", data.start_date || "");
     formData.append("description", data.description || "");
+    formData.append("is_visible", String(data.is_visible ?? true));
     if (editImageFile) formData.append("teacher_image", editImageFile);
     if (editDetailImageFile) formData.append("detail_image", editDetailImageFile);
     if (editDetailImageDeleted && !editDetailImageFile) formData.append("delete_detail_image", "true");
@@ -1065,6 +1081,7 @@ function TimetablesTab() {
     formData.append("class_time", data.class_time || "");
     formData.append("start_date", data.start_date || "");
     formData.append("description", data.description || "");
+    formData.append("is_visible", "true");
     if (teacherImageFile) formData.append("teacher_image", teacherImageFile);
     if (detailImageFile) formData.append("detail_image", detailImageFile);
     addMutation.mutate(formData);
@@ -1125,10 +1142,20 @@ function TimetablesTab() {
     <div
       ref={setNodeRef}
       style={cardStyle}
-      className="border border-gray-200 bg-white rounded-lg overflow-hidden"
-      data-testid={`card-admin-timetable-${tt.id}`}
     >
-      <div className="flex items-center gap-3 p-3">
+      <div className={`flex items-center gap-3 p-3 ${!tt.is_visible ? "bg-gray-50 opacity-60" : ""}`}>
+        <input
+          type="checkbox"
+          checked={selectedIds.has(tt.id)}
+          onChange={(e) => {
+            const next = new Set(selectedIds);
+            if (e.target.checked) next.add(tt.id);
+            else next.delete(tt.id);
+            setSelectedIds(next);
+          }}
+          className="w-4 h-4 rounded border-gray-300 text-[#7B2332] focus:ring-[#7B2332] cursor-pointer"
+          data-testid={`checkbox-select-tt-${tt.id}`}
+        />
         <button
           {...attributes}
           {...listeners}
@@ -1201,6 +1228,20 @@ function TimetablesTab() {
             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
             data-testid={`button-delete-timetable-${tt.id}`}
           ><Trash2 className="w-3.5 h-3.5" /></button>
+          <button
+            onClick={() => {
+              const formData = new FormData();
+              formData.append("class_name", tt.class_name);
+              formData.append("category", tt.category);
+              formData.append("is_visible", String(!tt.is_visible));
+              updateMutation.mutate({ id: tt.id, formData });
+            }}
+            className={`p-1.5 rounded transition-colors ${!tt.is_visible ? "text-gray-400 hover:text-gray-600" : "text-[#7B2332] hover:bg-red-50"}`}
+            title={tt.is_visible ? "숨기기" : "보이기"}
+            data-testid={`button-toggle-visibility-${tt.id}`}
+          >
+            {tt.is_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+          </button>
         </div>
       </div>
 
@@ -1309,6 +1350,16 @@ function TimetablesTab() {
                 <p className="text-xs text-red-500 mt-1">저장 시 사진이 삭제됩니다.</p>
               )}
             </div>
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...editRegister("is_visible")}
+                  className="w-4 h-4 rounded border-gray-300 text-[#7B2332] focus:ring-[#7B2332]"
+                />
+                <span className="text-sm font-medium text-gray-700">홈페이지에 노출</span>
+              </label>
+            </div>
             <div className="flex items-center gap-2 pt-1">
               <button type="submit" disabled={updateMutation.isPending}
                 className="flex items-center gap-1.5 bg-[#7B2332] text-white px-4 py-2 text-sm font-semibold hover:bg-[#6a1d2b] disabled:opacity-50 transition-colors rounded"
@@ -1350,6 +1401,55 @@ function TimetablesTab() {
             data-testid="button-toggle-add-timetable"
           >
             {showAddForm ? <><X className="w-4 h-4" />닫기</> : <><Plus className="w-4 h-4" />시간표 추가</>}
+          </button>
+        </div>
+      </div>
+
+      {/* Bulk Actions */}
+      <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-2.5 mb-4">
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filteredTimetables.length > 0 && selectedIds.size === filteredTimetables.length}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedIds(new Set(filteredTimetables.map(t => t.id)));
+                } else {
+                  setSelectedIds(new Set());
+                }
+              }}
+              className="w-4 h-4 rounded border-gray-300 text-[#7B2332] focus:ring-[#7B2332]"
+            />
+            <span className="text-sm font-medium text-gray-600">전체 선택</span>
+          </label>
+          <span className="text-xs text-gray-400">|</span>
+          <span className="text-xs font-medium text-gray-500">{selectedIds.size}개 선택됨</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (selectedIds.size === 0) return;
+              bulkVisibilityMutation.mutate({ ids: [...selectedIds], is_visible: true });
+            }}
+            disabled={selectedIds.size === 0 || bulkVisibilityMutation.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-gray-300 text-gray-700 rounded hover:bg-gray-50 disabled:opacity-30 transition-colors"
+            data-testid="button-bulk-show"
+          >
+            <Eye className="w-3 h-3" />보이기
+          </button>
+          <button
+            onClick={() => {
+              if (selectedIds.size === 0) return;
+              if (confirm(`${selectedIds.size}개의 시간표를 숨기시겠습니까?`)) {
+                bulkVisibilityMutation.mutate({ ids: [...selectedIds], is_visible: false });
+              }
+            }}
+            disabled={selectedIds.size === 0 || bulkVisibilityMutation.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-gray-300 text-gray-700 rounded hover:bg-gray-50 disabled:opacity-30 transition-colors"
+            data-testid="button-bulk-hide"
+          >
+            <EyeOff className="w-3 h-3" />숨기기
           </button>
         </div>
       </div>

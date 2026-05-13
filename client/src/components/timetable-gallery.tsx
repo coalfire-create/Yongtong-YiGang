@@ -74,19 +74,22 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
     );
   }
 
-  const grouped: Record<string, Timetable[]> = {};
-  const ungrouped: Timetable[] = [];
+  const grouped: Record<string, Record<string, Timetable[]>> = {};
+  const ungrouped: Record<string, Timetable[]> = {};
 
   for (const tt of filtered) {
-    if (tt.subject && SUBJECT_ORDER.includes(tt.subject)) {
-      if (!grouped[tt.subject]) grouped[tt.subject] = [];
-      grouped[tt.subject].push(tt);
+    const subj = tt.subject || "기타";
+    if (SUBJECT_ORDER.includes(subj)) {
+      if (!grouped[subj]) grouped[subj] = {};
+      if (!grouped[subj][tt.teacher_name]) grouped[subj][tt.teacher_name] = [];
+      grouped[subj][tt.teacher_name].push(tt);
     } else {
-      ungrouped.push(tt);
+      if (!ungrouped[tt.teacher_name]) ungrouped[tt.teacher_name] = [];
+      ungrouped[tt.teacher_name].push(tt);
     }
   }
 
-  const orderedSubjects = SUBJECT_ORDER.filter((s) => grouped[s]?.length > 0);
+  const orderedSubjects = SUBJECT_ORDER.filter((s) => grouped[s] && Object.keys(grouped[s]).length > 0);
   const hasGroups = orderedSubjects.length > 0;
 
   const openReserve = (tt: Timetable) =>
@@ -122,59 +125,48 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
               <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-sm text-gray-400">해당 조건의 시간표가 없습니다.</p>
             </div>
-          ) : hasGroups ? (
-            <div className="space-y-8">
+          ) : (
+            <div className="space-y-12">
               {orderedSubjects.map((subj) => (
                 <div key={subj}>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-1 h-5 bg-[#7B2332]" />
                     <h3 className="text-lg font-bold text-gray-900" data-testid={`text-subject-group-${subj}`}>{subj}</h3>
-                    <span className="text-xs text-gray-400 ml-1">({grouped[subj].length})</span>
                   </div>
-                  <div className="space-y-3">
-                    {grouped[subj].map((tt) => (
-                      <TimetableCard
-                        key={tt.id}
-                        tt={tt}
-                        expanded={expandedId === tt.id}
-                        onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                        onReserve={() => openReserve(tt)}
+                  <div className="space-y-4">
+                    {Object.entries(grouped[subj]).map(([teacherName, tts]) => (
+                      <TeacherGroupCard
+                        key={teacherName}
+                        teacherName={teacherName}
+                        timetables={tts}
+                        expandedId={expandedId}
+                        onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
+                        onReserve={openReserve}
                       />
                     ))}
                   </div>
                 </div>
               ))}
-              {ungrouped.length > 0 && (
+              {Object.keys(ungrouped).length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-1 h-5 bg-gray-400" />
                     <h3 className="text-lg font-bold text-gray-900">기타</h3>
                   </div>
-                  <div className="space-y-3">
-                    {ungrouped.map((tt) => (
-                      <TimetableCard
-                        key={tt.id}
-                        tt={tt}
-                        expanded={expandedId === tt.id}
-                        onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                        onReserve={() => openReserve(tt)}
+                  <div className="space-y-4">
+                    {Object.entries(ungrouped).map(([teacherName, tts]) => (
+                      <TeacherGroupCard
+                        key={teacherName}
+                        teacherName={teacherName}
+                        timetables={tts}
+                        expandedId={expandedId}
+                        onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
+                        onReserve={openReserve}
                       />
                     ))}
                   </div>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filtered.map((tt) => (
-                <TimetableCard
-                  key={tt.id}
-                  tt={tt}
-                  expanded={expandedId === tt.id}
-                  onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                  onReserve={() => openReserve(tt)}
-                />
-              ))}
             </div>
           )}
 
@@ -195,109 +187,113 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   );
 }
 
-function TimetableCard({
-  tt,
-  expanded,
+function TeacherGroupCard({
+  teacherName,
+  timetables,
+  expandedId,
   onToggle,
   onReserve,
 }: {
-  tt: Timetable;
-  expanded: boolean;
-  onToggle: () => void;
-  onReserve: () => void;
+  teacherName: string;
+  timetables: Timetable[];
+  expandedId: number | null;
+  onToggle: (id: number) => void;
+  onReserve: (tt: Timetable) => void;
 }) {
+  const firstTt = timetables[0];
+
   return (
-    <div
-      className="bg-white border border-gray-200 hover:shadow-sm transition-shadow"
-      data-testid={`card-timetable-${tt.id}`}
-    >
-      <div className="p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          {tt.teacher_image_url ? (
-            <div className="flex-shrink-0">
-              <img
-                src={tt.teacher_image_url}
-                alt={tt.teacher_name}
-                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                data-testid={`img-teacher-${tt.id}`}
-              />
-            </div>
-          ) : (
-            <div className="flex-shrink-0 w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-              <User className="w-7 h-7 text-gray-400" />
-            </div>
-          )}
-          <div className="flex-1 min-w-0 space-y-2">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[#7B2332] flex-shrink-0" />
-              <h3 className="text-base font-bold text-gray-900" data-testid={`text-classname-${tt.id}`}>{tt.class_name}</h3>
-              {tt.subject && <span className="text-xs bg-red-50 text-[#7B2332] px-1.5 py-0.5 font-medium">{tt.subject}</span>}
-            </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
-              {tt.teacher_name && (
-                <span className="flex items-center gap-1">
-                  <User className="w-3.5 h-3.5" />
-                  {tt.teacher_name}
-                </span>
-              )}
-              {tt.target_school && (
-                <span className="flex items-center gap-1">
-                  <GraduationCap className="w-3.5 h-3.5" />
-                  {tt.target_school}
-                </span>
-              )}
-              {tt.class_time && (
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  {tt.class_time}
-                </span>
-              )}
-              {tt.start_date && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  개강: {tt.start_date}
-                </span>
-              )}
-            </div>
+    <div className="bg-white border border-gray-200 overflow-hidden shadow-sm">
+      {/* Teacher Header */}
+      <div className="p-4 sm:p-5 border-b border-gray-100 bg-gray-50/50 flex items-center gap-4">
+        {firstTt.teacher_image_url ? (
+          <img
+            src={firstTt.teacher_image_url}
+            alt={teacherName}
+            className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+            <User className="w-6 h-6 text-gray-400" />
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {(tt.description || tt.detail_image_url) && (
-              <button
-                onClick={onToggle}
-                className="flex items-center gap-1 px-4 py-2.5 border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
-                data-testid={`button-detail-${tt.id}`}
-              >
-                상세보기
-                {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
-            )}
-            <button
-              onClick={onReserve}
-              className="px-5 py-2.5 bg-[#7B2332] text-white text-sm font-bold hover:bg-[#6B1D2A] transition-colors"
-              data-testid={`button-reserve-${tt.id}`}
-            >
-              수강예약
-            </button>
-          </div>
+        )}
+        <div>
+          <h4 className="text-base font-bold text-gray-900">{teacherName} 선생님</h4>
+          <p className="text-xs text-[#7B2332] font-medium">{firstTt.subject}</p>
         </div>
       </div>
-      {expanded && (tt.description || tt.detail_image_url) && (
-        <div className="border-t border-gray-100 bg-gray-50 px-5 py-4" data-testid={`detail-${tt.id}`}>
-          {tt.detail_image_url && (
-            <img
-              src={tt.detail_image_url}
-              alt={`${tt.class_name} 상세`}
-              className="w-full max-w-2xl mx-auto rounded mb-4 object-contain"
-              data-testid={`img-detail-${tt.id}`}
-            />
-          )}
-          {tt.description && (
-            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-              {tt.description}
+
+      {/* Class List */}
+      <div className="divide-y divide-gray-100">
+        {timetables.map((tt) => (
+          <div key={tt.id} className="p-4 sm:p-5 hover:bg-gray-50/30 transition-colors">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#7B2332] flex-shrink-0" />
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900">{tt.class_name}</h3>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-500">
+                  {tt.target_school && (
+                    <span className="flex items-center gap-1">
+                      <GraduationCap className="w-3.5 h-3.5" />
+                      {tt.target_school}
+                    </span>
+                  )}
+                  {tt.class_time && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {tt.class_time}
+                    </span>
+                  )}
+                  {tt.start_date && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      개강: {tt.start_date}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {(tt.description || tt.detail_image_url) && (
+                  <button
+                    onClick={() => onToggle(tt.id)}
+                    className="flex items-center gap-1 px-3 py-2 border border-gray-300 text-gray-600 text-xs font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    상세보기
+                    {expandedId === tt.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+                <button
+                  onClick={() => onReserve(tt)}
+                  className="px-4 py-2 bg-[#7B2332] text-white text-xs font-bold hover:bg-[#6B1D2A] transition-colors"
+                >
+                  수강예약
+                </button>
+              </div>
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Expanded Content */}
+            {expandedId === tt.id && (tt.description || tt.detail_image_url) && (
+              <div className="mt-4 pt-4 border-t border-gray-100 bg-gray-50/50 rounded p-4 animate-in fade-in slide-in-from-top-1">
+                {tt.detail_image_url && (
+                  <img
+                    src={tt.detail_image_url}
+                    alt={`${tt.class_name} 상세`}
+                    className="w-full max-w-2xl mx-auto rounded mb-4 object-contain"
+                  />
+                )}
+                {tt.description && (
+                  <div className="text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                    {tt.description}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
+
