@@ -24,18 +24,18 @@ const CLASS_INFO = [
   {
     grade: "고1",
     classes: [
-      { name: "의치서 M반", teacher: "최주용T", description: "1등급 중에서도 내신 1.0 최상위권만 모이는 의치서 M반!", highlight: true },
-      { name: "S반", teacher: "최주용T", description: "최상위권을 확실하게 만드는 최상위권 전문반", highlight: true },
-      { name: "A1반", teacher: "권소영T", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
+      { name: "의치서 M반", teacher: "최주용T", image: "/images/teachers/choi-juyong.png", description: "1등급 중에서도 내신 1.0 최상위권만 모이는 의치서 M반!", highlight: true },
+      { name: "S반", teacher: "최주용T", image: "/images/teachers/choi-juyong.png", description: "최상위권을 확실하게 만드는 최상위권 전문반", highlight: true },
+      { name: "A1반", teacher: "권소영T", image: "/images/teachers/kwon-soyoung.png", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
     ]
   },
   {
     grade: "고2",
     classes: [
-      { name: "S반", teacher: "최주용T", description: "최상위권을 확실하게 만드는 최상위권 전문반", highlight: true },
-      { name: "A1반", teacher: "황해룡T", description: "성적 상승을 이끌어내는 실전 응용 및 오답 관리", highlight: false },
-      { name: "A1반", teacher: "권소영T", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
-      { name: "A2반", teacher: "임서원T", description: "기초부터 확실히 잡는 개념 및 성적 상승 기반 구축", highlight: false },
+      { name: "S반", teacher: "최주용T", image: "/images/teachers/choi-juyong.png", description: "최상위권을 확실하게 만드는 최상위권 전문반", highlight: true },
+      { name: "A1반", teacher: "황해룡T", image: "/images/teachers/hwang-haeryong.png", description: "성적 상승을 이끌어내는 실전 응용 및 오답 관리", highlight: false },
+      { name: "A1반", teacher: "권소영T", image: "/images/teachers/kwon-soyoung.png", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
+      { name: "A2반", teacher: "임서원T", image: "/images/teachers/lim-seowon.png", description: "기초부터 확실히 잡는 개념 및 성적 상승 기반 구축", highlight: false },
     ]
   }
 ];
@@ -113,22 +113,22 @@ export default function MathSchool() {
             {/* S-Class */}
             <motion.div 
               whileHover={{ y: -10 }}
-              className="relative p-10 rounded-[2.5rem] bg-gray-900 text-white overflow-hidden border border-white/10 shadow-2xl"
+              className="p-10 rounded-[2.5rem] bg-white border border-gray-200 shadow-xl space-y-6 overflow-hidden relative"
             >
-              <div className="absolute top-0 right-0 p-6 opacity-20">
-                <Star className="w-20 h-20 text-yellow-400" />
+              <div className="absolute top-0 right-0 p-6 opacity-10">
+                <Star className="w-20 h-20 text-yellow-500" />
               </div>
               <div className="relative z-10 space-y-6">
-                <div className="inline-block px-3 py-1 bg-yellow-500 text-black text-[10px] font-black rounded-full uppercase tracking-widest">Elite Only</div>
-                <h3 className="text-3xl font-black tracking-tight">S반 <span className="text-yellow-400 text-lg block mt-1">TOP-TIER CERTAINTY</span></h3>
-                <p className="text-gray-400 text-sm leading-relaxed font-medium">최상위권을 확실하게 만듭니다. 최상위들만 모여 경쟁하며 압도적인 실력을 완성합니다.</p>
-                <div className="pt-4 border-t border-white/10 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-white/80">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-yellow-500" />
+                <div className="inline-block px-3 py-1 bg-yellow-50 text-yellow-600 text-[10px] font-black rounded-full uppercase tracking-widest">Elite Only</div>
+                <h3 className="text-3xl font-black tracking-tight text-gray-900">S반 <span className="text-yellow-600 text-lg block mt-1">TOP-TIER CERTAINTY</span></h3>
+                <p className="text-gray-600 text-sm leading-relaxed font-medium">최상위권을 확실하게 만듭니다. 최상위들만 모여 경쟁하며 압도적인 실력을 완성합니다.</p>
+                <div className="pt-4 border-t border-gray-100 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-yellow-600" />
                     내신 1등급 필승 전략
                   </div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-white/80">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-yellow-500" />
+                  <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-yellow-600" />
                     킬러 문항 정복 훈련
                   </div>
                 </div>
@@ -244,23 +244,32 @@ export default function MathSchool() {
                   {gradeInfo.classes.map((cls, idx) => (
                     <div 
                       key={idx}
-                      className={`p-6 rounded-3xl border transition-all duration-300 ${
+                      className={`p-6 rounded-3xl border transition-all duration-300 flex items-center gap-6 ${
                         cls.highlight 
                           ? "bg-red-50/50 border-red-100 hover:shadow-lg hover:shadow-red-900/5" 
                           : "bg-white border-gray-100 hover:border-[#7B2332]/30 hover:shadow-lg"
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-xl font-bold text-gray-900">{cls.name}</h4>
-                            {cls.highlight && <span className="px-2 py-0.5 bg-[#7B2332] text-white text-[10px] font-black rounded-md uppercase">Top</span>}
-                          </div>
-                          <p className="text-gray-500 text-sm font-medium">{cls.description}</p>
+                      {/* Teacher Photo */}
+                      {cls.image && (
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-gray-100 bg-gray-50">
+                          <img src={cls.image} alt={cls.teacher} className="w-full h-full object-cover" />
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Instructor</p>
-                          <p className="text-lg font-black text-[#7B2332]">{cls.teacher}</p>
+                      )}
+                      
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xl font-bold text-gray-900">{cls.name}</h4>
+                              {cls.highlight && <span className="px-2 py-0.5 bg-[#7B2332] text-white text-[10px] font-black rounded-md uppercase">Top</span>}
+                            </div>
+                            <p className="text-gray-500 text-sm font-medium">{cls.description}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Instructor</p>
+                            <p className="text-lg font-black text-[#7B2332]">{cls.teacher}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
