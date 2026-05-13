@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { FloatingSidebar } from "./floating-sidebar";
