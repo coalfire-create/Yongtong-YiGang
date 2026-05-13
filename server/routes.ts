@@ -904,6 +904,7 @@ export async function registerRoutes(
 
   // ========== TIMETABLES (text-based) ==========
   app.get("/api/timetables", async (req, res) => {
+    const category = req.query.category as string | undefined;
     const isAdmin = !!(req.session as any)?.isAdmin || (req.headers["x-admin-token"] === ADMIN_SESSION_TOKEN);
     try {
       let sql = "SELECT * FROM timetables";
