@@ -74,10 +74,20 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
     );
   }
 
+  const unionGrouped: Record<string, Timetable[]> = {};
   const grouped: Record<string, Record<string, Timetable[]>> = {};
   const ungrouped: Record<string, Timetable[]> = {};
 
   for (const tt of filtered) {
+    // Identify union classes (연합반)
+    const isUnion = (tt.target_school || "").includes("연합") || (tt.class_name || "").includes("연합");
+    
+    if (isUnion) {
+      if (!unionGrouped[tt.teacher_name]) unionGrouped[tt.teacher_name] = [];
+      unionGrouped[tt.teacher_name].push(tt);
+      continue;
+    }
+
     const subj = tt.subject || "기타";
     if (SUBJECT_ORDER.includes(subj)) {
       if (!grouped[subj]) grouped[subj] = {};
@@ -90,7 +100,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   }
 
   const orderedSubjects = SUBJECT_ORDER.filter((s) => grouped[s] && Object.keys(grouped[s]).length > 0);
-  const hasGroups = orderedSubjects.length > 0;
+  const hasUnionClasses = Object.keys(unionGrouped).length > 0;
 
   const openReserve = (tt: Timetable) =>
     setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date });
@@ -127,6 +137,34 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
             </div>
           ) : (
             <div className="space-y-12">
+              {/* Union Classes (연합반) Section */}
+              {hasUnionClasses && (
+                <div className="flex flex-col md:flex-row gap-4 md:gap-8 border-b border-gray-100 pb-10 last:border-0 last:pb-0">
+                  <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
+                    <div className="w-1 h-6 bg-[#7B2332] hidden md:block" />
+                    <div className="px-2 py-1 bg-[#7B2332] rounded-sm md:w-full text-center">
+                      <h3 className="text-sm md:text-base font-black text-white leading-tight">
+                        연합반
+                      </h3>
+                    </div>
+                    <span className="text-xs text-gray-400 font-medium">({Object.values(unionGrouped).reduce((acc, curr) => acc + curr.length, 0)}개 반)</span>
+                  </div>
+                  <div className="flex-1 space-y-6">
+                    {Object.entries(unionGrouped).map(([teacherName, tts]) => (
+                      <TeacherGroupCard
+                        key={teacherName}
+                        teacherName={teacherName}
+                        timetables={tts}
+                        expandedId={expandedId}
+                        onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
+                        onReserve={openReserve}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Standard Subject Groups */}
               {orderedSubjects.map((subj) => {
                 const teacherGroups = Object.entries(grouped[subj]);
                 const totalClasses = Object.values(grouped[subj]).reduce((acc, curr) => acc + curr.length, 0);
@@ -154,6 +192,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                   </div>
                 );
               })}
+
+              {/* Ungrouped (Others) Section */}
               {Object.keys(ungrouped).length > 0 && (
                 <div className="flex flex-col md:flex-row gap-4 md:gap-8 border-b border-gray-100 pb-10 last:border-0 last:pb-0">
                   <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
