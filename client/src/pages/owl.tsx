@@ -294,8 +294,8 @@ export function Owl() {
             {[
               { day: "평일 (월 ~ 금)", time: "14:00 ~ 24:00", note: "하교 후 이용", highlight: false },
               { day: "토 · 일 · 공휴일", time: "08:00 ~ 24:00", note: "", highlight: false },
-              { day: "내신 시험 기간", time: "13:00 ~ 24:00", note: "학기중 특별 운영", highlight: false },
-              { day: "방학 (썸머 · 윈터)", time: "08:00 ~ 24:00", note: "연중무휴 365일", highlight: true },
+              { day: "내신 시험 기간", time: "13:00 ~ 24:00", note: "학기중 특별 운영", highlight: true },
+              { day: "방학 (썸머 · 윈터)", time: "08:00 ~ 24:00", note: "연중무휴 365일", highlight: false },
             ].map((item, i) => (
               <div
                 key={item.day}
