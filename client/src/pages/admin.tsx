@@ -3165,7 +3165,7 @@ const SUMMARY_DIVISIONS = [
   { value: "junior", label: "초/중등관" },
 ] as const;
 
-function SortableSummaryCard({ item, onDelete }: { item: SummaryTimetable; onDelete: (id: number) => void }) {
+function SortableSummaryCard({ item, onDelete }: { item: any; onDelete: (id: number) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   return (
@@ -3366,6 +3366,176 @@ function SummaryTimetablesTab() {
                     key={item.id}
                     item={item}
                     onDelete={(id) => { if (confirm("삭제하시겠습니까?")) deleteMutation.mutate(id); }}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SummerTab() {
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: items = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/summer-images"],
+    queryFn: async () => {
+      const res = await fetch(`/api/summer-images`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+  });
+
+  const [localItems, setLocalItems] = useState<any[]>([]);
+  useEffect(() => {
+    setLocalItems(prev => {
+      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
+      const newKey = items.map(t => `${t.id}:${t.display_order}`).join(",");
+      return prevKey === newKey ? prev : items;
+    });
+  }, [items]);
+
+  const sumSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const addMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/summer-images", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summer-images"] });
+      setImageFiles([]);
+      setImagePreviews([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/summer-images/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summer-images"] });
+    },
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/summer-images/reorder", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ ids }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("순서 변경 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summer-images"] });
+    },
+    onError: () => {
+      setLocalItems(items);
+    },
+  });
+
+  function handleDragEndSummer(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = localItems.findIndex(t => t.id === Number(active.id));
+    const newIdx = localItems.findIndex(t => t.id === Number(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    const newList = arrayMove(localItems, oldIdx, newIdx);
+    setLocalItems(newList);
+    reorderMutation.mutate(newList.map(t => t.id));
+  }
+
+  const handleUpload = () => {
+    if (imageFiles.length === 0) return;
+    imageFiles.forEach((file) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      addMutation.mutate(formData);
+    });
+  };
+
+  return (
+    <div className="space-y-6" data-testid="section-summer-images">
+      <div className="bg-white border border-gray-200 p-6">
+        <h3 className="text-sm font-bold text-gray-900 mb-4">썸머스쿨 이미지 등록</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">이미지 선택 (여러 장 가능)</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length > 0) {
+                  setImageFiles(files);
+                  setImagePreviews(files.map((f) => URL.createObjectURL(f)));
+                }
+              }}
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+              data-testid="input-summer-image"
+            />
+          </div>
+          {imagePreviews.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {imagePreviews.map((preview, idx) => (
+                <div key={idx} className="relative">
+                  <img src={preview} alt={`미리보기 ${idx + 1}`} className="w-full border border-gray-200" />
+                  <span className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">{idx + 1}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={handleUpload}
+            disabled={imageFiles.length === 0 || addMutation.isPending}
+            className="px-6 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+            data-testid="button-add-summer"
+          >
+            {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {imageFiles.length > 1 ? `${imageFiles.length}개 등록` : "등록"}
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-gray-900">등록된 썸머스쿨 이미지 ({localItems.length})</h3>
+          <p className="text-[11px] text-gray-400">≡ 아이콘을 잡아 드래그하여 순서 변경</p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-gray-300" /></div>
+        ) : localItems.length === 0 ? (
+          <p className="text-center py-10 text-gray-400 text-sm">등록된 이미지가 없습니다.</p>
+        ) : (
+          <DndContext sensors={sumSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndSummer}>
+            <SortableContext items={localItems.map(t => t.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-3">
+                {localItems.map((item) => (
+                  <SortableSummaryCard
+                    key={item.id}
+                    item={item}
+                    onDelete={(id) => {
+                      if (confirm("이 이미지를 삭제하시겠습니까?")) deleteMutation.mutate(id);
+                    }}
                   />
                 ))}
               </div>
@@ -4029,7 +4199,7 @@ function NoticesTab() {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices" | "summer">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -4214,9 +4384,21 @@ export default function AdminPage() {
             <Megaphone className="w-4 h-4" />
             공지사항
           </button>
+          <button
+            onClick={() => setTab("summer")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "summer"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-summer"
+          >
+            <Image className="w-4 h-4" />
+            썸머 관리
+          </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : tab === "summer" ? <SummerTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );

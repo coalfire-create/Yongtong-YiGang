@@ -387,6 +387,21 @@ async function ensureSummaryTimetablesTable() {
   }
 }
 
+async function ensureSummerImagesTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS summer_images (
+        id SERIAL PRIMARY KEY,
+        image_url TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure summer_images table:", err);
+  }
+}
+
 async function ensureTeacherImagesTable() {
   try {
     await pool.query(`
@@ -512,6 +527,7 @@ export async function registerRoutes(
   await ensureTimetablesTable();
   await ensureReservationsTable();
   await ensureSummaryTimetablesTable();
+  await ensureSummerImagesTable();
   await ensureBriefingEventsTable();
   await ensureTeacherImagesTable();
   await ensureFilterTabsTable();
@@ -606,6 +622,76 @@ export async function registerRoutes(
   app.get("/api/admin/status", (req, res) => {
     res.set("Cache-Control", "no-store");
     res.json({ isAdmin: !!(req.session as any)?.isAdmin });
+  });
+
+  // ========== SUMMER IMAGES ==========
+  app.get("/api/summer-images", async (_req, res) => {
+    try {
+      const result = await pool.query(
+        "SELECT * FROM summer_images ORDER BY display_order ASC, created_at DESC"
+      );
+      res.json(result.rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/summer-images", requireAdmin, upload.single("image"), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
+
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const fileName = `summer/${crypto.randomUUID()}${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("images")
+      .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+
+    if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+    const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+
+    try {
+      const { rows: maxOrderRows } = await pool.query(
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_images"
+      );
+      const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
+      const { rows } = await pool.query(
+        "INSERT INTO summer_images (image_url, display_order) VALUES ($1, $2) RETURNING *",
+        [urlData.publicUrl, nextOrder]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summer-images/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await pool.query("UPDATE summer_images SET display_order = $1 WHERE id = $2", [i, ids[i]]);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/summer-images/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      const { rows } = await pool.query("SELECT image_url FROM summer_images WHERE id = $1", [id]);
+      if (rows.length > 0) {
+        const url = rows[0].image_url;
+        const urlParts = url.split("/images/");
+        if (urlParts[1]) {
+          await supabase.storage.from("images").remove([urlParts[1]]);
+        }
+      }
+      await pool.query("DELETE FROM summer_images WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // ========== TEACHERS ==========

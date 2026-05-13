@@ -17,6 +17,7 @@ import { About } from "@/pages/about";
 import { Directions } from "@/pages/directions";
 import { Notices } from "@/pages/notices";
 import TeachersPage, { TeacherDetail } from "@/pages/teachers";
+import Summer from "@/pages/summer";
 import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
@@ -40,7 +41,7 @@ function Router() {
       <Route path="/middle-school/schedule" component={MiddleSchoolSchedule} />
       <Route path="/elementary" component={Elementary} />
       <Route path="/elementary/schedule" component={ElementarySchedule} />
-      <Route path="/summer" component={HighSchool} />
+      <Route path="/summer" component={Summer} />
       <Route path="/math-school" component={HighSchool} />
       <Route path="/owl" component={Owl} />
       <Route path="/owl/info" component={OwlInfo} />
