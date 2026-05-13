@@ -127,43 +127,49 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
             </div>
           ) : (
             <div className="space-y-12">
-              {orderedSubjects.map((subj) => (
-                <div key={subj} className="flex flex-col md:flex-row gap-4 md:gap-8 border-b border-gray-100 pb-10 last:border-0 last:pb-0">
-                  <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
-                    <div className="w-1 h-6 bg-[#7B2332] hidden md:block" />
-                    <h3 className="text-xl font-extrabold text-gray-900 leading-tight" data-testid={`text-subject-group-${subj}`}>
-                      {subj}
-                    </h3>
-                    <span className="text-xs text-gray-400 font-medium">({grouped[subj].length}개 반)</span>
+              {orderedSubjects.map((subj) => {
+                const teacherGroups = Object.entries(grouped[subj]);
+                const totalClasses = Object.values(grouped[subj]).reduce((acc, curr) => acc + curr.length, 0);
+                return (
+                  <div key={subj} className="flex flex-col md:flex-row gap-4 md:gap-8 border-b border-gray-100 pb-10 last:border-0 last:pb-0">
+                    <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
+                      <div className="w-1 h-6 bg-[#7B2332] hidden md:block" />
+                      <h3 className="text-xl font-extrabold text-gray-900 leading-tight" data-testid={`text-subject-group-${subj}`}>
+                        {subj}
+                      </h3>
+                      <span className="text-xs text-gray-400 font-medium">({totalClasses}개 반)</span>
+                    </div>
+                    <div className="flex-1 space-y-6">
+                      {teacherGroups.map(([teacherName, tts]) => (
+                        <TeacherGroupCard
+                          key={teacherName}
+                          teacherName={teacherName}
+                          timetables={tts}
+                          expandedId={expandedId}
+                          onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
+                          onReserve={openReserve}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex-1 space-y-3">
-                    {grouped[subj].map((tt) => (
-                      <TimetableCard
-                        key={tt.id}
-                        tt={tt}
-                        expanded={expandedId === tt.id}
-                        onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                        onReserve={() => openReserve(tt)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {ungrouped.length > 0 && (
+                );
+              })}
+              {Object.keys(ungrouped).length > 0 && (
                 <div className="flex flex-col md:flex-row gap-4 md:gap-8 border-b border-gray-100 pb-10 last:border-0 last:pb-0">
                   <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
                     <div className="w-1 h-6 bg-gray-400 hidden md:block" />
                     <h3 className="text-xl font-extrabold text-gray-900 leading-tight">기타</h3>
-                    <span className="text-xs text-gray-400 font-medium">({ungrouped.length}개 반)</span>
+                    <span className="text-xs text-gray-400 font-medium">({Object.values(ungrouped).reduce((acc, curr) => acc + curr.length, 0)}개 반)</span>
                   </div>
-                  <div className="flex-1 space-y-3">
-                    {ungrouped.map((tt) => (
-                      <TimetableCard
-                        key={tt.id}
-                        tt={tt}
-                        expanded={expandedId === tt.id}
-                        onToggle={() => setExpandedId(expandedId === tt.id ? null : tt.id)}
-                        onReserve={() => openReserve(tt)}
+                  <div className="flex-1 space-y-6">
+                    {Object.entries(ungrouped).map(([teacherName, tts]) => (
+                      <TeacherGroupCard
+                        key={teacherName}
+                        teacherName={teacherName}
+                        timetables={tts}
+                        expandedId={expandedId}
+                        onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
+                        onReserve={openReserve}
                       />
                     ))}
                   </div>
@@ -171,7 +177,6 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
               )}
             </div>
           )}
-
         </div>
       )}
 
