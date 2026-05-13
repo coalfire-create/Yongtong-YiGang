@@ -77,11 +77,11 @@ const EMPTY_SUMMARY_TT: { id: number; division: string; image_url: string; displ
 const EMPTY_FILTER_TABS: { id: number; category: string; label: string; display_order: number }[] = [];
 
 const SUBJECT_OPTIONS: Record<string, string[]> = {
-  "고등관": ["수학", "국어", "영어", "탐구", "논술"],
+  "고등관": ["수학", "국어", "영어", "통합과학", "통합사회/한국사", "탐구", "논술"],
   "초/중등관": ["수학", "국어", "영어", "탐구"],
 };
 
-const TIMETABLE_SUBJECT_OPTIONS = ["수학", "국어", "영어", "탐구"];
+const TIMETABLE_SUBJECT_OPTIONS = ["수학", "국어", "영어", "통합과학", "통합사회/한국사", "탐구", "논술"];
 
 interface SortableModalRowProps {
   teacher: Teacher;

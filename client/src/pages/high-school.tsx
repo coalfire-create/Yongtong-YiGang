@@ -70,9 +70,10 @@ function buildFilterFn(label: string): (tt: any) => boolean {
   if (label === "요약시간표") return () => false;
   if (label === "전체시간표" || label === "전체") return () => true;
   if (label === "수학/탐구") return (tt) => tt.subject === "수학" || tt.subject === "탐구";
-  const SUBJECTS = ["국어", "영어", "수학", "탐구", "생명과학", "사회문화", "생윤", "논술"];
+  const SUBJECTS = ["국어", "영어", "수학", "탐구", "통합과학", "통합사회/한국사", "생명과학", "사회문화", "생윤", "논술"];
   if (SUBJECTS.includes(label)) {
     return (tt) =>
+      tt.subject === label ||
       (tt.target_school || "") === label ||
       (tt.subject || "").includes(label) ||
       (tt.class_name || "").includes(label);
@@ -97,7 +98,9 @@ const G1_FILTERS_DEFAULT: FilterTab[] = [
   { label: "영덕고", filterFn: (tt) => (tt.target_school || "").includes("영덕고") },
   { label: "수원고", filterFn: (tt) => (tt.target_school || "").includes("수원고") },
   { label: "청명고", filterFn: (tt) => (tt.target_school || "").includes("청명고") },
-  { label: "수학/탐구", filterFn: (tt) => tt.subject === "수학" || tt.subject === "탐구" },
+  { label: "통합과학", filterFn: (tt) => tt.subject === "통합과학" || (tt.class_name || "").includes("통합과학") },
+  { label: "통합사회/한국사", filterFn: (tt) => tt.subject === "통합사회/한국사" || (tt.class_name || "").includes("통합사회") || (tt.class_name || "").includes("한국사") },
+  { label: "수학/탐구", filterFn: (tt) => ["수학", "탐구", "통합과학", "통합사회/한국사"].includes(tt.subject) },
 ];
 
 const G2_FILTERS_DEFAULT: FilterTab[] = [
@@ -109,7 +112,7 @@ const G2_FILTERS_DEFAULT: FilterTab[] = [
   { label: "영덕고", filterFn: (tt) => (tt.target_school || "").includes("영덕고") },
   { label: "수원고", filterFn: (tt) => (tt.target_school || "").includes("수원고") },
   { label: "고색고", filterFn: (tt) => (tt.target_school || "").includes("고색고") },
-  { label: "수학/탐구", filterFn: (tt) => tt.subject === "수학" || tt.subject === "탐구" },
+  { label: "수학/탐구", filterFn: (tt) => ["수학", "탐구", "통합과학", "통합사회/한국사"].includes(tt.subject) },
 ];
 
 const G3_FILTERS_DEFAULT: FilterTab[] = [
