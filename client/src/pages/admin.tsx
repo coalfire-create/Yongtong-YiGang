@@ -4910,6 +4910,15 @@ export default function AdminPage() {
             <Image className="w-4 h-4" />
             썸머 관리
           </button>
+          <button
+            onClick={() => setTab("schools")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "schools"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-schools"
+          >
             <Calendar className="w-4 h-4" />
             학교 로고
           </button>

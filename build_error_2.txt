@@ -1,0 +1,29 @@
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2025 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                   3.38 kB │ gzip:   1.26 kB
+../dist/public/assets/index-Vu1MR2UJ.css  105.90 kB │ gzip:  16.97 kB
+../dist/public/assets/index-D2YnX5zz.js   750.86 kB │ gzip: 217.20 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.45s
+building server...
+
+  dist/index.cjs  1.2mb ⚠️
+
+⚡ Done in 59ms
