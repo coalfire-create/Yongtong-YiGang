@@ -49,6 +49,14 @@ interface Timetable {
   description: string;
   subject: string;
   is_visible: boolean;
+  is_union: boolean;
+  created_at: string;
+}
+
+interface School {
+  id: number;
+  name: string;
+  logo_url: string | null;
   created_at: string;
 }
 
@@ -73,6 +81,7 @@ interface Reservation {
 // Stable empty arrays - avoids React infinite loop from useEffect([data])
 const EMPTY_TEACHERS: Teacher[] = [];
 const EMPTY_TIMETABLES: Timetable[] = [];
+const EMPTY_SCHOOLS: School[] = [];
 const EMPTY_SUMMARY_TT: { id: number; division: string; image_url: string; display_order: number }[] = [];
 const EMPTY_FILTER_TABS: { id: number; category: string; label: string; display_order: number }[] = [];
 
@@ -733,6 +742,7 @@ function TimetablesTab() {
     start_date: string;
     teacher_id: string;
     description: string;
+    is_union: boolean;
   }>();
   const selectedCategory = watch("category");
   const [teacherImageFile, setTeacherImageFile] = useState<File | null>(null);
@@ -774,6 +784,7 @@ function TimetablesTab() {
     teacher_id: string;
     description: string;
     is_visible: boolean;
+    is_union: boolean;
   }>();
   const editCategory = editWatch("category");
 
@@ -1025,6 +1036,7 @@ function TimetablesTab() {
       teacher_id: tt.teacher_id ? String(tt.teacher_id) : "",
       description: tt.description || "",
       is_visible: tt.is_visible ?? true,
+      is_union: tt.is_union ?? false,
     });
   };
 
@@ -1052,6 +1064,7 @@ function TimetablesTab() {
     formData.append("start_date", data.start_date || "");
     formData.append("description", data.description || "");
     formData.append("is_visible", String(data.is_visible ?? true));
+    formData.append("is_union", String(data.is_union ?? false));
     if (editImageFile) formData.append("teacher_image", editImageFile);
     if (editDetailImageFile) formData.append("detail_image", editDetailImageFile);
     if (editDetailImageDeleted && !editDetailImageFile) formData.append("delete_detail_image", "true");
@@ -1082,6 +1095,7 @@ function TimetablesTab() {
     formData.append("start_date", data.start_date || "");
     formData.append("description", data.description || "");
     formData.append("is_visible", "true");
+    formData.append("is_union", String(data.is_union ?? false));
     if (teacherImageFile) formData.append("teacher_image", teacherImageFile);
     if (detailImageFile) formData.append("detail_image", detailImageFile);
     addMutation.mutate(formData);
@@ -1274,14 +1288,28 @@ function TimetablesTab() {
               </div>
               <div>
                 <label className={labelCls}>목차 (필터)</label>
-                {CATEGORY_FILTER_OPTIONS[editCategory] ? (
-                  <select {...editRegister("target_school")} className={inputCls}>
-                    <option value="">선택 안함</option>
-                    {CATEGORY_FILTER_OPTIONS[editCategory].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                ) : (
-                  <input {...editRegister("target_school")} className={inputCls} placeholder="예: 화성고, 가온고" />
-                )}
+                <select {...editRegister("target_school")} className={inputCls}>
+                  <option value="">직접 입력 / 선택 안함</option>
+                  {/* Category predefined options */}
+                  {CATEGORY_FILTER_OPTIONS[editCategory]?.map((opt) => (
+                    <option key={`pre-${opt}`} value={opt}>{opt} (기본)</option>
+                  ))}
+                  {/* Registered schools */}
+                  {schools.length > 0 && (
+                    <optgroup label="등록된 학교 로고">
+                      {schools.map((s) => (
+                        <option key={`school-${s.id}`} value={s.name}>{s.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <div className="mt-1">
+                  <input
+                    {...editRegister("target_school")}
+                    className={inputCls + " text-xs py-1 mt-1"}
+                    placeholder="직접 입력 시 위 선택 무시"
+                  />
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1328,6 +1356,26 @@ function TimetablesTab() {
                     </button>
                   </div>
                 )}
+                <div className="flex flex-wrap items-center gap-6 py-1">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      {...editRegister("is_visible")}
+                      className="w-4 h-4 rounded border-gray-300 text-[#7B2332] focus:ring-[#7B2332]"
+                    />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-[#7B2332] transition-colors">홈페이지에 노출</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      {...editRegister("is_union")}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">연합반으로 설정</span>
+                    <span className="text-[10px] text-gray-400 font-normal">(수학 필터에서 '연합반' 섹션으로 분류됩니다)</span>
+                  </label>
+                </div>
                 <input
                   ref={editDetailFileInputRef}
                   type="file"
@@ -1570,14 +1618,28 @@ function TimetablesTab() {
               </div>
               <div>
                 <label className={labelCls}>목차 (필터)</label>
-                {CATEGORY_FILTER_OPTIONS[selectedCategory] ? (
-                  <select {...register("target_school")} className={inputCls} defaultValue="" data-testid="select-timetable-school">
-                    <option value="">선택 안함</option>
-                    {CATEGORY_FILTER_OPTIONS[selectedCategory].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                ) : (
-                  <input {...register("target_school")} className={inputCls} placeholder="예: 화성고, 가온고" data-testid="input-timetable-school" />
-                )}
+                <select {...register("target_school")} className={inputCls} data-testid="select-timetable-school">
+                  <option value="">직접 입력 / 선택 안함</option>
+                  {/* Category predefined options */}
+                  {CATEGORY_FILTER_OPTIONS[selectedCategory]?.map((opt) => (
+                    <option key={`pre-add-${opt}`} value={opt}>{opt} (기본)</option>
+                  ))}
+                  {/* Registered schools */}
+                  {schools.length > 0 && (
+                    <optgroup label="등록된 학교 로고">
+                      {schools.map((s) => (
+                        <option key={`school-add-${s.id}`} value={s.name}>{s.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <div className="mt-1">
+                  <input
+                    {...register("target_school")}
+                    className={inputCls + " text-xs py-1 mt-1"}
+                    placeholder="직접 입력 시 위 선택 무시"
+                  />
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1594,6 +1656,19 @@ function TimetablesTab() {
                 <label className={labelCls}>개강일</label>
                 <input {...register("start_date")} className={inputCls} placeholder="예: 3월 3일" data-testid="input-timetable-date" />
               </div>
+            </div>
+            <div className="bg-gray-50/50 p-3 rounded-lg flex flex-wrap items-center gap-6 border border-gray-100">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  {...register("is_union")}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-600 transition-colors">연합반으로 설정</span>
+                  <span className="text-[10px] text-gray-400 font-normal">수학 필터에서 '연합반' 섹션에 표시됩니다.</span>
+                </div>
+              </label>
             </div>
             <div>
               <label className={labelCls}>수업 설명 (상세보기에 표시)</label>
@@ -4369,8 +4444,119 @@ function NoticesTab() {
   );
 }
 
+function SchoolsTab() {
+  const [name, setName] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const { data: schools = EMPTY_SCHOOLS, isLoading } = useQuery<School[]>({
+    queryKey: ["/api/schools"],
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/schools", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error("등록 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schools"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+      setName("");
+      if (fileRef.current) fileRef.current.value = "";
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/schools/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schools"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+    },
+  });
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("name", name.trim());
+    const file = fileRef.current?.files?.[0];
+    if (file) formData.append("logo", file);
+    try {
+      await addMutation.mutateAsync(formData);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="p-6">
+      <h2 className="text-lg font-bold text-gray-800 mb-4">학교 로고 관리</h2>
+      <p className="text-xs text-gray-400 mb-6">학교별 로고를 등록하면 시간표 목록에 해당 로고가 표시됩니다.</p>
+
+      <form onSubmit={onSubmit} className="bg-white border border-gray-200 rounded-xl p-5 mb-8 shadow-sm flex flex-col sm:flex-row items-end gap-4">
+        <div className="flex-1 w-full">
+          <label className="block text-xs font-semibold text-gray-500 mb-1.5">학교 이름 *</label>
+          <input
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#7B2332] bg-gray-50"
+            placeholder="예: 화성고"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div className="flex-1 w-full">
+          <label className="block text-xs font-semibold text-gray-500 mb-1.5">학교 로고 (이미지)</label>
+          <input ref={fileRef} type="file" accept="image/*" className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+        </div>
+        <button
+          type="submit"
+          disabled={uploading || !name.trim()}
+          className="bg-[#7B2332] text-white px-6 py-2 text-sm font-semibold rounded-lg hover:bg-[#6a1e2b] disabled:opacity-50 transition-colors h-[38px] flex items-center gap-2"
+        >
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          등록
+        </button>
+      </form>
+
+      {isLoading ? (
+        <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {schools.map((s) => (
+            <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 group">
+              <div className="w-12 h-12 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {s.logo_url ? (
+                  <img src={s.logo_url} alt={s.name} className="w-full h-full object-contain" />
+                ) : (
+                  <Calendar className="w-6 h-6 text-gray-200" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-gray-900 truncate">{s.name}</p>
+                <p className="text-[10px] text-gray-400">등록일: {formatNoticeDate(s.created_at)}</p>
+              </div>
+              <button
+                onClick={() => confirm(`"${s.name}" 학교를 삭제하시겠습니까?`) && deleteMutation.mutate(s.id)}
+                className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          {schools.length === 0 && (
+            <p className="col-span-full text-center py-10 text-gray-400 text-sm">등록된 학교가 없습니다.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices" | "summer">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices" | "summer" | "schools">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -4567,9 +4753,21 @@ export default function AdminPage() {
             <Image className="w-4 h-4" />
             썸머 관리
           </button>
+          <button
+            onClick={() => setTab("schools")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "schools"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-schools"
+          >
+            <Calendar className="w-4 h-4" />
+            학교 로고
+          </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : tab === "summer" ? <SummerTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : tab === "summer" ? <SummerTab /> : tab === "schools" ? <SchoolsTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );

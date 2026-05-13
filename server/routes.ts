@@ -231,6 +231,7 @@ async function ensureTimetablesTable() {
         class_time TEXT,
         start_date TEXT,
         teacher_image_url TEXT,
+        is_union BOOLEAN NOT NULL DEFAULT false,
         created_at TIMESTAMPTZ DEFAULT now()
       )
     `);
@@ -247,8 +248,24 @@ async function ensureTimetablesTable() {
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS subject TEXT NOT NULL DEFAULT ''`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS detail_image_url TEXT`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS is_visible BOOLEAN NOT NULL DEFAULT true`);
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS is_union BOOLEAN NOT NULL DEFAULT false`);
   } catch (err) {
     console.error("Failed to ensure timetables table:", err);
+  }
+}
+
+async function ensureSchoolsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS schools (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        logo_url TEXT,
+        created_at TIMESTAMPTZ DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure schools table:", err);
   }
 }
 
@@ -536,6 +553,7 @@ export async function registerRoutes(
   await ensureFilterTabsTable();
   await seedFilterTabs();
   await ensureNoticesTable();
+  await ensureSchoolsTable();
   try {
     await pool.query(`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
   } catch (err) {
@@ -953,8 +971,15 @@ export async function registerRoutes(
         timetablePhotos.forEach((r: any) => timetablePhotoMap.set(r.teacher_id, r.image_url));
       }
 
+      // Fetch all schools for logo mapping
+      const { rows: schoolRows } = await pool.query("SELECT name, logo_url FROM schools");
+      const schoolLogoMap = new Map(schoolRows.map((s: any) => [s.name, s.logo_url]));
+
       for (const row of rows as any[]) {
         let effectiveTeacherId = row.teacher_id || null;
+
+        // Add school logo info
+        row.school_logo_url = schoolLogoMap.get(row.target_school) || null;
 
         // Auto-match by name if teacher_id is not set
         if (!effectiveTeacherId && row.teacher_name) {
@@ -1098,8 +1123,54 @@ export async function registerRoutes(
     }
   });
 
+  // ========== SCHOOLS (Logo Management) ==========
+  app.get("/api/schools", async (_req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM schools ORDER BY name ASC");
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/schools", requireAdmin, upload.single("logo"), async (req, res) => {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: "학교 이름은 필수입니다." });
+
+    let logo_url: string | null = null;
+    if (req.file) {
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      const fileName = `schools/${crypto.randomUUID()}${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("images")
+        .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+      if (uploadError) return res.status(500).json({ error: "로고 업로드 실패: " + uploadError.message });
+      logo_url = supabase.storage.from("images").getPublicUrl(fileName).data.publicUrl;
+    }
+
+    try {
+      const { rows } = await pool.query(
+        "INSERT INTO schools (name, logo_url) VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET logo_url = EXCLUDED.logo_url RETURNING *",
+        [name, logo_url]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/schools/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      await pool.query("DELETE FROM schools WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post("/api/timetables", requireAdmin, upload.fields([{ name: "teacher_image", maxCount: 1 }, { name: "detail_image", maxCount: 1 }]), async (req, res) => {
-    const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, start_date, description, subject, is_visible } = req.body;
+    const { teacher_id, teacher_name, category, target_school, class_name, class_time, class_date, start_date, description, subject, is_visible, is_union } = req.body;
     const dateValue = start_date || class_date || "";
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, dateValue, subject });
@@ -1143,8 +1214,8 @@ export async function registerRoutes(
       );
       const next_order = countRes.rows[0].next_order;
       const { rows } = await pool.query(
-        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, detail_image_url, display_order, description, subject, is_visible)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, detail_image_url, display_order, description, subject, is_visible, is_union)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
         [
           class_name || "",
           teacher_id ? Number(teacher_id) : null,
@@ -1159,7 +1230,8 @@ export async function registerRoutes(
           next_order,
           description || "",
           subject || "",
-          is_visible !== undefined ? is_visible === "true" || is_visible === true : true
+          is_visible !== undefined ? is_visible === "true" || is_visible === true : true,
+          is_union !== undefined ? is_union === "true" || is_union === true : false
         ]
       );
       res.json(rows[0]);
@@ -1171,7 +1243,7 @@ export async function registerRoutes(
 
   app.put("/api/timetables/:id", requireAdmin, upload.fields([{ name: "teacher_image", maxCount: 1 }, { name: "detail_image", maxCount: 1 }]), async (req, res) => {
     const { id } = req.params;
-    const { teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, description, subject, is_visible } = req.body;
+    const { teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, description, subject, is_visible, is_union } = req.body;
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     if (!class_name) {
       return res.status(400).json({ error: "수업명은 필수입니다." });
@@ -1219,6 +1291,7 @@ export async function registerRoutes(
         "description = $9",
         "subject = $10",
         "is_visible = $11",
+        "is_union = $12",
       ];
       const values: any[] = [
         class_name || "",
@@ -1232,6 +1305,7 @@ export async function registerRoutes(
         description || "",
         subject || "",
         is_visible !== undefined ? is_visible === "true" || is_visible === true : true,
+        is_union !== undefined ? is_union === "true" || is_union === true : false,
       ];
       if (teacher_image_url !== undefined) {
         setClauses.push(`teacher_image_url = $${values.length + 1}`);

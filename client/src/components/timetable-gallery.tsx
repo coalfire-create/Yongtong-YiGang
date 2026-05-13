@@ -17,6 +17,8 @@ interface Timetable {
   detail_image_url: string | null;
   description: string;
   subject: string;
+  is_union: boolean;
+  school_logo_url: string | null;
   created_at: string;
 }
 
@@ -83,7 +85,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   const ungrouped: Record<string, Timetable[]> = {};
 
   for (const tt of filtered) {
-    const isUnion = (tt.target_school || "").includes("연합") || (tt.class_name || "").includes("연합");
+    const isUnion = tt.is_union;
     const subj = tt.subject || "기타";
 
     if (SUBJECT_ORDER.includes(subj)) {
@@ -294,8 +296,12 @@ function GroupCard({
           </>
         ) : (
           <>
-            <div className="w-12 h-12 rounded bg-[#7B2332]/5 flex items-center justify-center border border-[#7B2332]/10">
-              <GraduationCap className="w-6 h-6 text-[#7B2332]" />
+            <div className="w-12 h-12 rounded bg-[#7B2332]/5 flex items-center justify-center border border-[#7B2332]/10 overflow-hidden">
+              {firstTt.school_logo_url ? (
+                <img src={firstTt.school_logo_url} alt={title} className="w-full h-full object-contain" />
+              ) : (
+                <GraduationCap className="w-6 h-6 text-[#7B2332]" />
+              )}
             </div>
             <div>
               <h4 className="text-base font-bold text-gray-900">{title}</h4>
