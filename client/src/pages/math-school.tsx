@@ -230,6 +230,33 @@ export default function MathSchool() {
           </div>
         </section>
 
+        {/* Posters / Banners Section */}
+        <section className="space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900">영통이강 수학스쿨 소식</h2>
+            <p className="text-gray-500 font-medium">최신 교육 정보와 특별 프로그램 안내입니다.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((num) => (
+              <motion.div
+                key={num}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: num * 0.1 }}
+                whileHover={{ y: -10 }}
+                className="rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 bg-white"
+              >
+                <img 
+                  src={`/images/banner-${num}.png`} 
+                  alt={`수학스쿨 포스터 ${num}`} 
+                  className="w-full h-auto"
+                />
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
         {/* Teacher / Class List Section */}
         <section className="space-y-16">
           <div className="text-center space-y-4">
