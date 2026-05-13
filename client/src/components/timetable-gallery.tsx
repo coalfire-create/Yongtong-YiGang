@@ -99,12 +99,12 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         if (!subjectGroups[subj].union[groupKey]) subjectGroups[subj].union[groupKey] = [];
         subjectGroups[subj].union[groupKey].push(tt);
       } else {
-        const groupKey = tt.target_school || "기타 학교";
+        const groupKey = tt.target_school || "연합반";
         if (!subjectGroups[subj].school[groupKey]) subjectGroups[subj].school[groupKey] = [];
         subjectGroups[subj].school[groupKey].push(tt);
       }
     } else {
-      const groupKey = tt.target_school || "기타";
+      const groupKey = tt.target_school || "연합반";
       if (!ungrouped[groupKey]) ungrouped[groupKey] = [];
       ungrouped[groupKey].push(tt);
     }
@@ -305,7 +305,6 @@ function GroupCard({
             </div>
             <div>
               <h4 className="text-base font-bold text-gray-900">{title}</h4>
-              <p className="text-xs text-gray-500 font-medium">{firstTt.subject} 학교별 반구성</p>
             </div>
           </>
         )}
