@@ -4,23 +4,15 @@ import { Menu, X } from "lucide-react";
 import { FloatingSidebar } from "./floating-sidebar";
 import logoImg from "@assets/ikang_small.webp";
 
-const NAV_ITEMS = [
-  { label: "학원소개", path: "/about", sub: [{ label: "학원소개", path: "/about" }, { label: "오시는길", path: "/directions" }] },
-  { label: "고등관", path: "/high-school", sub: [{ label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }, { label: "요약 시간표", path: "/high-school/summary" }] },
-  { label: "중3", path: "/middle-school", sub: [] },
-  { label: "초/중등관", path: "/junior-school", sub: [{ label: "강의시간표", path: "/junior-school/schedule" }, { label: "프리미엄 학습 시스템", path: "/junior-school/premium-system" }] },
-  { label: "썸머", path: "/summer", sub: [] },
-  { label: "수학스쿨", path: "/math-school", sub: [] },
-  { label: "올빼미", path: "/owl", sub: [{ label: "독학관 안내", path: "/owl/info" }, { label: "이용 방법", path: "/owl/usage" }] },
-  { label: "선생님", path: "/teachers", sub: [] },
-  { label: "설명회", path: "/briefing", sub: [] },
-  { label: "입시", path: "/admissions", sub: [{ label: "입시 실적", path: "/admissions/results" }, { label: "합격 후기", path: "/admissions/reviews" }] },
-  { label: "공지사항", path: "/notices", sub: [] },
-];
+
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
+
+  const { data: navItems = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/navigation"],
+  });
 
   useEffect(() => {
     if (mobileMenuOpen) {
@@ -34,6 +26,8 @@ export function Header() {
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location]);
+
+  if (isLoading) return null;
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200" data-testid="header">
@@ -58,7 +52,7 @@ export function Header() {
           </Link>
 
           <nav className="hidden lg:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <div key={item.label} className="relative group" data-testid={`nav-item-${item.label}`}>
                 <Link
                   href={item.path}
@@ -71,9 +65,9 @@ export function Header() {
                 >
                   {item.label}
                 </Link>
-                {item.sub.length > 0 && (
+                {item.sub && item.sub.length > 0 && (
                   <div className="invisible group-hover:visible absolute top-full left-0 bg-white border border-gray-200 shadow-lg min-w-[170px] z-50" data-testid={`dropdown-${item.label}`}>
-                    {item.sub.map((subItem) => (
+                    {item.sub.map((subItem: any) => (
                       <Link
                         key={subItem.label}
                         href={subItem.path}
@@ -109,7 +103,7 @@ export function Header() {
         data-testid="nav-mobile"
       >
         <nav className="flex flex-col p-6 gap-1 overflow-y-auto h-full pb-16">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <div key={item.label}>
               <Link
                 href={item.path}
@@ -118,9 +112,9 @@ export function Header() {
               >
                 {item.label}
               </Link>
-              {item.sub.length > 0 && (
+              {item.sub && item.sub.length > 0 && (
                 <div className="pl-8 flex flex-col">
-                  {item.sub.map((subItem) => (
+                  {item.sub.map((subItem: any) => (
                     <Link
                       key={subItem.label}
                       href={subItem.path}

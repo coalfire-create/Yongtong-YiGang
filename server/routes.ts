@@ -287,6 +287,57 @@ async function ensureSchoolsTable() {
   }
 }
 
+async function ensureNavigationMenusTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS navigation_menus (
+        id SERIAL PRIMARY KEY,
+        label TEXT NOT NULL,
+        path TEXT NOT NULL,
+        parent_id INTEGER REFERENCES navigation_menus(id) ON DELETE CASCADE,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        is_visible BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT now()
+      )
+    `);
+
+    const { rows } = await pool.query("SELECT count(*) FROM navigation_menus");
+    if (parseInt(rows[0].count) === 0) {
+      const initialMenus = [
+        { label: "학원소개", path: "/about", sub: [{ label: "학원소개", path: "/about" }, { label: "오시는길", path: "/directions" }] },
+        { label: "고등관", path: "/high-school", sub: [{ label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }, { label: "요약 시간표", path: "/high-school/summary" }] },
+        { label: "중3", path: "/middle-school", sub: [] },
+        { label: "초/중등관", path: "/junior-school", sub: [{ label: "강의시간표", path: "/junior-school/schedule" }, { label: "프리미엄 학습 시스템", path: "/junior-school/premium-system" }] },
+        { label: "썸머", path: "/summer", sub: [] },
+        { label: "수학스쿨", path: "/math-school", sub: [] },
+        { label: "올빼미", path: "/owl", sub: [{ label: "독학관 안내", path: "/owl/info" }, { label: "이용 방법", path: "/owl/usage" }] },
+        { label: "선생님", path: "/teachers", sub: [] },
+        { label: "설명회", path: "/briefing", sub: [] },
+        { label: "입시", path: "/admissions", sub: [{ label: "입시 실적", path: "/admissions/results" }, { label: "합격 후기", path: "/admissions/reviews" }] },
+        { label: "공지사항", path: "/notices", sub: [] },
+      ];
+
+      for (let i = 0; i < initialMenus.length; i++) {
+        const item = initialMenus[i];
+        const res = await pool.query(
+          "INSERT INTO navigation_menus (label, path, display_order) VALUES ($1, $2, $3) RETURNING id",
+          [item.label, item.path, i]
+        );
+        const parentId = res.rows[0].id;
+        for (let j = 0; j < item.sub.length; j++) {
+          const sub = item.sub[j];
+          await pool.query(
+            "INSERT INTO navigation_menus (label, path, parent_id, display_order) VALUES ($1, $2, $3, $4)",
+            [sub.label, sub.path, parentId, j]
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to ensure navigation_menus table:", err);
+  }
+}
+
 async function ensureReservationsTable() {
   try {
     await pool.query(`
@@ -572,6 +623,7 @@ export async function registerRoutes(
   await seedFilterTabs();
   await ensureNoticesTable();
   await ensureSchoolsTable();
+  await ensureNavigationMenusTable();
   try {
     await pool.query(`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0`);
   } catch (err) {
@@ -1142,10 +1194,74 @@ export async function registerRoutes(
   });
 
   // ========== SCHOOLS (Logo Management) ==========
-  app.get("/api/schools", async (_req, res) => {
+  // ========== NAVIGATION (Menu Management) ==========
+  app.get("/api/navigation", async (_req, res) => {
     try {
-      const { rows } = await pool.query("SELECT * FROM schools ORDER BY name ASC");
+      const { rows } = await pool.query(
+        "SELECT * FROM navigation_menus WHERE is_visible = true ORDER BY parent_id ASC, display_order ASC"
+      );
+      // Group by parent_id
+      const menus = rows.filter(r => !r.parent_id);
+      menus.forEach(m => {
+        m.sub = rows.filter(r => r.parent_id === m.id);
+      });
+      res.json(menus);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/admin/navigation", requireAdmin, async (_req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM navigation_menus ORDER BY parent_id ASC, display_order ASC");
       res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/admin/navigation", requireAdmin, async (req, res) => {
+    const { label, path, parent_id, display_order, is_visible } = req.body;
+    try {
+      const { rows } = await pool.query(
+        "INSERT INTO navigation_menus (label, path, parent_id, display_order, is_visible) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [label, path, parent_id || null, display_order || 0, is_visible !== undefined ? is_visible : true]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/admin/navigation/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { label, path, parent_id, display_order, is_visible } = req.body;
+    try {
+      const { rows } = await pool.query(
+        `UPDATE navigation_menus 
+         SET label = COALESCE($1, label), 
+             path = COALESCE($2, path), 
+             parent_id = $3, 
+             display_order = COALESCE($4, display_order), 
+             is_visible = COALESCE($5, is_visible) 
+         WHERE id = $6 RETURNING *`,
+        [label, path, parent_id === undefined ? undefined : parent_id, display_order, is_visible, id]
+      );
+      // Fix: COALESCE doesn't handle parent_id well if we want to set it to null
+      if (parent_id !== undefined) {
+         await pool.query("UPDATE navigation_menus SET parent_id = $1 WHERE id = $2", [parent_id, id]);
+      }
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/admin/navigation/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+      await pool.query("DELETE FROM navigation_menus WHERE id = $1", [id]);
+      res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

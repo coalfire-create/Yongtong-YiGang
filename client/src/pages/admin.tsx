@@ -60,6 +60,16 @@ interface School {
   created_at: string;
 }
 
+interface NavigationMenu {
+  id: number;
+  label: string;
+  path: string;
+  parent_id: number | null;
+  display_order: number;
+  is_visible: boolean;
+  created_at: string;
+}
+
 interface Reservation {
   id: number;
   user_id: number;
@@ -4554,8 +4564,156 @@ function SchoolsTab() {
   );
 }
 
+function NavigationManager() {
+  const { data: menus = [], isLoading } = useQuery<NavigationMenu[]>({
+    queryKey: ["/api/admin/navigation"],
+  });
+
+  const { register, handleSubmit, reset, setValue } = useForm<Partial<NavigationMenu>>();
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: async (data: Partial<NavigationMenu>) => {
+      if (editingId) {
+        await apiRequest("PATCH", `/api/admin/navigation/${editingId}`, data);
+      } else {
+        await apiRequest("POST", "/api/admin/navigation", data);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/navigation"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/navigation"] });
+      reset();
+      setEditingId(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/admin/navigation/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/navigation"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/navigation"] });
+    },
+  });
+
+  const parentMenus = menus.filter(m => !m.parent_id);
+
+  if (isLoading) return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>;
+
+  return (
+    <div className="space-y-8">
+      <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
+        <h3 className="text-lg font-bold text-gray-900 mb-6">{editingId ? "메뉴 수정" : "새 메뉴 추가"}</h3>
+        <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-gray-500 uppercase">메뉴 이름</label>
+            <input {...register("label", { required: true })} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-600 focus:outline-none" placeholder="예: 학원소개" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-gray-500 uppercase">이동 경로 (Path)</label>
+            <input {...register("path", { required: true })} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-600 focus:outline-none" placeholder="예: /about" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-gray-500 uppercase">상위 메뉴</label>
+            <select {...register("parent_id")} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-600 focus:outline-none">
+              <option value="">없음 (상위 메뉴)</option>
+              {parentMenus.map(m => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-gray-500 uppercase">정렬 순서</label>
+            <input type="number" {...register("display_order")} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-600 focus:outline-none" />
+          </div>
+          <div className="md:col-span-2 flex items-center gap-4 pt-2">
+            <button type="submit" disabled={mutation.isPending} className="bg-red-600 text-white px-6 py-2 rounded font-bold text-sm hover:bg-red-700 transition-colors disabled:opacity-50">
+              {mutation.isPending ? "저장 중..." : editingId ? "수정 완료" : "추가하기"}
+            </button>
+            {editingId && (
+              <button type="button" onClick={() => { setEditingId(null); reset(); }} className="text-gray-500 text-sm font-bold hover:underline">취소</button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">메뉴 목록</h3>
+        </div>
+        <div className="divide-y divide-gray-100">
+          {parentMenus.map(parent => {
+            const children = menus.filter(m => m.parent_id === parent.id);
+            return (
+              <div key={parent.id} className="bg-white">
+                <div className="px-6 py-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 rounded bg-red-50 flex items-center justify-center font-bold text-[#7B2332] text-xs">
+                      {parent.display_order}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900">{parent.label}</h4>
+                      <p className="text-xs text-gray-400">{parent.path}</p>
+                    </div>
+                    {!parent.is_visible && <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-bold rounded">숨김</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => {
+                      setEditingId(parent.id);
+                      setValue("label", parent.label);
+                      setValue("path", parent.path);
+                      setValue("parent_id", parent.parent_id);
+                      setValue("display_order", parent.display_order);
+                    }} className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => {
+                      if (confirm("이 메뉴를 삭제하시겠습니까? 하위 메뉴도 함께 삭제됩니다.")) {
+                        deleteMutation.mutate(parent.id);
+                      }
+                    }} className="p-2 text-gray-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </div>
+                {children.length > 0 && (
+                  <div className="bg-gray-50/30 pl-12 divide-y divide-gray-100 border-t border-gray-100">
+                    {children.map(child => (
+                      <div key={child.id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="text-gray-300">└</span>
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700">{child.label}</h5>
+                            <p className="text-[10px] text-gray-400">{child.path}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => {
+                            setEditingId(child.id);
+                            setValue("label", child.label);
+                            setValue("path", child.path);
+                            setValue("parent_id", child.parent_id);
+                            setValue("display_order", child.display_order);
+                          }} className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => {
+                            if (confirm("이 하위 메뉴를 삭제하시겠습니까?")) {
+                              deleteMutation.mutate(child.id);
+                            }
+                          }} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices" | "summer" | "schools">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices" | "summer" | "schools" | "briefing-events" | "navigation">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -4752,21 +4910,24 @@ export default function AdminPage() {
             <Image className="w-4 h-4" />
             썸머 관리
           </button>
-          <button
-            onClick={() => setTab("schools")}
-            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
-              tab === "schools"
-                ? "bg-red-600 text-white"
-                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-            }`}
-            data-testid="tab-schools"
-          >
             <Calendar className="w-4 h-4" />
             학교 로고
           </button>
+          <button
+            onClick={() => setTab("navigation")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "navigation"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-navigation"
+          >
+            <ListOrdered className="w-4 h-4" />
+            메뉴 관리
+          </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : tab === "summer" ? <SummerTab /> : tab === "schools" ? <SchoolsTab /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : tab === "summer" ? <SummerTab /> : tab === "schools" ? <SchoolsTab /> : tab === "navigation" ? <NavigationManager /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );
