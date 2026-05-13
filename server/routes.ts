@@ -264,6 +264,24 @@ async function ensureSchoolsTable() {
         created_at TIMESTAMPTZ DEFAULT now()
       )
     `);
+
+    // Auto-populate default school logos
+    const defaultSchools = [
+      { name: "화성고", logo: "https://i.namu.wiki/i/No_NaYgYBWTmfTSTJknmWAA5c9wmQsVid6IU0DtWYjecwMe8C0zrEWAtrdHs_zmW9BU8NlvgN8jcyuO5bhMrJQ.svg" },
+      { name: "가온고", logo: "https://i.namu.wiki/i/_cvPJiqBOMdfNCNdIoY3FMDA6xuSGbD1sl5rOAS6p8uoZD8dZLwqriM2Rcb69MLOYCPehuCf3DcQ2oSLl2ntWg.svg" },
+      { name: "병점고", logo: "https://i.namu.wiki/i/Py9hY720Z3S3PQ0mDh0W1Opx5Tpymw0q6C5G9dB8INK5wT6riW18fL0GW0Gpxf7s4hKelA2kWuDKwCw1rq03mA.svg" },
+      { name: "영덕고", logo: "https://i.namu.wiki/i/PvvY7dFuA5gT7ostWUzsE3qhtaMKOT_skwrC8ddzF0ydMi75KC3Wv2A8IK1u1fv6vGhC0mkA44lK_MF7zZ1i3w.bmp" },
+      { name: "수원고", logo: "https://i.namu.wiki/i/SHh7bV4c8xzGKj4ofz86-gngBABM8Ywstv368h5v2tdCIDWWQ-03iPuq_XGJJq65zHQwQ6bcJGDJV4B_HiS1zg.webp" },
+      { name: "청명고", logo: "https://i.namu.wiki/i/jTHdZXBq637mSrkXdEDVSTXwpG3wiXVmL_vwIawPp6ivAOnZq9hBRcuw3SAw3h-LThmUayMOQ0dqWg-NjWtVZA.svg" },
+      { name: "고색고", logo: "https://i.namu.wiki/i/TV50pF-IwPdJ_jr86HIzthu7T9Nc27D71a-EOad3FQ_faVBtc1rImx7yV4twnnCRKXVqyDdJwNFYh2_LtjklbQ.svg" }
+    ];
+
+    for (const s of defaultSchools) {
+      await pool.query(
+        "INSERT INTO schools (name, logo_url) VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET logo_url = EXCLUDED.logo_url",
+        [s.name, s.logo]
+      );
+    }
   } catch (err) {
     console.error("Failed to ensure schools table:", err);
   }
