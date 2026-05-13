@@ -248,9 +248,9 @@ export default function MathSchool() {
                 className="rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 bg-white"
               >
                 <img 
-                  src={`/images/banner-${num}.png`} 
+                  src={`/images/posters/poster-${num}.jpg`} 
                   alt={`수학스쿨 포스터 ${num}`} 
-                  className="w-full h-auto"
+                  className="w-full h-auto block"
                 />
               </motion.div>
             ))}
