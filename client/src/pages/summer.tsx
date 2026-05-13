@@ -44,13 +44,13 @@ const HIGHLIGHTS = [
 ];
 
 const SCHEDULE = [
-  { time: "08:00 - 08:40", content: "등원 및 자습준비" },
-  { time: "08:40 - 09:00", content: "영단어 테스트 (총 18회)", highlight: true },
-  { time: "09:00 - 12:00", content: "수학 공수1/공수2 (기본·심화), 통과/국어(정규)" },
+  { time: "08:00 - 08:40", content: "등원 및 자습준비", type: "blue" },
+  { time: "08:40 - 09:00", content: "영단어 테스트 (총 18회)", type: "blue", label: "MUST TEST" },
+  { time: "09:00 - 12:00", content: "수학 공수1/공수2 (기본·심화), 통과/국어(정규)", type: "red" },
   { time: "12:00 - 13:30", content: "점심식사" },
-  { time: "13:30 - 17:00", content: "영어, 국어(정규), 물리(정규)" },
+  { time: "13:30 - 17:00", content: "영어, 국어(정규), 물리(정규)", type: "red" },
   { time: "17:00 - 18:00", content: "저녁식사" },
-  { time: "18:00 - 21:30", content: "자습 & 숙제 / 1:1 입시 컨설팅 / 수학 모의고사" },
+  { time: "18:00 - 21:30", content: "자습 & 숙제 / 1:1 입시 컨설팅 / 수학 모의고사", type: "blue" },
   { time: "21:30 - 22:00", content: "점검 및 하원" },
 ];
 
@@ -155,20 +155,22 @@ export default function Summer() {
               {SCHEDULE.map((s, idx) => (
                 <div 
                   key={idx} 
-                  className={`flex flex-col sm:flex-row items-center p-6 gap-4 sm:gap-10 border-b border-gray-100 last:border-0 ${s.highlight ? "bg-red-50/50" : ""}`}
+                  className={`flex flex-col sm:flex-row items-center p-6 gap-4 sm:gap-10 border-b border-gray-100 last:border-0 ${s.type === "red" ? "bg-red-50/50" : s.type === "blue" ? "bg-blue-50/50" : ""}`}
                 >
                   <div className="w-full sm:w-48 text-center sm:text-left">
-                    <span className={`text-sm font-black tracking-wider ${s.highlight ? "text-[#7B2332]" : "text-gray-400"}`}>
+                    <span className={`text-sm font-black tracking-wider ${s.type === "red" ? "text-[#7B2332]" : s.type === "blue" ? "text-blue-600" : "text-gray-400"}`}>
                       {s.time}
                     </span>
                   </div>
                   <div className="flex-1 text-center sm:text-left">
-                    <p className={`text-base font-bold ${s.highlight ? "text-[#7B2332]" : "text-gray-900"}`}>
+                    <p className={`text-base font-bold ${s.type === "red" ? "text-[#7B2332]" : s.type === "blue" ? "text-blue-600" : "text-gray-900"}`}>
                       {s.content}
                     </p>
                   </div>
-                  {s.highlight && (
-                    <div className="px-3 py-1 bg-[#7B2332] text-white text-[10px] font-bold rounded-full">MUST TEST</div>
+                  {s.label && (
+                    <div className={`px-3 py-1 ${s.type === "red" ? "bg-[#7B2332]" : "bg-blue-600"} text-white text-[10px] font-bold rounded-full`}>
+                      {s.label}
+                    </div>
                   )}
                 </div>
               ))}

@@ -1,6 +1,6 @@
 import { PageLayout } from "@/components/layout";
 import { Link, useLocation } from "wouter";
-import { Calendar, Users, type LucideIcon } from "lucide-react";
+import { Calendar, Users, TrendingUp, type LucideIcon } from "lucide-react";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 import { BannerCarousel } from "@/components/banner-carousel";
@@ -10,10 +10,10 @@ import { useQuery } from "@tanstack/react-query";
 const HIGH_SCHOOL_SUBJECTS = ["수학", "국어", "영어", "탐구"];
 
 const QUICK_MENU_ITEMS: { label: string; sub: string; icon: LucideIcon; path: string }[] = [
+  { label: "수학스쿨", sub: "성적을 만드는 시스템 +", icon: TrendingUp, path: "/math-school" },
   { label: "고1 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/high-school/schedule/g1" },
   { label: "고2 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/high-school/schedule/g2" },
   { label: "고3 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/high-school/schedule/g3" },
-  { label: "선생님 소개", sub: "자세히 보기 +", icon: Users, path: "/teachers" },
 ];
 
 const GRADE_TABS = [

@@ -27,12 +27,12 @@ const DEFAULT_SLIDES = [
 ];
 
 const QUICK_MENU_ITEMS = [
+  { label: "수학스쿨", sub: "성적을 만드는 시스템 +", icon: TrendingUp, path: "/math-school" },
   { label: "고등관", sub: "자세히 보기 +", icon: Landmark, path: "/high-school" },
   { label: "초/중등관", sub: "자세히 보기 +", icon: PenLine, path: "/junior-school" },
   { label: "올빼미 독학관", sub: "자세히 보기 +", icon: Brain, path: "/owl" },
-  { label: "선생님", sub: "자세히 보기 +", icon: Award, path: "/teachers" },
   { label: "설명회", sub: "자세히 보기 +", icon: Megaphone, path: "/briefing" },
-  { label: "입시실적", sub: "자세히 보기 +", icon: TrendingUp, path: "/admissions/results" },
+  { label: "입시실적", sub: "자세히 보기 +", icon: Award, path: "/admissions/results" },
 ];
 
 function HeroCarousel() {
