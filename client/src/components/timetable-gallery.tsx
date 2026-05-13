@@ -74,33 +74,41 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
     );
   }
 
-  const unionGrouped: Record<string, Timetable[]> = {};
-  const grouped: Record<string, Record<string, Timetable[]>> = {};
+  // Grouping logic
+  const subjectGroups: Record<string, {
+    union: Record<string, Timetable[]>;
+    school: Record<string, Timetable[]>;
+  }> = {};
+
   const ungrouped: Record<string, Timetable[]> = {};
 
   for (const tt of filtered) {
-    // Identify union classes (연합반)
     const isUnion = (tt.target_school || "").includes("연합") || (tt.class_name || "").includes("연합");
-    
-    if (isUnion) {
-      if (!unionGrouped[tt.teacher_name]) unionGrouped[tt.teacher_name] = [];
-      unionGrouped[tt.teacher_name].push(tt);
-      continue;
-    }
-
     const subj = tt.subject || "기타";
+
     if (SUBJECT_ORDER.includes(subj)) {
-      if (!grouped[subj]) grouped[subj] = {};
-      if (!grouped[subj][tt.teacher_name]) grouped[subj][tt.teacher_name] = [];
-      grouped[subj][tt.teacher_name].push(tt);
+      if (!subjectGroups[subj]) {
+        subjectGroups[subj] = { union: {}, school: {} };
+      }
+
+      if (isUnion) {
+        // Union classes are still grouped by teacher for clarity, or just as one "Union" group
+        const groupKey = tt.teacher_name || "연합반";
+        if (!subjectGroups[subj].union[groupKey]) subjectGroups[subj].union[groupKey] = [];
+        subjectGroups[subj].union[groupKey].push(tt);
+      } else {
+        const groupKey = tt.target_school || "기타 학교";
+        if (!subjectGroups[subj].school[groupKey]) subjectGroups[subj].school[groupKey] = [];
+        subjectGroups[subj].school[groupKey].push(tt);
+      }
     } else {
-      if (!ungrouped[tt.teacher_name]) ungrouped[tt.teacher_name] = [];
-      ungrouped[tt.teacher_name].push(tt);
+      const groupKey = tt.target_school || "기타";
+      if (!ungrouped[groupKey]) ungrouped[groupKey] = [];
+      ungrouped[groupKey].push(tt);
     }
   }
 
-  const orderedSubjects = SUBJECT_ORDER.filter((s) => grouped[s] && Object.keys(grouped[s]).length > 0);
-  const hasUnionClasses = Object.keys(unionGrouped).length > 0;
+  const orderedSubjects = SUBJECT_ORDER.filter((s) => subjectGroups[s]);
 
   const openReserve = (tt: Timetable) =>
     setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date });
@@ -137,37 +145,10 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
             </div>
           ) : (
             <div className="space-y-12">
-              {/* Union Classes (연합반) Section */}
-              {hasUnionClasses && (
-                <div className="flex flex-col md:flex-row gap-4 md:gap-8 border-b border-gray-100 pb-10 last:border-0 last:pb-0">
-                  <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
-                    <div className="w-1 h-6 bg-[#7B2332] hidden md:block" />
-                    <div className="px-2 py-1 bg-[#7B2332] rounded-sm md:w-full text-center">
-                      <h3 className="text-sm md:text-base font-black text-white leading-tight">
-                        연합반
-                      </h3>
-                    </div>
-                    <span className="text-xs text-gray-400 font-medium">({Object.values(unionGrouped).reduce((acc, curr) => acc + curr.length, 0)}개 반)</span>
-                  </div>
-                  <div className="flex-1 space-y-6">
-                    {Object.entries(unionGrouped).map(([teacherName, tts]) => (
-                      <TeacherGroupCard
-                        key={teacherName}
-                        teacherName={teacherName}
-                        timetables={tts}
-                        expandedId={expandedId}
-                        onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
-                        onReserve={openReserve}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Standard Subject Groups */}
               {orderedSubjects.map((subj) => {
-                const teacherGroups = Object.entries(grouped[subj]);
-                const totalClasses = Object.values(grouped[subj]).reduce((acc, curr) => acc + curr.length, 0);
+                const { union, school } = subjectGroups[subj];
+                const totalClasses = Object.values(union).flat().length + Object.values(school).flat().length;
+
                 return (
                   <div key={subj} className="flex flex-col md:flex-row gap-4 md:gap-8 border-b border-gray-100 pb-10 last:border-0 last:pb-0">
                     <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
@@ -177,17 +158,54 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                       </h3>
                       <span className="text-xs text-gray-400 font-medium">({totalClasses}개 반)</span>
                     </div>
-                    <div className="flex-1 space-y-6">
-                      {teacherGroups.map(([teacherName, tts]) => (
-                        <TeacherGroupCard
-                          key={teacherName}
-                          teacherName={teacherName}
-                          timetables={tts}
-                          expandedId={expandedId}
-                          onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
-                          onReserve={openReserve}
-                        />
-                      ))}
+                    <div className="flex-1 space-y-10">
+                      {/* Union Section for this subject */}
+                      {Object.keys(union).length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <div className="px-2 py-0.5 bg-[#7B2332] text-[10px] font-bold text-white rounded-sm">연합반</div>
+                            <div className="h-px flex-1 bg-gray-100" />
+                          </div>
+                          <div className="space-y-6">
+                            {Object.entries(union).map(([key, tts]) => (
+                              <GroupCard
+                                key={key}
+                                title={key}
+                                timetables={tts}
+                                expandedId={expandedId}
+                                onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
+                                onReserve={openReserve}
+                                type="teacher"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* School Section for this subject */}
+                      {Object.keys(school).length > 0 && (
+                        <div className="space-y-4">
+                          {Object.keys(union).length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div className="px-2 py-0.5 bg-gray-600 text-[10px] font-bold text-white rounded-sm">학교별</div>
+                              <div className="h-px flex-1 bg-gray-100" />
+                            </div>
+                          )}
+                          <div className="space-y-6">
+                            {Object.entries(school).map(([key, tts]) => (
+                              <GroupCard
+                                key={key}
+                                title={key}
+                                timetables={tts}
+                                expandedId={expandedId}
+                                onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
+                                onReserve={openReserve}
+                                type="school"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -199,17 +217,18 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                   <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
                     <div className="w-1 h-6 bg-gray-400 hidden md:block" />
                     <h3 className="text-xl font-extrabold text-gray-900 leading-tight">기타</h3>
-                    <span className="text-xs text-gray-400 font-medium">({Object.values(ungrouped).reduce((acc, curr) => acc + curr.length, 0)}개 반)</span>
+                    <span className="text-xs text-gray-400 font-medium">({Object.values(ungrouped).flat().length}개 반)</span>
                   </div>
                   <div className="flex-1 space-y-6">
-                    {Object.entries(ungrouped).map(([teacherName, tts]) => (
-                      <TeacherGroupCard
-                        key={teacherName}
-                        teacherName={teacherName}
+                    {Object.entries(ungrouped).map(([key, tts]) => (
+                      <GroupCard
+                        key={key}
+                        title={key}
                         timetables={tts}
                         expandedId={expandedId}
                         onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                         onReserve={openReserve}
+                        type="school"
                       />
                     ))}
                   </div>
@@ -234,40 +253,56 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   );
 }
 
-function TeacherGroupCard({
-  teacherName,
+function GroupCard({
+  title,
   timetables,
   expandedId,
   onToggle,
   onReserve,
+  type,
 }: {
-  teacherName: string;
+  title: string;
   timetables: Timetable[];
   expandedId: number | null;
   onToggle: (id: number) => void;
   onReserve: (tt: Timetable) => void;
+  type: "teacher" | "school";
 }) {
   const firstTt = timetables[0];
 
   return (
     <div className="bg-white border border-gray-200 overflow-hidden shadow-sm">
-      {/* Teacher Header */}
+      {/* Header */}
       <div className="p-4 sm:p-5 border-b border-gray-100 bg-gray-50/50 flex items-center gap-4">
-        {firstTt.teacher_image_url ? (
-          <img
-            src={firstTt.teacher_image_url}
-            alt={teacherName}
-            className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
-          />
+        {type === "teacher" ? (
+          <>
+            {firstTt.teacher_image_url ? (
+              <img
+                src={firstTt.teacher_image_url}
+                alt={title}
+                className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                <User className="w-6 h-6 text-gray-400" />
+              </div>
+            )}
+            <div>
+              <h4 className="text-base font-bold text-gray-900">{title} 선생님</h4>
+              <p className="text-xs text-[#7B2332] font-medium">{firstTt.subject}</p>
+            </div>
+          </>
         ) : (
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-            <User className="w-6 h-6 text-gray-400" />
-          </div>
+          <>
+            <div className="w-12 h-12 rounded bg-[#7B2332]/5 flex items-center justify-center border border-[#7B2332]/10">
+              <GraduationCap className="w-6 h-6 text-[#7B2332]" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-gray-900">{title}</h4>
+              <p className="text-xs text-gray-500 font-medium">{firstTt.subject} 학교별 반구성</p>
+            </div>
+          </>
         )}
-        <div>
-          <h4 className="text-base font-bold text-gray-900">{teacherName} 선생님</h4>
-          <p className="text-xs text-[#7B2332] font-medium">{firstTt.subject}</p>
-        </div>
       </div>
 
       {/* Class List */}
@@ -281,7 +316,11 @@ function TeacherGroupCard({
                   <h3 className="text-sm sm:text-base font-bold text-gray-900">{tt.class_name}</h3>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-500">
-                  {tt.target_school && (
+                  <span className="flex items-center gap-1 font-bold text-[#7B2332]">
+                    <User className="w-3.5 h-3.5" />
+                    {tt.teacher_name} 선생님
+                  </span>
+                  {tt.target_school && type === "teacher" && (
                     <span className="flex items-center gap-1">
                       <GraduationCap className="w-3.5 h-3.5" />
                       {tt.target_school}
