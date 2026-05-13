@@ -392,11 +392,13 @@ async function ensureSummerImagesTable() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS summer_images (
         id SERIAL PRIMARY KEY,
+        teacher_id INTEGER,
         image_url TEXT NOT NULL,
         display_order INTEGER NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    await pool.query(`ALTER TABLE summer_images ADD COLUMN IF NOT EXISTS teacher_id INTEGER`);
   } catch (err) {
     console.error("Failed to ensure summer_images table:", err);
   }
@@ -627,9 +629,12 @@ export async function registerRoutes(
   // ========== SUMMER IMAGES ==========
   app.get("/api/summer-images", async (_req, res) => {
     try {
-      const result = await pool.query(
-        "SELECT * FROM summer_images ORDER BY display_order ASC, created_at DESC"
-      );
+      const result = await pool.query(`
+        SELECT s.*, t.name as teacher_name 
+        FROM summer_images s
+        LEFT JOIN teachers t ON s.teacher_id = t.id
+        ORDER BY s.display_order ASC, s.created_at DESC
+      `);
       res.json(result.rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -637,6 +642,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/summer-images", requireAdmin, upload.single("image"), async (req, res) => {
+    const { teacher_id } = req.body;
     if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
 
     const ext = path.extname(req.file.originalname).toLowerCase();
@@ -650,12 +656,13 @@ export async function registerRoutes(
 
     try {
       const { rows: maxOrderRows } = await pool.query(
-        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_images"
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_images WHERE COALESCE(teacher_id, 0) = $1",
+        [teacher_id ? parseInt(teacher_id) : 0]
       );
       const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
       const { rows } = await pool.query(
-        "INSERT INTO summer_images (image_url, display_order) VALUES ($1, $2) RETURNING *",
-        [urlData.publicUrl, nextOrder]
+        "INSERT INTO summer_images (image_url, display_order, teacher_id) VALUES ($1, $2, $3) RETURNING *",
+        [urlData.publicUrl, nextOrder, teacher_id ? parseInt(teacher_id) : null]
       );
       res.json(rows[0]);
     } catch (err: any) {
@@ -1279,12 +1286,12 @@ export async function registerRoutes(
         );
         if (ttRows[0]) {
           className = ttRows[0].class_name || ttRows[0].target_school || "";
-          
+
           // Use 'subject' if available, otherwise fallback to 'category'
           if (!fetchedSubject || fetchedSubject.trim() === "") {
             fetchedSubject = ttRows[0].subject || ttRows[0].category || "";
           }
-          
+
           // Use 'teacher_name' if available, otherwise fallback to 'teacher_real_name' from JOIN
           if (!fetchedTeacher || fetchedTeacher.trim() === "") {
             fetchedTeacher = ttRows[0].teacher_name || ttRows[0].teacher_real_name || "";
@@ -1837,16 +1844,6 @@ export async function registerRoutes(
         console.error("[SheetsSync Error] 문자수신:", err);
       });
 
-      supabase.from("sms_subscriptions").insert({
-        name: name || "",
-        phone: cleaned,
-        school: school || "",
-        grade: grade || "",
-      }).then(({ error }) => {
-        if (error) console.error("[Supabase] 문자수신 저장 실패:", error.message);
-        else console.log("[Supabase] 문자수신 저장 성공");
-      });
-
       res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -1891,16 +1888,6 @@ export async function registerRoutes(
 
       appendLevelTestRow({ name, phone: cleaned, school: school || "", grade: grade || "" }).catch((err) => {
         console.error("[SheetsSync Error] 수학레벨테스트:", err);
-      });
-
-      supabase.from("level_test_registrations").insert({
-        name,
-        phone: cleaned,
-        school: school || "",
-        grade: grade || "",
-      }).then(({ error }) => {
-        if (error) console.error("[Supabase] 레벨테스트 저장 실패:", error.message);
-        else console.log("[Supabase] 레벨테스트 저장 성공");
       });
 
       res.json(rows[0]);

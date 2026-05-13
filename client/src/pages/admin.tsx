@@ -2369,6 +2369,8 @@ interface SmsSubscription {
   id: number;
   name: string;
   phone: string;
+  school: string;
+  grade: string;
   created_at: string;
 }
 
@@ -2401,6 +2403,8 @@ function SmsSubscriptionsTab() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">이름</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">학교</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">학년</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">전화번호</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">신청일</th>
                 <th className="w-12"></th>
@@ -2410,6 +2414,8 @@ function SmsSubscriptionsTab() {
               {subs.map((sub) => (
                 <tr key={sub.id} data-testid={`row-sms-${sub.id}`}>
                   <td className="px-4 py-3 text-gray-900">{sub.name || "-"}</td>
+                  <td className="px-4 py-3 text-gray-900">{sub.school || "-"}</td>
+                  <td className="px-4 py-3 text-gray-900">{sub.grade || "-"}</td>
                   <td className="px-4 py-3 text-gray-900 font-mono">{sub.phone}</td>
                   <td className="px-4 py-3 text-gray-500">{new Date(sub.created_at).toLocaleDateString("ko-KR")}</td>
                   <td className="px-2 py-3">
@@ -3378,9 +3384,14 @@ function SummaryTimetablesTab() {
 }
 
 function SummerTab() {
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>("0");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: teachers = [] } = useQuery<Teacher[]>({
+    queryKey: ["/api/teachers"],
+  });
 
   const { data: items = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/summer-images"],
@@ -3450,14 +3461,21 @@ function SummerTab() {
     },
   });
 
-  function handleDragEndSummer(event: DragEndEvent) {
+  function handleDragEndSummer(event: DragEndEvent, groupItems: any[]) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIdx = localItems.findIndex(t => t.id === Number(active.id));
-    const newIdx = localItems.findIndex(t => t.id === Number(over.id));
+    const oldIdx = groupItems.findIndex(t => t.id === Number(active.id));
+    const newIdx = groupItems.findIndex(t => t.id === Number(over.id));
     if (oldIdx < 0 || newIdx < 0) return;
-    const newList = arrayMove(localItems, oldIdx, newIdx);
-    setLocalItems(newList);
+    const newList = arrayMove(groupItems, oldIdx, newIdx);
+    
+    // Create a new full list by updating only the relevant group
+    const updatedFullList = localItems.map(item => {
+      const movedItem = newList.find(n => n.id === item.id);
+      return movedItem || item;
+    });
+    
+    setLocalItems(updatedFullList);
     reorderMutation.mutate(newList.map(t => t.id));
   }
 
@@ -3466,81 +3484,134 @@ function SummerTab() {
     imageFiles.forEach((file) => {
       const formData = new FormData();
       formData.append("image", file);
+      if (selectedTeacherId !== "0") {
+        formData.append("teacher_id", selectedTeacherId);
+      }
       addMutation.mutate(formData);
     });
   };
+
+  // Group items by teacher
+  const groupedItems: Record<string, any[]> = localItems.reduce((acc: any, item: any) => {
+    const key = item.teacher_id || "0";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+
+  // Get unique teacher IDs that have images, plus "0" for general
+  const sortedGroupKeys = Object.keys(groupedItems).sort((a, b) => {
+    if (a === "0") return -1;
+    if (b === "0") return 1;
+    return 0;
+  });
 
   return (
     <div className="space-y-6" data-testid="section-summer-images">
       <div className="bg-white border border-gray-200 p-6">
         <h3 className="text-sm font-bold text-gray-900 mb-4">썸머스쿨 이미지 등록</h3>
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이미지 선택 (여러 장 가능)</label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                if (files.length > 0) {
-                  setImageFiles(files);
-                  setImagePreviews(files.map((f) => URL.createObjectURL(f)));
-                }
-              }}
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-              data-testid="input-summer-image"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">선생님 선택</label>
+              <select
+                value={selectedTeacherId}
+                onChange={(e) => setSelectedTeacherId(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
+              >
+                <option value="0">공통 (선생님 미지정)</option>
+                {teachers.map(t => (
+                  <option key={t.id} value={t.id}>{t.name} ({t.subject})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 선택 (여러 장 가능)</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) {
+                    setImageFiles(files);
+                    setImagePreviews(files.map((f) => URL.createObjectURL(f)));
+                  }
+                }}
+                className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                data-testid="input-summer-image"
+              />
+            </div>
           </div>
+
           {imagePreviews.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {imagePreviews.map((preview, idx) => (
-                <div key={idx} className="relative">
-                  <img src={preview} alt={`미리보기 ${idx + 1}`} className="w-full border border-gray-200" />
-                  <span className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">{idx + 1}</span>
+                <div key={idx} className="relative aspect-square border border-gray-200 rounded-lg overflow-hidden">
+                  <img src={preview} alt={`미리보기 ${idx + 1}`} className="w-full h-full object-cover" />
+                  <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">{idx + 1}</span>
                 </div>
               ))}
             </div>
           )}
+          
           <button
             onClick={handleUpload}
             disabled={imageFiles.length === 0 || addMutation.isPending}
-            className="px-6 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+            className="w-full sm:w-auto px-8 py-2.5 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
             data-testid="button-add-summer"
           >
             {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            {imageFiles.length > 1 ? `${imageFiles.length}개 등록` : "등록"}
+            {imageFiles.length > 1 ? `${imageFiles.length}개 일괄 등록` : "이미지 등록"}
           </button>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-gray-900">등록된 썸머스쿨 이미지 ({localItems.length})</h3>
-          <p className="text-[11px] text-gray-400">≡ 아이콘을 잡아 드래그하여 순서 변경</p>
-        </div>
-
+      <div className="space-y-4">
         {isLoading ? (
-          <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-gray-300" /></div>
+          <div className="flex justify-center py-20 bg-white border border-gray-200 rounded-xl">
+            <Loader2 className="w-8 h-8 animate-spin text-gray-200" />
+          </div>
         ) : localItems.length === 0 ? (
-          <p className="text-center py-10 text-gray-400 text-sm">등록된 이미지가 없습니다.</p>
+          <div className="text-center py-20 bg-white border border-gray-200 rounded-xl">
+            <p className="text-gray-400 text-sm">등록된 이미지가 없습니다.</p>
+          </div>
         ) : (
-          <DndContext sensors={sumSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndSummer}>
-            <SortableContext items={localItems.map(t => t.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-3">
-                {localItems.map((item) => (
-                  <SortableSummaryCard
-                    key={item.id}
-                    item={item}
-                    onDelete={(id) => {
-                      if (confirm("이 이미지를 삭제하시겠습니까?")) deleteMutation.mutate(id);
-                    }}
-                  />
-                ))}
+          sortedGroupKeys.map(key => {
+            const groupItems = groupedItems[key];
+            const teacherName = key === "0" ? "공통" : teachers.find(t => t.id === Number(key))?.name || "알 수 없는 선생님";
+            
+            return (
+              <div key={key} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <div className="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${key === "0" ? "bg-gray-400" : "bg-red-500"}`} />
+                    {teacherName} ({groupItems.length})
+                  </h4>
+                  <p className="text-[10px] text-gray-400 font-medium">드래그하여 순서 변경</p>
+                </div>
+                
+                <div className="p-5">
+                  <DndContext sensors={sumSensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEndSummer(e, groupItems)}>
+                    <SortableContext items={groupItems.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                      <div className="grid grid-cols-1 gap-3">
+                        {groupItems.map((item) => (
+                          <SortableSummaryCard
+                            key={item.id}
+                            item={item}
+                            onDelete={(id) => {
+                              if (confirm("이 이미지를 삭제하시겠습니까?")) deleteMutation.mutate(id);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                </div>
               </div>
-            </SortableContext>
-          </DndContext>
+            );
+          })
         )}
       </div>
     </div>
