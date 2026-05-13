@@ -733,7 +733,7 @@ const CATEGORY_FILTER_OPTIONS: Record<string, string[]> = {
 };
 
 function TimetablesTab() {
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<{
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<{
     category: string;
     subject: string;
     target_school: string;
@@ -1288,7 +1288,11 @@ function TimetablesTab() {
               </div>
               <div>
                 <label className={labelCls}>목차 (필터)</label>
-                <select {...editRegister("target_school")} className={inputCls}>
+                <select
+                  className={inputCls}
+                  value={editWatch("target_school")}
+                  onChange={(e) => editSetValue("target_school", e.target.value)}
+                >
                   <option value="">직접 입력 / 선택 안함</option>
                   {/* Category predefined options */}
                   {CATEGORY_FILTER_OPTIONS[editCategory]?.map((opt) => (
@@ -1397,16 +1401,6 @@ function TimetablesTab() {
               {editDetailImageDeleted && !editDetailImageFile && (
                 <p className="text-xs text-red-500 mt-1">저장 시 사진이 삭제됩니다.</p>
               )}
-            </div>
-            <div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...editRegister("is_visible")}
-                  className="w-4 h-4 rounded border-gray-300 text-[#7B2332] focus:ring-[#7B2332]"
-                />
-                <span className="text-sm font-medium text-gray-700">홈페이지에 노출</span>
-              </label>
             </div>
             <div className="flex items-center gap-2 pt-1">
               <button type="submit" disabled={updateMutation.isPending}
@@ -1618,7 +1612,12 @@ function TimetablesTab() {
               </div>
               <div>
                 <label className={labelCls}>목차 (필터)</label>
-                <select {...register("target_school")} className={inputCls} data-testid="select-timetable-school">
+                <select
+                  className={inputCls}
+                  data-testid="select-timetable-school"
+                  value={watch("target_school")}
+                  onChange={(e) => setValue("target_school", e.target.value)}
+                >
                   <option value="">직접 입력 / 선택 안함</option>
                   {/* Category predefined options */}
                   {CATEGORY_FILTER_OPTIONS[selectedCategory]?.map((opt) => (
