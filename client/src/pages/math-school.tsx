@@ -1,6 +1,7 @@
 import { PageLayout } from "@/components/layout";
 import { motion } from "framer-motion";
-import { CheckCircle2, Trophy, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, Star, TrendingUp, ShieldCheck } from "lucide-react";
+import { Link } from "wouter";
+import { CheckCircle2, Trophy, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, Star, TrendingUp, ShieldCheck, ArrowRight } from "lucide-react";
 
 const HIGHLIGHTS = [
   {
@@ -252,8 +253,8 @@ export default function MathSchool() {
                     >
                       {/* Teacher Photo */}
                       {cls.image && (
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-gray-100 bg-gray-50">
-                          <img src={cls.image} alt={cls.teacher} className="w-full h-full object-cover" />
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-gray-100 bg-gray-50 p-1">
+                          <img src={cls.image} alt={cls.teacher} className="w-full h-full object-contain" />
                         </div>
                       )}
                       
@@ -296,6 +297,18 @@ export default function MathSchool() {
               수학은 제대로 된 훈련이 결과를 만듭니다.<br />
               2년의 결과가 증명합니다. 이제는 당신의 차례입니다.
             </p>
+            <div className="pt-4">
+              <Link href="/briefing">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-8 py-4 bg-yellow-400 text-gray-900 text-lg font-black rounded-full shadow-xl shadow-yellow-400/20 flex items-center gap-2 mx-auto hover:bg-yellow-300 transition-colors"
+                >
+                  수학 레벨테스트 신청하기
+                  <ArrowRight className="w-5 h-5" />
+                </motion.button>
+              </Link>
+            </div>
           </div>
           
           <div className="relative flex flex-col sm:flex-row justify-center items-center gap-12 pt-8">
