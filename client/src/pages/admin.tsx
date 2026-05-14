@@ -832,6 +832,10 @@ function TimetablesTab() {
     queryKey: ["/api/teachers"],
   });
 
+  const { data: schools = EMPTY_SCHOOLS } = useQuery<School[]>({
+    queryKey: ["/api/schools"],
+  });
+
   const { data: timetablePhotos = [] } = useQuery<{ teacher_id: number; teacher_name: string; image_url: string }[]>({
     queryKey: ["/api/teacher-timetable-photos"],
   });
