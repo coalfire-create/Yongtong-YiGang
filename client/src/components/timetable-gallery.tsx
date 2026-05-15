@@ -282,6 +282,49 @@ function GroupCard({
 }) {
   const firstTt = timetables[0];
 
+  // Merge timetables with the same base name (ignoring parenthetical suffixes like (일요반))
+  const mergedTimetables: Timetable[] = [];
+  const classMap = new Map<string, Timetable>();
+
+  timetables.forEach(tt => {
+    // Extract base name, e.g. "가온고2 수학 내신반" from "가온고2 수학 내신반 (일요반)"
+    const baseName = tt.class_name.split(" (")[0].trim();
+    
+    if (classMap.has(baseName)) {
+      const existing = classMap.get(baseName)!;
+      // Combine class times
+      if (tt.class_time && !existing.class_time.includes(tt.class_time)) {
+        existing.class_time = `${existing.class_time} / ${tt.class_time}`;
+      }
+      
+      // Combine teachers
+      const existingTeacherNames = existing.teacher_name.split(", ").map(n => n.trim());
+      if (tt.teacher_name && !existingTeacherNames.includes(tt.teacher_name)) {
+        existing.teacher_name = `${existing.teacher_name}, ${tt.teacher_name}`;
+      }
+
+      // Combine teacher IDs
+      const tIds = new Set(existing.teacher_ids || []);
+      if (tt.teacher_id) tIds.add(tt.teacher_id);
+      if (tt.teacher_ids) tt.teacher_ids.forEach(id => tIds.add(id));
+      existing.teacher_ids = Array.from(tIds);
+
+      // Prefer the entry with detail image or description
+      if (!existing.detail_image_url && tt.detail_image_url) existing.detail_image_url = tt.detail_image_url;
+      if (!existing.description && tt.description) existing.description = tt.description;
+      
+    } else {
+      const copy = { ...tt, class_name: baseName };
+      // Ensure teacher_ids is an array even if it was just teacher_id
+      const tIds = new Set(copy.teacher_ids || []);
+      if (copy.teacher_id) tIds.add(copy.teacher_id);
+      copy.teacher_ids = Array.from(tIds);
+      
+      classMap.set(baseName, copy);
+      mergedTimetables.push(copy);
+    }
+  });
+
   return (
     <div className="bg-white border border-gray-200 overflow-hidden shadow-sm">
       {/* Header */}
@@ -339,7 +382,7 @@ function GroupCard({
 
       {/* Class List */}
       <div className="divide-y divide-gray-100">
-        {timetables.map((tt) => (
+        {mergedTimetables.map((tt) => (
           <div key={tt.id} className="p-4 sm:p-5 hover:bg-gray-50/30 transition-colors">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-1 min-w-0 space-y-2">
