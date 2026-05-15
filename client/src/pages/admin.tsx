@@ -50,6 +50,7 @@ interface Timetable {
   subject: string;
   is_visible: boolean;
   is_union: boolean;
+  teacher_ids: number[] | null;
   created_at: string;
 }
 
@@ -751,9 +752,14 @@ function TimetablesTab() {
     class_time: string;
     start_date: string;
     teacher_id: string;
+    teacher_ids: string[];
     description: string;
     is_union: boolean;
-  }>();
+  }>({
+    defaultValues: {
+      teacher_ids: []
+    }
+  });
   const selectedCategory = watch("category");
   const [teacherImageFile, setTeacherImageFile] = useState<File | null>(null);
   const [teacherImagePreview, setTeacherImagePreview] = useState<string>("");
@@ -792,10 +798,15 @@ function TimetablesTab() {
     class_time: string;
     start_date: string;
     teacher_id: string;
+    teacher_ids: string[];
     description: string;
     is_visible: boolean;
     is_union: boolean;
-  }>();
+  }>({
+    defaultValues: {
+      teacher_ids: []
+    }
+  });
   const editCategory = editWatch("category");
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -1048,6 +1059,7 @@ function TimetablesTab() {
       class_time: tt.class_time || "",
       start_date: tt.start_date || "",
       teacher_id: tt.teacher_id ? String(tt.teacher_id) : "",
+      teacher_ids: tt.teacher_ids ? tt.teacher_ids.map(String) : (tt.teacher_id ? [String(tt.teacher_id)] : []),
       description: tt.description || "",
       is_visible: tt.is_visible ?? true,
       is_union: tt.is_union ?? false,
@@ -1066,10 +1078,15 @@ function TimetablesTab() {
 
   const onEditSubmit = (data: any) => {
     if (!editingId) return;
-    const teacher = teachers.find((t) => String(t.id) === data.teacher_id);
+    const selectedTeacherIds = Array.isArray(data.teacher_ids) ? data.teacher_ids : [];
+    const primaryTeacherId = selectedTeacherIds[0] || null;
+    const selectedTeachers = teachers.filter((t) => selectedTeacherIds.includes(String(t.id)));
+    const combinedNames = selectedTeachers.map(t => t.name).join(", ");
+    
     const formData = new FormData();
-    if (data.teacher_id) formData.append("teacher_id", data.teacher_id);
-    formData.append("teacher_name", teacher?.name || data.teacher_id || "");
+    formData.append("teacher_id", primaryTeacherId || "");
+    formData.append("teacher_ids", selectedTeacherIds.join(","));
+    formData.append("teacher_name", combinedNames || "");
     formData.append("category", data.category);
     formData.append("subject", data.subject || "");
     formData.append("target_school", data.target_school || "");
@@ -1097,10 +1114,15 @@ function TimetablesTab() {
   };
 
   const onSubmit = (data: any) => {
-    const teacher = teachers.find((t) => String(t.id) === data.teacher_id);
+    const selectedTeacherIds = Array.isArray(data.teacher_ids) ? data.teacher_ids : [];
+    const primaryTeacherId = selectedTeacherIds[0] || null;
+    const selectedTeachers = teachers.filter((t) => selectedTeacherIds.includes(String(t.id)));
+    const combinedNames = selectedTeachers.map(t => t.name).join(", ");
+
     const formData = new FormData();
-    if (data.teacher_id) formData.append("teacher_id", data.teacher_id);
-    formData.append("teacher_name", teacher?.name || "");
+    formData.append("teacher_id", primaryTeacherId || "");
+    formData.append("teacher_ids", selectedTeacherIds.join(","));
+    formData.append("teacher_name", combinedNames || "");
     formData.append("category", data.category);
     formData.append("subject", data.subject || "");
     formData.append("target_school", data.target_school || "");
@@ -1147,13 +1169,36 @@ function TimetablesTab() {
   // Group by teacher name (preserving display_order within each group)
   const teacherGroupMap = new Map<string, { teacherName: string; photoUrl: string; items: { tt: Timetable; idx: number }[] }>();
   filteredTimetables.forEach((tt, idx) => {
-    const key = tt.teacher_name?.trim() || "담당 없음";
-    if (!teacherGroupMap.has(key)) {
-      teacherGroupMap.set(key, { teacherName: key, photoUrl: tt.teacher_image_url || "", items: [] });
+    // Collect all unique teacher IDs for this timetable
+    const tIds = new Set<number>();
+    if (tt.teacher_id) tIds.add(tt.teacher_id);
+    if (tt.teacher_ids && Array.isArray(tt.teacher_ids)) {
+      tt.teacher_ids.forEach(id => tIds.add(id));
     }
-    teacherGroupMap.get(key)!.items.push({ tt, idx });
+    
+    if (tIds.size === 0) {
+      const key = tt.teacher_name?.trim() || "담당 없음";
+      if (!teacherGroupMap.has(key)) {
+        teacherGroupMap.set(key, { teacherName: key, photoUrl: tt.teacher_image_url || "", items: [] });
+      }
+      teacherGroupMap.get(key)!.items.push({ tt, idx });
+    } else {
+      tIds.forEach(tId => {
+        const teacher = teachers.find(t => t.id === tId);
+        const name = teacher?.name || "알 수 없음";
+        const photo = teacher?.image_url || "";
+        if (!teacherGroupMap.has(name)) {
+          teacherGroupMap.set(name, { teacherName: name, photoUrl: photo, items: [] });
+        }
+        teacherGroupMap.get(name)!.items.push({ tt, idx });
+      });
+    }
   });
-  const groupedByTeacher = [...teacherGroupMap.values()];
+  const groupedByTeacher = [...teacherGroupMap.values()].sort((a, b) => {
+    if (a.teacherName === "담당 없음") return 1;
+    if (b.teacherName === "담당 없음") return -1;
+    return a.teacherName.localeCompare(b.teacherName);
+  });
 
   const inputCls = "w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#7B2332] bg-white rounded";
   const labelCls = "block text-xs font-semibold text-gray-600 mb-1";
@@ -1237,6 +1282,14 @@ function TimetablesTab() {
               <span className="text-[10px] bg-blue-100 text-blue-600 px-1 py-0.5 rounded font-medium">자동</span>
             )}
           </div>
+          {tt.teacher_ids && tt.teacher_ids.length > 1 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {tt.teacher_ids.map(tId => {
+                const t = teachers.find(teacher => teacher.id === tId);
+                return <span key={tId} className="text-[10px] bg-gray-50 text-gray-500 px-1 py-0.5 rounded border border-gray-200 leading-none">{t?.name}</span>;
+              })}
+            </div>
+          )}
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {tt.target_school && <span className="text-xs text-gray-400">{tt.target_school}</span>}
             {tt.class_time && <span className="text-xs text-gray-400">{tt.class_time}</span>}
@@ -1293,12 +1346,21 @@ function TimetablesTab() {
                   {TIMETABLE_SUBJECT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <div>
-                <label className={labelCls}>담당 선생님</label>
-                <select {...editRegister("teacher_id")} className={inputCls}>
-                  <option value="">선택 안함</option>
-                  {teachers.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.subject})</option>)}
-                </select>
+              <div className="col-span-2 sm:col-span-2">
+                <label className={labelCls}>담당 선생님 (다중 선택 가능)</label>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1 p-2 border border-gray-300 rounded bg-white min-h-[40px] max-h-[120px] overflow-y-auto">
+                  {teachers.map((t) => (
+                    <label key={t.id} className="flex items-center gap-1.5 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        value={String(t.id)}
+                        {...editRegister("teacher_ids")}
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#7B2332] focus:ring-[#7B2332]"
+                      />
+                      <span className="text-xs text-gray-700 truncate">{t.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className={labelCls}>목차 (필터)</label>
@@ -1617,12 +1679,21 @@ function TimetablesTab() {
                 </select>
                 {errors.subject && <p className="text-xs text-red-500 mt-1">{errors.subject.message}</p>}
               </div>
-              <div>
-                <label className={labelCls}>담당 선생님</label>
-                <select {...register("teacher_id")} className={inputCls} defaultValue="" data-testid="select-timetable-teacher">
-                  <option value="">선택 안함</option>
-                  {teachers.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.subject})</option>)}
-                </select>
+              <div className="col-span-2 sm:col-span-2">
+                <label className={labelCls}>담당 선생님 (다중 선택 가능)</label>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1 p-2 border border-gray-300 rounded bg-white min-h-[40px] max-h-[120px] overflow-y-auto">
+                  {teachers.map((t) => (
+                    <label key={t.id} className="flex items-center gap-1.5 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        value={String(t.id)}
+                        {...register("teacher_ids")}
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#7B2332] focus:ring-[#7B2332]"
+                      />
+                      <span className="text-xs text-gray-700 truncate">{t.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className={labelCls}>목차 (필터)</label>

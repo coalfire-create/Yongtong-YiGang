@@ -18,6 +18,7 @@ interface Timetable {
   description: string;
   subject: string;
   is_union: boolean;
+  teacher_ids: number[] | null;
   school_logo_url: string | null;
   created_at: string;
 }
@@ -49,6 +50,15 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json();
     },
+  });
+ 
+  const { data: teachers = [] } = useQuery<{ id: number; name: string; image_url: string }[]>({
+    queryKey: ["/api/teachers"],
+    queryFn: async () => {
+      const res = await fetch("/api/teachers");
+      if (!res.ok) throw new Error("Failed to fetch teachers");
+      return res.json();
+    }
   });
 
   const activeTab = filterTabs?.[selectedFilter];
@@ -278,20 +288,35 @@ function GroupCard({
       <div className="p-4 sm:p-5 border-b border-gray-100 bg-gray-50/50 flex items-center gap-4">
         {type === "teacher" ? (
           <>
-            {firstTt.teacher_image_url ? (
+            {firstTt.teacher_ids && firstTt.teacher_ids.length > 0 ? (
+              <div className="flex -space-x-4">
+                {firstTt.teacher_ids.map((tId, idx) => {
+                  const t = teachers.find((teacher) => teacher.id === tId);
+                  return (
+                    <div key={tId} className="relative" style={{ zIndex: 10 - idx }}>
+                      <img
+                        src={t?.image_url || firstTt.teacher_image_url || "/images/default-teacher.png"}
+                        alt={t?.name || firstTt.teacher_name}
+                        className="w-14 h-14 rounded-full object-cover border-4 border-white shadow-md flex-shrink-0"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : firstTt.teacher_image_url ? (
               <img
                 src={firstTt.teacher_image_url}
                 alt={title}
-                className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200 shadow-sm"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                <User className="w-6 h-6 text-gray-400" />
+              <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200 shadow-sm">
+                <User className="w-7 h-7 text-gray-400" />
               </div>
             )}
             <div>
-              <h4 className="text-base font-bold text-gray-900">{title} 선생님</h4>
-              <p className="text-xs text-[#7B2332] font-medium">{firstTt.subject}</p>
+              <h4 className="text-base font-extrabold text-gray-900">{title} 선생님</h4>
+              <p className="text-xs text-[#7B2332] font-black uppercase tracking-wider">{firstTt.subject}</p>
             </div>
           </>
         ) : (
@@ -319,10 +344,25 @@ function GroupCard({
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex items-center gap-3">
-                  {tt.teacher_image_url ? (
-                    <img src={tt.teacher_image_url} alt={tt.teacher_name} className="w-8 h-8 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+                  {tt.teacher_ids && tt.teacher_ids.length > 0 ? (
+                    <div className="flex -space-x-3">
+                      {tt.teacher_ids.map((tId, idx) => {
+                        const t = teachers.find((teacher) => teacher.id === tId);
+                        return (
+                          <div key={tId} className="relative" style={{ zIndex: 10 - idx }}>
+                            <img
+                              src={t?.image_url || tt.teacher_image_url || "/images/default-teacher.png"}
+                              alt={t?.name || tt.teacher_name}
+                              className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : tt.teacher_image_url ? (
+                    <img src={tt.teacher_image_url} alt={tt.teacher_name} className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center border-2 border-white shadow-sm flex-shrink-0">
                       <User className="w-4 h-4 text-gray-400" />
                     </div>
                   )}

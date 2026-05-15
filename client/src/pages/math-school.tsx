@@ -39,6 +39,13 @@ const CLASS_INFO = [
       { name: "A1반", teacher: "황해룡T", image: "/images/teachers/hwang-haeryong.png", description: "성적 상승을 이끌어내는 실전 응용 및 오답 관리", highlight: false },
       { name: "A1반", teacher: "권소영T", image: "/images/teachers/kwon-soyoung.png", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
       { name: "A2반", teacher: "임서원T", image: "/images/teachers/lim-seowon.png", description: "기초부터 확실히 잡는 개념 및 성적 상승 기반 구축", highlight: false },
+      { 
+        name: "가온고 수학 2 내신반", 
+        teachers: ["정승준T", "권소영T"], 
+        images: ["/images/teachers/jung-seungjun.png", "/images/teachers/kwon-soyoung.png"], 
+        description: "가온고 수학2 내신 완벽 대비! 정승준·권소영 선생님의 강력한 협업 수업", 
+        highlight: true 
+      },
     ]
   }
 ];
@@ -52,6 +59,7 @@ const SYSTEM_STEPS = [
 
 export default function MathSchool() {
   const [showLevelTestModal, setShowLevelTestModal] = useState(false);
+  const [selectedGrade, setSelectedGrade] = useState("고1");
   return (
     <PageLayout>
       <div className="bg-[#7B2332] text-white overflow-hidden relative">
@@ -258,56 +266,100 @@ export default function MathSchool() {
         </section>
 
         {/* Teacher / Class List Section */}
-        <section className="space-y-16">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900">강의 안내</h2>
-            <p className="text-gray-500">각 학년별 수준에 맞춘 최적의 강사진을 소개합니다.</p>
+        <section className="space-y-16 max-w-[1200px] mx-auto pt-10">
+          <div className="text-center space-y-6">
+            <h2 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tight">강의 안내</h2>
+            <p className="text-gray-500 text-lg md:text-xl font-medium">영통이강 수학스쿨만의 학년별 수준 맞춤 커리큘럼</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {CLASS_INFO.map((gradeInfo) => (
-              <div key={gradeInfo.grade} className="space-y-8">
-                <div className="inline-flex items-center gap-3 border-b-4 border-[#7B2332] pb-3">
-                  <h3 className="text-3xl font-black text-gray-900">{gradeInfo.grade}</h3>
-                  <span className="text-gray-400 font-bold uppercase tracking-[0.2em] text-sm">Class Schedule</span>
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                  {gradeInfo.classes.map((cls, idx) => (
-                    <div 
-                      key={idx}
-                      className={`p-6 rounded-3xl border transition-all duration-300 flex items-center gap-6 ${
-                        cls.highlight 
-                          ? "bg-red-50/50 border-red-100 hover:shadow-lg hover:shadow-red-900/5" 
-                          : "bg-white border-gray-100 hover:border-[#7B2332]/30 hover:shadow-lg"
-                      }`}
-                    >
-                      {/* Teacher Photo */}
-                      {cls.image && (
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-gray-100 bg-gray-50 p-1">
-                          <img src={cls.image} alt={cls.teacher} className="w-full h-full object-contain" />
-                        </div>
-                      )}
-                      
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-xl font-bold text-gray-900">{cls.name}</h4>
-                              {cls.highlight && <span className="px-2 py-0.5 bg-[#7B2332] text-white text-[10px] font-black rounded-md uppercase">Top</span>}
+          <div className="flex flex-col items-center gap-12">
+            {/* Premium Tab Switcher */}
+            <div className="inline-flex p-2 bg-gray-100/80 backdrop-blur-sm rounded-[2.5rem] border border-gray-200/50 shadow-inner">
+              {CLASS_INFO.map((gradeInfo) => (
+                <button
+                  key={gradeInfo.grade}
+                  onClick={() => setSelectedGrade(gradeInfo.grade)}
+                  className={`relative px-12 md:px-20 py-5 rounded-[2rem] text-xl md:text-2xl font-black transition-all duration-500 ${
+                    selectedGrade === gradeInfo.grade
+                      ? "bg-white text-[#7B2332] shadow-2xl shadow-red-900/10 scale-105 z-10"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  {gradeInfo.grade}
+                  {selectedGrade === gradeInfo.grade && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute inset-0 bg-white rounded-[2rem] -z-10"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Class Cards List */}
+            <div className="w-full space-y-10">
+              {CLASS_INFO.find(g => g.grade === selectedGrade)?.classes.map((cls, idx) => (
+                <motion.div
+                  key={`${selectedGrade}-${idx}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  className={`group p-8 md:p-10 rounded-[3rem] border transition-all duration-500 flex flex-col md:flex-row items-center gap-12 ${
+                    cls.highlight 
+                      ? "bg-gradient-to-br from-white to-red-50/30 border-red-100 shadow-2xl shadow-red-900/5 hover:translate-y-[-5px]" 
+                      : "bg-white border-gray-100 shadow-xl hover:border-[#7B2332]/20 hover:translate-y-[-5px]"
+                  }`}
+                >
+                  {/* Teacher Photo(s) */}
+                  <div className="flex -space-x-8 md:-space-x-12 group-hover:-space-x-6 md:group-hover:-space-x-8 transition-all duration-500">
+                    {cls.images ? cls.images.map((img, i) => (
+                      <div key={i} className="w-36 h-36 md:w-56 md:h-56 rounded-[2.5rem] overflow-hidden flex-shrink-0 border-8 border-white bg-gray-50 shadow-2xl transition-transform duration-500 group-hover:scale-105 relative z-[10-i]">
+                        <img src={img} alt={cls.teachers ? cls.teachers[i] : cls.teacher} className="w-full h-full object-cover" />
+                      </div>
+                    )) : cls.image && (
+                      <div className="w-36 h-36 md:w-56 md:h-56 rounded-[2.5rem] overflow-hidden flex-shrink-0 border-8 border-gray-50/50 bg-gray-50 shadow-2xl transition-transform duration-500 group-hover:scale-105">
+                        <img src={cls.image} alt={cls.teacher} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 w-full space-y-8">
+                    <div className="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-10">
+                      <div className="space-y-4 text-center lg:text-left">
+                        <div className="flex items-center justify-center lg:justify-start gap-4 flex-wrap">
+                          <h4 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">{cls.name}</h4>
+                          {cls.highlight && (
+                            <div className="flex items-center gap-1 px-4 py-1.5 bg-[#7B2332] text-white text-[11px] font-black rounded-full uppercase tracking-wider shadow-lg shadow-red-900/20">
+                              <Star className="w-3 h-3 fill-current" />
+                              Premium
                             </div>
-                            <p className="text-gray-500 text-sm font-medium">{cls.description}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Instructor</p>
-                            <p className="text-lg font-black text-[#7B2332]">{cls.teacher}</p>
-                          </div>
+                          )}
+                        </div>
+                        <p className="text-gray-500 text-lg md:text-xl font-medium leading-relaxed max-w-2xl">{cls.description}</p>
+                        
+                        <div className="flex flex-wrap justify-center lg:justify-start gap-3 pt-2">
+                          <span className="px-4 py-2 bg-gray-50 text-gray-400 text-xs font-bold rounded-xl border border-gray-100">내신 완벽 대비</span>
+                          <span className="px-4 py-2 bg-gray-50 text-gray-400 text-xs font-bold rounded-xl border border-gray-100">수준별 맞춤 교재</span>
+                          <span className="px-4 py-2 bg-gray-50 text-gray-400 text-xs font-bold rounded-xl border border-gray-100">밀착 관리 시스템</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col items-center lg:items-end flex-shrink-0 bg-gray-50/50 p-8 rounded-[2.5rem] w-full lg:w-auto border border-gray-100 shadow-inner">
+                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Main Instructor</p>
+                        <p className="text-3xl md:text-4xl font-black text-[#7B2332] whitespace-nowrap">
+                          {cls.teachers ? cls.teachers.join(" & ") : cls.teacher}
+                        </p>
+                        <div className="mt-4 flex items-center gap-2 text-[#7B2332]/60 text-xs font-bold bg-white px-3 py-1 rounded-full border border-red-50/50 shadow-sm">
+                          <Users className="w-3.5 h-3.5" />
+                          마감 임박
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
