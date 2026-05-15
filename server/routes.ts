@@ -1200,10 +1200,24 @@ export async function registerRoutes(
       const { rows } = await pool.query(
         "SELECT * FROM navigation_menus WHERE is_visible = true ORDER BY parent_id ASC, display_order ASC"
       );
+      
+      // Normalize paths and specifically ensure Math School path is correct
+      const normalizedRows = rows.map(r => {
+        let path = r.path || "";
+        if (path && !path.startsWith("/") && !path.startsWith("http")) {
+          path = "/" + path;
+        }
+        // Force /math-school for anything labeled '수학스쿨'
+        if (r.label === "수학스쿨" || r.label === "수학 스쿨") {
+          path = "/math-school";
+        }
+        return { ...r, path };
+      });
+
       // Group by parent_id
-      const menus = rows.filter(r => !r.parent_id);
+      const menus = normalizedRows.filter(r => !r.parent_id);
       menus.forEach(m => {
-        m.sub = rows.filter(r => r.parent_id === m.id);
+        m.sub = normalizedRows.filter(r => r.parent_id === m.id);
       });
       res.json(menus);
     } catch (err: any) {
@@ -1719,7 +1733,19 @@ export async function registerRoutes(
         "SELECT * FROM banners WHERE is_active = true AND division = $1 ORDER BY display_order ASC, created_at DESC",
         [division]
       );
-      res.json(rows);
+      const normalizedRows = rows.map(r => {
+        let link_url = r.link_url || "";
+        if (link_url && !link_url.startsWith("/") && !link_url.startsWith("http")) {
+          link_url = "/" + link_url;
+        }
+        // Force /math-school for math-related banners
+        const combinedText = `${r.title} ${r.subtitle} ${r.description}`.toLowerCase();
+        if (combinedText.includes("수학스쿨") || combinedText.includes("math school")) {
+          link_url = "/math-school";
+        }
+        return { ...r, link_url };
+      });
+      res.json(normalizedRows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
