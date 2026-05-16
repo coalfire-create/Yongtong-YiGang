@@ -17,16 +17,37 @@ interface Banner {
 interface LightboxPhoto {
   src: string;
   label: string;
+  description?: string;
 }
 
 const FACILITY_PHOTOS: LightboxPhoto[] = [
   { src: "/owl-entrance.jpeg",    label: "올빼미 스파르타 입구" },
-  { src: "/owl-girls-seats.jpeg", label: "남학생 좌석" },
-  { src: "/owl-boys-seats.jpeg",  label: "여학생 좌석" },
+  { 
+    src: "/owl-girls-seats.jpeg", 
+    label: "남학생 좌석",
+    description: "개별 칸막이와 편안한 시디즈 의자가 구비된 몰입형 학습 공간입니다. 인강 전용 WIFI 운영 및 외부 사이트 접속 차단 시스템으로 학습에만 집중할 수 있는 최고의 환경을 제공합니다."
+  },
+  { 
+    src: "/owl-boys-seats.jpeg",  
+    label: "여학생 좌석",
+    description: "개별 칸막이와 편안한 시디즈 의자가 구비된 몰입형 학습 공간입니다. 인강 전용 WIFI 운영 및 외부 사이트 접속 차단 시스템으로 학습에만 집중할 수 있는 최고의 환경을 제공합니다."
+  },
   { src: "/owl-reception.jpeg",   label: "프런트 & 접수" },
-  { src: "/owl-cctv.jpeg",        label: "CCTV 실시간 모니터" },
-  { src: "/owl-checkin.jpeg",     label: "출석 체크 시스템" },
-  { src: "/owl-phoneboxes.jpeg",  label: "핸드폰 보관함" },
+  { 
+    src: "/owl-cctv.jpeg",        
+    label: "CCTV 실시간 모니터",
+    description: "좌석별 학습 상태를 수시로 확인하며, 상시 녹화를 통해 인강 및 졸음 관리 등 압도적인 몰입 환경을 유지합니다."
+  },
+  { 
+    src: "/owl-checkin.jpeg",     
+    label: "출석 체크 시스템",
+    description: "등하원 즉시 학부모님께 실시간 문자를 전송하며, 사전 제출된 개인 일정 기반으로 입퇴실 및 부재 관리를 자동 체크합니다."
+  },
+  { 
+    src: "/owl-phoneboxes.jpeg",  
+    label: "핸드폰 보관함",
+    description: "입실 시 휴대폰을 개인 좌석 번호에 맞춰 지정 보관함에 보관하여 학습 외 요소를 원천 차단합니다."
+  },
 ];
 
 const STATIC_POSTERS: LightboxPhoto[] = [
@@ -99,9 +120,14 @@ function PhotoLightbox({ photos, initialIndex, onClose }: {
           alt={photos[idx].label}
           className="w-full max-h-[80vh] object-contain"
         />
-        <p className="text-white/80 text-center text-sm mt-3">{photos[idx].label}</p>
+        <div className="mt-4 text-center">
+          <p className="text-white text-lg font-bold">{photos[idx].label}</p>
+          {photos[idx].description && (
+            <p className="text-white/70 text-sm mt-2 leading-relaxed max-w-xl mx-auto">{photos[idx].description}</p>
+          )}
+        </div>
         {showNav && (
-          <p className="text-white/40 text-center text-xs mt-1">{idx + 1} / {photos.length}</p>
+          <p className="text-white/40 text-center text-xs mt-4">{idx + 1} / {photos.length}</p>
         )}
       </div>
       {showNav && (
@@ -193,29 +219,33 @@ function OwlHeroSection() {
             시설 사진
           </h2>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {FACILITY_PHOTOS.map((photo, i) => (
-              <button
-                key={photo.src}
-                onClick={() => setFacilityLightbox(i)}
-                className={`group relative overflow-hidden rounded-sm bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7B2332] ${
-                  i === 0
-                    ? "col-span-2 sm:col-span-3 lg:col-span-2 aspect-[4/3] sm:aspect-[21/9] lg:aspect-[4/3]"
-                    : "aspect-[4/3]"
-                }`}
-                data-testid={`button-owl-photo-${i}`}
-              >
-                <FadeImage
-                  src={photo.src}
-                  alt={photo.label}
-                  eager={i < 2}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/60 to-transparent">
-                  <p className="text-white text-xs font-semibold leading-snug">{photo.label}</p>
+              <div key={photo.src} className="flex flex-col">
+                <button
+                  onClick={() => setFacilityLightbox(i)}
+                  className="group relative overflow-hidden rounded-sm bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7B2332] aspect-[4/3]"
+                  data-testid={`button-owl-photo-${i}`}
+                >
+                  <FadeImage
+                    src={photo.src}
+                    alt={photo.label}
+                    eager={i < 2}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300 flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-800 shadow">
+                      크게 보기
+                    </div>
+                  </div>
+                </button>
+                <div className="mt-3">
+                  <h4 className="text-sm font-bold text-gray-900">{photo.label}</h4>
+                  {photo.description && (
+                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">{photo.description}</p>
+                  )}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-2 text-right">사진을 클릭하면 크게 볼 수 있습니다</p>
