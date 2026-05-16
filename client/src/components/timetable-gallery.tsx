@@ -184,6 +184,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                                 key={key}
                                 title={key}
                                 timetables={tts}
+                                teachers={teachers}
                                 expandedId={expandedId}
                                 onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                                 onReserve={openReserve}
@@ -209,6 +210,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                                 key={key}
                                 title={key}
                                 timetables={tts}
+                                teachers={teachers}
                                 expandedId={expandedId}
                                 onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                                 onReserve={openReserve}
@@ -237,6 +239,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                         key={key}
                         title={key}
                         timetables={tts}
+                        teachers={teachers}
                         expandedId={expandedId}
                         onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                         onReserve={openReserve}
@@ -268,6 +271,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 function GroupCard({
   title,
   timetables,
+  teachers,
   expandedId,
   onToggle,
   onReserve,
@@ -275,6 +279,7 @@ function GroupCard({
 }: {
   title: string;
   timetables: Timetable[];
+  teachers: { id: number; name: string; image_url: string }[];
   expandedId: number | null;
   onToggle: (id: number) => void;
   onReserve: (tt: Timetable) => void;
@@ -288,7 +293,7 @@ function GroupCard({
 
   timetables.forEach(tt => {
     // Extract base name, e.g. "가온고2 수학 내신반" from "가온고2 수학 내신반 (일요반)"
-    const baseName = tt.class_name.split(" (")[0].trim();
+    const baseName = (tt.class_name || "").split(" (")[0].trim();
     
     if (classMap.has(baseName)) {
       const existing = classMap.get(baseName)!;
@@ -298,9 +303,11 @@ function GroupCard({
       }
       
       // Combine teachers
-      const existingTeacherNames = existing.teacher_name.split(", ").map(n => n.trim());
+      const existingTeacherNames = (existing.teacher_name || "").split(", ").map(n => n.trim());
       if (tt.teacher_name && !existingTeacherNames.includes(tt.teacher_name)) {
-        existing.teacher_name = `${existing.teacher_name}, ${tt.teacher_name}`;
+        existing.teacher_name = existing.teacher_name 
+          ? `${existing.teacher_name}, ${tt.teacher_name}`
+          : tt.teacher_name;
       }
 
       // Combine teacher IDs
