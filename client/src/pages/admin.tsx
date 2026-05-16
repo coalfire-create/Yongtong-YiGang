@@ -1000,8 +1000,10 @@ function TimetablesTab() {
   function handleDragEndTimetables(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIdx = filteredTimetables.findIndex(t => t.id === Number(active.id));
-    const newIdx = filteredTimetables.findIndex(t => t.id === Number(over.id));
+    const activeId = Number(String(active.id).split("-")[0]);
+    const overId = Number(String(over.id).split("-")[0]);
+    const oldIdx = filteredTimetables.findIndex(t => t.id === activeId);
+    const newIdx = filteredTimetables.findIndex(t => t.id === overId);
     if (oldIdx < 0 || newIdx < 0) return;
     const newFiltered = arrayMove(filteredTimetables, oldIdx, newIdx);
     const filteredIdSet = new Set(filteredTimetables.map(t => t.id));
@@ -1200,11 +1202,16 @@ function TimetablesTab() {
     return a.teacherName.localeCompare(b.teacherName);
   });
 
+  const sortableItems = groupedByTeacher.flatMap(group => 
+    group.items.map(item => `${item.tt.id}-${group.teacherName}`)
+  );
+
   const inputCls = "w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#7B2332] bg-white rounded";
   const labelCls = "block text-xs font-semibold text-gray-600 mb-1";
 
-  const TimetableCard = ({ tt }: { tt: Timetable }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tt.id });
+  const TimetableCard = ({ tt, teacherName }: { tt: Timetable, teacherName: string }) => {
+    const sortableId = `${tt.id}-${teacherName}`;
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: sortableId });
     const cardStyle: React.CSSProperties = {
       transform: CSS.Transform.toString(transform),
       transition,
@@ -1845,29 +1852,31 @@ function TimetablesTab() {
         </div>
       ) : (
         <DndContext sensors={ttSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndTimetables}>
-          <SortableContext items={filteredTimetables.map(t => t.id)} strategy={verticalListSortingStrategy}>
-            <div className="space-y-6">
-              {groupedByTeacher.map(({ teacherName, photoUrl, items }) => (
-                <div key={teacherName}>
-                  <div className="flex items-center gap-2 mb-2">
-                    {photoUrl ? (
-                      <img src={photoUrl} alt={teacherName} className="w-7 h-7 rounded-full object-cover border border-gray-200 flex-shrink-0" />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <User className="w-3.5 h-3.5 text-gray-400" />
-                      </div>
-                    )}
-                    <span className="text-sm font-bold text-gray-800">{teacherName}</span>
-                    <span className="text-xs text-gray-400">{items.length}개</span>
-                    <div className="flex-1 h-px bg-gray-100" />
-                  </div>
-                  <div className="space-y-2">
-                    {items.map(({ tt }) => <TimetableCard key={tt.id} tt={tt} />)}
-                  </div>
+          <div className="space-y-6">
+            {groupedByTeacher.map(({ teacherName, photoUrl, items }) => (
+              <div key={teacherName}>
+                <div className="flex items-center gap-2 mb-2">
+                  {photoUrl ? (
+                    <img src={photoUrl} alt={teacherName} className="w-7 h-7 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <User className="w-3.5 h-3.5 text-gray-400" />
+                    </div>
+                  )}
+                  <span className="text-sm font-bold text-gray-800">{teacherName}</span>
+                  <span className="text-xs text-gray-400">{items.length}개</span>
+                  <div className="flex-1 h-px bg-gray-100" />
                 </div>
-              ))}
-            </div>
-          </SortableContext>
+                <SortableContext items={items.map(({ tt }) => `${tt.id}-${teacherName}`)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {items.map(({ tt }) => (
+                      <TimetableCard key={`${tt.id}-${teacherName}`} tt={tt} teacherName={teacherName} />
+                    ))}
+                  </div>
+                </SortableContext>
+              </div>
+            ))}
+          </div>
         </DndContext>
       )}
     </div>
