@@ -31,11 +31,10 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
     queryKey: [queryKey],
   });
 
-  const teachers = [...raw].sort((a, b) => {
-    if (a.name === "정승준") return -1;
-    if (b.name === "정승준") return 1;
-    return a.name.localeCompare(b.name, "ko");
-  });
+  const EXCLUDED_NAMES = ["정승준", "권소영"];
+  const teachers = raw
+    .filter(t => !EXCLUDED_NAMES.includes(t.name))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 
   const filteredTeachers =
     selectedSubject === "ALL"

@@ -43,7 +43,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [reserveTarget, setReserveTarget] = useState<{ id: number; name: string; subject: string; teacherName: string; classTime: string; startDate: string } | null>(null);
 
-  const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
+  const { data: rawTimetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables", category],
     queryFn: async () => {
       const res = await fetch(`/api/timetables?category=${encodeURIComponent(category)}`);
@@ -51,6 +51,9 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       return res.json();
     },
   });
+
+  const EXCLUDED_TEACHERS = ["정승준", "권소영"];
+  const timetables = rawTimetables.filter(tt => !EXCLUDED_TEACHERS.includes(tt.teacher_name));
  
   const { data: teachers = [] } = useQuery<{ id: number; name: string; image_url: string }[]>({
     queryKey: ["/api/teachers"],
