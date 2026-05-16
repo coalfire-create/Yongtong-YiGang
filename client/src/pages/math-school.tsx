@@ -390,7 +390,7 @@ export default function MathSchool() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Enrollment Inquiry</p>
-                <a href="tel:0312041353" className="text-3xl font-black text-white hover:text-yellow-400 transition-colors">031-204-1353</a>
+                <a href="tel:0315480982" className="text-3xl font-black text-white hover:text-yellow-400 transition-colors">031-548-0982</a>
               </div>
             </div>
             <div className="hidden sm:block w-px h-24 bg-white/10"></div>
@@ -400,7 +400,7 @@ export default function MathSchool() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Text Message Only</p>
-                <a href="tel:01097641353" className="text-3xl font-black text-white hover:text-yellow-400 transition-colors">010-9764-1353</a>
+                <a href="tel:01077372843" className="text-3xl font-black text-white hover:text-yellow-400 transition-colors">010-7737-2843</a>
               </div>
             </div>
           </div>

@@ -26,8 +26,8 @@ const HIGHLIGHTS = [
   {
     num: "03",
     icon: CheckCircle2,
-    title: "매일 영어·매주 수학 필수 테스트 진행",
-    desc: "고등 수능 영단어 매일 20분 간 테스트 진행 후 피드백을 제공하며, 수학 단원별 이해도 점검 및 취약 유형 오답 관리를 철저히 합니다.",
+    title: "주요 영어·수학 필수 테스트 진행",
+    desc: "고등 수능 영단어 매일 20분 간 테스트 진행 후 피드백을 제공하며, 총 3회에 걸친 수학 단원별 이해도 점검 및 취약 유형 오답 관리를 철저히 합니다.",
   },
   {
     num: "04",
@@ -46,8 +46,8 @@ const HIGHLIGHTS = [
 const SCHEDULE = [
   { time: "08:00 - 08:40", content: "등원 및 자습준비", type: "blue" },
   { time: "08:40 - 09:00", content: "영단어 테스트 (총 18회)", type: "blue", label: "MUST TEST" },
-  { time: "09:00 - 12:00", content: "수학 공수1/공수2 (기본·심화), 통과/국어(정규)", type: "red" },
-  { time: "12:00 - 13:30", content: "점심식사" },
+  { time: "09:00 - 12:30", content: "수학 공수1/공수2 (기본·심화), 통과/국어(정규)", type: "red" },
+  { time: "12:30 - 13:30", content: "점심식사" },
   { time: "13:30 - 17:00", content: "영어, 국어(정규), 물리(정규)", type: "red" },
   { time: "17:00 - 18:00", content: "저녁식사" },
   { time: "18:00 - 21:30", content: "자습 & 숙제 / 1:1 입시 컨설팅 / 수학 모의고사", type: "blue" },
@@ -196,7 +196,7 @@ export default function Summer() {
                 <Phone className="w-6 h-6" />
               </div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">전화 문의</p>
-              <a href="tel:0312041353" className="text-xl sm:text-2xl font-black text-white hover:text-[#7B2332] transition-colors">031-204-1353</a>
+              <a href="tel:0315480982" className="text-xl sm:text-2xl font-black text-white hover:text-[#7B2332] transition-colors">031-548-0982</a>
             </div>
             <div className="w-px h-16 bg-white/10 hidden sm:block"></div>
             <div className="flex flex-col items-center gap-2">
@@ -204,7 +204,7 @@ export default function Summer() {
                 <MessageSquare className="w-6 h-6" />
               </div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">문자 전용</p>
-              <a href="tel:01097641353" className="text-xl sm:text-2xl font-black text-white hover:text-blue-400 transition-colors">010-9764-1353</a>
+              <a href="tel:01077372843" className="text-xl sm:text-2xl font-black text-white hover:text-blue-400 transition-colors">010-7737-2843</a>
             </div>
           </div>
         </section>
