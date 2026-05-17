@@ -490,6 +490,200 @@ function OwlHeroSection() {
   );
 }
 
+function OwlDayTimeline() {
+  const [activeTab, setActiveTab] = useState(0);
+
+  const TIMELINE_DATA = [
+    {
+      title: "등원 & 디지털 디톡스",
+      time: "08:00 AM",
+      phase: "01",
+      subtitle: "성장으로 가득 찬 완벽한 하루의 시작",
+      image: "/owl-entrance.jpeg",
+      bullets: [
+        "스마트 안심 출결 태킹: 등하원 패드에 출결 번호를 태깅하면 학부모님께 입실 완료 알림 문자가 즉각 발송됩니다.",
+        "의무 휴대폰 제출 및 수거: 입실 시 개인의 지정된 번호 보관함에 스마트폰을 무조건 제출하여 공부방해 1순위 요소를 차단합니다.",
+        "학업 몰입 모드 준비: 모든 소지품을 사물함과 책상에 정리하고, 졸음과 웹서핑을 사전에 방지할 준비를 마칩니다."
+      ],
+      quote: {
+        author: "올빼미 1기 장학생 김O호",
+        text: "등원하자마자 스마트폰을 수거함에 반납하니까 매번 오던 알림 문자나 SNS에 피로감을 느낄 필요가 없어졌어요. 순공 시간이 하루에 최소 3시간 이상 수직 상승하는 기적을 겪었습니다!"
+      }
+    },
+    {
+      title: "올빼미 독서실 몰입 자습",
+      time: "08:40 AM ~",
+      phase: "02",
+      subtitle: "치열하고 정숙한 초집중 몰입 공간",
+      image: "/owl-girls-seats.jpeg",
+      bullets: [
+        "시디즈 의자 & 개별 칸막이: 오래 앉아 있어도 피로감이 적은 시디즈 의자와 프라이버시가 확보되는 개별 와이드 책상이 완비되어 있습니다.",
+        "인강 전용 초고속 방화벽 WIFI: 자습에 필수적인 인강 수강용 초고속 무선 인터넷을 제공하되, SNS/유튜브/게임/웹툰 등 유해 사이트는 원천 차단됩니다.",
+        "남/여 전용 자습 구역 완전 분리: 이성 간의 불필요한 주의 분산을 차단하기 위해 학습 공간을 독립적으로 배치하여 면학 극대화."
+      ],
+      quote: {
+        author: "올빼미 1기 장학생 이O민",
+        text: "자습실 책상이 정말 넓어서 무거운 모의고사 시험지나 개념서 여러 권을 펼쳐놓아도 넉넉했어요. 기가 와이파이에 방화벽이 쳐져 있어서 공부 딴짓할 생각조차 못하고 온전히 학습에만 몰입했습니다."
+      }
+    },
+    {
+      title: "빈틈없는 밀착 케어",
+      time: "상시 운영",
+      phase: "03",
+      subtitle: "사각지대 없는 모니터링 및 실시간 순찰",
+      image: "/owl-cctv.jpeg",
+      bullets: [
+        "CCTV 실시간 학습 상태 점검: 사각지대 없는 실시간 모니터를 통해 75석 전체 학생들의 자습 집중도와 학습 상태를 정밀 체크합니다.",
+        "관리 교사의 상시 생활 순찰: 전문 생활 관리 선생님이 학습관 내부를 정기적으로 돌며 졸음 방지, 태도 경고, 태블릿 화면 검사를 실시합니다.",
+        "체계적인 벌점제 및 환경 관리: 학습관 내부 소음 통제는 물론, 쾌적한 학습 환경 유지를 위해 실내 온도와 습도를 상시 최적화합니다."
+      ],
+      quote: {
+        author: "올빼미 2기 장학생 최O준",
+        text: "순간 졸음이 밀려오거나 나태해질 때쯤 관리 선생님이 살며시 깨워주셔서 금방 정신을 다잡을 수 있었습니다. 누군가 나를 지켜봐 주고 함께 호흡한다는 생각 덕분에 하루 종일 팽팽한 긴장감을 유지하며 자습했습니다."
+      }
+    },
+    {
+      title: "1:1 대면 질의응답 & 피드백",
+      time: "상시 Q&A",
+      phase: "04",
+      subtitle: "막힘 없는 질문과 체계적인 입시 설계",
+      image: "/owl-reception.jpeg",
+      bullets: [
+        "1:1 과목별 강사 대면 Q&A: 자습 중 어려운 기출문제나 오답 등 막히는 개념은 데스크에 상주하는 과목별 선생님께 직접 대면 질의응답을 신청할 수 있습니다.",
+        "입학사정관 출신 입시 매니지먼트: 9년 차 대입 사정관 경력의 한노아 입시 소장이 자습생 전용 1:1 진로진학/학종 컨설팅을 즉각 지원합니다.",
+        "개인 스케줄 밀착 부재 관리: 사전에 제출된 개별 단과 수업 또는 피치 못할 사유의 외출 외에는 자습실 무단 이탈을 엄격히 규제합니다."
+      ],
+      quote: {
+        author: "올빼미 2기 장학생 박O우",
+        text: "혼자 공부하다 보면 어려운 수학 문제에 막혀서 아까운 시간을 통째로 버리는 경우가 많은데, 영통이강에서는 상주하시는 조교와 선생님들께 즉시 대면 피드백을 받아 해결할 수 있어서 모르는 것 없이 시원하게 공부를 마쳤습니다."
+      }
+    },
+    {
+      title: "안전한 퇴실 및 재점검",
+      time: "~ 24:00",
+      phase: "05",
+      subtitle: "철저한 마무리로 오늘 하루의 보람찬 퇴근",
+      image: "/owl-checkin.jpeg",
+      bullets: [
+        "일일 자습 과제 및 최종 책상 정리: 밤 10시(또는 자율연장 12시) 자습 종료 후, 오늘 달성한 분량을 스스로 확인하고 책상을 말끔하게 비웁니다.",
+        "스마트 안심 하원 완료 문자: 하원 패드를 태킹함과 동시에 등록된 학부모님의 휴대폰으로 안전 하원 문자가 실시간 자동 발송됩니다.",
+        "관리 교사의 최종 시설 점검: 안전 귀가를 돕고 다음 날의 쾌적한 자습을 위해 학습관 전체의 보안 및 시설 상태를 최종 점검하고 마무리합니다."
+      ],
+      quote: {
+        author: "올빼미 1기 장학생 학부모님 수기",
+        text: "밤늦게 아이가 집에 올 때 항상 걱정이었는데, 하원 태그와 동시에 실시간 안심 귀가 문자가 와서 마음을 완전히 놓을 수 있었습니다. 등원부터 하원까지 아이를 완벽하게 보살펴주는 스파르타 시스템에 대만족합니다."
+      }
+    }
+  ];
+
+  return (
+    <div className="bg-gray-50/50 py-16 border-y border-gray-200/60 my-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Header */}
+        <div className="text-center space-y-4 mb-12">
+          <p className="text-xs font-black tracking-widest text-[#7B2332] uppercase">DAILY SYSTEM FLOW</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+            등원하는 순간부터 하원까지
+          </h2>
+          <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed">
+            올빼미 장학생들의 하루는 철저하게 계산된 타임라인에 따라 완벽하게 통제 및 지원됩니다.<br />
+            의무 자습 교시에는 몰입을, 피드백 시간에는 성장을 이뤄냅니다.
+          </p>
+        </div>
+
+        {/* Tab Buttons */}
+        <div className="flex flex-wrap sm:flex-nowrap justify-center gap-2 border-b border-gray-200 pb-4 mb-10 overflow-x-auto scrollbar-none">
+          {TIMELINE_DATA.map((tab, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveTab(idx)}
+              className={`flex-1 min-w-[140px] text-center py-3.5 px-4 border-b-2 font-bold text-xs sm:text-sm transition-all duration-300 ${
+                activeTab === idx
+                  ? "border-[#7B2332] text-[#7B2332] bg-[#7B2332]/5 scale-102"
+                  : "border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300"
+              }`}
+            >
+              <div className="text-[10px] tracking-wider text-gray-400 mb-1">PHASE {tab.phase}</div>
+              <div className="whitespace-nowrap">{tab.title}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Active Content Block */}
+        <div className="bg-white border border-gray-200/80 shadow-md rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-12">
+            
+            {/* Left Image Area */}
+            <div className="lg:col-span-6 relative aspect-video lg:aspect-auto min-h-[300px] lg:h-auto bg-gray-100 overflow-hidden group">
+              <img
+                src={TIMELINE_DATA[activeTab].image}
+                alt={TIMELINE_DATA[activeTab].title}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6 text-white">
+                <span className="text-[10px] font-black tracking-widest text-[#c0a878] uppercase mb-1">TIMELINE PHASE {TIMELINE_DATA[activeTab].phase}</span>
+                <h3 className="text-xl sm:text-2xl font-black mb-1 flex items-center gap-2">
+                  {TIMELINE_DATA[activeTab].title}
+                  <span className="text-xs font-normal text-white/80 bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-sm">{TIMELINE_DATA[activeTab].time}</span>
+                </h3>
+                <p className="text-xs sm:text-sm text-white/70 leading-relaxed font-medium">{TIMELINE_DATA[activeTab].subtitle}</p>
+              </div>
+            </div>
+
+            {/* Right Content Area */}
+            <div className="lg:col-span-6 p-6 sm:p-8 flex flex-col justify-between space-y-6">
+              
+              {/* Bullet details */}
+              <div className="space-y-6">
+                <span className="text-[10px] font-extrabold tracking-widest text-[#7B2332] uppercase bg-red-50 px-2.5 py-1 inline-block">
+                  SPARTA DAILY PROTOCOL
+                </span>
+                <h4 className="text-lg font-bold text-gray-900 leading-snug">
+                  {TIMELINE_DATA[activeTab].title} 핵심 운영 원칙
+                </h4>
+                <ul className="space-y-4 text-sm text-gray-600">
+                  {TIMELINE_DATA[activeTab].bullets.map((bullet, i) => {
+                    const [title, desc] = bullet.split(": ");
+                    return (
+                      <li key={i} className="flex gap-3 items-start">
+                        <span className="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#7B2332] mt-0.5">
+                          {i + 1}
+                        </span>
+                        <div>
+                          <strong className="text-gray-900 block font-bold mb-0.5">{title}</strong>
+                          <span className="text-xs text-gray-500 leading-relaxed">{desc}</span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              {/* Student Testimonial */}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#7B2332]" />
+                  <span className="text-[10px] font-black text-gray-500 tracking-wider uppercase">STUDENT TESTIMONIAL</span>
+                </div>
+                <p className="text-xs text-gray-600 italic leading-relaxed">
+                  &ldquo;{TIMELINE_DATA[activeTab].quote.text}&rdquo;
+                </p>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-gray-400">— {TIMELINE_DATA[activeTab].quote.author}</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 export function Owl() {
   return (
     <PageLayout>
@@ -507,6 +701,10 @@ export function Owl() {
           </p>
         </div>
       </div>
+
+      {/* 등원하는 순간부터 하원까지 인터랙티브 타임라인 */}
+      <OwlDayTimeline />
+
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
 
