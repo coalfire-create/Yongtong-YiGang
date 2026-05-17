@@ -296,10 +296,16 @@ function GroupCard({
 
   timetables.forEach(tt => {
     // Extract base name, e.g. "가온고2 수학 내신반" from "가온고2 수학 내신반 (일요반)"
-    const baseName = (tt.class_name || "").split(" (")[0].trim();
+    const hasParenthesis = (tt.class_name || "").includes(" (");
+    const baseName = hasParenthesis 
+      ? (tt.class_name || "").split(" (")[0].trim() 
+      : (tt.class_name || "").trim();
     
-    if (classMap.has(baseName)) {
-      const existing = classMap.get(baseName)!;
+    // Group key: only merge if they had a parenthesis (differing by suffix)
+    const mapKey = hasParenthesis ? baseName : `${tt.id}-${baseName}`;
+    
+    if (classMap.has(mapKey)) {
+      const existing = classMap.get(mapKey)!;
       // Combine class times
       if (tt.class_time && !existing.class_time.includes(tt.class_time)) {
         existing.class_time = `${existing.class_time} / ${tt.class_time}`;
@@ -330,7 +336,7 @@ function GroupCard({
       if (copy.teacher_id) tIds.add(copy.teacher_id);
       copy.teacher_ids = Array.from(tIds);
       
-      classMap.set(baseName, copy);
+      classMap.set(mapKey, copy);
       mergedTimetables.push(copy);
     }
   });
