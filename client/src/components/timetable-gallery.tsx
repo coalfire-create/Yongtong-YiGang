@@ -301,8 +301,10 @@ function GroupCard({
       ? (tt.class_name || "").split(" (")[0].trim() 
       : (tt.class_name || "").trim();
     
-    // Group key: only merge if they had a parenthesis (differing by suffix)
-    const mapKey = hasParenthesis ? baseName : `${tt.id}-${baseName}`;
+    // Group key: only merge if they had a parenthesis and the teacher is Jung Seung-jun
+    const isJungSeungJun = (tt.teacher_name || "").includes("정승준");
+    const shouldMerge = hasParenthesis && isJungSeungJun;
+    const mapKey = shouldMerge ? baseName : `${tt.id}-${(tt.class_name || "").trim()}`;
     
     if (classMap.has(mapKey)) {
       const existing = classMap.get(mapKey)!;
@@ -330,7 +332,7 @@ function GroupCard({
       if (!existing.description && tt.description) existing.description = tt.description;
       
     } else {
-      const copy = { ...tt, class_name: baseName };
+      const copy = { ...tt, class_name: shouldMerge ? baseName : (tt.class_name || "").trim() };
       // Ensure teacher_ids is an array even if it was just teacher_id
       const tIds = new Set(copy.teacher_ids || []);
       if (copy.teacher_id) tIds.add(copy.teacher_id);
