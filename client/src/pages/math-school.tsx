@@ -41,9 +41,9 @@ const CLASS_INFO = [
       { name: "A2반", teacher: "임서원T", image: "/images/teachers/lim-seowon.png", description: "기초부터 확실히 잡는 개념 및 성적 상승 기반 구축", highlight: false },
       { 
         name: "가온고 수학 2 내신반", 
-        teachers: ["정승준T", "권소영T"], 
-        images: ["/images/teachers/jung-seungjun.png", "/images/teachers/kwon-soyoung.png"], 
-        description: "가온고 수학2 내신 완벽 대비! 정승준·권소영 선생님의 강력한 협업 수업", 
+        teacher: "권소영T", 
+        image: "/images/teachers/kwon-soyoung.png", 
+        description: "가온고 수학2 내신 완벽 대비! 권소영 선생님의 강력한 수업", 
         highlight: true 
       },
     ]
