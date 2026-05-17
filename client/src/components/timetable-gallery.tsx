@@ -343,6 +343,34 @@ function GroupCard({
     }
   });
 
+  // Stable sort mergedTimetables: S -> A1 -> A2
+  const getPriority = (name: string) => {
+    const cleanName = name.replace(/\s+/g, '');
+    if (cleanName.includes("S반") || cleanName.includes("s반")) return 1;
+    if (cleanName.includes("A1반") || cleanName.includes("a1반")) return 2;
+    if (cleanName.includes("A2반") || cleanName.includes("a2반")) return 3;
+    
+    if (/(?:^|[^a-zA-Z0-9])[Ss](?:[^a-zA-Z0-9]|$)/.test(name)) return 1;
+    if (/(?:^|[^a-zA-Z0-9])A1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
+    if (/(?:^|[^a-zA-Z0-9])A2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 3;
+
+    return 4;
+  };
+
+  const indexedTimetables = mergedTimetables.map((tt, idx) => ({ tt, idx }));
+  indexedTimetables.sort((a, b) => {
+    const prioA = getPriority(a.tt.class_name || "");
+    const prioB = getPriority(b.tt.class_name || "");
+    if (prioA !== prioB) {
+      return prioA - prioB;
+    }
+    return a.idx - b.idx;
+  });
+  
+  for (let i = 0; i < mergedTimetables.length; i++) {
+    mergedTimetables[i] = indexedTimetables[i].tt;
+  }
+
   return (
     <div className="bg-white border border-gray-200 overflow-hidden shadow-sm">
       {/* Header */}
