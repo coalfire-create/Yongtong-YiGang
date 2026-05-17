@@ -29,6 +29,7 @@ const CLASS_INFO = [
     classes: [
       { name: "의치서 M반", teacher: "최주용T", image: "/images/teachers/choi-juyong.png", description: "1등급 중에서도 내신 1.0 최상위권만 모이는 의치서 M반!", highlight: true },
       { name: "S반", teacher: "최주용T", image: "/images/teachers/choi-juyong.png", description: "최상위권을 확실하게 만드는 최상위권 전문반", highlight: true },
+      { name: "A1반", teacher: "권소영T", image: "/images/teachers/kwon-soyoung.png", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
     ]
   },
   {
@@ -36,7 +37,15 @@ const CLASS_INFO = [
     classes: [
       { name: "S반", teacher: "최주용T", image: "/images/teachers/choi-juyong.png", description: "최상위권을 확실하게 만드는 최상위권 전문반", highlight: true },
       { name: "A1반", teacher: "황해룡T", image: "/images/teachers/hwang-haeryong.png", description: "성적 상승을 이끌어내는 실전 응용 및 오답 관리", highlight: false },
+      { name: "A1반", teacher: "권소영T", image: "/images/teachers/kwon-soyoung.png", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
       { name: "A2반", teacher: "임서원T", image: "/images/teachers/lim-seowon.png", description: "기초부터 확실히 잡는 개념 및 성적 상승 기반 구축", highlight: false },
+      { 
+        name: "가온고 수학 2 내신반", 
+        teachers: ["정승준T", "권소영T"], 
+        images: ["/images/teachers/jung-seungjun.png", "/images/teachers/kwon-soyoung.png"], 
+        description: "가온고 수학2 내신 완벽 대비! 정승준·권소영 선생님의 강력한 협업 수업", 
+        highlight: true 
+      },
     ]
   }
 ];
@@ -304,13 +313,13 @@ export default function MathSchool() {
                 >
                   {/* Teacher Photo(s) */}
                   <div className="flex -space-x-8 md:-space-x-12 group-hover:-space-x-6 md:group-hover:-space-x-8 transition-all duration-500">
-                    {cls.images ? cls.images.map((img, i) => (
+                    {(cls as any).images ? (cls as any).images.map((img: string, i: number) => (
                       <div key={i} className="w-36 h-36 md:w-56 md:h-56 rounded-[2.5rem] overflow-hidden flex-shrink-0 border-8 border-white bg-gray-50 shadow-2xl transition-transform duration-500 group-hover:scale-105 relative z-[10-i]">
-                        <img src={img} alt={cls.teachers ? cls.teachers[i] : cls.teacher} className="w-full h-full object-cover" />
+                        <img src={img} alt={(cls as any).teachers ? (cls as any).teachers[i] : (cls as any).teacher} className="w-full h-full object-cover" />
                       </div>
-                    )) : cls.image && (
+                    )) : (cls as any).image && (
                       <div className="w-36 h-36 md:w-56 md:h-56 rounded-[2.5rem] overflow-hidden flex-shrink-0 border-8 border-gray-50/50 bg-gray-50 shadow-2xl transition-transform duration-500 group-hover:scale-105">
-                        <img src={cls.image} alt={cls.teacher} className="w-full h-full object-cover" />
+                        <img src={(cls as any).image} alt={(cls as any).teacher} className="w-full h-full object-cover" />
                       </div>
                     )}
                   </div>
@@ -339,7 +348,7 @@ export default function MathSchool() {
                       <div className="flex flex-col items-center lg:items-end flex-shrink-0 bg-gray-50/50 p-8 rounded-[2.5rem] w-full lg:w-auto border border-gray-100 shadow-inner">
                         <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Main Instructor</p>
                         <p className="text-3xl md:text-4xl font-black text-[#7B2332] whitespace-nowrap">
-                          {cls.teachers ? cls.teachers.join(" & ") : cls.teacher}
+                          {(cls as any).teachers ? (cls as any).teachers.join(" & ") : (cls as any).teacher}
                         </p>
                         <div className="mt-4 flex items-center gap-2 text-[#7B2332]/60 text-xs font-bold bg-white px-3 py-1 rounded-full border border-red-50/50 shadow-sm">
                           <Users className="w-3.5 h-3.5" />

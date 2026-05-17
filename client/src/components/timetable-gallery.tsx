@@ -52,7 +52,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
     },
   });
 
-  const EXCLUDED_TEACHERS = ["정승준", "권소영"];
+  const EXCLUDED_TEACHERS: string[] = [];
   const timetables = rawTimetables.filter(tt => !EXCLUDED_TEACHERS.includes(tt.teacher_name));
  
   const { data: teachers = [] } = useQuery<{ id: number; name: string; image_url: string }[]>({

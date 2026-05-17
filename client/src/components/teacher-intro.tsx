@@ -31,7 +31,7 @@ export function TeacherIntroPage({ division, subjects }: TeacherIntroPageProps) 
     queryKey: [queryKey],
   });
 
-  const EXCLUDED_NAMES = ["정승준", "권소영"];
+  const EXCLUDED_NAMES: string[] = [];
   const teachers = raw
     .filter(t => !EXCLUDED_NAMES.includes(t.name))
     .sort((a, b) => a.name.localeCompare(b.name, "ko"));

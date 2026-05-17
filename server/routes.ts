@@ -572,6 +572,176 @@ async function seedFilterTabs() {
   }
 }
 
+async function autoRestoreTeachersAndTimetables() {
+  try {
+    console.log("[autoRestore] Checking if teachers Kwon So-young and Jung Seung-jun exist...");
+    
+    // 1. Get teachers
+    const { data: existingTeachers, error: fetchErr } = await supabase
+      .from("teachers")
+      .select("id, name")
+      .in("name", ["정승준", "권소영"]);
+      
+    if (fetchErr) {
+      console.error("[autoRestore] Error fetching teachers from Supabase:", fetchErr);
+      return;
+    }
+    
+    let soyoung = existingTeachers?.find(t => t.name === "권소영");
+    let seungjun = existingTeachers?.find(t => t.name === "정승준");
+    
+    // 2. Insert Kwon So-young if missing
+    if (!soyoung) {
+      console.log("[autoRestore] Kwon So-young is missing. Inserting...");
+      const { data: newSoyoung, error: insertSoyoungErr } = await supabase
+        .from("teachers")
+        .insert({
+          name: "권소영",
+          subject: "고등관::수학",
+          description: "현) 영통이강학원 고등부 수학 강사\n전) 대치동 고등부 수학 전문 강사\n개념부터 실전까지 빈틈없는 성적 상승 마스터",
+          image_url: "/images/teachers/kwon-soyoung.png",
+          display_order: 10
+        })
+        .select()
+        .single();
+        
+      if (insertSoyoungErr) {
+        console.error("[autoRestore] Error inserting Kwon So-young:", insertSoyoungErr);
+      } else {
+        soyoung = newSoyoung;
+        console.log("[autoRestore] Kwon So-young successfully restored with ID:", soyoung?.id);
+      }
+    } else {
+      console.log("[autoRestore] Kwon So-young exists with ID:", soyoung?.id);
+    }
+    
+    // 3. Insert Jung Seung-jun if missing
+    if (!seungjun) {
+      console.log("[autoRestore] Jung Seung-jun is missing. Inserting...");
+      const { data: newSeungjun, error: insertSeungjunErr } = await supabase
+        .from("teachers")
+        .insert({
+          name: "정승준",
+          subject: "고등관::수학",
+          description: "현) 영통이강학원 수학과 원장\n전) 대치동 수학 전문 강사\n최상위권부터 하위권까지 압도적인 성적 향상",
+          image_url: "/images/teachers/jung-seungjun.png",
+          display_order: 9
+        })
+        .select()
+        .single();
+        
+      if (insertSeungjunErr) {
+        console.error("[autoRestore] Error inserting Jung Seung-jun:", insertSeungjunErr);
+      } else {
+        seungjun = newSeungjun;
+        console.log("[autoRestore] Jung Seung-jun successfully restored with ID:", seungjun?.id);
+      }
+    } else {
+      console.log("[autoRestore] Jung Seung-jun exists with ID:", seungjun?.id);
+    }
+    
+    // 4. Restore timetables
+    if (soyoung || seungjun) {
+      const soyoungId = soyoung ? Number(soyoung.id) : null;
+      const seungjunId = seungjun ? Number(seungjun.id) : null;
+      
+      console.log("[autoRestore] Checking if schedules are missing in timetables...");
+      
+      // Class 1: 고1 수학 A1반
+      const { rows: tt1 } = await pool.query(
+        "SELECT id FROM timetables WHERE class_name = '고1 수학 A1반' AND teacher_name = '권소영'"
+      );
+      if (tt1.length === 0) {
+        console.log("[autoRestore] Schedule '고1 수학 A1반' is missing. Restoring...");
+        await pool.query(
+          `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order, description, subject, is_visible, is_union)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+          [
+            "고1 수학 A1반",
+            soyoungId,
+            "권소영",
+            "고등관-고1",
+            "공통",
+            "고1 수학 A1반",
+            "토 14:00 - 17:00 / 일 14:00 - 17:00",
+            "3월 개강",
+            "/images/teachers/kwon-soyoung.png",
+            10,
+            "출제 유형 분석과 반복 훈련을 통한 성적 상승",
+            "수학",
+            true,
+            false
+          ]
+        );
+      }
+      
+      // Class 2: 고2 수학 A1반
+      const { rows: tt2 } = await pool.query(
+        "SELECT id FROM timetables WHERE class_name = '고2 수학 A1반' AND teacher_name = '권소영'"
+      );
+      if (tt2.length === 0) {
+        console.log("[autoRestore] Schedule '고2 수학 A1반' is missing. Restoring...");
+        await pool.query(
+          `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order, description, subject, is_visible, is_union)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+          [
+            "고2 수학 A1반",
+            soyoungId,
+            "권소영",
+            "고등관-고2",
+            "공통",
+            "고2 수학 A1반",
+            "토 18:00 - 21:00 / 일 18:00 - 21:00",
+            "3월 개강",
+            "/images/teachers/kwon-soyoung.png",
+            11,
+            "출제 유형 분석과 반복 훈련을 통한 성적 상승",
+            "수학",
+            true,
+            false
+          ]
+        );
+      }
+      
+      // Class 3: 가온고 수학 2 내신반 (Co-taught with 정승준 and 권소영)
+      const { rows: tt3 } = await pool.query(
+        "SELECT id FROM timetables WHERE class_name = '가온고 수학 2 내신반' AND target_school = '가온고'"
+      );
+      if (tt3.length === 0) {
+        console.log("[autoRestore] Schedule '가온고 수학 2 내신반' is missing. Restoring...");
+        
+        const teacherIds = [];
+        if (seungjunId) teacherIds.push(seungjunId);
+        if (soyoungId) teacherIds.push(soyoungId);
+        
+        await pool.query(
+          `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, display_order, description, subject, is_visible, is_union, teacher_ids)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          [
+            "가온고 수학 2 내신반",
+            seungjunId || soyoungId, // principal teacher
+            "정승준, 권소영",
+            "고등관-고2",
+            "가온고",
+            "가온고 수학 2 내신반",
+            "토 14:00 - 17:00 / 일 14:00 - 17:00",
+            "3월 개강",
+            "/images/teachers/kwon-soyoung.png",
+            12,
+            "가온고 수학2 내신 완벽 대비! 정승준·권소영 선생님의 강력한 협업 수업",
+            "수학",
+            true,
+            false,
+            teacherIds
+          ]
+        );
+      }
+    }
+  } catch (err) {
+    console.error("[autoRestore] Exception in autoRestoreTeachersAndTimetables:", err);
+  }
+}
+
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
@@ -622,6 +792,7 @@ export async function registerRoutes(
   await ensureTeacherImagesTable();
   await ensureFilterTabsTable();
   await seedFilterTabs();
+  await autoRestoreTeachersAndTimetables();
   await ensureNoticesTable();
   await ensureSchoolsTable();
   await ensureNavigationMenusTable();
