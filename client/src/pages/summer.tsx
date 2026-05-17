@@ -196,7 +196,7 @@ export default function Summer() {
                 <Phone className="w-6 h-6" />
               </div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">전화 문의</p>
-              <a href="tel:0315480982" className="text-xl sm:text-2xl font-black text-white hover:text-[#7B2332] transition-colors">031-548-0982</a>
+              <a href="tel:0312041353" className="text-xl sm:text-2xl font-black text-white hover:text-[#7B2332] transition-colors">031-204-1353</a>
             </div>
             <div className="w-px h-16 bg-white/10 hidden sm:block"></div>
             <div className="flex flex-col items-center gap-2">
@@ -204,7 +204,7 @@ export default function Summer() {
                 <MessageSquare className="w-6 h-6" />
               </div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">문자 전용</p>
-              <a href="tel:01077372843" className="text-xl sm:text-2xl font-black text-white hover:text-blue-400 transition-colors">010-7737-2843</a>
+              <a href="tel:01097641353" className="text-xl sm:text-2xl font-black text-white hover:text-blue-400 transition-colors">010-9764-1353</a>
             </div>
           </div>
         </section>

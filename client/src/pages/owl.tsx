@@ -1130,7 +1130,7 @@ export function Owl() {
                   <a href="tel:031-548-0982" className="text-2xl font-black text-white hover:text-[#E6C687] block transition-colors">
                     031-548-0982
                   </a>
-                  <span className="text-[10px] text-gray-400 font-medium mt-1 block">문자 상담 전용: 010-7737-2843</span>
+                  <span className="text-[10px] text-gray-400 font-medium mt-1 block">문자 상담 전용: 010-9764-1353</span>
                 </div>
                 <div className="border-t border-white/10 pt-4 text-[10px] text-gray-300 space-y-1">
                   <p className="font-semibold text-white">영통이강학원 4관 올빼미 학습관</p>
