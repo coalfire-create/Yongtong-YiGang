@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Users, Calendar, MapPin, User, CheckCircle2, Clock } from "lucide-react";
 import { PageLayout } from "@/components/layout";
 import { Link, useLocation } from "wouter";
 
@@ -219,6 +219,252 @@ interface BriefingAnnouncement {
   is_active: boolean;
 }
 
+interface ParsedSpeaker {
+  subject?: string;
+  name: string;
+  desc?: string;
+}
+
+interface ParsedField {
+  key: string;
+  value: string;
+  speakers?: ParsedSpeaker[];
+  bullets?: string[];
+}
+
+interface ParsedSession {
+  title?: string;
+  fields: ParsedField[];
+}
+
+interface ParsedDescription {
+  intro: string;
+  sessions: ParsedSession[];
+}
+
+function parseDescription(descText: string): ParsedDescription {
+  const result: ParsedDescription = { intro: "", sessions: [] };
+  if (!descText) return result;
+
+  let introPart = "";
+  let sessionParts: string[] = [];
+
+  if (descText.includes("▣")) {
+    const splitByBox = descText.split("▣");
+    introPart = splitByBox[0].trim();
+    sessionParts = splitByBox.slice(1);
+  } else {
+    const firstArrow = descText.indexOf("▶");
+    if (firstArrow !== -1) {
+      introPart = descText.substring(0, firstArrow).trim();
+      sessionParts = [descText.substring(firstArrow)];
+    } else {
+      introPart = descText.trim();
+    }
+  }
+
+  result.intro = introPart;
+
+  for (const sessionRaw of sessionParts) {
+    let title = "";
+    let content = sessionRaw;
+
+    const arrowIdx = sessionRaw.indexOf("▶");
+    if (arrowIdx !== -1) {
+      title = sessionRaw.substring(0, arrowIdx).trim();
+      content = sessionRaw.substring(arrowIdx);
+    }
+
+    const fields: ParsedField[] = [];
+    const rawFields = content.split("▶").map(f => f.trim()).filter(Boolean);
+
+    for (const rawField of rawFields) {
+      let key = "";
+      let val = "";
+
+      const colonIdx = rawField.indexOf(":");
+      const spaceIdx = rawField.search(/\s/);
+      const circleIdx = rawField.indexOf("○");
+      const dashIdx = rawField.indexOf("-");
+
+      let splitIdx = -1;
+      if (colonIdx !== -1) {
+        splitIdx = colonIdx;
+      } else {
+        const indices = [spaceIdx, circleIdx, dashIdx].filter(idx => idx !== -1);
+        if (indices.length > 0) {
+          splitIdx = Math.min(...indices);
+        }
+      }
+
+      if (splitIdx !== -1) {
+        key = rawField.substring(0, splitIdx).replace(/:/g, "").trim();
+        val = rawField.substring(splitIdx).trim();
+        if (val.startsWith(":")) {
+          val = val.substring(1).trim();
+        }
+      } else {
+        key = rawField;
+      }
+
+      const fieldObj: ParsedField = { key, value: val };
+
+      if (key === "연사" || val.includes("○")) {
+        const speakerSegments = val.split("○").map(s => s.trim()).filter(Boolean);
+        const parsedSpeakers: ParsedSpeaker[] = speakerSegments.map(seg => {
+          const words = seg.split(/\s+/);
+          let subject = "";
+          let name = "";
+          let desc = "";
+
+          if (words.length > 0) {
+            const firstWord = words[0];
+            if (["국어", "영어", "수학", "과학", "입시", "논술", "사회", "사탐", "과탐", "생명과학", "화학", "물리"].includes(firstWord)) {
+              subject = firstWord;
+              name = words[1] || "";
+              desc = words.slice(2).join(" ");
+            } else {
+              name = words[0] || "";
+              desc = words.slice(1).join(" ");
+            }
+          }
+          return { subject, name, desc };
+        });
+        fieldObj.speakers = parsedSpeakers;
+      } else if (key === "내용" || val.includes("-")) {
+        const bulletSegments = val.split("-").map(b => b.trim()).filter(Boolean);
+        fieldObj.bullets = bulletSegments;
+      }
+
+      fields.push(fieldObj);
+    }
+
+    result.sessions.push({ title, fields });
+  }
+
+  return result;
+}
+
+function FormattedDescription({ description }: { description: string }) {
+  const parsed = parseDescription(description);
+
+  if (parsed.sessions.length === 0) {
+    return (
+      <p className="mt-3 text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+        {description}
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-6">
+      {/* Intro */}
+      {parsed.intro && (
+        <div className="text-gray-700 text-sm leading-relaxed p-4 sm:p-5 rounded-2xl bg-gray-50/70 border-l-4 border-[#7B2332] font-medium shadow-sm">
+          {parsed.intro}
+        </div>
+      )}
+
+      {/* Sessions */}
+      {parsed.sessions.map((session, idx) => (
+        <div key={idx} className="space-y-4">
+          {session.title && (
+            <h4 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2 mt-6 mb-2 pb-2 border-b border-gray-100">
+              <span className="w-2.5 h-4 bg-[#7B2332] rounded-sm"></span>
+              {session.title}
+            </h4>
+          )}
+
+          {/* Fields */}
+          <div className="space-y-4">
+            {/* Group metadata fields like "일정"/"일시", "대상", "장소" */}
+            {session.fields.some(f => !f.speakers && !f.bullets) && (
+              <div className="bg-white border border-gray-150/70 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm">
+                {session.fields
+                  .filter(f => !f.speakers && !f.bullets)
+                  .map((field, fIdx) => {
+                    const isTime = field.key.includes("일시") || field.key.includes("일정") || field.key.includes("시간");
+                    const isTarget = field.key.includes("대상");
+                    const isLocation = field.key.includes("장소") || field.key.includes("위치");
+                    
+                    return (
+                      <div key={fIdx} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 text-sm border-b border-gray-50 last:border-0 pb-3 last:pb-0 font-medium">
+                        <span className="w-20 font-black text-gray-400 flex items-center gap-1.5 flex-shrink-0">
+                          {isTime && <Clock className="w-4 h-4 text-[#7B2332]/70" />}
+                          {isTarget && <Users className="w-4 h-4 text-[#7B2332]/70" />}
+                          {isLocation && <MapPin className="w-4 h-4 text-[#7B2332]/70" />}
+                          {!isTime && !isTarget && !isLocation && <Calendar className="w-4 h-4 text-[#7B2332]/70" />}
+                          {field.key}
+                        </span>
+                        <span className="text-gray-800 font-extrabold">{field.value}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            {/* Render Speakers (연사) */}
+            {session.fields
+              .filter(f => f.speakers)
+              .map((field, fIdx) => (
+                <div key={fIdx} className="space-y-3">
+                  <h5 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5 pl-1">
+                    <User className="w-4 h-4 text-[#7B2332]" />
+                    설명회 연사 라인업
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {field.speakers?.map((speaker, sIdx) => (
+                      <div
+                        key={sIdx}
+                        className="bg-gradient-to-br from-white to-gray-50/30 rounded-2xl p-5 border border-gray-200/80 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-gray-300 transition-all duration-300"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            {speaker.subject && (
+                              <span className="px-2.5 py-0.5 text-[10px] font-black bg-[#7B2332]/10 text-[#7B2332] rounded-full uppercase tracking-wider">
+                                {speaker.subject}
+                              </span>
+                            )}
+                            <span className="font-extrabold text-gray-900 text-base">{speaker.name}</span>
+                          </div>
+                          {speaker.desc && (
+                            <p className="text-xs text-gray-500 leading-relaxed font-semibold whitespace-pre-line">
+                              {speaker.desc}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+            {/* Render Contents (내용) */}
+            {session.fields
+              .filter(f => f.bullets)
+              .map((field, fIdx) => (
+                <div key={fIdx} className="space-y-3 bg-white border border-gray-150/70 rounded-2xl p-5 sm:p-6 shadow-sm">
+                  <h5 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5 pl-1">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    설명회 주요 핵심 내용
+                  </h5>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 pl-1 pt-1">
+                    {field.bullets?.map((bullet, bIdx) => (
+                      <li key={bIdx} className="flex items-start gap-3 text-xs sm:text-sm text-gray-700 leading-relaxed font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#7B2332] mt-2 flex-shrink-0" />
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function Briefing() {
   const { data: briefings = [], isLoading } = useQuery<BriefingAnnouncement[]>({
     queryKey: ["/api/briefings/active"],
@@ -237,40 +483,46 @@ export function Briefing() {
           <p className="text-gray-400 text-sm mt-1">새로운 설명회 일정이 등록되면 이곳에 표시됩니다.</p>
         </div>
       ) : (
-        <div className="space-y-4" data-testid="briefing-list">
+        <div className="space-y-8" data-testid="briefing-list">
           {briefings.map((b) => (
             <div
               key={b.id}
-              className="bg-white border border-gray-200 p-6 sm:p-8"
+              className="bg-white border border-gray-200/80 rounded-3xl p-6 sm:p-10 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden"
               data-testid={`card-briefing-${b.id}`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
-                <div className="flex-shrink-0 w-14 h-14 bg-red-50 flex items-center justify-center">
-                  <CalendarDays className="w-7 h-7 text-[#7B2332]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-gray-900 leading-snug" data-testid={`text-briefing-title-${b.id}`}>
-                    {b.title}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
-                    <span className="font-medium">{b.date}</span>
-                    {b.time && <span>{b.time}</span>}
+              {/* Header Container */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-150/70">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-[#7B2332]/5 text-[#7B2332] rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border border-[#7B2332]/10">
+                    <CalendarDays className="w-7 h-7" />
                   </div>
-                  {b.description && (
-                    <p className="mt-3 text-sm text-gray-600 leading-relaxed">{b.description}</p>
-                  )}
-                  {b.form_url && (
-                    <a
-                      href={b.form_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-[#7B2332] text-white text-sm font-semibold hover:bg-[#6B1D2A] transition-colors"
-                      data-testid={`link-briefing-form-${b.id}`}
-                    >
-                      설명회 신청하기
-                    </a>
-                  )}
+                  <div className="space-y-1">
+                    <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-snug" data-testid={`text-briefing-title-${b.id}`}>
+                      {b.title}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 font-semibold">
+                      <span className="flex items-center gap-1">📅 {b.date}</span>
+                      {b.time && <span className="flex items-center gap-1">⏰ {b.time}</span>}
+                    </div>
+                  </div>
                 </div>
+                
+                {b.form_url && (
+                  <a
+                    href={b.form_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#7B2332] text-white text-sm font-extrabold hover:bg-[#6B1D2A] rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md active:scale-[0.98]"
+                    data-testid={`link-briefing-form-${b.id}`}
+                  >
+                    설명회 신청하기
+                  </a>
+                )}
+              </div>
+
+              {/* Description Body */}
+              <div className="pt-6">
+                <FormattedDescription description={b.description} />
               </div>
             </div>
           ))}

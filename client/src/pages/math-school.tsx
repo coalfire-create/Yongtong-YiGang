@@ -215,15 +215,25 @@ export default function MathSchool() {
                   <h3 className="text-xl font-bold text-gray-900">독보적인 내신 대비 콘텐츠</h3>
                 </div>
                 <div className="space-y-6">
-                  <div className="group p-6 bg-gray-50 rounded-2xl border border-transparent hover:border-[#7B2332]/20 transition-all">
-                    <h4 className="font-black text-[#7B2332] mb-1 uppercase tracking-wider text-xs">Secret File</h4>
-                    <p className="text-gray-900 font-bold mb-2">학교별 내신분석자료</p>
-                    <p className="text-xs text-gray-500 leading-relaxed">각 학교별 출제 경향을 깊고 날카롭게 분석하여 완벽한 대비를 돕는 시크릿 파일 제공</p>
+                  <div className="group p-6 bg-gray-50 rounded-2xl border border-transparent hover:border-[#7B2332]/20 transition-all space-y-4">
+                    <div>
+                      <h4 className="font-black text-[#7B2332] mb-1 uppercase tracking-wider text-xs">Secret File</h4>
+                      <p className="text-gray-900 font-bold mb-2">학교별 내신분석자료</p>
+                      <p className="text-xs text-gray-500 leading-relaxed">각 학교별 출제 경향을 깊고 날카롭게 분석하여 완벽한 대비를 돕는 시크릿 파일 제공</p>
+                    </div>
+                    <div className="rounded-xl overflow-hidden border border-gray-200/60 shadow-sm bg-white">
+                      <img src="/images/secret-file-covers.png" alt="Secret File Covers" className="w-full h-auto block" />
+                    </div>
                   </div>
-                  <div className="group p-6 bg-gray-50 rounded-2xl border border-transparent hover:border-[#7B2332]/20 transition-all">
-                    <h4 className="font-black text-[#7B2332] mb-1 uppercase tracking-wider text-xs">Su-Mock Exam</h4>
-                    <p className="text-gray-900 font-bold mb-2">매주 응시하는 수모의고사</p>
-                    <p className="text-xs text-gray-500 leading-relaxed">실전과 동일한 환경에서의 매주 테스트를 통해 실전 감각을 극대화하고 약점 분석</p>
+                  <div className="group p-6 bg-gray-50 rounded-2xl border border-transparent hover:border-[#7B2332]/20 transition-all space-y-4">
+                    <div>
+                      <h4 className="font-black text-[#7B2332] mb-1 uppercase tracking-wider text-xs">Su-Mock Exam</h4>
+                      <p className="text-gray-900 font-bold mb-2">매주 응시하는 수모의고사</p>
+                      <p className="text-xs text-gray-500 leading-relaxed">실전과 동일한 환경에서의 매주 테스트를 통해 실전 감각을 극대화하고 약점 분석</p>
+                    </div>
+                    <div className="rounded-xl overflow-hidden border border-gray-200/60 shadow-sm bg-white">
+                      <img src="/images/mock-exam-covers.png" alt="Su-Mock Exam Covers" className="w-full h-auto block" />
+                    </div>
                   </div>
                 </div>
               </div>
