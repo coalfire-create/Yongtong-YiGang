@@ -1,3 +1,26 @@
+import fs from "fs";
+import path from "path";
+
+// Proactively load .env variables in local sandbox environment if not populated
+if (!process.env.DATABASE_URL) {
+  try {
+    const envPath = path.resolve(process.cwd(), ".env");
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, "utf-8");
+      content.split("\n").forEach(line => {
+        const parts = line.trim().split("=");
+        if (parts.length >= 2 && !line.startsWith("#")) {
+          const key = parts[0].trim();
+          const val = parts.slice(1).join("=").trim().replace(/^['"]|['"]$/g, "");
+          process.env[key] = val;
+        }
+      });
+    }
+  } catch (e) {
+    console.error("Failed to load .env manually:", e);
+  }
+}
+
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -121,7 +144,6 @@ app.use((req, res, next) => {
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

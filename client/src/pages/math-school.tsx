@@ -39,13 +39,6 @@ const CLASS_INFO = [
       { name: "A1반", teacher: "황해룡T", image: "/images/teachers/hwang-haeryong.png", description: "성적 상승을 이끌어내는 실전 응용 및 오답 관리", highlight: false },
       { name: "A1반", teacher: "권소영T", image: "/images/teachers/kwon-soyoung.png", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
       { name: "A2반", teacher: "임서원T", image: "/images/teachers/lim-seowon.png", description: "기초부터 확실히 잡는 개념 및 성적 상승 기반 구축", highlight: false },
-      { 
-        name: "가온고 수학 2 내신반", 
-        teacher: "권소영T", 
-        image: "/images/teachers/kwon-soyoung.png", 
-        description: "가온고 수학2 내신 완벽 대비! 권소영 선생님의 강력한 수업", 
-        highlight: true 
-      },
     ]
   }
 ];
@@ -238,32 +231,6 @@ export default function MathSchool() {
           </div>
         </section>
 
-        {/* Posters / Banners Section */}
-        <section className="space-y-12">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900">영통이강 수학스쿨 소식</h2>
-            <p className="text-gray-500 font-medium">최신 교육 정보와 특별 프로그램 안내입니다.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((num) => (
-              <motion.div
-                key={num}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: num * 0.1 }}
-                whileHover={{ y: -10 }}
-                className="rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 bg-white"
-              >
-                <img 
-                  src={`/images/posters/poster-${num}.jpg`} 
-                  alt={`수학스쿨 포스터 ${num}`} 
-                  className="w-full h-auto block"
-                />
-              </motion.div>
-            ))}
-          </div>
-        </section>
 
         {/* Teacher / Class List Section */}
         <section className="space-y-16 max-w-[1200px] mx-auto pt-10">
@@ -412,6 +379,33 @@ export default function MathSchool() {
                 <a href="tel:01097641353" className="text-3xl font-black text-white hover:text-yellow-400 transition-colors">010-9764-1353</a>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Posters / Banners Section */}
+        <section className="space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900">영통이강 수학스쿨 소식</h2>
+            <p className="text-gray-500 font-medium">최신 교육 정보와 특별 프로그램 안내입니다.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((num) => (
+              <motion.div
+                key={num}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: num * 0.1 }}
+                whileHover={{ y: -10 }}
+                className="rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 bg-white"
+              >
+                <img 
+                  src={`/images/posters/poster-${num}.jpg`} 
+                  alt={`수학스쿨 포스터 ${num}`} 
+                  className="w-full h-auto block"
+                />
+              </motion.div>
+            ))}
           </div>
         </section>
       </div>

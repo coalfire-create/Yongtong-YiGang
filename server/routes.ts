@@ -306,7 +306,13 @@ async function ensureNavigationMenusTable() {
     if (parseInt(rows[0].count) === 0) {
       const initialMenus = [
         { label: "학원소개", path: "/about", sub: [{ label: "학원소개", path: "/about" }, { label: "오시는길", path: "/directions" }] },
-        { label: "고등관", path: "/high-school", sub: [{ label: "고1 시간표", path: "/high-school/schedule/g1" }, { label: "고2 시간표", path: "/high-school/schedule/g2" }, { label: "고3 시간표", path: "/high-school/schedule/g3" }, { label: "요약 시간표", path: "/high-school/summary" }] },
+        { label: "고등관", path: "/high-school", sub: [
+          { label: "고1 시간표", path: "/high-school/schedule/g1" },
+          { label: "고2 시간표", path: "/high-school/schedule/g2" },
+          { label: "고3 시간표", path: "/high-school/schedule/g3" },
+          { label: "동탄국제고 시간표", path: "/high-school/schedule/dongtan" },
+          { label: "요약 시간표", path: "/high-school/summary" }
+        ] },
         { label: "중3", path: "/middle-school", sub: [] },
         { label: "초/중등관", path: "/junior-school", sub: [{ label: "강의시간표", path: "/junior-school/schedule" }, { label: "프리미엄 학습 시스템", path: "/junior-school/premium-system" }] },
         { label: "썸머", path: "/summer", sub: [] },
@@ -331,6 +337,23 @@ async function ensureNavigationMenusTable() {
             "INSERT INTO navigation_menus (label, path, parent_id, display_order) VALUES ($1, $2, $3, $4)",
             [sub.label, sub.path, parentId, j]
           );
+        }
+      }
+    } else {
+      // Ensure "동탄국제고 시간표" submenu exists under parent "고등관"
+      const { rows: highSchoolParent } = await pool.query("SELECT id FROM navigation_menus WHERE label = '고등관' AND parent_id IS NULL LIMIT 1");
+      if (highSchoolParent.length > 0) {
+        const parentId = highSchoolParent[0].id;
+        const { rows: existingDongtan } = await pool.query("SELECT id FROM navigation_menus WHERE path = '/high-school/schedule/dongtan' AND parent_id = $1 LIMIT 1", [parentId]);
+        if (existingDongtan.length === 0) {
+          // Find max display_order under "고등관"
+          const { rows: maxOrder } = await pool.query("SELECT max(display_order) as max_ord FROM navigation_menus WHERE parent_id = $1", [parentId]);
+          const newOrder = (maxOrder[0].max_ord !== null ? maxOrder[0].max_ord : 0) + 1;
+          await pool.query(
+            "INSERT INTO navigation_menus (label, path, parent_id, display_order) VALUES ($1, $2, $3, $4)",
+            ["동탄국제고 시간표", "/high-school/schedule/dongtan", parentId, newOrder]
+          );
+          console.log("Successfully seeded '동탄국제고 시간표' submenu in DB check.");
         }
       }
     }
@@ -508,6 +531,24 @@ async function ensureTeacherImagesTable() {
   }
 }
 
+async function ensureTeachersTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS teachers (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        description TEXT NOT NULL,
+        image_url TEXT,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure teachers table:", err);
+  }
+}
+
 async function ensureFilterTabsTable() {
   try {
     await pool.query(`
@@ -587,8 +628,8 @@ async function autoRestoreTeachersAndTimetables() {
       return;
     }
     
-    let soyoung = existingTeachers?.find(t => t.name === "권소영");
-    let seungjun = existingTeachers?.find(t => t.name === "정승준");
+    let soyoung = existingTeachers?.find((t: any) => t.name === "권소영");
+    let seungjun = existingTeachers?.find((t: any) => t.name === "정승준");
     
     // 2. Insert Kwon So-young if missing
     if (!soyoung) {
@@ -790,6 +831,7 @@ export async function registerRoutes(
   await ensureSummerImagesTable();
   await ensureBriefingEventsTable();
   await ensureTeacherImagesTable();
+  await ensureTeachersTable();
   await ensureFilterTabsTable();
   await seedFilterTabs();
   await autoRestoreTeachersAndTimetables();
@@ -809,6 +851,7 @@ export async function registerRoutes(
     "/high-school/schedule/g1",
     "/high-school/schedule/g2",
     "/high-school/schedule/g3",
+    "/high-school/schedule/dongtan",
     "/high-school/summary",
     "/high-school/teachers",
     "/junior-school",
@@ -1225,7 +1268,7 @@ export async function registerRoutes(
 
         // Auto-match by name if teacher_id is not set
         if (!effectiveTeacherId && row.teacher_name) {
-          const matched = nameToTeacher.get(row.teacher_name?.trim());
+          const matched = nameToTeacher.get(row.teacher_name?.trim()) as any;
           if (matched) {
             effectiveTeacherId = matched.id;
           }
@@ -1280,7 +1323,7 @@ export async function registerRoutes(
 
   // --- Individual timetable photo upload ---
   app.patch("/api/timetables/:id/photo", requireAdmin, upload.single("image"), async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 id" });
     if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
 
@@ -1303,7 +1346,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/timetables/:id/photo", requireAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 id" });
     try {
       await pool.query("UPDATE timetables SET teacher_image_url = '' WHERE id = $1", [id]);
@@ -1324,7 +1367,7 @@ export async function registerRoutes(
   });
 
   app.put("/api/teacher-timetable-photos/:teacherId", requireAdmin, upload.single("image"), async (req, res) => {
-    const teacherId = parseInt(req.params.teacherId);
+    const teacherId = parseInt(req.params.teacherId as string);
     if (isNaN(teacherId)) return res.status(400).json({ error: "유효하지 않은 teacher_id" });
     if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
 
@@ -1355,7 +1398,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/teacher-timetable-photos/:teacherId", requireAdmin, async (req, res) => {
-    const teacherId = parseInt(req.params.teacherId);
+    const teacherId = parseInt(req.params.teacherId as string);
     if (isNaN(teacherId)) return res.status(400).json({ error: "유효하지 않은 teacher_id" });
     try {
       await pool.query("DELETE FROM teacher_timetable_photos WHERE teacher_id = $1", [teacherId]);
@@ -1420,7 +1463,7 @@ export async function registerRoutes(
   });
 
   app.patch("/api/admin/navigation/:id", requireAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const { label, path, parent_id, display_order, is_visible } = req.body;
     try {
       const { rows } = await pool.query(
@@ -1444,7 +1487,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/navigation/:id", requireAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     try {
       await pool.query("DELETE FROM navigation_menus WHERE id = $1", [id]);
       res.json({ success: true });

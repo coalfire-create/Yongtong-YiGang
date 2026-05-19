@@ -671,6 +671,68 @@ function CareSystemSection() {
         </p>
       </div>
 
+      {/* 4대 핵심 테마 요약 대시보드 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+        {[
+          {
+            num: "01",
+            title: "출결 관리",
+            eng: "ATTENDANCE",
+            desc: "등·하원 실시간 안심 문자 & 부재 실시간 원천 차단",
+            icon: Smartphone,
+            bg: "bg-[#7B2332]/5",
+            border: "border-[#7B2332]/20 text-[#7B2332]"
+          },
+          {
+            num: "02",
+            title: "생활 & 환경",
+            eng: "ENVIRONMENT",
+            desc: "디지털 디톡스 휴대폰 의무 반납 & 학습 저해 요소 통제",
+            icon: ShieldAlert,
+            bg: "bg-amber-50/50",
+            border: "border-amber-200 text-amber-700"
+          },
+          {
+            num: "03",
+            title: "학습 관리",
+            eng: "Q&A FEEDBACK",
+            desc: "명문대 TA 1:1 대면 질문 & 올빼미Q 온라인 24H 지원",
+            icon: GraduationCap,
+            bg: "bg-blue-50/50",
+            border: "border-blue-200 text-blue-700"
+          },
+          {
+            num: "04",
+            title: "입시 관리",
+            eng: "CONSULTING",
+            desc: "전문 입시 소장 1:1 대입 컨설팅 & 시대인재 모의고사",
+            icon: Award,
+            bg: "bg-emerald-50/50",
+            border: "border-emerald-200 text-emerald-700"
+          }
+        ].map((theme, idx) => {
+          const Icon = theme.icon;
+          return (
+            <div 
+              key={idx} 
+              className={`p-6 rounded-2xl border ${theme.border} ${theme.bg} flex flex-col justify-between space-y-4 hover:scale-[1.03] transition-all duration-300 shadow-sm`}
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-2xl font-black opacity-30">{theme.num}</span>
+                <div className="p-2.5 rounded-xl bg-white shadow-sm">
+                  <Icon className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="space-y-1.5 text-left">
+                <p className="text-[10px] font-black tracking-widest opacity-60 uppercase">{theme.eng}</p>
+                <h3 className="text-base font-extrabold text-gray-900">{theme.title}</h3>
+                <p className="text-[11px] text-gray-500 leading-relaxed font-medium">{theme.desc}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* 01. 출결 관리 CARE Card */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 hover:shadow-md transition-shadow">
         <div className="md:col-span-4 bg-[#7B2332]/5 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-150">
@@ -787,36 +849,6 @@ function CareSystemSection() {
                   음료는 텀블러 또는 플라스틱 페트병만 반입이 허용됩니다 (캔, 1회용 컵 절대 불가). 지각 또는 교시 중 무단 출입 시 해당 교시 종료 시까지 자습실 입실이 제한됩니다.
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* Timebell Bell Schedule Table */}
-          <div className="border border-gray-150 rounded-xl overflow-hidden">
-            <div className="bg-[#7B2332] text-white p-3 font-bold text-xs flex justify-between items-center">
-              <span>⏰ 교시제 타종 운영 시간표 (월~금 기준)</span>
-              <span className="text-[10px] text-white/80">토요일 의무 / 일요일 선택 운영</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-[11px] border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-150 text-gray-500 font-bold">
-                    <th className="p-3">교시구분</th>
-                    <th className="p-3">운영시간</th>
-                    <th className="p-3 text-center">자습시간</th>
-                    <th className="p-3">세부 룰</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
-                  {BELL_SCHEDULE.map((bell, bIdx) => (
-                    <tr key={bIdx} className={bIdx % 2 === 0 ? "bg-white" : "bg-gray-50/30"}>
-                      <td className="p-3 font-bold text-gray-900">{bell.period}</td>
-                      <td className="p-3 text-[#7B2332] font-semibold">{bell.time}</td>
-                      <td className="p-3 text-center text-gray-500">{bell.duration}</td>
-                      <td className="p-3 text-gray-400">{bell.type}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
 
@@ -1069,6 +1101,46 @@ function CareSystemSection() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 05. 독자적인 타종 운영 시간표 Section */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden p-8 sm:p-10 hover:shadow-md transition-shadow space-y-6">
+        <div className="text-center md:text-left space-y-2">
+          <span className="text-[#7B2332] font-black text-xs uppercase tracking-widest">BELL SCHEDULE SYSTEM</span>
+          <h3 className="text-2xl font-black text-gray-900">올빼미 교시제 타종 운영 시간표</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            자습 시간과 휴식 시간을 타종으로 완벽 통제하여 1초의 흐름 유실도 없는 초고밀도 면학 분위기를 완성합니다.
+          </p>
+        </div>
+
+        <div className="border border-gray-150 rounded-xl overflow-hidden shadow-inner">
+          <div className="bg-[#7B2332] text-white p-4 font-bold text-xs sm:text-sm flex flex-col sm:flex-row justify-between items-center gap-2">
+            <span className="flex items-center gap-2">⏰ 교시제 타종 운영 시간표 (월~금 기준)</span>
+            <span className="text-[10px] sm:text-xs text-white/80 bg-black/25 px-2.5 py-1 rounded-full">토요일 의무 자습 / 일요일 선택 자습</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[11px] sm:text-xs border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-150 text-gray-500 font-bold">
+                  <th className="p-3.5 pl-5">교시구분</th>
+                  <th className="p-3.5">운영시간</th>
+                  <th className="p-3.5 text-center">자습시간</th>
+                  <th className="p-3.5 pr-5">세부 룰</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
+                {BELL_SCHEDULE.map((bell, bIdx) => (
+                  <tr key={bIdx} className={bIdx % 2 === 0 ? "bg-white" : "bg-gray-50/30"}>
+                    <td className="p-3.5 pl-5 font-bold text-gray-900">{bell.period}</td>
+                    <td className="p-3.5 text-[#7B2332] font-semibold">{bell.time}</td>
+                    <td className="p-3.5 text-center text-gray-500 font-semibold">{bell.duration}</td>
+                    <td className="p-3.5 pr-5 text-gray-400 font-normal">{bell.type}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

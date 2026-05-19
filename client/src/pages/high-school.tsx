@@ -20,6 +20,7 @@ const GRADE_TABS = [
   { label: "고1", path: "/high-school/schedule/g1", color: "rose" },
   { label: "고2", path: "/high-school/schedule/g2", color: "crimson" },
   { label: "고3", path: "/high-school/schedule/g3", color: "maroon" },
+  { label: "동탄국제고", path: "/high-school/schedule/dongtan", color: "blue" },
 ];
 
 function QuickMenuCard({
@@ -94,6 +95,7 @@ const G1_FILTERS_DEFAULT: FilterTab[] = [
   { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => (tt.target_school || "").includes("화성고") },
   { label: "가온고", filterFn: (tt) => (tt.target_school || "").includes("가온고") },
+  { label: "동탄국제고", filterFn: (tt) => (tt.target_school || "").includes("동탄국제고") },
   { label: "병점고", filterFn: (tt) => (tt.target_school || "").includes("병점고") },
   { label: "영덕고", filterFn: (tt) => (tt.target_school || "").includes("영덕고") },
   { label: "수원고", filterFn: (tt) => (tt.target_school || "").includes("수원고") },
@@ -108,6 +110,7 @@ const G2_FILTERS_DEFAULT: FilterTab[] = [
   { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => (tt.target_school || "").includes("화성고") },
   { label: "가온고", filterFn: (tt) => (tt.target_school || "").includes("가온고") },
+  { label: "동탄국제고", filterFn: (tt) => (tt.target_school || "").includes("동탄국제고") },
   { label: "청명고", filterFn: (tt) => (tt.target_school || "").includes("청명고") },
   { label: "영덕고", filterFn: (tt) => (tt.target_school || "").includes("영덕고") },
   { label: "수원고", filterFn: (tt) => (tt.target_school || "").includes("수원고") },
@@ -125,6 +128,12 @@ const G3_FILTERS_DEFAULT: FilterTab[] = [
   { label: "사회문화", filterFn: (tt) => (tt.target_school || "") === "사회문화" || (tt.subject || "").includes("사회") || (tt.class_name || "").includes("사회문화") },
   { label: "생윤", filterFn: (tt) => (tt.target_school || "") === "생윤" || (tt.subject || "").includes("생윤") || (tt.class_name || "").includes("생윤") || (tt.class_name || "").includes("생활과윤리") },
   { label: "논술", filterFn: (tt) => (tt.target_school || "") === "논술" || (tt.subject || "").includes("논술") || (tt.class_name || "").includes("논술") },
+];
+
+const DONGTAN_FILTERS_DEFAULT: FilterTab[] = [
+  { label: "전체시간표", filterFn: (tt) => (tt.class_name || "").includes("동탄국제고") || (tt.target_school || "").includes("동탄국제고") },
+  { label: "수학", filterFn: (tt) => ((tt.class_name || "").includes("동탄국제고") || (tt.target_school || "").includes("동탄국제고")) && tt.subject === "수학" },
+  { label: "정찬영", filterFn: (tt) => ((tt.class_name || "").includes("동탄국제고") || (tt.target_school || "").includes("동탄국제고")) && (tt.teacher_name || "").includes("정찬영") },
 ];
 
 function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defaultFilterTabs }: { grade: string; category: string; color?: string; summaryDivision?: string; filterTabs?: FilterTab[] }) {
@@ -231,6 +240,10 @@ export function HighSchoolScheduleG2() {
 
 export function HighSchoolScheduleG3() {
   return <SchedulePageLayout grade="고3" category="고등관-고3" color="maroon" summaryDivision="high-g3" filterTabs={G3_FILTERS_DEFAULT} />;
+}
+
+export function HighSchoolScheduleDongtan() {
+  return <SchedulePageLayout grade="동탄국제고" category="고등관" color="blue" filterTabs={DONGTAN_FILTERS_DEFAULT} />;
 }
 
 export function HighSchoolSummaryTimetable() {

@@ -345,16 +345,25 @@ function GroupCard({
 
   // Stable sort mergedTimetables: S -> A1 -> A2
   const getPriority = (name: string) => {
-    const cleanName = name.replace(/\s+/g, '');
-    if (cleanName.includes("S반") || cleanName.includes("s반")) return 1;
-    if (cleanName.includes("A1반") || cleanName.includes("a1반")) return 2;
-    if (cleanName.includes("A2반") || cleanName.includes("a2반")) return 3;
+    const cleanName = name.replace(/\s+/g, '').toUpperCase();
     
-    if (/(?:^|[^a-zA-Z0-9])[Ss](?:[^a-zA-Z0-9]|$)/.test(name)) return 1;
-    if (/(?:^|[^a-zA-Z0-9])A1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
-    if (/(?:^|[^a-zA-Z0-9])A2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 3;
+    // Exact or suffix matches
+    if (cleanName.includes("S-1") || cleanName.includes("S1")) return 1;
+    if (cleanName.includes("S-2") || cleanName.includes("S2")) return 2;
+    if (cleanName.includes("S반") || cleanName === "S") return 3;
+    if (cleanName.includes("A1반") || cleanName.includes("A1")) return 4;
+    if (cleanName.includes("A2반") || cleanName.includes("A2")) return 5;
+    
+    // Boundary matches (fallback)
+    if (/(?:^|[^a-zA-Z0-9])S-1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 1;
+    if (/(?:^|[^a-zA-Z0-9])S1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 1;
+    if (/(?:^|[^a-zA-Z0-9])S-2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
+    if (/(?:^|[^a-zA-Z0-9])S2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
+    if (/(?:^|[^a-zA-Z0-9])S(?:[^a-zA-Z0-9]|$)/i.test(name)) return 3;
+    if (/(?:^|[^a-zA-Z0-9])A1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 4;
+    if (/(?:^|[^a-zA-Z0-9])A2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 5;
 
-    return 4;
+    return 6;
   };
 
   const indexedTimetables = mergedTimetables.map((tt, idx) => ({ tt, idx }));
