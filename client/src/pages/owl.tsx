@@ -157,24 +157,7 @@ function PhotoLightbox({ photos, initialIndex, onClose }: {
 }
 
 function OwlHeroSection() {
-  const { data: banners = [] } = useQuery<Banner[]>({
-    queryKey: ["/api/banners", "owl"],
-    queryFn: async () => {
-      const res = await fetch("/api/banners?division=owl");
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
-  });
-
   const [facilityLightbox, setFacilityLightbox] = useState<number | null>(null);
-  const [posterLightbox, setPosterLightbox] = useState<number | null>(null);
-
-  const apiBannerPosters: LightboxPhoto[] = banners
-    .filter((b) => b.is_active && b.image_url)
-    .map((b) => ({ src: b.image_url!, label: b.title || "올빼미 포스터" }));
-
-  const posterLightboxPhotos: LightboxPhoto[] = [...STATIC_POSTERS, ...apiBannerPosters];
-  const allPosters = posterLightboxPhotos;
 
   return (
     <>
@@ -183,13 +166,6 @@ function OwlHeroSection() {
           photos={FACILITY_PHOTOS}
           initialIndex={facilityLightbox}
           onClose={() => setFacilityLightbox(null)}
-        />
-      )}
-      {posterLightbox !== null && (
-        <PhotoLightbox
-          photos={posterLightboxPhotos}
-          initialIndex={posterLightbox}
-          onClose={() => setPosterLightbox(null)}
         />
       )}
 
@@ -230,47 +206,17 @@ function OwlHeroSection() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-4">
-        {/* Poster Showcase */}
-        {allPosters.length > 0 && (
-          <section className="mb-14" data-testid="section-owl-posters">
-            <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-              <span className="w-6 h-0.5 bg-[#7B2332] inline-block" />
-              학습관 홍보 포스터
-            </h2>
-            <div className={`grid gap-4 ${allPosters.length === 1 ? "grid-cols-1 max-w-xs mx-auto" : allPosters.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
-              {allPosters.map((p, i) => (
-                <button
-                  key={p.src}
-                  onClick={() => setPosterLightbox(i)}
-                  className="group relative overflow-hidden rounded shadow-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7B2332] text-left"
-                  data-testid={`button-owl-poster-${i}`}
-                >
-                  <div className="aspect-[3/4] w-full overflow-hidden bg-gray-100">
-                    <FadeImage
-                      src={p.src}
-                      alt={p.label}
-                      eager={i === 0}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                    <span className="bg-white/90 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-800 shadow self-center mb-auto mt-auto">
-                      포스터 크게보기
-                    </span>
-                    <p className="text-white text-xs font-bold truncate leading-none">{p.label}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Widescreen Interactive Photo Gallery */}
         <section id="facility-gallery" data-testid="section-owl-gallery" className="space-y-12">
-          <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-4">
-            <span className="w-6 h-0.5 bg-[#7B2332] inline-block" />
-            프리미엄 학습관 내부 시설 갤러리
-          </h2>
+          <div className="text-center space-y-4">
+            <span className="text-xs font-black tracking-widest text-[#7B2332] uppercase">PREMIUM STUDY GALLERY</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+              올빼미 완전몰입을 위한 완벽한 공간
+            </h2>
+            <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed">
+              공부에만 집중할 수 있도록 설계된 남녀 분리형 학습 자습실과 철저한 순공 환경을 직접 확인해보세요.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Girls Seat & Boys Seat Widescreen Card */}
@@ -476,7 +422,7 @@ function OwlDayTimeline() {
       icon: Users,
       subtitle: "최강의 질답 조교 상시 대기와 입시 컨설팅",
       details: [
-        "시대인재 재종 및 수원 전교권 출신 TA 질문: 화요일 임해영 조교, 토요일 이현우 조교 등 명문대 출신 조교가 현장에서 1:1 대면 질문을 직접 받아 해결합니다.",
+        "명문대 출신 TA 질문 피드백: 명문대 출신 조교가 상시 대기하여 현장에서 1:1 대면 질문을 직접 받아 해결합니다.",
         "입학사정관 출신 소장의 Full-Care: 1:1 생기부 관리, 탐구 주제 추천, 모의고사 오답 및 학종 컨설팅까지 학원 내 상시 무료/유료 컨설팅이 진행됩니다.",
         "온라인 올빼미Q (owlq.co.kr) 지원: 24시간 언제 어디서나 질문을 등록하고 정확한 피드백을 받을 수 있는 독자적 질문 플랫폼을 활용합니다."
       ],
@@ -934,7 +880,7 @@ function CareSystemSection() {
             <span className="text-[#7B2332] font-black text-xs block mb-1">CARE SYSTEM 03</span>
             <h3 className="text-2xl font-black text-gray-900 mb-4">학습 (질문/피드백) 관리</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
-              수원 최고의 질답 및 피드백 시스템입니다. 시대인재 재종 및 수원 전교권 출신 대면 TA 조교가 상시 대기하여 학생들의 질문에 즉각 대응합니다.
+              수원 최고의 질답 및 피드백 시스템입니다. 명문대 출신 대면 TA 조교가 상시 대기하여 학생들의 질문에 즉각 대응합니다.
             </p>
           </div>
           <div className="mt-8 border border-dashed border-[#7B2332]/40 rounded-xl p-4 bg-white text-center">
@@ -947,60 +893,17 @@ function CareSystemSection() {
         <div className="md:col-span-8 p-8 space-y-6">
           <h4 className="text-gray-900 font-extrabold text-lg flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-[#7B2332]" />
-            시대인재 및 명문대 출신 명품 조교진의 1:1 현장 대면 질문
+            명문대 출신 조교진의 1:1 밀착 학습 피드백
           </h4>
           
-          <div className="bg-red-50/50 border border-red-100 p-4 rounded-xl space-y-1">
-            <p className="text-xs font-bold text-gray-800">💡 현장 Q&A 신청 및 피드백 매뉴얼</p>
-            <p className="text-[11px] text-gray-500 leading-relaxed">
-              현장 조교의 질문 가능 과목을 확인하신 뒤, **올빼미Q** 사이트를 통해 현장 예약을 신청하거나 학습관 복도에 거치된 실물 수기 질문 대장에 이름을 기재하여 등록할 수 있습니다.
+          <div className="bg-[#FAF9F5] p-6 rounded-xl border border-gray-150 space-y-3">
+            <p className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+              <CheckCircle className="w-4 h-4 text-[#7B2332]" /> 1:1 대면 질문 및 학습 멘토링
             </p>
-          </div>
-
-          {/* TA Timetable Table */}
-          <div className="border border-gray-150 rounded-xl overflow-hidden">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
-                  <th className="p-3 w-28">구분 / 요일</th>
-                  <th className="p-3 w-28">담당 TA 조교</th>
-                  <th className="p-3">질문 가능 과목 및 세부 영역 세부 범위</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-gray-700">
-                {/* 화요일 임해영 */}
-                <tr className="bg-white">
-                  <td className="p-3 font-bold text-gray-900">화요일 (현장)</td>
-                  <td className="p-3 text-[#7B2332] font-semibold">임해영 조교</td>
-                  <td className="p-3 space-y-1">
-                    <p className="text-xs"><strong className="text-gray-900">국어:</strong> 독서 (비문학) / 문학 / 화법과 작문</p>
-                    <p className="text-xs"><strong className="text-gray-900">수학:</strong> 대수 (수1) / 미적분1 (수2) / 확률과 통계</p>
-                    <p className="text-xs"><strong className="text-gray-900">사회:</strong> 생활과 윤리 / 사회·문화</p>
-                    <p className="text-xs"><strong className="text-gray-400 font-medium">비교과:</strong> 학습방법 멘토링 및 전과목 학습법 상담</p>
-                  </td>
-                </tr>
-                {/* 토요일 이현우 */}
-                <tr className="bg-gray-50/50">
-                  <td className="p-3 font-bold text-gray-900">토요일 (현장)</td>
-                  <td className="p-3 text-[#7B2332] font-semibold">이현우 조교</td>
-                  <td className="p-3 space-y-1">
-                    <p className="text-xs"><strong className="text-gray-900">수학:</strong> 공통수학 1·2 (수상·하) / 대수 (수1) / 미적분1 (수2) / 미적분2 (미적분) / 확률과 통계 / 기하</p>
-                    <p className="text-xs"><strong className="text-gray-900">국어:</strong> 독서 (비문학) / 문학 / 문법 (언어와 매체)</p>
-                    <p className="text-xs"><strong className="text-gray-900">영어:</strong> 전 범위</p>
-                    <p className="text-xs"><strong className="text-gray-900">사회:</strong> 생활과 윤리 / 사회·문화</p>
-                    <p className="text-xs"><strong className="text-gray-900">과학:</strong> 통합과학 / 물리1 / 화학1 / 생명과학1 / 지구과학1</p>
-                  </td>
-                </tr>
-                {/* 온라인 */}
-                <tr className="bg-white">
-                  <td className="p-3 font-bold text-gray-900">올빼미Q (온라인)</td>
-                  <td className="p-3 text-[#7B2332] font-semibold">상시 원격 TA</td>
-                  <td className="p-3 text-xs text-gray-500 font-semibold">
-                    24시간 실시간 온라인 질문 피드백 대응 (올빼미Q 웹사이트 연동)
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              올빼미 학습관에서는 명문대 출신 조교진이 현장에 상주하여 학생들과 1:1 대면 질의응답을 진행합니다.
+              학습 중 막히는 개념이나 어려운 문항에 대해 피드백을 제공하며, 개인 맞춤형 학습법 및 공부 방향성 멘토링까지 함께 지원합니다.
+            </p>
           </div>
 
           {/* Academic features */}
@@ -1149,19 +1052,79 @@ function CareSystemSection() {
 }
 
 export function Owl() {
-  const [facilityLightbox, setFacilityLightbox] = useState<number | null>(null);
+  const { data: banners = [] } = useQuery<Banner[]>({
+    queryKey: ["/api/banners", "owl"],
+    queryFn: async () => {
+      const res = await fetch("/api/banners?division=owl");
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+
+  const [posterLightbox, setPosterLightbox] = useState<number | null>(null);
+
+  const apiBannerPosters: LightboxPhoto[] = banners
+    .filter((b) => b.is_active && b.image_url)
+    .map((b) => ({ src: b.image_url!, label: b.title || "올빼미 포스터" }));
+
+  const posterLightboxPhotos: LightboxPhoto[] = [...STATIC_POSTERS, ...apiBannerPosters];
+  const allPosters = posterLightboxPhotos;
   
   return (
     <PageLayout>
+      {posterLightbox !== null && (
+        <PhotoLightbox
+          photos={posterLightboxPhotos}
+          initialIndex={posterLightbox}
+          onClose={() => setPosterLightbox(null)}
+        />
+      )}
       <div className="bg-[#FAF9F5] min-h-screen pb-16">
         {/* Main Hero Header and Posters */}
         <OwlHeroSection />
 
+        {/* Core CARE Dashboard Section (생활, 학습, 입시, 출결) */}
+        <CareSystemSection />
+
         {/* Scroll Storyboard Daily Progress (등원부터 하원까지) */}
         <OwlDayTimeline />
 
-        {/* Core CARE Dashboard Section (생활, 학습, 입시, 출결) */}
-        <CareSystemSection />
+        {/* Poster Showcase (Moved from top to bottom) */}
+        {allPosters.length > 0 && (
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+            <section className="mb-14" data-testid="section-owl-posters">
+              <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+                <span className="w-6 h-0.5 bg-[#7B2332] inline-block" />
+                올빼미 소식지
+              </h2>
+              <div className={`grid gap-4 ${allPosters.length === 1 ? "grid-cols-1 max-w-xs mx-auto" : allPosters.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+                {allPosters.map((p, i) => (
+                  <button
+                    key={p.src}
+                    onClick={() => setPosterLightbox(i)}
+                    className="group relative overflow-hidden rounded shadow-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7B2332] text-left"
+                    data-testid={`button-owl-poster-${i}`}
+                  >
+                    <div className="aspect-[3/4] w-full overflow-hidden bg-gray-100">
+                      <FadeImage
+                        src={p.src}
+                        alt={p.label}
+                        eager={i === 0}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                      <span className="bg-white/90 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-800 shadow self-center mb-auto mt-auto">
+                        포스터 크게보기
+                      </span>
+                      <p className="text-white text-xs font-bold truncate leading-none">{p.label}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
 
         {/* Interactive Quick Information Section */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">

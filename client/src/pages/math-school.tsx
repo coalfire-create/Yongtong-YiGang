@@ -2,6 +2,7 @@ import { PageLayout } from "@/components/layout";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Trophy, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, Star, TrendingUp, ShieldCheck, ArrowRight } from "lucide-react";
 import { MathLevelTestModal } from "@/components/math-level-test-modal";
 
@@ -53,6 +54,28 @@ const SYSTEM_STEPS = [
 export default function MathSchool() {
   const [showLevelTestModal, setShowLevelTestModal] = useState(false);
   const [selectedGrade, setSelectedGrade] = useState("고1");
+
+  const { data: teachers } = useQuery<any[]>({
+    queryKey: ["/api/teachers"],
+    queryFn: async () => {
+      const res = await fetch("/api/teachers");
+      if (!res.ok) throw new Error("Failed to fetch teachers");
+      return res.json();
+    }
+  });
+
+  const filteredClassInfo = teachers
+    ? CLASS_INFO.map(gradeInfo => {
+        const filteredClasses = gradeInfo.classes.filter(cls => {
+          const baseName = cls.teacher.replace(/T$/, "").trim();
+          return teachers.some((t: any) => t.name.trim() === baseName);
+        });
+        return {
+          ...gradeInfo,
+          classes: filteredClasses
+        };
+      })
+    : CLASS_INFO;
   return (
     <PageLayout>
       <div className="bg-[#7B2332] text-white overflow-hidden relative">
@@ -252,7 +275,7 @@ export default function MathSchool() {
           <div className="flex flex-col items-center gap-12">
             {/* Premium Tab Switcher */}
             <div className="inline-flex p-2 bg-gray-100/80 backdrop-blur-sm rounded-[2.5rem] border border-gray-200/50 shadow-inner">
-              {CLASS_INFO.map((gradeInfo) => (
+              {filteredClassInfo.map((gradeInfo) => (
                 <button
                   key={gradeInfo.grade}
                   onClick={() => setSelectedGrade(gradeInfo.grade)}
@@ -276,7 +299,7 @@ export default function MathSchool() {
 
             {/* Class Cards List */}
             <div className="w-full space-y-10">
-              {CLASS_INFO.find(g => g.grade === selectedGrade)?.classes.map((cls, idx) => (
+              {filteredClassInfo.find(g => g.grade === selectedGrade)?.classes.map((cls, idx) => (
                 <motion.div
                   key={`${selectedGrade}-${idx}`}
                   initial={{ opacity: 0, y: 20 }}

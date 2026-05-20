@@ -738,8 +738,8 @@ function TeacherImagesManager({ teacherId, teacherName }: { teacherId: number; t
 }
 
 const CATEGORY_FILTER_OPTIONS: Record<string, string[]> = {
-  "고등관-고1": ["화성고", "가온고", "동탄국제고", "병점고", "영덕고", "수원고", "청명고"],
-  "고등관-고2": ["화성고", "가온고", "동탄국제고", "청명고", "영덕고", "수원고", "고색고"],
+  "고등관-고1": ["화성고", "가온고", "병점고", "영덕고", "수원고", "청명고", "동탄국제고"],
+  "고등관-고2": ["화성고", "가온고", "영덕고", "수원고", "청명고", "고색고", "동탄국제고"],
   "고등관-고3": ["국어", "영어", "수학", "생명과학", "사회문화", "생윤", "논술"],
 };
 
@@ -818,6 +818,15 @@ function TimetablesTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
       setSelectedIds(new Set());
+    },
+  });
+
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async ({ id, is_visible }: { id: number; is_visible: boolean }) => {
+      await apiRequest("PATCH", "/api/timetables/bulk-visibility", { ids: [id], is_visible });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
     },
   });
 
@@ -1317,14 +1326,9 @@ function TimetablesTab() {
             data-testid={`button-delete-timetable-${tt.id}`}
           ><Trash2 className="w-3.5 h-3.5" /></button>
           <button
-            onClick={() => {
-              const formData = new FormData();
-              formData.append("class_name", tt.class_name);
-              formData.append("category", tt.category);
-              formData.append("is_visible", String(!tt.is_visible));
-              updateMutation.mutate({ id: tt.id, formData });
-            }}
-            className={`p-1.5 rounded transition-colors ${!tt.is_visible ? "text-gray-400 hover:text-gray-600" : "text-[#7B2332] hover:bg-red-50"}`}
+            onClick={() => toggleVisibilityMutation.mutate({ id: tt.id, is_visible: !tt.is_visible })}
+            disabled={toggleVisibilityMutation.isPending}
+            className={`p-1.5 rounded transition-colors disabled:opacity-50 ${!tt.is_visible ? "text-gray-400 hover:text-gray-600" : "text-[#7B2332] hover:bg-red-50"}`}
             title={tt.is_visible ? "숨기기" : "보이기"}
             data-testid={`button-toggle-visibility-${tt.id}`}
           >

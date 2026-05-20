@@ -38,8 +38,8 @@ function getPool() {
 class SupabaseQueryBuilder {
   private table: string;
   private selects: string = "*";
-  private filters: { type: "eq" | "in"; col: string; val: any }[] = [];
-  private orders: { col: string; ascending: boolean }[] = [];
+  private filters: { type: "eq" | "in" | "like"; col: string; val: any }[] = [];
+  private orders: { col: string; ascending: boolean; nullsFirst?: boolean }[] = [];
   private limitNum: number | null = null;
   private isSingle: boolean = false;
 
@@ -62,8 +62,13 @@ class SupabaseQueryBuilder {
     return this;
   }
 
+  like(col: string, pattern: string) {
+    this.filters.push({ type: "like", col, val: pattern });
+    return this;
+  }
+
   order(col: string, opts?: any) {
-    this.orders.push({ col, ascending: opts?.ascending !== false });
+    this.orders.push({ col, ascending: opts?.ascending !== false, nullsFirst: opts?.nullsFirst });
     return this;
   }
 
@@ -99,13 +104,21 @@ class SupabaseQueryBuilder {
               return `$${params.length}`;
             }).join(",");
             filterClauses.push(`${f.col} IN (${placeholders})`);
+          } else if (f.type === "like") {
+            params.push(f.val);
+            filterClauses.push(`${f.col} LIKE $${params.length}`);
           }
         }
         queryStr += ` WHERE ` + filterClauses.join(" AND ");
       }
 
       if (this.orders.length > 0) {
-        const orderClauses = this.orders.map(o => `${o.col} ${o.ascending ? "ASC" : "DESC"}`).join(", ");
+        const orderClauses = this.orders.map(o => {
+          let clause = `${o.col} ${o.ascending ? "ASC" : "DESC"}`;
+          if (o.nullsFirst === true) clause += " NULLS FIRST";
+          else if (o.nullsFirst === false) clause += " NULLS LAST";
+          return clause;
+        }).join(", ");
         queryStr += ` ORDER BY ` + orderClauses;
       }
 

@@ -25,6 +25,32 @@ interface Timetable {
 
 const SUBJECT_ORDER = ["수학", "국어", "영어", "통합과학", "통합사회/한국사", "생명과학", "사회문화", "생윤", "논술", "탐구"];
 
+// 학교/그룹 표시 순서: 연합반 -> 화성/가온/병점 -> 영덕/수원/청명 -> 고색/동탄국제
+const SCHOOL_ORDER = [
+  "연합반",
+  "화성고",
+  "가온고",
+  "병점고",
+  "영덕고",
+  "수원고",
+  "청명고",
+  "고색고",
+  "동탄국제고",
+];
+
+const getSchoolRank = (name: string): number => {
+  const idx = SCHOOL_ORDER.findIndex((s) => name.includes(s));
+  return idx === -1 ? SCHOOL_ORDER.length : idx;
+};
+
+const sortByGroupKey = <T,>(entries: [string, T][]): [string, T][] =>
+  [...entries].sort(([a], [b]) => {
+    const ra = getSchoolRank(a);
+    const rb = getSchoolRank(b);
+    if (ra !== rb) return ra - rb;
+    return a.localeCompare(b);
+  });
+
 interface FilterTab {
   label: string;
   filterFn: (tt: Timetable) => boolean;
@@ -182,7 +208,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                             <div className="h-px flex-1 bg-gray-100" />
                           </div>
                           <div className="space-y-6">
-                            {Object.entries(union).map(([key, tts]) => (
+                            {sortByGroupKey(Object.entries(union)).map(([key, tts]) => (
                               <GroupCard
                                 key={key}
                                 title={key}
@@ -208,7 +234,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                             </div>
                           )}
                           <div className="space-y-6">
-                            {Object.entries(school).map(([key, tts]) => (
+                            {sortByGroupKey(Object.entries(school)).map(([key, tts]) => (
                               <GroupCard
                                 key={key}
                                 title={key}
@@ -237,7 +263,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                     <span className="text-xs text-gray-400 font-medium">({Object.values(ungrouped).flat().length}개 반)</span>
                   </div>
                   <div className="flex-1 space-y-6">
-                    {Object.entries(ungrouped).map(([key, tts]) => (
+                    {sortByGroupKey(Object.entries(ungrouped)).map(([key, tts]) => (
                       <GroupCard
                         key={key}
                         title={key}

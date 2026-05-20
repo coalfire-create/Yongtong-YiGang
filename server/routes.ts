@@ -834,7 +834,7 @@ export async function registerRoutes(
   await ensureTeachersTable();
   await ensureFilterTabsTable();
   await seedFilterTabs();
-  await autoRestoreTeachersAndTimetables();
+  // await autoRestoreTeachersAndTimetables();
   await ensureNoticesTable();
   await ensureSchoolsTable();
   await ensureNavigationMenusTable();
@@ -1464,22 +1464,30 @@ export async function registerRoutes(
 
   app.patch("/api/admin/navigation/:id", requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id as string);
-    const { label, path, parent_id, display_order, is_visible } = req.body;
+    const body = req.body;
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+
+    if (body.label !== undefined) { values.push(body.label); setClauses.push(`label = $${values.length}`); }
+    if (body.path !== undefined) { values.push(body.path); setClauses.push(`path = $${values.length}`); }
+    if ("parent_id" in body) {
+      const pid = body.parent_id === "" || body.parent_id === null ? null : Number(body.parent_id);
+      values.push(pid);
+      setClauses.push(`parent_id = $${values.length}`);
+    }
+    if (body.display_order !== undefined) { values.push(body.display_order); setClauses.push(`display_order = $${values.length}`); }
+    if (body.is_visible !== undefined) { values.push(body.is_visible); setClauses.push(`is_visible = $${values.length}`); }
+
+    if (setClauses.length === 0) return res.status(400).json({ error: "변경할 내용이 없습니다." });
+
     try {
+      values.push(id);
       const { rows } = await pool.query(
-        `UPDATE navigation_menus 
-         SET label = COALESCE($1, label), 
-             path = COALESCE($2, path), 
-             parent_id = $3, 
-             display_order = COALESCE($4, display_order), 
-             is_visible = COALESCE($5, is_visible) 
-         WHERE id = $6 RETURNING *`,
-        [label, path, parent_id === undefined ? undefined : parent_id, display_order, is_visible, id]
+        `UPDATE navigation_menus SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING *`,
+        values
       );
-      // Fix: COALESCE doesn't handle parent_id well if we want to set it to null
-      if (parent_id !== undefined) {
-         await pool.query("UPDATE navigation_menus SET parent_id = $1 WHERE id = $2", [parent_id, id]);
-      }
+      if (rows.length === 0) return res.status(404).json({ error: "Not found" });
       res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -1611,17 +1619,69 @@ export async function registerRoutes(
 
   app.put("/api/timetables/:id", requireAdmin, upload.fields([{ name: "teacher_image", maxCount: 1 }, { name: "detail_image", maxCount: 1 }]), async (req, res) => {
     const { id } = req.params;
-    const { teacher_id, teacher_ids, teacher_name, category, target_school, class_name, class_time, start_date, description, subject, is_visible, is_union } = req.body;
-    let teacherIdsArray: number[] | null = null;
-    if (teacher_ids) {
-      teacherIdsArray = Array.isArray(teacher_ids) ? teacher_ids.map(Number) : String(teacher_ids).split(",").map(Number).filter(id => !isNaN(id));
-    }
+    const body = req.body;
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
-    if (!class_name) {
+
+    // Partial update: only modify columns whose keys are explicitly present in the request body.
+    // This prevents clients that send only a subset of fields (e.g. the visibility toggle)
+    // from wiping out the other columns.
+    if (body.class_name !== undefined && !String(body.class_name).trim()) {
       return res.status(400).json({ error: "수업명은 필수입니다." });
     }
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    const addField = (column: string, value: any) => {
+      values.push(value);
+      setClauses.push(`${column} = $${values.length}`);
+    };
+    const toBool = (v: any) => v === true || v === "true";
+
     try {
-      let teacher_image_url: string | undefined;
+      if (body.class_name !== undefined) {
+        addField("class_name", body.class_name);
+        addField("title", body.class_name);
+      }
+      if (body.teacher_id !== undefined) {
+        addField("teacher_id", body.teacher_id ? Number(body.teacher_id) : null);
+      }
+      if (body.teacher_name !== undefined) {
+        addField("teacher_name", body.teacher_name || "");
+      }
+      if (body.category !== undefined) {
+        addField("category", body.category || "");
+      }
+      if (body.target_school !== undefined) {
+        addField("target_school", body.target_school || "");
+      }
+      if (body.class_time !== undefined) {
+        addField("class_time", body.class_time || "");
+      }
+      if (body.start_date !== undefined) {
+        addField("start_date", body.start_date || "");
+      }
+      if (body.description !== undefined) {
+        addField("description", body.description || "");
+      }
+      if (body.subject !== undefined) {
+        addField("subject", body.subject || "");
+      }
+      if (body.is_visible !== undefined) {
+        addField("is_visible", toBool(body.is_visible));
+      }
+      if (body.is_union !== undefined) {
+        addField("is_union", toBool(body.is_union));
+      }
+      if (body.teacher_ids !== undefined) {
+        let teacherIdsArray: number[] = [];
+        if (Array.isArray(body.teacher_ids)) {
+          teacherIdsArray = body.teacher_ids.map(Number).filter((n: number) => !isNaN(n));
+        } else if (typeof body.teacher_ids === "string" && body.teacher_ids.length > 0) {
+          teacherIdsArray = body.teacher_ids.split(",").map(Number).filter((n: number) => !isNaN(n));
+        }
+        addField("teacher_ids", teacherIdsArray);
+      }
+
       const teacherFile = files?.["teacher_image"]?.[0];
       if (teacherFile) {
         const ext = path.extname(teacherFile.originalname) || ".jpg";
@@ -1633,9 +1693,9 @@ export async function registerRoutes(
           return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
         }
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-        teacher_image_url = urlData.publicUrl;
+        addField("teacher_image_url", urlData.publicUrl);
       }
-      let detail_image_url: string | null | undefined;
+
       const detailFile = files?.["detail_image"]?.[0];
       if (detailFile) {
         const ext = path.extname(detailFile.originalname) || ".jpg";
@@ -1647,48 +1707,15 @@ export async function registerRoutes(
           return res.status(500).json({ error: "상세 이미지 업로드 실패: " + uploadError.message });
         }
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-        detail_image_url = urlData.publicUrl;
-      } else if (req.body.delete_detail_image === "true") {
-        detail_image_url = null;
+        addField("detail_image_url", urlData.publicUrl);
+      } else if (body.delete_detail_image === "true") {
+        addField("detail_image_url", null);
       }
-      const setClauses = [
-        "title = $1",
-        "teacher_id = $2",
-        "teacher_name = $3",
-        "category = $4",
-        "target_school = $5",
-        "class_name = $6",
-        "class_time = $7",
-        "start_date = $8",
-        "description = $9",
-        "subject = $10",
-        "is_visible = $11",
-        "is_union = $12",
-        "teacher_ids = $13",
-      ];
-      const values: any[] = [
-        class_name || "",
-        teacher_id ? Number(teacher_id) : null,
-        teacher_name || "",
-        category || "",
-        target_school || "",
-        class_name || "",
-        class_time || "",
-        start_date || "",
-        description || "",
-        subject || "",
-        is_visible !== undefined ? is_visible === "true" || is_visible === true : true,
-        is_union !== undefined ? is_union === "true" || is_union === true : false,
-        teacherIdsArray,
-      ];
-      if (teacher_image_url !== undefined) {
-        setClauses.push(`teacher_image_url = $${values.length + 1}`);
-        values.push(teacher_image_url);
+
+      if (setClauses.length === 0) {
+        return res.status(400).json({ error: "변경할 내용이 없습니다." });
       }
-      if (detail_image_url !== undefined) {
-        setClauses.push(`detail_image_url = $${values.length + 1}`);
-        values.push(detail_image_url);
-      }
+
       values.push(id);
       const { rows } = await pool.query(
         `UPDATE timetables SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING *`,

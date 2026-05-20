@@ -413,28 +413,50 @@ function FormattedDescription({ description }: { description: string }) {
                     설명회 연사 라인업
                   </h5>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {field.speakers?.map((speaker, sIdx) => (
-                      <div
-                        key={sIdx}
-                        className="bg-gradient-to-br from-white to-gray-50/30 rounded-2xl p-5 border border-gray-200/80 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-gray-300 transition-all duration-300"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            {speaker.subject && (
-                              <span className="px-2.5 py-0.5 text-[10px] font-black bg-[#7B2332]/10 text-[#7B2332] rounded-full uppercase tracking-wider">
-                                {speaker.subject}
-                              </span>
+                    {field.speakers?.map((speaker, sIdx) => {
+                      let roleBadge = null;
+                      const cleanName = speaker.name.trim();
+                      if (cleanName.includes("한노아")) {
+                        roleBadge = "소장님";
+                      } else if (
+                        cleanName.includes("텐타클") ||
+                        cleanName.includes("펜타클") ||
+                        cleanName.includes("펜타켈") ||
+                        cleanName.includes("최승해")
+                      ) {
+                        roleBadge = "소장님";
+                      } else if (cleanName.includes("정승준")) {
+                        roleBadge = "영통이강원장/수학";
+                      }
+
+                      return (
+                        <div
+                          key={sIdx}
+                          className="bg-gradient-to-br from-white to-gray-50/30 rounded-2xl p-5 border border-gray-200/80 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-gray-300 transition-all duration-300"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              {speaker.subject && (
+                                <span className="px-2.5 py-0.5 text-[10px] font-black bg-[#7B2332]/10 text-[#7B2332] rounded-full uppercase tracking-wider">
+                                  {speaker.subject}
+                                </span>
+                              )}
+                              <span className="font-extrabold text-gray-900 text-base">{speaker.name}</span>
+                              {roleBadge && (
+                                <span className="px-2.5 py-0.5 text-[10px] font-black bg-[#7B2332]/10 text-[#7B2332] rounded-full uppercase tracking-wider">
+                                  {roleBadge}
+                                </span>
+                              )}
+                            </div>
+                            {speaker.desc && (
+                              <p className="text-xs text-gray-500 leading-relaxed font-semibold whitespace-pre-line">
+                                {speaker.desc}
+                              </p>
                             )}
-                            <span className="font-extrabold text-gray-900 text-base">{speaker.name}</span>
                           </div>
-                          {speaker.desc && (
-                            <p className="text-xs text-gray-500 leading-relaxed font-semibold whitespace-pre-line">
-                              {speaker.desc}
-                            </p>
-                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -465,9 +487,77 @@ function FormattedDescription({ description }: { description: string }) {
   );
 }
 
+function parseBriefingDate(dateStr: string, timeStr?: string): Date {
+  try {
+    const cleanDate = dateStr.trim();
+    // YYYY년 MM월 DD일
+    const matchFull = cleanDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+    if (matchFull) {
+      const year = parseInt(matchFull[1], 10);
+      const month = parseInt(matchFull[2], 10) - 1;
+      const day = parseInt(matchFull[3], 10);
+      
+      let hour = 0;
+      let minute = 0;
+      if (timeStr) {
+        const timeMatch = timeStr.trim().match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          hour = parseInt(timeMatch[1], 10);
+          minute = parseInt(timeMatch[2], 10);
+        }
+      }
+      return new Date(year, month, day, hour, minute);
+    }
+    
+    // MM월 DD일 (assume current year)
+    const matchPartial = cleanDate.match(/(\d{1,2})월\s*(\d{1,2})일/);
+    if (matchPartial) {
+      const year = new Date().getFullYear();
+      const month = parseInt(matchPartial[1], 10) - 1;
+      const day = parseInt(matchPartial[2], 10);
+      
+      let hour = 0;
+      let minute = 0;
+      if (timeStr) {
+        const timeMatch = timeStr.trim().match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          hour = parseInt(timeMatch[1], 10);
+          minute = parseInt(timeMatch[2], 10);
+        }
+      }
+      return new Date(year, month, day, hour, minute);
+    }
+
+    const parsed = Date.parse(cleanDate);
+    if (!isNaN(parsed)) {
+      return new Date(parsed);
+    }
+  } catch (e) {
+    console.error("Failed to parse briefing date:", dateStr, e);
+  }
+  return new Date(0);
+}
+
 export function Briefing() {
   const { data: briefings = [], isLoading } = useQuery<BriefingAnnouncement[]>({
     queryKey: ["/api/briefings/active"],
+  });
+
+  const now = new Date();
+  const sortedBriefings = [...briefings].sort((a, b) => {
+    const dateA = parseBriefingDate(a.date, a.time);
+    const dateB = parseBriefingDate(b.date, b.time);
+    const isFutureA = dateA.getTime() >= now.getTime();
+    const isFutureB = dateB.getTime() >= now.getTime();
+
+    if (isFutureA && !isFutureB) return -1;
+    if (!isFutureA && isFutureB) return 1;
+
+    if (isFutureA && isFutureB) {
+      return dateA.getTime() - dateB.getTime(); // Soonest first
+    } else {
+      return dateB.getTime() - dateA.getTime(); // Most recent past first
+    }
   });
 
   return (
@@ -476,7 +566,7 @@ export function Briefing() {
         <div className="flex justify-center py-20">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
-      ) : briefings.length === 0 ? (
+      ) : sortedBriefings.length === 0 ? (
         <div className="text-center py-20">
           <CalendarDays className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-400 text-lg font-medium">현재 예정된 설명회가 없습니다.</p>
@@ -484,7 +574,7 @@ export function Briefing() {
         </div>
       ) : (
         <div className="space-y-8" data-testid="briefing-list">
-          {briefings.map((b) => (
+          {sortedBriefings.map((b) => (
             <div
               key={b.id}
               className="bg-white border border-gray-200/80 rounded-3xl p-6 sm:p-10 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden"
