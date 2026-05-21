@@ -20,7 +20,6 @@ const GRADE_TABS = [
   { label: "고1", path: "/high-school/schedule/g1", color: "rose" },
   { label: "고2", path: "/high-school/schedule/g2", color: "crimson" },
   { label: "고3", path: "/high-school/schedule/g3", color: "maroon" },
-  { label: "동탄국제고", path: "/high-school/schedule/dongtan", color: "blue" },
 ];
 
 function QuickMenuCard({
@@ -79,7 +78,7 @@ function buildFilterFn(label: string): (tt: any) => boolean {
       (tt.subject || "").includes(label) ||
       (tt.class_name || "").includes(label);
   }
-  return (tt) => (tt.target_school || "").includes(label);
+  return (tt) => (tt.target_school || "").includes(label) || (tt.class_name || "").includes(label);
 }
 
 function buildFilterTabs(apiTabs: { id: number; label: string }[]): FilterTab[] {
@@ -130,11 +129,7 @@ const G3_FILTERS_DEFAULT: FilterTab[] = [
   { label: "논술", filterFn: (tt) => (tt.target_school || "") === "논술" || (tt.subject || "").includes("논술") || (tt.class_name || "").includes("논술") },
 ];
 
-const DONGTAN_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "전체시간표", filterFn: (tt) => (tt.class_name || "").includes("동탄국제고") || (tt.target_school || "").includes("동탄국제고") },
-  { label: "수학", filterFn: (tt) => ((tt.class_name || "").includes("동탄국제고") || (tt.target_school || "").includes("동탄국제고")) && tt.subject === "수학" },
-  { label: "정찬영", filterFn: (tt) => ((tt.class_name || "").includes("동탄국제고") || (tt.target_school || "").includes("동탄국제고")) && (tt.teacher_name || "").includes("정찬영") },
-];
+// (DONGTAN_FILTERS_DEFAULT removed)
 
 function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defaultFilterTabs }: { grade: string; category: string; color?: string; summaryDivision?: string; filterTabs?: FilterTab[] }) {
   const [location] = useLocation();
@@ -242,9 +237,6 @@ export function HighSchoolScheduleG3() {
   return <SchedulePageLayout grade="고3" category="고등관-고3" color="maroon" summaryDivision="high-g3" filterTabs={G3_FILTERS_DEFAULT} />;
 }
 
-export function HighSchoolScheduleDongtan() {
-  return <SchedulePageLayout grade="동탄국제고" category="고등관" color="blue" filterTabs={DONGTAN_FILTERS_DEFAULT} />;
-}
 
 export function HighSchoolSummaryTimetable() {
   return (

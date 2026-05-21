@@ -310,7 +310,6 @@ async function ensureNavigationMenusTable() {
           { label: "고1 시간표", path: "/high-school/schedule/g1" },
           { label: "고2 시간표", path: "/high-school/schedule/g2" },
           { label: "고3 시간표", path: "/high-school/schedule/g3" },
-          { label: "동탄국제고 시간표", path: "/high-school/schedule/dongtan" },
           { label: "요약 시간표", path: "/high-school/summary" }
         ] },
         { label: "중3", path: "/middle-school", sub: [] },
@@ -337,23 +336,6 @@ async function ensureNavigationMenusTable() {
             "INSERT INTO navigation_menus (label, path, parent_id, display_order) VALUES ($1, $2, $3, $4)",
             [sub.label, sub.path, parentId, j]
           );
-        }
-      }
-    } else {
-      // Ensure "동탄국제고 시간표" submenu exists under parent "고등관"
-      const { rows: highSchoolParent } = await pool.query("SELECT id FROM navigation_menus WHERE label = '고등관' AND parent_id IS NULL LIMIT 1");
-      if (highSchoolParent.length > 0) {
-        const parentId = highSchoolParent[0].id;
-        const { rows: existingDongtan } = await pool.query("SELECT id FROM navigation_menus WHERE path = '/high-school/schedule/dongtan' AND parent_id = $1 LIMIT 1", [parentId]);
-        if (existingDongtan.length === 0) {
-          // Find max display_order under "고등관"
-          const { rows: maxOrder } = await pool.query("SELECT max(display_order) as max_ord FROM navigation_menus WHERE parent_id = $1", [parentId]);
-          const newOrder = (maxOrder[0].max_ord !== null ? maxOrder[0].max_ord : 0) + 1;
-          await pool.query(
-            "INSERT INTO navigation_menus (label, path, parent_id, display_order) VALUES ($1, $2, $3, $4)",
-            ["동탄국제고 시간표", "/high-school/schedule/dongtan", parentId, newOrder]
-          );
-          console.log("Successfully seeded '동탄국제고 시간표' submenu in DB check.");
         }
       }
     }
@@ -565,8 +547,8 @@ async function ensureFilterTabsTable() {
 }
 
 const DEFAULT_FILTER_TABS: Record<string, string[]> = {
-  "고등관-고1": ["요약시간표", "전체시간표", "화성고", "가온고", "병점고", "영덕고", "수원고", "청명고", "수학/탐구"],
-  "고등관-고2": ["요약시간표", "전체시간표", "화성고", "가온고", "청명고", "영덕고", "수원고", "고색고", "수학/탐구"],
+  "고등관-고1": ["요약시간표", "전체시간표", "화성고", "가온고", "동탄국제고", "병점고", "영덕고", "수원고", "청명고", "수학/탐구"],
+  "고등관-고2": ["요약시간표", "전체시간표", "화성고", "가온고", "동탄국제고", "청명고", "영덕고", "수원고", "고색고", "수학/탐구"],
   "고등관-고3": ["요약시간표", "전체", "국어", "영어", "수학", "생명과학", "사회문화", "생윤", "논술"],
 };
 

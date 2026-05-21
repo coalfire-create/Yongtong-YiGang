@@ -369,27 +369,29 @@ function GroupCard({
     }
   });
 
-  // Stable sort mergedTimetables: S -> A1 -> A2
+  // Stable sort mergedTimetables: 의치서M -> S -> A1 -> A2
   const getPriority = (name: string) => {
     const cleanName = name.replace(/\s+/g, '').toUpperCase();
     
-    // Exact or suffix matches
-    if (cleanName.includes("S-1") || cleanName.includes("S1")) return 1;
-    if (cleanName.includes("S-2") || cleanName.includes("S2")) return 2;
-    if (cleanName.includes("S반") || cleanName === "S") return 3;
-    if (cleanName.includes("A1반") || cleanName.includes("A1")) return 4;
-    if (cleanName.includes("A2반") || cleanName.includes("A2")) return 5;
+    // Exact or substring matches
+    if (cleanName.includes("의치서M반") || cleanName.includes("의치서M") || cleanName.includes("의치서") || cleanName.includes("의치반") || cleanName.includes("M반") || cleanName.includes("의치한")) return 1;
+    if (cleanName.includes("S-1") || cleanName.includes("S1")) return 2;
+    if (cleanName.includes("S-2") || cleanName.includes("S2")) return 3;
+    if (cleanName.includes("S반") || cleanName === "S") return 4;
+    if (cleanName.includes("A1반") || cleanName.includes("A1") || cleanName.includes("A반") || cleanName === "A") return 5;
+    if (cleanName.includes("A2반") || cleanName.includes("A2") || cleanName.includes("B반") || cleanName === "B") return 6;
     
     // Boundary matches (fallback)
-    if (/(?:^|[^a-zA-Z0-9])S-1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 1;
-    if (/(?:^|[^a-zA-Z0-9])S1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 1;
-    if (/(?:^|[^a-zA-Z0-9])S-2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
-    if (/(?:^|[^a-zA-Z0-9])S2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
-    if (/(?:^|[^a-zA-Z0-9])S(?:[^a-zA-Z0-9]|$)/i.test(name)) return 3;
-    if (/(?:^|[^a-zA-Z0-9])A1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 4;
-    if (/(?:^|[^a-zA-Z0-9])A2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 5;
+    if (/(?:^|[^a-zA-Z0-9])(?:의치서M반|의치서M|의치서|의치반|M반|의치한)(?:[^a-zA-Z0-9]|$)/i.test(name)) return 1;
+    if (/(?:^|[^a-zA-Z0-9])S-1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
+    if (/(?:^|[^a-zA-Z0-9])S1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
+    if (/(?:^|[^a-zA-Z0-9])S-2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 3;
+    if (/(?:^|[^a-zA-Z0-9])S2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 3;
+    if (/(?:^|[^a-zA-Z0-9])S(?:[^a-zA-Z0-9]|$)/i.test(name)) return 4;
+    if (/(?:^|[^a-zA-Z0-9])(?:A1|A)(?:[^a-zA-Z0-9]|$)/i.test(name)) return 5;
+    if (/(?:^|[^a-zA-Z0-9])(?:A2|B)(?:[^a-zA-Z0-9]|$)/i.test(name)) return 6;
 
-    return 6;
+    return 7;
   };
 
   const indexedTimetables = mergedTimetables.map((tt, idx) => ({ tt, idx }));

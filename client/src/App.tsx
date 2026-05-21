@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import Home from "@/pages/home";
-import { HighSchool, HighSchoolSchedule, HighSchoolScheduleG1, HighSchoolScheduleG2, HighSchoolScheduleG3, HighSchoolScheduleDongtan, HighSchoolSummaryTimetable } from "@/pages/high-school";
+import { HighSchool, HighSchoolSchedule, HighSchoolScheduleG1, HighSchoolScheduleG2, HighSchoolScheduleG3, HighSchoolSummaryTimetable } from "@/pages/high-school";
 import { JuniorSchool, JuniorSchoolSchedule } from "@/pages/junior-school";
 import { JuniorPremiumSystem } from "@/pages/junior-premium";
 import { Owl, OwlInfo, OwlUsage } from "@/pages/owl";
@@ -31,7 +31,6 @@ function Router() {
       <Route path="/high-school/schedule/g1" component={HighSchoolScheduleG1} />
       <Route path="/high-school/schedule/g2" component={HighSchoolScheduleG2} />
       <Route path="/high-school/schedule/g3" component={HighSchoolScheduleG3} />
-      <Route path="/high-school/schedule/dongtan" component={HighSchoolScheduleDongtan} />
       <Route path="/high-school/summary" component={HighSchoolSummaryTimetable} />
       <Route path="/high-school/teachers" component={TeachersPage} />
       <Route path="/junior-school" component={JuniorSchool} />
