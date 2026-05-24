@@ -143,7 +143,11 @@ function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defa
     enabled: !!category,
   });
 
-  const filterTabs = apiTabs && apiTabs.length > 0 ? buildFilterTabs(apiTabs) : defaultFilterTabs;
+  const filteredApiTabs = apiTabs && category === "고등관-고1"
+    ? apiTabs.filter((tab) => tab.label !== "동탄국제고")
+    : apiTabs;
+
+  const filterTabs = filteredApiTabs && filteredApiTabs.length > 0 ? buildFilterTabs(filteredApiTabs) : defaultFilterTabs;
 
   return (
     <PageLayout>

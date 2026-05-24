@@ -555,6 +555,12 @@ const DEFAULT_FILTER_TABS: Record<string, string[]> = {
 
 async function seedFilterTabs() {
   try {
+    // 고등관-고1 카테고리에서 동탄국제고 필터 탭 삭제
+    await pool.query(
+      "DELETE FROM filter_tabs WHERE category = $1 AND label = $2",
+      ["고등관-고1", "동탄국제고"]
+    );
+
     // 기존 탭 목록 조회
     const { rows: existing } = await pool.query(
       "SELECT category, label FROM filter_tabs"
