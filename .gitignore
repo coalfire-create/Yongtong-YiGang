@@ -7,3 +7,8 @@ vite.config.ts.*
 .env
 .env.local
 .env.*.local
+scratch/
+.agents/
+.claude/
+.config/
+.local/
