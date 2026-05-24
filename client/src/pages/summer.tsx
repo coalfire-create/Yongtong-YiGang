@@ -51,7 +51,7 @@ const SCHEDULE = [
   { time: "13:30 - 17:00", content: "영어, 국어(정규), 물리(정규), 수학클리닉", type: "red" },
   { time: "17:00 - 18:00", content: "저녁식사" },
   { time: "18:00 - 21:30", content: "자습 & 숙제 / 1:1 입시 컨설팅 / 수학 모의고사", type: "blue" },
-  { time: "21:30 - 22:00", content: "재점검 및 하원" },
+  { time: "21:30 - 22:00", content: "자기점검 및 하원" },
 ];
 
 export default function Summer() {
