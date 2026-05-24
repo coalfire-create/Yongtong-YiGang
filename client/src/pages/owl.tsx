@@ -430,7 +430,7 @@ function OwlDayTimeline() {
     },
     {
       phase: "PHASE 05",
-      title: "재점검 및 안심 귀가 하원",
+      title: "자기점검 및 안심 귀가 하원",
       time: "10:00 PM ~ 24:00 PM",
       image: "/owl-cctv.jpeg",
       icon: CheckCircle,
@@ -642,7 +642,7 @@ function CareSystemSection() {
             num: "03",
             title: "학습 관리",
             eng: "Q&A FEEDBACK",
-            desc: "명문대 TA 1:1 대면 질문 & 올빼미Q 온라인 24H 지원",
+            desc: "명문대 TA 1:1 대면 질문 & 올빼미Q 온라인 24H 지원 (윈터/썸머 상시 운행)",
             icon: GraduationCap,
             bg: "bg-blue-50/50",
             border: "border-blue-200 text-blue-700"
@@ -786,7 +786,7 @@ function CareSystemSection() {
               <div className="space-y-2">
                 <span className="font-bold text-gray-800 block">🍔 급식 배식형 식사 서비스</span>
                 <p className="text-gray-500 leading-relaxed">
-                  외출로 인한 집중 이탈을 방지하고자 배식형 식사를 제공합니다. 학기 중에는 평일 석식을, 방학 중에는 평일 중/석식 및 토요일 중식을 지원합니다 (외부 도시락 반입 불가).
+                  외출로 인한 집중 이탈을 방지하고자 배식형 식사를 제공합니다. 방학 중에는 평일 중/석식 및 토요일 중식을 지원합니다 (외부 도시락 반입 불가).
                 </p>
               </div>
               <div className="space-y-2">
@@ -880,7 +880,7 @@ function CareSystemSection() {
             <span className="text-[#7B2332] font-black text-xs block mb-1">CARE SYSTEM 03</span>
             <h3 className="text-2xl font-black text-gray-900 mb-4">학습 (질문/피드백) 관리</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
-              수원 최고의 질답 및 피드백 시스템입니다. 명문대 출신 대면 TA 조교가 상시 대기하여 학생들의 질문에 즉각 대응합니다.
+              수원 최고의 질답 및 피드백 시스템입니다. 명문대 출신 대면 TA 조교가 상시 대기하여 학생들의 질문에 즉각 대응합니다. (윈터/썸머 상시 운행)
             </p>
           </div>
           <div className="mt-8 border border-dashed border-[#7B2332]/40 rounded-xl p-4 bg-white text-center">
@@ -1144,7 +1144,7 @@ export function Owl() {
                     </div>
                     <div className="text-xs">
                       <span className="text-gray-400 block">학기중 운영 시간</span>
-                      <span className="font-bold text-white">평일 15:00~24:00 (시험 13시~24시) / 토·일 08:00~24:00</span>
+                      <span className="font-bold text-white">평일 15:00~24:00 (정기고사 13시~24시) / 토·일 08:00~24:00</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
