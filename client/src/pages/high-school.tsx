@@ -94,7 +94,6 @@ const G1_FILTERS_DEFAULT: FilterTab[] = [
   { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => (tt.target_school || "").includes("화성고") },
   { label: "가온고", filterFn: (tt) => (tt.target_school || "").includes("가온고") },
-  { label: "동탄국제고", filterFn: (tt) => (tt.target_school || "").includes("동탄국제고") },
   { label: "병점고", filterFn: (tt) => (tt.target_school || "").includes("병점고") },
   { label: "영덕고", filterFn: (tt) => (tt.target_school || "").includes("영덕고") },
   { label: "수원고", filterFn: (tt) => (tt.target_school || "").includes("수원고") },
