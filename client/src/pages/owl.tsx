@@ -1144,7 +1144,10 @@ export function Owl() {
                     </div>
                     <div className="text-xs">
                       <span className="text-gray-400 block">학기중 운영 시간</span>
-                      <span className="font-bold text-white">평일 15:00~24:00 (정기고사 13시~24시) / 토·일 08:00~24:00</span>
+                      <span className="font-bold text-white block">
+                        평일 15:00~24:00 (정기고사 13시~24시)<br />
+                        토·일 08:00~24:00
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

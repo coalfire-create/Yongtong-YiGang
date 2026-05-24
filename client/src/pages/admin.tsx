@@ -281,8 +281,8 @@ function TeachersTab() {
   const [localTeachers, setLocalTeachers] = useState<Teacher[]>(EMPTY_TEACHERS);
   useEffect(() => {
     setLocalTeachers(prev => {
-      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
-      const newKey = teachers.map(t => `${t.id}:${t.display_order}`).join(",");
+      const prevKey = JSON.stringify(prev);
+      const newKey = JSON.stringify(teachers);
       return prevKey === newKey ? prev : teachers;
     });
   }, [teachers]);
@@ -837,8 +837,8 @@ function TimetablesTab() {
   const [localTimetables, setLocalTimetables] = useState<Timetable[]>(EMPTY_TIMETABLES);
   useEffect(() => {
     setLocalTimetables(prev => {
-      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
-      const newKey = timetables.map(t => `${t.id}:${t.display_order}`).join(",");
+      const prevKey = JSON.stringify(prev);
+      const newKey = JSON.stringify(timetables);
       return prevKey === newKey ? prev : timetables;
     });
   }, [timetables]);
@@ -3494,8 +3494,8 @@ function SummaryTimetablesTab() {
   const [localItems, setLocalItems] = useState<SummaryTimetable[]>([]);
   useEffect(() => {
     setLocalItems(prev => {
-      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
-      const newKey = items.map(t => `${t.id}:${t.display_order}`).join(",");
+      const prevKey = JSON.stringify(prev);
+      const newKey = JSON.stringify(items);
       return prevKey === newKey ? prev : items;
     });
   }, [items]);
@@ -3677,8 +3677,8 @@ function SummerTab() {
   const [localItems, setLocalItems] = useState<any[]>([]);
   useEffect(() => {
     setLocalItems(prev => {
-      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
-      const newKey = items.map(t => `${t.id}:${t.display_order}`).join(",");
+      const prevKey = JSON.stringify(prev);
+      const newKey = JSON.stringify(items);
       return prevKey === newKey ? prev : items;
     });
   }, [items]);
@@ -4008,8 +4008,8 @@ function FilterTabsTab() {
   const [localTabs, setLocalTabs] = useState<FilterTabItem[]>([]);
   useEffect(() => {
     setLocalTabs(prev => {
-      const prevKey = prev.map(t => `${t.id}:${t.display_order}`).join(",");
-      const newKey = tabs.map(t => `${t.id}:${t.display_order}`).join(",");
+      const prevKey = JSON.stringify(prev);
+      const newKey = JSON.stringify(tabs);
       return prevKey === newKey ? prev : tabs;
     });
   }, [tabs]);
