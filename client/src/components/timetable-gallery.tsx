@@ -373,6 +373,16 @@ function GroupCard({
   const getPriority = (name: string) => {
     const cleanName = name.replace(/\s+/g, '').toUpperCase();
     
+    // 고3 수학 정렬 순서: 1등급 프리미엄 -> 공통 정규 -> 미적 -> 확통
+    const isG3Math = firstTt.category === "고등관-고3" && firstTt.subject === "수학";
+    if (isG3Math) {
+      if (cleanName.includes("1등급") || cleanName.includes("프리미엄")) return 1;
+      if (cleanName.includes("공통")) return 2;
+      if (cleanName.includes("미적")) return 3;
+      if (cleanName.includes("확통") || cleanName.includes("확률")) return 4;
+      return 5;
+    }
+    
     // Exact or substring matches
     if (cleanName.includes("의치서M반") || cleanName.includes("의치서M") || cleanName.includes("의치서") || cleanName.includes("의치반") || cleanName.includes("M반") || cleanName.includes("의치한")) return 1;
     if (cleanName.includes("S-1") || cleanName.includes("S1")) return 2;
