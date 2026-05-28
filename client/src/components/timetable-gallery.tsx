@@ -125,7 +125,16 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
   for (const tt of filtered) {
     const isUnion = tt.is_union;
-    const subj = tt.subject || "기타";
+    let subj = tt.subject || "기타";
+    let targetSchool = tt.target_school || "연합반";
+
+    // If it is an essay class, force the subject and target school to be "논술"
+    if ((tt.class_name || "").includes("논술") || (tt.subject || "").includes("논술") || (tt.target_school || "") === "논술") {
+      subj = "논술";
+      if (!isUnion) {
+        targetSchool = "논술";
+      }
+    }
 
     if (SUBJECT_ORDER.includes(subj)) {
       if (!subjectGroups[subj]) {
@@ -138,12 +147,12 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         if (!subjectGroups[subj].union[groupKey]) subjectGroups[subj].union[groupKey] = [];
         subjectGroups[subj].union[groupKey].push(tt);
       } else {
-        const groupKey = tt.target_school || "연합반";
+        const groupKey = targetSchool;
         if (!subjectGroups[subj].school[groupKey]) subjectGroups[subj].school[groupKey] = [];
         subjectGroups[subj].school[groupKey].push(tt);
       }
     } else {
-      const groupKey = tt.target_school || "연합반";
+      const groupKey = targetSchool;
       if (!ungrouped[groupKey]) ungrouped[groupKey] = [];
       ungrouped[groupKey].push(tt);
     }
