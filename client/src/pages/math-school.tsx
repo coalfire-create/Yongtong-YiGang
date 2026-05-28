@@ -210,54 +210,61 @@ export default function MathSchool() {
         </section>
 
         {/* 4 Step System */}
-        <section className="bg-gray-50 rounded-[3rem] p-12 md:p-20 overflow-hidden relative">
-          <div className="relative z-10 flex flex-col lg:flex-row gap-16 items-center">
-            <div className="flex-1 space-y-8">
-              <div className="space-y-4">
-                <h2 className="text-3xl md:text-5xl font-black text-gray-900 leading-tight">단순 진도가 아닌<br /><span className="text-[#7B2332]">4단계 학습 구조</span></h2>
-                <p className="text-gray-600 text-lg leading-relaxed">
-                  이해부터 점검까지, 영통이강학원만의 독보적인 4단계 관리 시스템으로 학생별 취약 단원을 완벽하게 보완합니다.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {SYSTEM_STEPS.map((s) => (
-                  <div key={s.step} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2">
-                    <span className="text-[#7B2332] font-black text-lg">{s.step}</span>
-                    <h4 className="font-bold text-gray-900">{s.title}</h4>
-                    <p className="text-xs text-gray-500">{s.desc}</p>
-                  </div>
-                ))}
-              </div>
+        <section className="bg-gray-50 rounded-[3rem] p-12 md:p-20 overflow-hidden relative space-y-16">
+          {/* Background Decorative Elements */}
+          <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+            <div className="absolute top-[-20%] right-[-10%] w-96 h-96 rounded-full bg-red-600 blur-[150px]"></div>
+            <div className="absolute bottom-[-20%] left-[-10%] w-96 h-96 rounded-full bg-blue-600 blur-[150px]"></div>
+          </div>
+
+          {/* Part 1: 4단계 학습 구조 */}
+          <div className="relative z-10 flex flex-col lg:flex-row gap-12 items-center lg:items-start">
+            <div className="w-full lg:w-1/3 space-y-4 text-center lg:text-left">
+              <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight">단순 진도가 아닌<br /><span className="text-[#7B2332]">4단계 학습 구조</span></h2>
+              <p className="text-gray-600 text-base leading-relaxed">
+                이해부터 점검까지, 영통이강학원만의 독보적인 4단계 관리 시스템으로 학생별 취약 단원을 완벽하게 보완합니다.
+              </p>
             </div>
-            <div className="flex-1 w-full">
-              <div className="bg-white p-8 rounded-[2.5rem] border border-gray-200 shadow-2xl space-y-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#7B2332] rounded-xl flex items-center justify-center text-white">
-                    <ShieldCheck className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900">독보적인 내신 대비 콘텐츠</h3>
+            <div className="w-full lg:w-2/3 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {SYSTEM_STEPS.map((s) => (
+                <div key={s.step} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2 text-center lg:text-left">
+                  <span className="text-[#7B2332] font-black text-lg">{s.step}</span>
+                  <h4 className="font-bold text-gray-900">{s.title}</h4>
+                  <p className="text-xs text-gray-500">{s.desc}</p>
                 </div>
-                <div className="space-y-6">
-                  <div className="group p-6 bg-gray-50 rounded-2xl border border-transparent hover:border-[#7B2332]/20 transition-all space-y-4">
-                    <div>
-                      <h4 className="font-black text-[#7B2332] mb-1 uppercase tracking-wider text-xs">Secret File</h4>
-                      <p className="text-gray-900 font-bold mb-2">학교별 내신분석자료</p>
-                      <p className="text-xs text-gray-500 leading-relaxed">각 학교별 출제 경향을 깊고 날카롭게 분석하여 완벽한 대비를 돕는 시크릿 파일 제공</p>
-                    </div>
-                    <div className="rounded-xl overflow-hidden border border-gray-200/60 shadow-sm bg-white">
-                      <img src="/images/secret-file-covers.png" alt="Secret File Covers" className="w-full h-auto block" />
-                    </div>
-                  </div>
-                  <div className="group p-6 bg-gray-50 rounded-2xl border border-transparent hover:border-[#7B2332]/20 transition-all space-y-4">
-                    <div>
-                      <h4 className="font-black text-[#7B2332] mb-1 uppercase tracking-wider text-xs">Su-Mock Exam</h4>
-                      <p className="text-gray-900 font-bold mb-2">매주 응시하는 수모의고사</p>
-                      <p className="text-xs text-gray-500 leading-relaxed">실전과 동일한 환경에서의 매주 테스트를 통해 실전 감각을 극대화하고 약점 분석</p>
-                    </div>
-                    <div className="rounded-xl overflow-hidden border border-gray-200/60 shadow-sm bg-white">
-                      <img src="/images/mock-exam-covers.png" alt="Su-Mock Exam Covers" className="w-full h-auto block" />
-                    </div>
-                  </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-px bg-gray-200/80 relative z-10" />
+
+          {/* Part 2: 독보적인 내신 대비 콘텐츠 */}
+          <div className="relative z-10 space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-center lg:justify-start">
+              <div className="w-12 h-12 bg-[#7B2332] rounded-xl flex items-center justify-center text-white mx-auto sm:mx-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <h3 className="text-2xl md:text-3xl font-black text-gray-900 text-center sm:text-left">독보적인 내신 대비 콘텐츠</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="group p-6 md:p-8 bg-white rounded-[2rem] border border-gray-150 shadow-lg hover:border-[#7B2332]/20 hover:shadow-xl transition-all duration-350 flex flex-col sm:flex-row gap-6 items-center">
+                <div className="flex-1 space-y-2 text-center sm:text-left">
+                  <h4 className="font-black text-[#7B2332] uppercase tracking-wider text-xs">Secret File</h4>
+                  <p className="text-gray-900 font-extrabold text-lg">학교별 내신분석자료</p>
+                  <p className="text-xs text-gray-500 leading-relaxed">각 학교별 출제 경향을 깊고 날카롭게 분석하여 완벽한 대비를 돕는 시크릿 파일 제공</p>
+                </div>
+                <div className="w-full sm:w-40 rounded-xl overflow-hidden border border-gray-200/60 shadow-sm flex-shrink-0 bg-white">
+                  <img src="/images/secret-file-covers.png" alt="Secret File Covers" className="w-full h-auto block" />
+                </div>
+              </div>
+              <div className="group p-6 md:p-8 bg-white rounded-[2rem] border border-gray-150 shadow-lg hover:border-[#7B2332]/20 hover:shadow-xl transition-all duration-350 flex flex-col sm:flex-row gap-6 items-center">
+                <div className="flex-1 space-y-2 text-center sm:text-left">
+                  <h4 className="font-black text-[#7B2332] uppercase tracking-wider text-xs">Su-Mock Exam</h4>
+                  <p className="text-gray-900 font-extrabold text-lg">매주 응시하는 수모의고사</p>
+                  <p className="text-xs text-gray-500 leading-relaxed">실전과 동일한 환경에서의 매주 테스트를 통해 실전 감각을 극대화하고 약점 분석</p>
+                </div>
+                <div className="w-full sm:w-40 rounded-xl overflow-hidden border border-gray-200/60 shadow-sm flex-shrink-0 bg-white">
+                  <img src="/images/mock-exam-covers.png" alt="Su-Mock Exam Covers" className="w-full h-auto block" />
                 </div>
               </div>
             </div>
