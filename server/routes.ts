@@ -250,6 +250,7 @@ async function ensureTimetablesTable() {
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS is_visible BOOLEAN NOT NULL DEFAULT true`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS is_union BOOLEAN NOT NULL DEFAULT false`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_ids INTEGER[]`);
+    await pool.query(`UPDATE timetables SET subject = '논술' WHERE class_name LIKE '%약술논술%'`);
   } catch (err) {
     console.error("Failed to ensure timetables table:", err);
   }
