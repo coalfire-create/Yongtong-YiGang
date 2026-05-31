@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { PageLayout } from "@/components/layout";
-import { 
-  Moon, Clock, BookOpen, CheckCircle, ChevronLeft, ChevronRight, X, 
-  MessageSquare, UserCheck, CalendarCheck, Wifi, Thermometer, Camera, 
-  Smartphone, Droplets, ShieldAlert, Award, Calendar, GraduationCap, 
+import {
+  Moon, Clock, BookOpen, CheckCircle, ChevronLeft, ChevronRight, X,
+  MessageSquare, UserCheck, CalendarCheck, Wifi, Thermometer, Camera,
+  Smartphone, Droplets, ShieldAlert, Award, Calendar, GraduationCap,
   Users, MapPin, Send, HelpCircle, Utensils, AlertTriangle, ArrowRight, ChevronDown
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -26,38 +26,38 @@ interface LightboxPhoto {
 }
 
 const FACILITY_PHOTOS: LightboxPhoto[] = [
-  { 
-    src: "/owl-girls-seats.jpeg", 
+  {
+    src: "/owl-girls-seats.jpeg",
     label: "남학생 자습 구역 (성별 완전 분리)",
     description: "개별 와이드 칸막이와 척추 피로를 최소화하는 프리미엄 시디즈 의자가 구비된 성별 분리형 독서실입니다. 인강 전용 초고속 방화벽 WIFI 운영으로 공부 이외의 유해 사이트 접속을 철저하게 차단합니다."
   },
-  { 
-    src: "/owl-boys-seats.jpeg",  
+  {
+    src: "/owl-boys-seats.jpeg",
     label: "여학생 자습 구역 (성별 완전 분리)",
     description: "개별 와이드 칸막이와 척추 피로를 최소화하는 프리미엄 시디즈 의자가 구비된 성별 분리형 독서실입니다. 인강 전용 초고속 방화벽 WIFI 운영으로 공부 이외의 유해 사이트 접속을 철저하게 차단합니다."
   },
-  { 
-    src: "/owl-cctv.jpeg",        
+  {
+    src: "/owl-cctv.jpeg",
     label: "CCTV 75석 전 좌석 실시간 모니터링",
     description: "사각지대 없는 CCTV 설치로 학생들의 학습 상태를 실시간으로 교사 데스크에서 모니터링합니다. 태블릿 딴짓 방지 및 실시간 졸음 관리를 통해 한치의 흐트러짐도 허용하지 않습니다."
   },
-  { 
-    src: "/owl-checkin.jpeg",     
+  {
+    src: "/owl-checkin.jpeg",
     label: "등·하원 안심 출석 체크 시스템",
     description: "전용 출결 태깅 패드를 통해 입퇴실 시 학부모님께 실시간 안심 문자가 즉시 전송되며, 사전 제출된 학생의 개인 스케줄에 맞춰 완벽한 이탈 및 부재 통제가 진행됩니다."
   },
-  { 
-    src: "/owl-phoneboxes.jpeg",  
+  {
+    src: "/owl-phoneboxes.jpeg",
     label: "핸드폰 좌석 번호별 지정 보관함",
     description: "학습관 입장 시 본인 좌석 지정 번호 보관함에 의무적으로 휴대폰을 반납합니다. 공부를 저해하는 1순위 유혹을 물리적으로 완벽 격리하여 초집중 순공 환경을 유지합니다."
   },
-  { 
-    src: "/owl-entrance.jpeg",    
+  {
+    src: "/owl-entrance.jpeg",
     label: "올빼미 관리형 학습관 입구 전경",
     description: "영통이강학원 3관 및 4관 모던타운 505호에 위치해 있으며, 차분하고 엄숙한 면학 모드로 집중 전환되는 프리미엄 디자인이 적용된 입구 인터페이스입니다."
   },
-  { 
-    src: "/owl-reception.jpeg",   
+  {
+    src: "/owl-reception.jpeg",
     label: "상주형 관리 데스크 & 접수처",
     description: "풍부한 입시/생활 지도 경험의 교직원이 상주하여 실시간 순찰, 학습 질서 유지, 1:1 대면 질문 등록 및 생활 민원을 즉시 원스톱으로 해결해 줍니다."
   },
@@ -185,17 +185,17 @@ function OwlHeroSection() {
           </p>
           <div className="h-0.5 w-20 bg-[#E6C687] mx-auto my-4" />
           <p className="text-sm sm:text-base text-gray-400 max-w-xl mx-auto leading-relaxed">
-            단순한 자리 제공을 넘어 24시간 실시간 입시 컨설팅, 시대인재 서바이벌 모의고사, 성별 완벽 분리 자습실, 초밀착 졸음 및 인강 관리가 결합된 영통 최고의 프리미엄 입시 센터입니다.
+            단순한 공간 제공이 아닌 08시~24시 몰입형 자습시간 확보 및 성별 분리 자습실, 초밀착 졸음 및 인강 관리, 대면 입시 컨설팅, 고3 시대인재 서바이벌 모의고사가 결합된 영통 최고의 프리미엄 입시 센터입니다.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <a 
+            <a
               href="#care-dashboard"
               className="px-6 py-3 bg-[#7B2332] hover:bg-[#922A3B] text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all rounded duration-300 flex items-center gap-2"
             >
               4대 밀착 CARE 시스템 확인 <ArrowRight className="w-4 h-4" />
             </a>
-            <a 
+            <a
               href="#timeline-storyboard"
               className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 hover:border-white/40 transition-all rounded duration-300"
             >
@@ -244,7 +244,7 @@ function OwlHeroSection() {
                 </span>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">남학생 전용 몰입형 학습 자습관</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  장시간 면학 시 누적되는 요추 피로도를 최소화하는 **최고급 시디즈 의자** 및 와이드 개별 칸막이를 도입했습니다. 남/여 동선 및 공간의 완벽한 분리를 통해 이성 간 불필요한 시선 차단과 최적의 집중 환경을 확보했습니다.
+                  장시간 면학 시 누적되는 요추 피로도를 최소화하는 **최고급 시디즈 의자** 및 와이드 개별 칸막이를 도입했습니다. 남/여 동선 및 공간의 분리를 통해 이성 간 불필요한 시선 차단과 최적의 집중 환경을 확보했습니다.
                 </p>
               </div>
             </div>
@@ -286,11 +286,11 @@ function OwlHeroSection() {
               { idx: 4, tag: "05. DIGITAL DETOX", title: "핸드폰 전용 보관함", desc: "개별 좌석 번호와 매칭된 함에 스마트폰을 의무 제출합니다. 눈앞의 유효한 스마트폰 미디어 자극을 차단하는 정교한 디톡스 룰입니다." }
             ].map(({ idx, tag, title, desc }) => (
               <div key={idx} className="bg-white border border-gray-150 rounded overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                <button 
+                <button
                   onClick={() => setFacilityLightbox(idx)}
                   className="group relative aspect-[16/11] bg-gray-50 w-full overflow-hidden block"
                 >
-                  <FadeImage 
+                  <FadeImage
                     src={FACILITY_PHOTOS[idx].src}
                     alt={FACILITY_PHOTOS[idx].label}
                     className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
@@ -315,11 +315,11 @@ function OwlHeroSection() {
           {/* Entrance & Reception card */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col sm:flex-row shadow-sm hover:shadow-md transition-all">
-              <button 
+              <button
                 onClick={() => setFacilityLightbox(5)}
                 className="group relative sm:w-1/2 aspect-[16/10] sm:aspect-auto overflow-hidden bg-gray-100"
               >
-                <FadeImage 
+                <FadeImage
                   src={FACILITY_PHOTOS[5].src}
                   alt={FACILITY_PHOTOS[5].label}
                   className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
@@ -339,11 +339,11 @@ function OwlHeroSection() {
             </div>
 
             <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col sm:flex-row shadow-sm hover:shadow-md transition-all">
-              <button 
+              <button
                 onClick={() => setFacilityLightbox(6)}
                 className="group relative sm:w-1/2 aspect-[16/10] sm:aspect-auto overflow-hidden bg-gray-100"
               >
-                <FadeImage 
+                <FadeImage
                   src={FACILITY_PHOTOS[6].src}
                   alt={FACILITY_PHOTOS[6].label}
                   className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
@@ -356,7 +356,7 @@ function OwlHeroSection() {
                   </span>
                   <h4 className="text-base font-bold text-gray-900 mb-2">원스톱 교사 상주 프런트 데스크</h4>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    입시 관리 능력이 뛰어난 상주형 교직원이 자습관 전면에서 학생들과 밀착 호흡합니다. 무단 외출 통제, 학습 질서 유지, 현장 대면 질문 예약 접수 및 각종 불편 해결의 지휘 타워입니다.
+                    입시 관리 능력이 뛰어난 상주형 교직원이 자습관 전면에서 학생들과 밀착 호흡합니다. 무단 외출 통제, 학습 질서 유지, 현장 대면 컨설팅 예약 접수 및 각종 불편 해결의 지휘 타워입니다.
                   </p>
                 </div>
               </div>
@@ -375,7 +375,7 @@ function OwlDayTimeline() {
     {
       phase: "PHASE 01",
       title: "등원 및 디지털 디톡스",
-      time: "08:00 AM",
+      time: "08:00",
       image: "/owl-entrance.jpeg",
       icon: Smartphone,
       subtitle: "철저한 시작, 오늘 하루 방해 요소의 완전 격리",
@@ -388,36 +388,36 @@ function OwlDayTimeline() {
     },
     {
       phase: "PHASE 02",
-      title: "집중을 깨우는 영단어 테스트",
-      time: "08:40 AM ~ 09:00 AM",
+      title: "집중을 깨우는 영단어 테스트 (썸머/윈터 시즌 상시 운영)",
+      time: "08:40 ~ 09:00",
       image: "/owl-checkin.jpeg",
       icon: BookOpen,
       subtitle: "단 1분도 허투루 쓰지 않는 빈틈없는 루틴",
       details: [
         "영단어 Daily 의무 테스트: 매일 아침 20분 동안 진행되는 18회차 집중 영단어 시험을 통해 실전 어휘력을 폭발적으로 다집니다.",
         "엄격한 정숙 및 시험 모드: 타종 및 생활 교사의 통제 아래 전원 동일한 시간대에 엄밀한 시험 분위기를 유지합니다.",
-        "오답 복기 및 체크: 시험 직후 신속한 자가 채점 및 피드백으로 취약한 어휘를 즉각 보완하고 본 자습을 준비합니다."
+        "오답 복기 및 체크: 시험 후 TA조교 채점 및 피드백으로 취약한 어휘를 즉각 보완하고 본 자습을 준비합니다."
       ],
       highlight: "방학 집중 프로그램의 필수 영단어 테스트이며, 매 등원생의 순수 자습 두뇌를 깨우는 핵심 교시입니다."
     },
     {
       phase: "PHASE 03",
       title: "교시제 타종 몰입 자습",
-      time: "09:00 AM ~ 05:00 PM",
+      time: "09:00 ~ 17:00",
       image: "/owl-girls-seats.jpeg",
       icon: Clock,
       subtitle: "타종에 맞춰 운영되는 극대화된 면학 분위기",
       details: [
         "생활 관리교사 상시 내부 순찰: 자습관 내부를 상시 순찰하며 자습 시간 수면(벌점 2점), 전자기기 딴짓(벌점 5점) 등을 정밀 케어합니다.",
         "인강 전용 WIFI 차단 방화벽: 학습용 기가 와이파이망이 제공되며, 학습 목적 이외의 모든 게임, SNS, 웹서핑 접속은 차단됩니다.",
-        "이성 간 접촉 차단 및 남녀 분리: 공부 외적인 모든 시각적, 감성적 방해 자극을 배제하여 남녀 학습관 구역을 완전 격리 운영합니다."
+        "이성 간 접촉 차단 및 남녀 분리: 공부 외적인 모든 시각적, 감성적 방해 자극을 배제하여 남녀 학습관 구역을 격리 운영합니다."
       ],
       highlight: "타종 시스템에 의한 교시제 운영으로 자습 시간 내에는 자리 이동이 절대 금지되어 극대화된 정숙함을 유지합니다."
     },
     {
       phase: "PHASE 04",
-      title: "1:1 대면 질의응답 & 맞춤 피드백",
-      time: "05:00 PM ~ 10:00 PM",
+      title: "1:1 대면 질의응답 & 맞춤 피드백 (썸머/윈터 시즌 상시 운영",
+      time: "17:00 ~ 22:00",
       image: "/owl-reception.jpeg",
       icon: Users,
       subtitle: "최강의 질답 조교 상시 대기와 입시 컨설팅",
@@ -431,14 +431,14 @@ function OwlDayTimeline() {
     {
       phase: "PHASE 05",
       title: "자기점검 및 안심 귀가 하원",
-      time: "10:00 PM ~ 24:00 PM",
+      time: "22:00 ~ 24:00",
       image: "/owl-cctv.jpeg",
       icon: CheckCircle,
       subtitle: "완벽한 하루의 마침표와 학부모 안심 연계",
       details: [
         "순공 학습량 점검 & 책상 최종 정리: 자습 종료 후 오늘 학습한 양을 최종적으로 마스터하고, 다음 날의 쾌적한 시작을 위해 책상을 비웁니다.",
         "하원 알림 문자 발송: 하원 전용 태깅을 입력하는 즉시 학부모님께 안심 귀가 알림 문자가 전송되어 늦은 밤에도 안심할 수 있습니다.",
-        "심야 자율 연장 자습 지원: 월요일부터 일요일까지 24시(자정)까지 매 시간 교사의 통제하에 철저하게 안전 및 면학 질서가 보장됩니다."
+        "심야 자율 연장 자습 지원: 월요일부터 일요일까지 1년 365일  24시(자정)까지 매 시간 교사의 통제하에 철저하게 안전 및 면학 질서가 보장됩니다."
       ],
       highlight: "등원부터 하원까지, 오늘 하루의 학습 흐름과 생활 태도 데이터는 밀착 케어 시스템으로 철저히 마무리됩니다."
     }
@@ -484,9 +484,9 @@ function OwlDayTimeline() {
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300 grid grid-cols-1 lg:grid-cols-12">
                   {/* Left Side Image Panel */}
                   <div className="lg:col-span-5 relative aspect-[16/10] lg:aspect-auto bg-gray-100 overflow-hidden">
-                    <img 
-                      src={item.image} 
-                      alt={item.title} 
+                    <img
+                      src={item.image}
+                      alt={item.title}
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-5 lg:hidden">
@@ -546,7 +546,7 @@ function CareSystemSection() {
     // 1. 기본 생활 수칙
     { id: 1, category: "basic", item: "쓰레기 무단 방치 및 투기", points: 1 },
     { id: 2, category: "basic", item: "공용 물품 부주의 사용", points: 1 },
-    { id: 3, category: "basic", item: "지각 (평일 18시, 토요일 8:30까지 미통보 미등원시)", points: 2 },
+    { id: 3, category: "basic", item: "지각 (학기중: 평일 18시, 토요일 8:40 썸머/윈터시즌: 월~토 8:40까지 미통보 미등원시)", points: 2 },
     { id: 4, category: "basic", item: "학습실 청결에 위반되는 행위", points: 1 },
     { id: 5, category: "basic", item: "무단 결석 / 조퇴 / 외출", points: 5 },
     // 2. 전자기기 부정 사용
@@ -571,8 +571,8 @@ function CareSystemSection() {
     { id: 22, category: "behavior", item: "기물 파손", points: 5 },
   ];
 
-  const filteredPenalties = activePenaltyCategory === "all" 
-    ? PENALTY_RULES 
+  const filteredPenalties = activePenaltyCategory === "all"
+    ? PENALTY_RULES
     : PENALTY_RULES.filter(p => p.category === activePenaltyCategory);
 
   const displayedPenalties = penaltyExpanded ? filteredPenalties : filteredPenalties.slice(0, 8);
@@ -590,18 +590,18 @@ function CareSystemSection() {
   ];
 
   const BELL_SCHEDULE = [
-    { period: "0교시 자습", time: "08:00 ~ 08:40", duration: "40분", type: "선택자습 (월~토 운영, 일요일 미운영)" },
-    { period: "1교시 자습", time: "08:40 ~ 10:00", duration: "80분", type: "의무자습 (월~토 의무, 일요일 선택자습)" },
-    { period: "2교시 자습", time: "10:20 ~ 12:00", duration: "100분", type: "의무자습 (월~토 의무, 일요일 선택자습)" },
-    { period: "점심시간", time: "12:00 ~ 13:00", duration: "60분", type: "식사 배식 및 휴식 (학습관 미운영)" },
-    { period: "3교시 자습", time: "13:00 ~ 14:10", duration: "70분", type: "의무자습 (월~토 의무, 일요일 선택자습)" },
-    { period: "4교시 자습", time: "14:30 ~ 15:40", duration: "70분", type: "의무자습 (월~토 의무, 일요일 선택자습)" },
-    { period: "5교시 자습", time: "16:00 ~ 17:00", duration: "60분", type: "의무자습 (월~토 의무, 일요일 선택자습)" },
-    { period: "저녁선택자습", time: "17:00 ~ 18:00", duration: "60분", type: "선택자습 (월~금만 운영, 토/일 단과)" },
-    { period: "저녁시간", time: "18:00 ~ 19:50", duration: "110분", type: "식사 배식 및 단과 연계 (학습관 미운영)" },
-    { period: "6교시 자습", time: "20:10 ~ 22:00", duration: "110분", type: "의무자습 (월~토 의무, 일요일 선택자습)" },
-    { period: "7교시 자습", time: "22:10 ~ 23:00", duration: "50분", type: "선택자습 (월~토 자율연장, 일요일 선택)" },
-    { period: "8교시 자습", time: "23:10 ~ 24:00", duration: "50분", type: "선택자습 (월~토 자율연장, 일요일 선택)" },
+    { period: "0교시 자습", time: "08:00 ~ 08:40", duration: "40분", type: "선택자습" },
+    { period: "1교시 자습", time: "08:40 ~ 10:00", duration: "80분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
+    { period: "2교시 자습", time: "10:20 ~ 12:00", duration: "100분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
+    { period: "점심시간", time: "12:00 ~ 13:00", duration: "60분", type: "식사 및 휴식" },
+    { period: "3교시 자습", time: "13:00 ~ 14:10", duration: "70분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
+    { period: "4교시 자습", time: "14:30 ~ 15:40", duration: "70분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
+    { period: "5교시 자습", time: "16:00 ~ 17:00", duration: "60분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
+    { period: "저녁시간", time: "17:00 ~ 18:00", duration: "60분", type: "식사 및 휴식" },
+    { period: "6교시 자습", time: "18:00 ~ 19:50", duration: "110분", type: "의무자습 (월~토 의무, 일,공휴일 선택자습)" },
+    { period: "7교시 자습", time: "20:10 ~ 22:00", duration: "110분", type: "의무자습 (월~토 의무, 일,공휴일 선택자습)" },
+    { period: "8교시 자습", time: "22:10 ~ 23:00", duration: "50분", type: "선택자습" },
+    { period: "9교시 자습", time: "23:10 ~ 24:00", duration: "50분", type: "선택자습" },
   ];
 
   return (
@@ -642,7 +642,7 @@ function CareSystemSection() {
             num: "03",
             title: "학습 관리",
             eng: "Q&A FEEDBACK",
-            desc: "명문대 TA 1:1 대면 질문 & 올빼미Q 온라인 24H 지원 (윈터/썸머 상시 운행)",
+            desc: "명문대 TA 1:1 대면 질문 & 올빼미Q 온라인 24H 지원 (썸머/윈터 상시 운영)",
             icon: GraduationCap,
             bg: "bg-blue-50/50",
             border: "border-blue-200 text-blue-700"
@@ -651,7 +651,7 @@ function CareSystemSection() {
             num: "04",
             title: "입시 관리",
             eng: "CONSULTING",
-            desc: "전문 입시 소장 1:1 대입 컨설팅 & 시대인재 모의고사",
+            desc: "전문 입학사정관 출신 입시 소장님 1:1 대입 컨설팅 & 시대인재 모의고사",
             icon: Award,
             bg: "bg-emerald-50/50",
             border: "border-emerald-200 text-emerald-700"
@@ -659,8 +659,8 @@ function CareSystemSection() {
         ].map((theme, idx) => {
           const Icon = theme.icon;
           return (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className={`p-6 rounded-2xl border ${theme.border} ${theme.bg} flex flex-col justify-between space-y-4 hover:scale-[1.03] transition-all duration-300 shadow-sm`}
             >
               <div className="flex justify-between items-start">
@@ -717,7 +717,7 @@ function CareSystemSection() {
                 개인 일정 기반 스케줄 체크
               </h5>
               <p className="text-xs text-gray-500 leading-relaxed">
-                개인별 단과 수업 수강증 및 일정표를 사전에 제출받아 자습 시간 중 인가되지 않은 무단 이탈, 지각, 외출을 자동으로 파악하고 사전에 통제합니다.
+                개인별 단과 수업 수강등 주간 일정표를 사전에 제출받아 자습 시간 중 인가되지 않은 무단 이탈, 지각, 외출을 자동으로 파악하고 사전에 통제합니다.
               </p>
             </div>
           </div>
@@ -786,7 +786,7 @@ function CareSystemSection() {
               <div className="space-y-2">
                 <span className="font-bold text-gray-800 block">🍔 급식 배식형 식사 서비스</span>
                 <p className="text-gray-500 leading-relaxed">
-                  외출로 인한 집중 이탈을 방지하고자 배식형 식사를 제공합니다. 방학 중에는 평일 중/석식 및 토요일 중식을 지원합니다 (외부 도시락 반입 불가).
+                  외출로 인한 집중 이탈을 방지하고자 배식형 식사를 제공합니다. 방학 중에는 평일 중/석식 및 토요일 중식을 지원합니다 (개인 도시락 지참 가능).
                 </p>
               </div>
               <div className="space-y-2">
@@ -805,7 +805,7 @@ function CareSystemSection() {
                 <AlertTriangle className="w-4 h-4 text-red-500" />
                 올빼미 학습관 생활 벌점 규정표
               </span>
-              <button 
+              <button
                 onClick={() => setPenaltyExpanded(!penaltyExpanded)}
                 className="text-xs text-[#7B2332] font-black hover:underline"
               >
@@ -825,11 +825,10 @@ function CareSystemSection() {
                 <button
                   key={cat.key}
                   onClick={() => { setActivePenaltyCategory(cat.key); setPenaltyExpanded(true); }}
-                  className={`px-3 py-1 rounded text-[11px] font-bold border transition-colors ${
-                    activePenaltyCategory === cat.key 
-                      ? "bg-[#7B2332] border-[#7B2332] text-white" 
-                      : "bg-white border-gray-200 text-gray-500 hover:text-gray-800"
-                  }`}
+                  className={`px-3 py-1 rounded text-[11px] font-bold border transition-colors ${activePenaltyCategory === cat.key
+                    ? "bg-[#7B2332] border-[#7B2332] text-white"
+                    : "bg-white border-gray-200 text-gray-500 hover:text-gray-800"
+                    }`}
                 >
                   {cat.label}
                 </button>
@@ -880,7 +879,7 @@ function CareSystemSection() {
             <span className="text-[#7B2332] font-black text-xs block mb-1">CARE SYSTEM 03</span>
             <h3 className="text-2xl font-black text-gray-900 mb-4">학습 (질문/피드백) 관리</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
-              수원 최고의 질답 및 피드백 시스템입니다. 명문대 출신 대면 TA 조교가 상시 대기하여 학생들의 질문에 즉각 대응합니다. (윈터/썸머 상시 운행)
+              수원 최고의 질답 및 피드백 시스템입니다. 명문대 출신 대면 TA 조교가 상시 대기하여 학생들의 질문에 즉각 대응합니다. (썸머/윈터 상시 운영)
             </p>
           </div>
           <div className="mt-8 border border-dashed border-[#7B2332]/40 rounded-xl p-4 bg-white text-center">
@@ -895,7 +894,7 @@ function CareSystemSection() {
             <GraduationCap className="w-5 h-5 text-[#7B2332]" />
             명문대 출신 조교진의 1:1 밀착 학습 피드백
           </h4>
-          
+
           <div className="bg-[#FAF9F5] p-6 rounded-xl border border-gray-150 space-y-3">
             <p className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-[#7B2332]" /> 1:1 대면 질문 및 학습 멘토링
@@ -1020,7 +1019,7 @@ function CareSystemSection() {
 
         <div className="border border-gray-150 rounded-xl overflow-hidden shadow-inner">
           <div className="bg-[#7B2332] text-white p-4 font-bold text-xs sm:text-sm flex flex-col sm:flex-row justify-between items-center gap-2">
-            <span className="flex items-center gap-2">⏰ 교시제 타종 운영 시간표 (월~금 기준)</span>
+            <span className="flex items-center gap-2">⏰ 교시제 타종 운영 시간표</span>
             <span className="text-[10px] sm:text-xs text-white/80 bg-black/25 px-2.5 py-1 rounded-full">토요일 의무 자습 / 일요일 선택 자습</span>
           </div>
           <div className="overflow-x-auto">
@@ -1069,7 +1068,7 @@ export function Owl() {
 
   const posterLightboxPhotos: LightboxPhoto[] = [...STATIC_POSTERS, ...apiBannerPosters];
   const allPosters = posterLightboxPhotos;
-  
+
   return (
     <PageLayout>
       {posterLightbox !== null && (
