@@ -500,6 +500,63 @@ async function ensureSummerImagesTable() {
   }
 }
 
+async function ensureSummerGuidelinesTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS summer_guidelines (
+        id SERIAL PRIMARY KEY,
+        division TEXT NOT NULL DEFAULT '중등',
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure summer_guidelines table:", err);
+  }
+}
+
+async function seedSummerGuidelines() {
+  try {
+    const { rows } = await pool.query("SELECT COUNT(*) FROM summer_guidelines");
+    if (parseInt(rows[0].count) > 0) return;
+
+    const divisions = ["중등", "고1", "고2", "고3"];
+    const defaultGuidelines = [
+      {
+        title: "수업 기간 및 시간",
+        content: "• 기간: 07/22 (수) - 08/13 (목) (총 17일간 종합반으로 진행)\n• 시간: 월-금 08:30 - 22:00"
+      },
+      {
+        title: "수업",
+        content: "• 국어 3.5시간 주 2회\n• 수학 3.5시간 주 5회\n• 영어 3.5시간 주 1회\n• 통합과학/통합사회 3.5시간 각 주 1회"
+      },
+      {
+        title: "입학 자격",
+        content: "• 모의고사 국/수/영 3개 과목 중 2과목 등급합 4등급 이내\n• 1학기 중간고사 성적표 제출 후 자체 심사"
+      },
+      {
+        title: "교습비",
+        content: "1,870,000 (17일) (식비/교재비/자습관 비용 별도)\n\n중도 환불 시 교육청 환불 기준에 준함\n- 시작 후부터 1/3 경과 전까지: 2/3 환불\n- 1/3 경과 후부터 1/2 경과 전까지: 1/2 환불\n- 1/2 경과 이후: 환불 불가"
+      }
+    ];
+
+    for (const div of divisions) {
+      for (let i = 0; i < defaultGuidelines.length; i++) {
+        const item = defaultGuidelines[i];
+        await pool.query(
+          "INSERT INTO summer_guidelines (division, title, content, display_order) VALUES ($1, $2, $3, $4)",
+          [div, item.title, item.content, i]
+        );
+      }
+    }
+    console.log("Successfully seeded default summer guidelines.");
+  } catch (err) {
+    console.error("Failed to seed default summer guidelines:", err);
+  }
+}
+
 async function ensureTeacherImagesTable() {
   try {
     await pool.query(`
@@ -820,6 +877,8 @@ export async function registerRoutes(
   await ensureReservationsTable();
   await ensureSummaryTimetablesTable();
   await ensureSummerImagesTable();
+  await ensureSummerGuidelinesTable();
+  await seedSummerGuidelines();
   await ensureBriefingEventsTable();
   await ensureTeacherImagesTable();
   await ensureTeachersTable();
@@ -990,6 +1049,80 @@ export async function registerRoutes(
         }
       }
       await pool.query("DELETE FROM summer_images WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== SUMMER GUIDELINES ==========
+  app.get("/api/summer-guidelines", async (_req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT * FROM summer_guidelines
+        ORDER BY display_order ASC, created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/summer-guidelines", requireAdmin, async (req, res) => {
+    const { division, title, content } = req.body;
+    if (!division || !title || content === undefined) {
+      return res.status(400).json({ error: "division, title, content가 필요합니다." });
+    }
+    try {
+      const { rows: maxOrderRows } = await pool.query(
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_guidelines WHERE division = $1",
+        [division]
+      );
+      const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
+      const { rows } = await pool.query(
+        "INSERT INTO summer_guidelines (division, title, content, display_order) VALUES ($1, $2, $3, $4) RETURNING *",
+        [division, title, content, nextOrder]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summer-guidelines/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await pool.query("UPDATE summer_guidelines SET display_order = $1 WHERE id = $2", [i, ids[i]]);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summer-guidelines/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    const { title, content, division } = req.body;
+    try {
+      const { rows } = await pool.query(
+        "UPDATE summer_guidelines SET title = COALESCE($1, title), content = COALESCE($2, content), division = COALESCE($3, division) WHERE id = $4 RETURNING *",
+        [title, content, division, id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "존재하지 않는 가이드라인" });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/summer-guidelines/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    try {
+      await pool.query("DELETE FROM summer_guidelines WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

@@ -84,8 +84,13 @@ export default function Summer() {
     queryKey: ["/api/summer-images"],
   });
 
-  // Filter images by the active tab
+  const { data: guidelines = [] } = useQuery<any[]>({
+    queryKey: ["/api/summer-guidelines"],
+  });
+
+  // Filter images and guidelines by the active tab
   const filteredImages = images.filter((img) => (img.division || "중등") === activeTab);
+  const filteredGuidelines = guidelines.filter((g) => g.division === activeTab);
 
   const grouped = filteredImages.reduce((acc: Record<string, SummerImage[]>, img) => {
     const key = img.teacher_name || "공통";
@@ -259,6 +264,36 @@ export default function Summer() {
               </div>
             </motion.section>
           </>
+        )}
+
+        {/* 모집 요강 (Guidelines) Section */}
+        {filteredGuidelines.length > 0 && (
+          <section className="space-y-6 pt-10 border-t border-gray-100">
+            <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-6 bg-[#7B2332]" />
+                <h2 className="text-2xl font-black text-gray-900">모집 요강</h2>
+              </div>
+              <div className="text-xs sm:text-sm font-semibold text-gray-400">
+                2026 {activeTab === "중등" ? "중3" : activeTab} Summer School &nbsp;|&nbsp; Tel. 031-204-1353
+              </div>
+            </div>
+            
+            <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-[2rem]">
+              {filteredGuidelines.map((g) => (
+                <div key={g.id} className="flex flex-col md:flex-row border-b border-gray-100 last:border-b-0">
+                  <div className="w-full md:w-56 bg-slate-50/50 p-6 flex items-center justify-start md:justify-center border-b md:border-b-0 md:border-r border-gray-100">
+                    <span className="font-bold text-gray-800 text-sm tracking-tight text-left md:text-center">
+                      {g.title}
+                    </span>
+                  </div>
+                  <div className="flex-1 p-6 bg-white whitespace-pre-line text-sm text-gray-600 leading-relaxed font-medium">
+                    {g.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Existing Image Gallery */}
