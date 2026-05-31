@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { SectionPage } from "@/components/layout";
 import { Loader2, User, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,7 +58,27 @@ const SCHEDULE = [
 ];
 
 export default function Summer() {
-  const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2" | "고3">("중등");
+  const [location] = useLocation();
+  const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2" | "고3">(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab === "중등" || tab === "고1" || tab === "고2" || tab === "고3") {
+        return tab;
+      }
+    }
+    return "중등";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab === "중등" || tab === "고1" || tab === "고2" || tab === "고3") {
+        setActiveTab(tab);
+      }
+    }
+  }, [location]);
 
   const { data: images = [], isLoading } = useQuery<SummerImage[]>({
     queryKey: ["/api/summer-images"],
