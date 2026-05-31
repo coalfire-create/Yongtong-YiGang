@@ -488,112 +488,52 @@ export default function Summer() {
 
         {/* Hwang Hae-ryong Curriculum Section (Only for 고1 / 고2) */}
         {(activeTab === "고1" || activeTab === "고2") && (
-          <section className="space-y-8 pt-10 border-t border-gray-100">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#7B2332] flex-shrink-0 bg-white flex items-center justify-center">
-                  <img
-                    src="/images/teachers/hwang-haeryong.png"
-                    alt="황해룡 선생님"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      const parent = e.currentTarget.parentElement;
-                      if (parent) {
-                        const fallback = document.createElement('div');
-                        fallback.className = 'w-full h-full flex items-center justify-center bg-red-50';
-                        fallback.innerHTML = '<svg class="w-6 h-6 text-[#7B2332]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>';
-                        parent.appendChild(fallback);
-                      }
-                    }}
-                  />
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">황해룡 선생님 수학 시간표 & 커리큘럼</h2>
-                  <p className="text-sm text-gray-500 font-medium">{activeTab} 썸머스쿨 수학 정규반 및 특강 상세 안내</p>
-                </div>
+          <section className="space-y-6 pt-10 border-t border-gray-100">
+            <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-6 bg-[#7B2332]" />
+                <h2 className="text-2xl font-black text-gray-900">수학 시간표 & 커리큘럼 (황해룡T)</h2>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-[#7B2332] text-xs font-bold rounded-lg border border-red-100">
-                수학 황해룡T
+              <div className="text-xs sm:text-sm font-semibold text-gray-400">
+                2026 {activeTab} Summer School &nbsp;|&nbsp; Tel. 031-204-1353
               </div>
             </div>
 
-            <div className="space-y-6">
-              {HWANG_HR_CURRICULUM[activeTab].map((course) => {
-                const isExpanded = expandedCurriculum === course.title;
-                return (
-                  <div key={course.title} className="bg-white border border-gray-200 rounded-[2rem] overflow-hidden shadow-sm transition-all duration-300 hover:border-gray-300">
-                    <button
-                      onClick={() => setExpandedCurriculum(isExpanded ? null : course.title)}
-                      className="w-full text-left p-6 sm:p-8 flex items-center justify-between gap-4 focus:outline-none"
-                    >
-                      <div className="space-y-2">
-                        <span className="inline-block px-2.5 py-0.5 bg-[#7B2332] text-white text-[10px] font-bold rounded">
-                          수학 특강/정규
-                        </span>
-                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 leading-snug">{course.title}</h3>
-                        <p className="text-xs sm:text-sm text-gray-500 font-medium">{course.subtitle} &nbsp;|&nbsp; <span className="text-[#7B2332] font-semibold">{course.timeInfo}</span></p>
-                      </div>
-                      <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0 border border-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                        {isExpanded ? (
-                          <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" /></svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
-                        )}
-                      </div>
-                    </button>
-
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.25 }}
-                          className="border-t border-gray-100 overflow-hidden"
-                        >
-                          <div className="p-6 sm:p-8 pt-0 space-y-6">
-                            {course.note && (
-                              <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl text-xs sm:text-sm text-amber-800 leading-relaxed font-medium">
-                                {course.note}
-                              </div>
-                            )}
-
-                            <div className="overflow-x-auto rounded-2xl border border-gray-100">
-                              <table className="w-full text-left border-collapse">
-                                <thead>
-                                  <tr className="bg-gray-50 border-b border-gray-100">
-                                    <th className="p-4 text-xs font-bold text-gray-500 w-16 text-center">회차</th>
-                                    <th className="p-4 text-xs font-bold text-gray-500 w-28">날짜</th>
-                                    <th className="p-4 text-xs font-bold text-gray-500 w-16 text-center">요일</th>
-                                    <th className="p-4 text-xs font-bold text-gray-500 w-36">시간</th>
-                                    <th className="p-4 text-xs font-bold text-gray-500">단원 / 주제</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                  {course.sessions.map((session, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                                      <td className="p-4 text-xs sm:text-sm font-black text-gray-400 text-center">{session.session}</td>
-                                      <td className="p-4 text-xs sm:text-sm font-bold text-gray-900">{session.date}</td>
-                                      <td className="p-4 text-center">
-                                        <span className={`inline-block w-6 py-0.5 rounded text-[11px] font-black text-center ${session.day === "토" || session.day === "일" ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-600"}`}>
-                                          {session.day}
-                                        </span>
-                                      </td>
-                                      <td className="p-4 text-xs sm:text-sm font-semibold text-[#7B2332]">{session.time}</td>
-                                      <td className="p-4 text-xs sm:text-sm font-medium text-gray-700">{session.topic}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+            <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-[2rem]">
+              {HWANG_HR_CURRICULUM[activeTab as "고1" | "고2"].map((course, idx) => (
+                <div key={idx} className="flex flex-col md:flex-row border-b border-gray-100 last:border-b-0">
+                  <div className="w-full md:w-56 bg-slate-50/50 p-6 flex flex-col items-start md:items-center justify-center border-b md:border-b-0 md:border-r border-gray-100 flex-shrink-0">
+                    <span className="font-bold text-gray-900 text-base tracking-tight text-left md:text-center leading-snug">
+                      {course.title}
+                    </span>
+                    <span className="text-[10px] text-gray-400 mt-1 font-semibold">수학 황해룡T</span>
                   </div>
-                );
-              })}
+                  <div className="flex-1 p-6 bg-white whitespace-pre-line text-sm text-gray-600 leading-relaxed font-medium">
+                    <div className="space-y-2">
+                      <p className="font-semibold text-gray-800">• 시간: {course.timeInfo}</p>
+                      {course.note && <p className="font-semibold text-amber-700">• {course.note}</p>}
+                      
+                      <div className="pt-3 border-t border-gray-100 space-y-1.5">
+                        {course.sessions.map((s, sIdx) => (
+                          <div key={sIdx} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 text-xs sm:text-sm">
+                            <span className="font-bold text-gray-700 min-w-[7.5rem] flex-shrink-0">
+                              • {s.session} ({s.date} {s.day})
+                            </span>
+                            <span className="text-gray-400 hidden sm:inline">|</span>
+                            <span className="text-[#7B2332] font-semibold min-w-[7.5rem] flex-shrink-0">
+                              {s.time}
+                            </span>
+                            <span className="text-gray-400 hidden sm:inline">|</span>
+                            <span className="text-gray-600 flex-1 font-medium">
+                              {s.topic}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         )}
