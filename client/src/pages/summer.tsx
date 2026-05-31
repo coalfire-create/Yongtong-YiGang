@@ -57,6 +57,124 @@ const SCHEDULE = [
   { time: "21:30 - 22:00", content: "자기점검 및 하원" },
 ];
 
+interface SummerCurriculumSession {
+  session: string;
+  date: string;
+  day: string;
+  time: string;
+  topic: string;
+}
+
+interface SummerCurriculumClass {
+  title: string;
+  subtitle: string;
+  timeInfo: string;
+  sessions: SummerCurriculumSession[];
+  note?: string;
+}
+
+const HWANG_HR_CURRICULUM: Record<"고1" | "고2", SummerCurriculumClass[]> = {
+  "고1": [
+    {
+      title: "화성고1 공동수학2 (10회) - 실력",
+      subtitle: "화성고 내신 출제 경향 분석 및 수능 연계 개념 완성",
+      timeInfo: "토/일 14:00 - 17:30",
+      sessions: [
+        { session: "1회", date: "7월 11일", day: "토", time: "14:00~17:30", topic: "평면좌표와 평면도형의 성질" },
+        { session: "2회", date: "7월 12일", day: "일", time: "14:00~17:30", topic: "직선의 방정식" },
+        { session: "3회", date: "7월 18일", day: "토", time: "14:00~17:30", topic: "원의 방정식" },
+        { session: "4회", date: "7월 19일", day: "일", time: "14:00~17:30", topic: "도형의 이동" },
+        { session: "5회", date: "7월 25일", day: "토", time: "14:00~17:30", topic: "집합" },
+        { session: "6회", date: "7월 26일", day: "일", time: "14:00~17:30", topic: "명제" },
+        { session: "7회", date: "8월 1일", day: "토", time: "14:00~17:30", topic: "함수" },
+        { session: "8회", date: "8월 2일", day: "일", time: "14:00~17:30", topic: "합성함수와 역함수" },
+        { session: "9회", date: "8월 8일", day: "토", time: "14:00~17:30", topic: "유리함수" },
+        { session: "10회", date: "8월 9일", day: "일", time: "14:00~17:30", topic: "무리함수" }
+      ]
+    },
+    {
+      title: "고1 특강 대수 (9회) - 실력",
+      subtitle: "대수 단원 핵심 개념 심화 학습 및 빈출 유형 완벽 정복",
+      timeInfo: "수/금/월 09:00 - 12:30",
+      sessions: [
+        { session: "1회", date: "7월 22일", day: "수", time: "09:00~12:30", topic: "지수와 로그" },
+        { session: "2회", date: "7월 24일", day: "금", time: "09:00~12:30", topic: "지수함수와 로그함수의 그래프" },
+        { session: "3회", date: "7월 27일", day: "월", time: "09:00~12:30", topic: "지수함수와 로그함수 (역함수 관계, 교점, 방정식, 부등식, 활용)" },
+        { session: "4회", date: "7월 29일", day: "수", time: "09:00~12:30", topic: "삼각함수의 정의와 그래프 기본" },
+        { session: "5회", date: "7월 31일", day: "금", time: "09:00~12:30", topic: "삼각함수의 그래프" },
+        { session: "6회", date: "8월 3일", day: "월", time: "09:00~12:30", topic: "삼각함수의 활용" },
+        { session: "7회", date: "8월 5일", day: "수", time: "09:00~12:30", topic: "등차수열과 등비수열" },
+        { session: "8회", date: "8월 7일", day: "금", time: "09:00~12:30", topic: "수열의 합" },
+        { session: "9회", date: "8월 10일", day: "월", time: "09:00~12:30", topic: "수학적 귀납법" }
+      ]
+    },
+    {
+      title: "화성고1 All Day 대수 (6회) - 기본+실력",
+      subtitle: "단기간 몰입 학습을 통해 대수 전 단원 고득점 발판 마련",
+      timeInfo: "일 18:30 - 22:00, 월-금 14:00 - 17:30",
+      note: "★ 영상 대체 단원: ① 지수함수와 로그함수의 방정식과 부등식 ② 삼각함수의 활용 ③ 수학적 귀납법",
+      sessions: [
+        { session: "1회", date: "8월 2일", day: "일", time: "18:30~22:00", topic: "지수와 로그" },
+        { session: "2회", date: "8월 3일", day: "월", time: "14:00~17:30", topic: "지수함수와 로그함수" },
+        { session: "3회", date: "8월 4일", day: "화", time: "14:00~17:30", topic: "삼각함수의 정의와 그래프" },
+        { session: "4회", date: "8월 5일", day: "수", time: "14:00~17:30", topic: "삼각함수의 그래프" },
+        { session: "5회", date: "8월 6일", day: "목", time: "14:00~17:30", topic: "등차수열과 등비수열" },
+        { session: "6회", date: "8월 7일", day: "금", time: "14:00~17:30", topic: "수열의 합" }
+      ]
+    }
+  ],
+  "고2": [
+    {
+      title: "고2 A1 미적분1 (10회) - 실력",
+      subtitle: "미적분 주요 단원의 고난도 실전 심화 및 고득점 완성",
+      timeInfo: "수/월 18:00 - 22:00",
+      sessions: [
+        { session: "1회", date: "7월 8일", day: "수", time: "18:00~22:00", topic: "함수의 극한" },
+        { session: "2회", date: "7월 13일", day: "월", time: "18:00~22:00", topic: "함수의 연속" },
+        { session: "3회", date: "7월 15일", day: "수", time: "18:00~22:00", topic: "미분계수와 도함수" },
+        { session: "4회", date: "7월 20일", day: "월", time: "18:00~22:00", topic: "접선의 방정식" },
+        { session: "5회", date: "7월 22일", day: "수", time: "18:00~22:00", topic: "그래프 해석의 도구 (증가감소/극대극소)" },
+        { session: "6회", date: "7월 27일", day: "월", time: "18:00~22:00", topic: "다항함수의 그래프" },
+        { session: "7회", date: "7월 29일", day: "수", time: "18:00~22:00", topic: "방정식과 부등식" },
+        { session: "8회", date: "8월 3일", day: "월", time: "18:00~22:00", topic: "부정적분과 정적분" },
+        { session: "9회", date: "8월 5일", day: "수", time: "18:00~22:00", topic: "정적분으로 정의된 함수" },
+        { session: "10회", date: "8월 10일", day: "월", time: "18:00~22:00", topic: "넓이와 직선운동" }
+      ]
+    },
+    {
+      title: "영덕고2 1 S 공동수학2 (10회) - 실력+심화",
+      subtitle: "영덕고 출제 경향에 맞춤 설계된 고난도 내신 및 심화 완성",
+      timeInfo: "목/화 18:00 - 22:00",
+      sessions: [
+        { session: "1회", date: "7월 9일", day: "목", time: "18:00~22:00", topic: "평면좌표와 평면도형의 성질" },
+        { session: "2회", date: "7월 14일", day: "화", time: "18:00~22:00", topic: "직선의 방정식" },
+        { session: "3회", date: "7월 16일", day: "목", time: "18:00~22:00", topic: "원의 방정식" },
+        { session: "4회", date: "7월 21일", day: "화", time: "18:00~22:00", topic: "도형의 이동" },
+        { session: "5회", date: "7월 23일", day: "목", time: "18:00~22:00", topic: "집합" },
+        { session: "6회", date: "7월 28일", day: "화", time: "18:00~22:00", topic: "명제" },
+        { session: "7회", date: "7월 30일", day: "목", time: "18:00~22:00", topic: "함수" },
+        { session: "8회", date: "8월 4일", day: "화", time: "18:00~22:00", topic: "합성함수와 역함수" },
+        { session: "9회", date: "8월 6일", day: "목", time: "18:00~22:00", topic: "유리함수" },
+        { session: "10회", date: "8월 11일", day: "화", time: "18:00~22:00", topic: "무리함수" }
+      ]
+    },
+    {
+      title: "고2 특강 기하 (7회) - 기본",
+      subtitle: "기하 단원의 기본 이론 확립 및 핵심 유형 마스터",
+      timeInfo: "토 18:30 - 22:00 / 화 09:00 - 12:30",
+      sessions: [
+        { session: "1회", date: "7월 11일", day: "토", time: "18:30~22:00", topic: "이차곡선의 정의" },
+        { session: "2회", date: "7월 18일", day: "토", time: "18:30~22:00", topic: "이차곡선의 접선" },
+        { session: "3회", date: "7월 25일", day: "토", time: "18:30~22:00", topic: "공간도형" },
+        { session: "4회", date: "7월 28일", day: "화", time: "09:00~12:30", topic: "공간좌표" },
+        { session: "5회", date: "8월 1일", day: "토", time: "18:30~22:00", topic: "벡터의 연산" },
+        { session: "6회", date: "8월 4일", day: "화", time: "09:00~12:30", topic: "벡터의 내적" },
+        { session: "7회", date: "8월 8일", day: "토", time: "18:30~22:00", topic: "벡터의 방정식" }
+      ]
+    }
+  ]
+};
+
 export default function Summer() {
   const [location] = useLocation();
   const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2" | "고3">(() => {
@@ -69,6 +187,8 @@ export default function Summer() {
     }
     return "중등";
   });
+
+  const [expandedCurriculum, setExpandedCurriculum] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -310,25 +430,31 @@ export default function Summer() {
               <Loader2 className="w-10 h-10 animate-spin text-[#7B2332]" />
             </div>
           ) : filteredImages.length === 0 ? (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-24 bg-white border border-gray-100 rounded-[2rem] shadow-sm space-y-6 flex flex-col items-center justify-center relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-tr from-red-50/10 via-transparent to-blue-50/10 opacity-50 pointer-events-none" />
-              <div className="relative z-10">
-                <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mb-6 animate-bounce">
-                  <Clock className="w-10 h-10 text-[#7B2332]" />
-                </div>
+            (activeTab === "고1" || activeTab === "고2") ? (
+              <div className="text-center py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-sm text-gray-400 font-medium">
+                국어/영어/과학 등 다른 과목의 세부 시간표와 브로셔는 준비 중입니다.
               </div>
-              <h3 className="relative z-10 text-5xl sm:text-7xl font-black text-gray-200 tracking-wider uppercase select-none font-mono">
-                Coming Soon
-              </h3>
-              <p className="relative z-10 text-base sm:text-lg text-gray-500 font-semibold max-w-md mx-auto leading-relaxed">
-                {activeTab} 썸머스쿨 프로그램 안내 및 시간표가<br />
-                곧 공개될 예정입니다. 잠시만 기다려주세요!
-              </p>
-            </motion.div>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-24 bg-white border border-gray-100 rounded-[2rem] shadow-sm space-y-6 flex flex-col items-center justify-center relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-tr from-red-50/10 via-transparent to-blue-50/10 opacity-50 pointer-events-none" />
+                <div className="relative z-10">
+                  <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mb-6 animate-bounce">
+                    <Clock className="w-10 h-10 text-[#7B2332]" />
+                  </div>
+                </div>
+                <h3 className="relative z-10 text-5xl sm:text-7xl font-black text-gray-200 tracking-wider uppercase select-none font-mono">
+                  Coming Soon
+                </h3>
+                <p className="relative z-10 text-base sm:text-lg text-gray-500 font-semibold max-w-md mx-auto leading-relaxed">
+                  {activeTab} 썸머스쿨 프로그램 안내 및 시간표가<br />
+                  곧 공개될 예정입니다. 잠시만 기다려주세요!
+                </p>
+              </motion.div>
+            )
           ) : (
             teacherNames.map((name) => (
               <div key={name} className="space-y-6">
@@ -359,6 +485,118 @@ export default function Summer() {
             ))
           )}
         </section>
+
+        {/* Hwang Hae-ryong Curriculum Section (Only for 고1 / 고2) */}
+        {(activeTab === "고1" || activeTab === "고2") && (
+          <section className="space-y-8 pt-10 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#7B2332] flex-shrink-0 bg-white flex items-center justify-center">
+                  <img
+                    src="/images/teachers/hwang-haeryong.png"
+                    alt="황해룡 선생님"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        const fallback = document.createElement('div');
+                        fallback.className = 'w-full h-full flex items-center justify-center bg-red-50';
+                        fallback.innerHTML = '<svg class="w-6 h-6 text-[#7B2332]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>';
+                        parent.appendChild(fallback);
+                      }
+                    }}
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">황해룡 선생님 수학 시간표 & 커리큘럼</h2>
+                  <p className="text-sm text-gray-500 font-medium">{activeTab} 썸머스쿨 수학 정규반 및 특강 상세 안내</p>
+                </div>
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-[#7B2332] text-xs font-bold rounded-lg border border-red-100">
+                수학 황해룡T
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {HWANG_HR_CURRICULUM[activeTab].map((course) => {
+                const isExpanded = expandedCurriculum === course.title;
+                return (
+                  <div key={course.title} className="bg-white border border-gray-200 rounded-[2rem] overflow-hidden shadow-sm transition-all duration-300 hover:border-gray-300">
+                    <button
+                      onClick={() => setExpandedCurriculum(isExpanded ? null : course.title)}
+                      className="w-full text-left p-6 sm:p-8 flex items-center justify-between gap-4 focus:outline-none"
+                    >
+                      <div className="space-y-2">
+                        <span className="inline-block px-2.5 py-0.5 bg-[#7B2332] text-white text-[10px] font-bold rounded">
+                          수학 특강/정규
+                        </span>
+                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 leading-snug">{course.title}</h3>
+                        <p className="text-xs sm:text-sm text-gray-500 font-medium">{course.subtitle} &nbsp;|&nbsp; <span className="text-[#7B2332] font-semibold">{course.timeInfo}</span></p>
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0 border border-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                        {isExpanded ? (
+                          <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" /></svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
+                        )}
+                      </div>
+                    </button>
+
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="border-t border-gray-100 overflow-hidden"
+                        >
+                          <div className="p-6 sm:p-8 pt-0 space-y-6">
+                            {course.note && (
+                              <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl text-xs sm:text-sm text-amber-800 leading-relaxed font-medium">
+                                {course.note}
+                              </div>
+                            )}
+
+                            <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="bg-gray-50 border-b border-gray-100">
+                                    <th className="p-4 text-xs font-bold text-gray-500 w-16 text-center">회차</th>
+                                    <th className="p-4 text-xs font-bold text-gray-500 w-28">날짜</th>
+                                    <th className="p-4 text-xs font-bold text-gray-500 w-16 text-center">요일</th>
+                                    <th className="p-4 text-xs font-bold text-gray-500 w-36">시간</th>
+                                    <th className="p-4 text-xs font-bold text-gray-500">단원 / 주제</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                  {course.sessions.map((session, idx) => (
+                                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                      <td className="p-4 text-xs sm:text-sm font-black text-gray-400 text-center">{session.session}</td>
+                                      <td className="p-4 text-xs sm:text-sm font-bold text-gray-900">{session.date}</td>
+                                      <td className="p-4 text-center">
+                                        <span className={`inline-block w-6 py-0.5 rounded text-[11px] font-black text-center ${session.day === "토" || session.day === "일" ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-600"}`}>
+                                          {session.day}
+                                        </span>
+                                      </td>
+                                      <td className="p-4 text-xs sm:text-sm font-semibold text-[#7B2332]">{session.time}</td>
+                                      <td className="p-4 text-xs sm:text-sm font-medium text-gray-700">{session.topic}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Contact CTA */}
         <section className="bg-gray-900 rounded-[2rem] p-10 sm:p-16 text-center space-y-8 relative overflow-hidden">
