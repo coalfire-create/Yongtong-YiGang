@@ -512,6 +512,61 @@ async function ensureSummerGuidelinesTable() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+
+    // Ensure Hwang Hae-ryong math curriculums are in the DB for G1 and G2
+    const hwangMathGuidelines = [
+      // 고1
+      {
+        division: "고1",
+        title: "화성고1 공동수학2 (10회) - 실력",
+        content: "• 시간: 토/일 14:00 - 17:30\n• 상세 회차 일정:\n  - 1회 (7월 11일 토) : 평면좌표와 평면도형의 성질\n  - 2회 (7월 12일 일) : 직선의 방정식\n  - 3회 (7월 18일 토) : 원의 방정식\n  - 4회 (7월 19일 일) : 도형의 이동\n  - 5회 (7월 25일 토) : 집합\n  - 6회 (7월 26일 일) : 명제\n  - 7회 (8월 1일 토) : 함수\n  - 8회 (8월 2일 일) : 합성함수와 역함수\n  - 9회 (8월 8일 토) : 유리함수\n  - 10회 (8월 9일 일) : 무리함수",
+        display_order: 4
+      },
+      {
+        division: "고1",
+        title: "고1 특강 대수 (9회) - 실력",
+        content: "• 시간: 수/금/월 09:00 - 12:30\n• 상세 회차 일정:\n  - 1회 (7월 22일 수) : 지수와 로그\n  - 2회 (7월 24일 금) : 지수함수와 로그함수의 그래프\n  - 3회 (7월 27일 월) : 지수함수와 로그함수 (역함수 관계, 교점, 방정식, 부등식, 활용)\n  - 4회 (7월 29일 수) : 삼각함수의 정의와 그래프 기본\n  - 5회 (7월 31일 금) : 삼각함수의 그래프\n  - 6회 (8월 3일 월) : 삼각함수의 활용\n  - 7회 (8월 5일 수) : 등차수열과 등비수열\n  - 8회 (8월 7일 금) : 수열의 합\n  - 9회 (8월 10일 월) : 수학적 귀납법",
+        display_order: 5
+      },
+      {
+        division: "고1",
+        title: "화성고1 All Day 대수 (6회) - 기본+실력",
+        content: "• 시간: 일 18:30 - 22:00, 월-금 14:00 - 17:30\n• 상세 회차 일정:\n  - 1회 (8월 2일 일) : 지수와 로그\n  - 2회 (8월 3일 월) : 지수함수와 로그함수\n  - 3회 (8월 4일 화) : 삼각함수의 정의와 그래프\n  - 4회 (8월 5일 수) : 삼각함수의 그래프\n  - 5회 (8월 6일 목) : 등차수열과 등비수열\n  - 6회 (8월 7일 금) : 수열의 합\n★ 영상 대체 단원: ① 지수함수와 로그함수의 방정식과 부등식 ② 삼각함수의 활용 ③ 수학적 귀납법",
+        display_order: 6
+      },
+      // 고2
+      {
+        division: "고2",
+        title: "고2 A1 미적분1 (10회) - 실력",
+        content: "• 시간: 수/월 18:00 - 22:00\n• 상세 회차 일정:\n  - 1회 (7월 8일 수) : 함수의 극한\n  - 2회 (7월 13일 월) : 함수의 연속\n  - 3회 (7월 15일 수) : 미분계수와 도함수\n  - 4회 (7월 20일 월) : 접선의 방정식\n  - 5회 (7월 22일 수) : 그래프 해석의 도구 (증가감소/극대극소)\n  - 6회 (7월 27일 월) : 다항함수의 그래프\n  - 7회 (7월 29일 수) : 방정식과 부등식\n  - 8회 (8월 3일 월) : 부정적분과 정적분\n  - 9회 (8월 5일 수) : 정적분으로 정의된 함수\n  - 10회 (8월 10일 월) : 넓이와 직선운동",
+        display_order: 4
+      },
+      {
+        division: "고2",
+        title: "영덕고2 1 S 공동수학2 (10회) - 실력+심화",
+        content: "• 시간: 목/화 18:00 - 22:00\n• 상세 회차 일정:\n  - 1회 (7월 9일 목) : 평면좌표와 평면도형의 성질\n  - 2회 (7월 14일 화) : 직선의 방정식\n  - 3회 (7월 16일 목) : 원의 방정식\n  - 4회 (7월 21일 화) : 도형의 이동\n  - 5회 (7월 23일 목) : 집합\n  - 6회 (7월 28일 화) : 명제\n  - 7회 (7월 30일 목) : 함수\n  - 8회 (8월 4일 화) : 합성함수와 역함수\n  - 9회 (8월 6일 목) : 유리함수\n  - 10회 (8월 11일 화) : 무리함수",
+        display_order: 5
+      },
+      {
+        division: "고2",
+        title: "고2 특강 기하 (7회) - 기본",
+        content: "• 시간: 토 18:30 - 22:00 / 화 09:00 - 12:30\n• 상세 회차 일정:\n  - 1회 (7월 11일 토) : 이차곡선의 정의\n  - 2회 (7월 18일 토) : 이차곡선의 접선\n  - 3회 (7월 25일 토) : 공간도형\n  - 4회 (7월 28일 화) : 공간좌표\n  - 5회 (8월 1일 토) : 벡터의 연산\n  - 6회 (8월 4일 화) : 벡터의 내적\n  - 7회 (8월 8일 토) : 벡터의 방정식",
+        display_order: 6
+      }
+    ];
+
+    for (const item of hwangMathGuidelines) {
+      const checkExist = await pool.query(
+        "SELECT id FROM summer_guidelines WHERE division = $1 AND title = $2",
+        [item.division, item.title]
+      );
+      if (checkExist.rows.length === 0) {
+        await pool.query(
+          "INSERT INTO summer_guidelines (division, title, content, display_order) VALUES ($1, $2, $3, $4)",
+          [item.division, item.title, item.content, item.display_order]
+        );
+      }
+    }
   } catch (err) {
     console.error("Failed to ensure summer_guidelines table:", err);
   }
