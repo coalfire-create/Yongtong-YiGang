@@ -3656,10 +3656,16 @@ function SummaryTimetablesTab() {
 }
 
 function SummerTab() {
+  const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2" | "고3">("중등");
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("0");
+  const [selectedDivision, setSelectedDivision] = useState<string>("중등");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setSelectedDivision(activeTab);
+  }, [activeTab]);
 
   const { data: teachers = [] } = useQuery<Teacher[]>({
     queryKey: ["/api/teachers"],
@@ -3759,12 +3765,16 @@ function SummerTab() {
       if (selectedTeacherId !== "0") {
         formData.append("teacher_id", selectedTeacherId);
       }
+      formData.append("division", selectedDivision);
       addMutation.mutate(formData);
     });
   };
 
-  // Group items by teacher
-  const groupedItems: Record<string, any[]> = localItems.reduce((acc: any, item: any) => {
+  // Filter items by the active tab
+  const filteredItems = localItems.filter((img) => (img.division || "중등") === activeTab);
+
+  // Group filtered items by teacher
+  const groupedItems: Record<string, any[]> = filteredItems.reduce((acc: any, item: any) => {
     const key = item.teacher_id || "0";
     if (!acc[key]) acc[key] = [];
     acc[key].push(item);
@@ -3780,10 +3790,43 @@ function SummerTab() {
 
   return (
     <div className="space-y-6" data-testid="section-summer-images">
+      {/* Division selection tabs at the top */}
+      <div className="flex gap-2 border-b border-gray-200 pb-px">
+        {(["중등", "고1", "고2", "고3"] as const).map((tab) => {
+          const active = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-2.5 border-b-2 text-sm font-bold transition-colors ${
+                active
+                  ? "border-[#7B2332] text-[#7B2332]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {tab === "중등" ? "중등 썸머" : `${tab} 썸머`}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="bg-white border border-gray-200 p-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">썸머스쿨 이미지 등록</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-4">{activeTab} 썸머스쿨 이미지 등록</h3>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분</label>
+              <select
+                value={selectedDivision}
+                onChange={(e) => setSelectedDivision(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
+              >
+                <option value="중등">중등</option>
+                <option value="고1">고1</option>
+                <option value="고2">고2</option>
+                <option value="고3">고3</option>
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">선생님 선택</label>
               <select
@@ -3845,9 +3888,9 @@ function SummerTab() {
           <div className="flex justify-center py-20 bg-white border border-gray-200 rounded-xl">
             <Loader2 className="w-8 h-8 animate-spin text-gray-200" />
           </div>
-        ) : localItems.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="text-center py-20 bg-white border border-gray-200 rounded-xl">
-            <p className="text-gray-400 text-sm">등록된 이미지가 없습니다.</p>
+            <p className="text-gray-400 text-sm">{activeTab} 썸머스쿨에 등록된 이미지가 없습니다.</p>
           </div>
         ) : (
           sortedGroupKeys.map(key => {

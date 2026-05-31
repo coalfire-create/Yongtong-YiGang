@@ -494,6 +494,7 @@ async function ensureSummerImagesTable() {
       )
     `);
     await pool.query(`ALTER TABLE summer_images ADD COLUMN IF NOT EXISTS teacher_id INTEGER`);
+    await pool.query(`ALTER TABLE summer_images ADD COLUMN IF NOT EXISTS division TEXT NOT NULL DEFAULT '중등'`);
   } catch (err) {
     console.error("Failed to ensure summer_images table:", err);
   }
@@ -936,7 +937,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/summer-images", requireAdmin, upload.single("image"), async (req, res) => {
-    const { teacher_id } = req.body;
+    const { teacher_id, division } = req.body;
     if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
 
     const ext = path.extname(req.file.originalname).toLowerCase();
@@ -950,13 +951,13 @@ export async function registerRoutes(
 
     try {
       const { rows: maxOrderRows } = await pool.query(
-        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_images WHERE COALESCE(teacher_id, 0) = $1",
-        [teacher_id ? parseInt(teacher_id) : 0]
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_images WHERE COALESCE(teacher_id, 0) = $1 AND COALESCE(division, '중등') = $2",
+        [teacher_id ? parseInt(teacher_id) : 0, division || '중등']
       );
       const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
       const { rows } = await pool.query(
-        "INSERT INTO summer_images (image_url, display_order, teacher_id) VALUES ($1, $2, $3) RETURNING *",
-        [urlData.publicUrl, nextOrder, teacher_id ? parseInt(teacher_id) : null]
+        "INSERT INTO summer_images (image_url, display_order, teacher_id, division) VALUES ($1, $2, $3, $4) RETURNING *",
+        [urlData.publicUrl, nextOrder, teacher_id ? parseInt(teacher_id) : null, division || '중등']
       );
       res.json(rows[0]);
     } catch (err: any) {
