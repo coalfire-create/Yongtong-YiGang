@@ -786,7 +786,7 @@ function CareSystemSection() {
               <div className="space-y-2">
                 <span className="font-bold text-gray-800 block">🍔 급식 배식형 식사 서비스</span>
                 <p className="text-gray-500 leading-relaxed">
-                  외출로 인한 집중 이탈을 방지하고자 배식형 식사를 제공합니다. 방학 중에는 평일 중/석식 및 토요일 중식을 지원합니다 (개인 도시락 지참 가능).
+                  외출로 인한 집중 이탈을 방지하고자 배식형 식사를 제공합니다 (개인 도시락 지참 가능).
                 </p>
               </div>
               <div className="space-y-2">
