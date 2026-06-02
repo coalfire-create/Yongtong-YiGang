@@ -590,16 +590,16 @@ function CareSystemSection() {
   ];
 
   const BELL_SCHEDULE = [
-    { period: "0교시 자습", time: "08:00 ~ 08:40", duration: "40분", type: "선택자습" },
-    { period: "1교시 자습", time: "08:40 ~ 10:00", duration: "80분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
-    { period: "2교시 자습", time: "10:20 ~ 12:00", duration: "100분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
-    { period: "점심시간", time: "12:00 ~ 13:00", duration: "60분", type: "식사 및 휴식" },
-    { period: "3교시 자습", time: "13:00 ~ 14:10", duration: "70분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
-    { period: "4교시 자습", time: "14:30 ~ 15:40", duration: "70분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
-    { period: "5교시 자습", time: "16:00 ~ 17:00", duration: "60분", type: "의무자습 (월~토 의무, 공휴일 선택자습)" },
-    { period: "저녁시간", time: "17:00 ~ 18:00", duration: "60분", type: "식사 및 휴식" },
-    { period: "6교시 자습", time: "18:00 ~ 19:50", duration: "110분", type: "의무자습 (월~토 의무, 일,공휴일 선택자습)" },
-    { period: "7교시 자습", time: "20:10 ~ 22:00", duration: "110분", type: "의무자습 (월~토 의무, 일,공휴일 선택자습)" },
+    { period: "0교시 자습", time: "08:00 ~ 08:40", duration: "40분", type: "선택자습 (월~토 운영, 일요일·공휴일 미운영)" },
+    { period: "1교시 자습", time: "08:40 ~ 10:00", duration: "80분", type: "의무자습 (월~토 의무, 일요일·공휴일 선택자습)" },
+    { period: "2교시 자습", time: "10:20 ~ 12:00", duration: "100분", type: "의무자습 (월~토 의무, 일요일·공휴일 선택자습)" },
+    { period: "점심시간", time: "12:00 ~ 13:00", duration: "60분", type: "식사 및 휴식 (학습관 미운영)" },
+    { period: "3교시 자습", time: "13:00 ~ 14:10", duration: "70분", type: "의무자습 (월~토 의무, 일요일·공휴일 선택자습)" },
+    { period: "4교시 자습", time: "14:30 ~ 15:40", duration: "70분", type: "의무자습 (월~토 의무, 일요일·공휴일 선택자습)" },
+    { period: "5교시 자습", time: "16:00 ~ 17:00", duration: "60분", type: "의무자습 (월~토 의무, 일요일·공휴일 선택자습)" },
+    { period: "저녁시간", time: "17:00 ~ 18:00", duration: "60분", type: "식사 및 휴식 / 선택자습 (월~금만 운영, 토/일/공휴일 미운영)" },
+    { period: "6교시 자습", time: "18:00 ~ 19:50", duration: "110분", type: "식사 및 단과 연계 (학습관 미운영) (* 일, 공휴일)" },
+    { period: "7교시 자습", time: "20:10 ~ 22:00", duration: "110분", type: "의무자습 (월~토 의무, 일요일·공휴일 선택자습)" },
     { period: "8교시 자습", time: "22:10 ~ 23:00", duration: "50분", type: "선택자습" },
     { period: "9교시 자습", time: "23:10 ~ 24:00", duration: "50분", type: "선택자습" },
   ];
@@ -1011,7 +1011,7 @@ function CareSystemSection() {
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden p-8 sm:p-10 hover:shadow-md transition-shadow space-y-6">
         <div className="text-center md:text-left space-y-2">
           <span className="text-[#7B2332] font-black text-xs uppercase tracking-widest">BELL SCHEDULE SYSTEM</span>
-          <h3 className="text-2xl font-black text-gray-900">올빼미 교시제 타종 운영 시간표</h3>
+          <h3 className="text-2xl font-black text-gray-900">올빼미 교시제 타종 운영 시간표 (학기중, 썸머/윈터 별도 운영)</h3>
           <p className="text-xs text-gray-500 leading-relaxed">
             자습 시간과 휴식 시간을 타종으로 완벽 통제하여 1초의 흐름 유실도 없는 초고밀도 면학 분위기를 완성합니다.
           </p>
@@ -1019,8 +1019,8 @@ function CareSystemSection() {
 
         <div className="border border-gray-150 rounded-xl overflow-hidden shadow-inner">
           <div className="bg-[#7B2332] text-white p-4 font-bold text-xs sm:text-sm flex flex-col sm:flex-row justify-between items-center gap-2">
-            <span className="flex items-center gap-2">⏰ 교시제 타종 운영 시간표</span>
-            <span className="text-[10px] sm:text-xs text-white/80 bg-black/25 px-2.5 py-1 rounded-full">토요일 의무 자습 / 일요일 선택 자습</span>
+            <span className="flex items-center gap-2">⏰ 교시제 타종 운영 시간표 (학기중, 썸머/윈터 별도 운영)</span>
+            <span className="text-[10px] sm:text-xs text-white/80 bg-black/25 px-2.5 py-1 rounded-full">월~토요일 의무 자습 / 일요일·공휴일 선택 자습</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[11px] sm:text-xs border-collapse">
@@ -1144,8 +1144,8 @@ export function Owl() {
                     <div className="text-xs">
                       <span className="text-gray-400 block">학기중 운영 시간</span>
                       <span className="font-bold text-white block">
-                        평일 15:00~24:00 (정기고사 13시~24시)<br />
-                        토·일 08:00~24:00
+                        평일 15:00~24:00 (정기고사 기간 13시~24시)<br />
+                        토·일·공휴일 08:00~24:00
                       </span>
                     </div>
                   </div>
@@ -1155,7 +1155,7 @@ export function Owl() {
                     </div>
                     <div className="text-xs">
                       <span className="text-gray-400 block">방학중 운영 시간</span>
-                      <span className="font-bold text-white">365일 연중무휴 매일 08:00 ~ 24:00</span>
+                      <span className="font-bold text-white">매일 08:00 ~ 24:00</span>
                     </div>
                   </div>
                 </div>
@@ -1167,7 +1167,7 @@ export function Owl() {
                   <a href="tel:031-548-0982" className="text-2xl font-black text-white hover:text-[#E6C687] block transition-colors">
                     031-548-0982
                   </a>
-                  <span className="text-[10px] text-gray-400 font-medium mt-1 block">문자 상담 전용: 010-9764-1353</span>
+                  <span className="text-[10px] text-gray-400 font-medium mt-1 block">문자 상담 전용: 010-7737-2843</span>
                 </div>
                 <div className="border-t border-white/10 pt-4 text-[10px] text-gray-300 space-y-1">
                   <p className="font-semibold text-white">영통이강학원 4관 올빼미 학습관</p>

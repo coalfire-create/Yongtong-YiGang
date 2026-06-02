@@ -167,11 +167,11 @@ export function JuniorPremiumSystem() {
               031-548-0985
             </a>
             <a
-              href="sms:010-9764-1353"
+              href="sms:010-7737-2843"
               className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 font-bold px-6 py-3 rounded-sm hover:border-[#7B2332] hover:text-[#7B2332] transition-colors text-sm"
               data-testid="link-premium-sms"
             >
-              📱 010-9764-1353 (문자전용)
+              📱 010-7737-2843 (문자전용)
             </a>
           </div>
         </div>
