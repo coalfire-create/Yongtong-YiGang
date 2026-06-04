@@ -519,6 +519,62 @@ async function ensureSummerGuidelinesTable() {
   }
 }
 
+async function seedSummerCurriculumData() {
+  try {
+    const { rows } = await pool.query(
+      "SELECT COUNT(*) FROM summer_guidelines WHERE category = 'curriculum' AND division IN ('고1', '고2')"
+    );
+    if (parseInt(rows[0].count) >= 4) return; // already seeded
+
+    await pool.query("DELETE FROM summer_guidelines WHERE category = 'curriculum'");
+
+    const entries = [
+      // 고1
+      {
+        division: '고1', category: 'curriculum', display_order: 0,
+        title: '[물리] 유승진T\n역학특강\n고1·2 연합',
+        content: '수업 일정: 금 14:00 – 17:30 (총 5회 / 7/17 개강)\n강좌 특징: 물리학 역학파트 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test\n관리: 현장 과제체크 / 복습 테스트 20문항 / 금요일 수업 직후·토요일 저녁 Zoom 클리닉\n\n[회차별 수업 내용]\n1회차 – 등가속도운동\n2회차 – 뉴턴운동법칙\n3회차 – 운동량과 충격량 / 돌림힘\n4회차 – 일과 에너지\n5회차 – 역학 전 영역 모의고사 및 총 정리\n\n[연계 강좌] 썸머 종강 후: 겨울방학 물리학 특강'
+      },
+      {
+        division: '고1', category: 'curriculum', display_order: 1,
+        title: '[물리] 유승진T\n역학과에너지\n고1·2 연합',
+        content: '수업 일정: 금 19:30 – 22:30 (총 5회 / 7/17 개강)\n강좌 특징: 2학년 2학기 역학과 에너지 전범위 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test\n관리: 현장 과제체크 / 복습 테스트 20문항 / 토요일 저녁 Zoom 클리닉\n\n[회차별 수업 내용]\n1회차 – 힘의 평형과 포물선운동\n2회차 – 등속원운동과 케플러법칙\n3회차 – 역학적 에너지 보존과 일반 상대성이론\n4회차 – 단진동과 열역학 법칙\n5회차 – 파동\n\n[연계 강좌] 썸머 종강 후: 2학기 중간고사 대비 역학과 에너지'
+      },
+      // 고2
+      {
+        division: '고2', category: 'curriculum', display_order: 0,
+        title: '[물리] 유승진T\n역학특강\n고1·2 연합',
+        content: '수업 일정: 금 14:00 – 17:30 (총 5회 / 7/17 개강)\n강좌 특징: 물리학 역학파트 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test\n관리: 현장 과제체크 / 복습 테스트 20문항 / 금요일 수업 직후·토요일 저녁 Zoom 클리닉\n\n[회차별 수업 내용]\n1회차 – 등가속도운동\n2회차 – 뉴턴운동법칙\n3회차 – 운동량과 충격량 / 돌림힘\n4회차 – 일과 에너지\n5회차 – 역학 전 영역 모의고사 및 총 정리\n\n[연계 강좌] 썸머 종강 후: 겨울방학 물리학 특강'
+      },
+      {
+        division: '고2', category: 'curriculum', display_order: 1,
+        title: '[물리] 유승진T\n역학과에너지\n고1·2 연합',
+        content: '수업 일정: 금 19:30 – 22:30 (총 5회 / 7/17 개강)\n강좌 특징: 2학년 2학기 역학과 에너지 전범위 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test\n관리: 현장 과제체크 / 복습 테스트 20문항 / 토요일 저녁 Zoom 클리닉\n\n[회차별 수업 내용]\n1회차 – 힘의 평형과 포물선운동\n2회차 – 등속원운동과 케플러법칙\n3회차 – 역학적 에너지 보존과 일반 상대성이론\n4회차 – 단진동과 열역학 법칙\n5회차 – 파동\n\n[연계 강좌] 썸머 종강 후: 2학기 중간고사 대비 역학과 에너지'
+      },
+      {
+        division: '고2', category: 'curriculum', display_order: 2,
+        title: '[영어] 문브라더스T\n독해의 올인원\n고2',
+        content: '수업 일정: 토 09:00 – 12:00\n강좌 특징: 학생별 약점 분석 시스템 + 실전 능력 극대화를 통한 수능 영어 완성\n교재: 독해의 올인원 / 단어전쟁 50 / 심폐소생영문법 / 신세계 구문\n과제: 올인원 수업 복습 / 매주 신세계 구문 2강 / 문브라더스 단어앱 100개씩 / 구문앱 하루 5구문 / Voyage 주간지\nTEST: 지난 수업 주관식 피드백 / 단어 TEST / 학생별 개별 피드백\n관리: 문브라더스 앱으로 단어·구문·계획·피드백 통합 관리\n\n[시즌 핵심 체크]\n① 올해 평가원 핵심 어휘·표현·논리 흐름 완벽 정리\n② 30번 이후 고난도 문항 실전 대응력 극대화\n③ 학생별 맞춤 어휘 관리 (문브라더스 단어 앱)\n④ 매주 개별 피드백으로 약점 분석 + 학습 방향 교정\n⑤ 두 선생님의 직접 관리 및 동기부여'
+      },
+      {
+        division: '고2', category: 'curriculum', display_order: 3,
+        title: '[국어] 김현종T\n우문현답 ZERO\n고2 수능반',
+        content: '수업 일정: 토 18:30 – 21:30 (영통 이강학원)\n교재: 우문현답 ZERO (본교재) / 월간 김현종 1~3호 (과제)\n강좌 특징: 수능 국어 독서·문학 주제별 글 읽기 / 거시+미시 독해 체계 / 14주 완성\n과제: 월간 김현종 하루 10문제·주간 50문제 / 필수 독서 배경지식 / 필수 고전시가 학습 / 복습지 첨삭\n관리: 개별 복습지 첨삭 → 사고 과정 교정 / 맞춤형 개별 플래너 → 학습 루틴 정착 / 철저한 숙제 관리 / 매주 피드백 학부모 공유\n\n[12주 완성 후 달라지는 것]\n① 독서 시간 부족 현상 종결 (킬러 지문 막힘없이 완독)\n② 낯선 문학 작품 스스로 분석하는 능력\n③ 감으로 푸는 버릇 교정 (1:1 복습지 첨삭)\n④ 고전 어휘 및 독서 배경지식 상식화\n⑤ 매일 10문제 푸는 완벽한 루틴\n\n[주차별 수업 내용]\n1~2주: 독서 인문/예술 + 현대시 기본기\n3~4주: 독서 법 + 현대소설 기본기\n5~6주: 독서 경제 + 고전시 기본기\n7주: 독서 과학/기술 + 고전소설 기본기\n8주: 9월 모평 대비 자체 모의고사\n9주: 9월 모의평가 해설 수업\n10~14주 (시즌2): 전 영역 심화 학습'
+      },
+    ];
+
+    for (const e of entries) {
+      await pool.query(
+        "INSERT INTO summer_guidelines (division, title, content, display_order, category) VALUES ($1, $2, $3, $4, $5)",
+        [e.division, e.title, e.content, e.display_order, e.category]
+      );
+    }
+    console.log("Successfully seeded summer curriculum data for 고1/고2.");
+  } catch (err) {
+    console.error("Failed to seed summer curriculum data:", err);
+  }
+}
+
 async function seedSummerGuidelines() {
   try {
     const { rows } = await pool.query("SELECT COUNT(*) FROM summer_guidelines");
@@ -1055,6 +1111,7 @@ export async function registerRoutes(
   await ensureSummerImagesTable();
   await ensureSummerGuidelinesTable();
   await seedSummerGuidelines();
+  await seedSummerCurriculumData();
   await ensureSummerHighlightsTable();
   await seedSummerHighlights();
   await ensureSummerSchedulesTable();
