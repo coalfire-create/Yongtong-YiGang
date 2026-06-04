@@ -522,11 +522,11 @@ async function ensureSummerGuidelinesTable() {
 async function seedSummerCurriculumData() {
   try {
     const { rows } = await pool.query(
-      "SELECT COUNT(*) FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview') AND division IN ('고1', '고2')"
+      "SELECT COUNT(*) FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview','guideline') AND division IN ('고1', '고2')"
     );
-    if (parseInt(rows[0].count) >= 14) return; // already seeded
+    if (parseInt(rows[0].count) >= 25) return; // already seeded
 
-    await pool.query("DELETE FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview')");
+    await pool.query("DELETE FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview','guideline') AND division IN ('고1','고2')");
 
     const entries = [
       // ── 고1 시간표 ──
@@ -590,6 +590,49 @@ async function seedSummerCurriculumData() {
       { division:'고1', category:'overview', display_order:1,
         title:'영어',
         content:'학교별 전담 강사 배정 — 화성고·가온고·병점고·수원고·청명고·영덕고 내신 맞춤 수업\n수능 영어 기반 실전 독해 + 학교별 내신 대비 병행' },
+      // ── 고2 모집 요강 ──
+      { division:'고2', category:'guideline', display_order:0,
+        title:'수업 기간 및 시간',
+        content:'• 기간: 07/22 (수) – 08/13 (목) (총 17일간 종합반으로 진행)\n• 시간: 월-금 08:30 – 22:00' },
+      { division:'고2', category:'guideline', display_order:1,
+        title:'수업',
+        content:'• 국어 3.5시간 주 3회\n• 수학 3.5시간 주 5회\n• 영어 3.5시간 주 1회\n• (선택) 과학 진로선택과목 물/화/생/지 3시간 각 주 1회' },
+      { division:'고2', category:'guideline', display_order:2,
+        title:'입학 자격',
+        content:'• 고2 3월 또는 6월 모의고사 국/수/영 3개 과목 중 2과목 등급합 4등급 이내\n• 고2 1학기 중간고사 성적표 제출 후 자체 심사' },
+      { division:'고2', category:'guideline', display_order:3,
+        title:'교습비',
+        content:'1,770,000 (17일) (식비/교재비/자습관 비용 별도)\n※ 과학 (진로선택) 과목 추가 시 단과 수강료의 30% 할인\n\n중도 환불 시 교육청 환불 기준에 준함\n- 시작 후부터 1/3 경과 전까지: 2/3 환불\n- 1/3 경과 후부터 1/2 경과 전까지: 1/2 환불\n- 1/2 경과 이후: 환불 불가' },
+      // ── 고2 프로그램 개요 ──
+      { division:'고2', category:'overview', display_order:0,
+        title:'모닝 TEST',
+        content:'• 데일리 과목별 모닝 리뷰 TEST 진행' },
+      { division:'고2', category:'overview', display_order:1,
+        title:'수업 구성',
+        content:'• 국어: 문학 / 독서 / 화법과 언어\n• 수학: 미적분1 / 확률과 통계\n• 영어\n• (선택) 과학 진로선택: 역학과 에너지 / 물질과 에너지 / 세포와 물질대사 / 지구시스템과학' },
+      { division:'고2', category:'overview', display_order:2,
+        title:'자습',
+        content:'• 당일 학습 내용 복습 + 과제 해결 / 전문 관리 조교 밀착 관리' },
+      { division:'고2', category:'overview', display_order:3,
+        title:'클리닉',
+        content:'• 과목별/강사별 별도 진행 (개별 커리큘럼 참고)' },
+      { division:'고2', category:'overview', display_order:4,
+        title:'썸머 재원생\n프리미엄 특강',
+        content:'• 주제: 미리 준비하는 SKY 입시 전략\n• 대상: 학생 및 학부모\n• 일정: 추후 공지' },
+      // ── 고2 시간표: 강사진 + 주간 스케줄 ──
+      { division:'고2', category:'timetable', display_order:4,
+        title:'강사진',
+        content:'• 국어 (수능 문학 + 독서 + 화법과언어)\n  (문학) 화 오후 – 윤난경\n  (독서) 목 오후 – 이민수\n  (화법과언어) 월 오후 – 윤지원\n\n• 수학 (미적분1) 입반테스트 추후 별도 진행\n  월수금 오전 실력+심화 – 이승철\n  월수금 오전 기본+실력 – 서정인\n\n• 수학 (확통) 입반테스트 추후 별도 진행\n  화목 오전 실력+심화 – 정석원\n  화목 오전 기본+실력 – 김해인\n\n• 영어 (수능 시작)\n  수 오후 – 김선덕\n\n• (선택) 과학 진로선택 – 강사 및 시간표 변동 가능\n  역학과 에너지 월 저녁 – 장선균 (7/20~ 5회)\n  물질과 에너지 화 저녁 – 윤용균 (7/21~ 5회)\n  세포와 물질대사 금 저녁 – 황민준 (7/24~ 4회)\n  지구시스템과학 수 저녁 – 최가형 (7/15~ 5회)' },
+      { division:'고2', category:'timetable', display_order:5,
+        title:'주간 시간표',
+        content:'등원: 월-금 8:30\n\nTEST (8:30-9:00)\n월 수학TEST / 화 국어TEST / 수 수학TEST / 목 영어TEST / 금 수학TEST\n\n1교시 (9:00-12:30)\n월·수·금  수학 미적1 실력+심화 (이승철) / 기본+실력 (서정인)\n화·목      수학 확통 실력+심화 (정석원) / 기본+실력 (김해인)\n\n2교시 (13:30-17:00)\n월  국어 수능 화법과언어 (윤지원)\n화  국어 수능 문학 (윤난경)\n수  영어 수능 시작 (김선덕)\n목  국어 수능 독서 (이민수)\n금  자습\n\n3교시 (18:30-22:00)\n월  (진로선택) 역학과에너지 (장선균) 18:00-21:00  /  혹은 자습\n화  (진로선택) 물질과에너지 (윤용균) 18:00-21:00  /  혹은 자습\n수  (진로선택) 지구시스템과학 (최가형) 18:00-21:00  /  혹은 자습\n목  의무자습 / 클리닉\n금  (진로선택) 세포와물질대사 (황민준) 18:00-21:00  /  혹은 자습' },
+      // ── 고2 커리큘럼: 윤난경T, 이민수T ──
+      { division:'고2', category:'curriculum', display_order:4,
+        title:'국어 – 윤난경T\n[문학 3점 다 맞기]',
+        content:'수업 일정: 화요일 오후 (총 3회)\n강좌 특징: 평가원 문학의 고난도 3점 문항 출제 원리 이해 / <보기>에 홀리지 않고 정확하게 푸는 법\n교재/제공자료: 강사 자체 교재\n과제/TEST: 문학 적용 과제 매주 20분 테스트 진행\n관리 SYSTEM: 과제 체크 – 미비자 클리닉 진행 / 테스트 – 성적표 발송 및 개별 오답노트 / 클리닉 – 수업 외 별도 시간, 부족한 부분 보완, 강사 직접 진행\n\n[회차별 내용]\n1회차 7/28 (화) – 3점, <보기> 문제의 특징 일반 / 평가원 현대시 <보기> 문제\n2회차 8/4 (화) – 평가원 고전시가 <보기> 문제\n3회차 8/11 (화) – 평가원 현대/고전산문 <보기> 문제' },
+      { division:'고2', category:'curriculum', display_order:5,
+        title:'국어 – 이민수T\n[독서 기출분석:\n피지컬 만들기]',
+        content:'수업 일정: 목요일 오후 (총 4회)\n강좌 특징: 문장 독해부터 글 전체의 구조까지 일관된 방법론으로 훈련 / 실전에서 활용할 수 있는 독해 피지컬 훈련 / 스킬보다 글을 읽고 이해하는 본질적인 독해력 우선\n교재/제공자료: 강사 직접 작성 본교재 (수업 복기 가능한 상세 설명) + 데일리 과제집\n과제/TEST: 매주 수업 내용 변형 문제 테스트 / 상세한 해설 제공 및 오답 정리 / 테스트 점수 분석 개별 피드백\n관리 SYSTEM: 복습 테스트 – 매주 문학/독서 테스트 실시 → 점수 발송 / 과제 – 매주 과제 검사 → 수행도 및 피드백 문자 발송' },
     ];
 
     for (const e of entries) {
