@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, MessageSquare, ClipboardList, Loader2, Check } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 
@@ -6,6 +6,12 @@ type ModalType = "sms" | "level" | null;
 
 export function FloatingSidebar() {
   const [open, setOpen] = useState<ModalType>(null);
+
+  useEffect(() => {
+    const handleOpen = () => setOpen("level");
+    window.addEventListener("open-math-level-test", handleOpen);
+    return () => window.removeEventListener("open-math-level-test", handleOpen);
+  }, []);
 
   return (
     <>

@@ -495,6 +495,7 @@ async function ensureSummerImagesTable() {
     `);
     await pool.query(`ALTER TABLE summer_images ADD COLUMN IF NOT EXISTS teacher_id INTEGER`);
     await pool.query(`ALTER TABLE summer_images ADD COLUMN IF NOT EXISTS division TEXT NOT NULL DEFAULT '중등'`);
+    await pool.query(`ALTER TABLE summer_images ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'curriculum'`);
   } catch (err) {
     console.error("Failed to ensure summer_images table:", err);
   }
@@ -512,8 +513,7 @@ async function ensureSummerGuidelinesTable() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
-
-
+    await pool.query(`ALTER TABLE summer_guidelines ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'guideline'`);
   } catch (err) {
     console.error("Failed to ensure summer_guidelines table:", err);
   }
@@ -1178,7 +1178,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/summer-images", requireAdmin, upload.single("image"), async (req, res) => {
-    const { teacher_id, division } = req.body;
+    const { teacher_id, division, category } = req.body;
     if (!req.file) return res.status(400).json({ error: "이미지 파일이 필요합니다." });
 
     const ext = path.extname(req.file.originalname).toLowerCase();
@@ -1192,13 +1192,13 @@ export async function registerRoutes(
 
     try {
       const { rows: maxOrderRows } = await pool.query(
-        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_images WHERE COALESCE(teacher_id, 0) = $1 AND COALESCE(division, '중등') = $2",
-        [teacher_id ? parseInt(teacher_id) : 0, division || '중등']
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_images WHERE COALESCE(teacher_id, 0) = $1 AND COALESCE(division, '중등') = $2 AND COALESCE(category, 'curriculum') = $3",
+        [teacher_id ? parseInt(teacher_id) : 0, division || '중등', category || 'curriculum']
       );
       const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
       const { rows } = await pool.query(
-        "INSERT INTO summer_images (image_url, display_order, teacher_id, division) VALUES ($1, $2, $3, $4) RETURNING *",
-        [urlData.publicUrl, nextOrder, teacher_id ? parseInt(teacher_id) : null, division || '중등']
+        "INSERT INTO summer_images (image_url, display_order, teacher_id, division, category) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [urlData.publicUrl, nextOrder, teacher_id ? parseInt(teacher_id) : null, division || '중등', category || 'curriculum']
       );
       res.json(rows[0]);
     } catch (err: any) {
@@ -1251,19 +1251,19 @@ export async function registerRoutes(
   });
 
   app.post("/api/summer-guidelines", requireAdmin, async (req, res) => {
-    const { division, title, content } = req.body;
+    const { division, title, content, category } = req.body;
     if (!division || !title || content === undefined) {
       return res.status(400).json({ error: "division, title, content가 필요합니다." });
     }
     try {
       const { rows: maxOrderRows } = await pool.query(
-        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_guidelines WHERE division = $1",
-        [division]
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_guidelines WHERE division = $1 AND COALESCE(category, 'guideline') = $2",
+        [division, category || 'guideline']
       );
       const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
       const { rows } = await pool.query(
-        "INSERT INTO summer_guidelines (division, title, content, display_order) VALUES ($1, $2, $3, $4) RETURNING *",
-        [division, title, content, nextOrder]
+        "INSERT INTO summer_guidelines (division, title, content, display_order, category) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [division, title, content, nextOrder, category || 'guideline']
       );
       res.json(rows[0]);
     } catch (err: any) {
@@ -1287,11 +1287,11 @@ export async function registerRoutes(
   app.patch("/api/summer-guidelines/:id", requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
-    const { title, content, division } = req.body;
+    const { title, content, division, category } = req.body;
     try {
       const { rows } = await pool.query(
-        "UPDATE summer_guidelines SET title = COALESCE($1, title), content = COALESCE($2, content), division = COALESCE($3, division) WHERE id = $4 RETURNING *",
-        [title, content, division, id]
+        "UPDATE summer_guidelines SET title = COALESCE($1, title), content = COALESCE($2, content), division = COALESCE($3, division), category = COALESCE($4, category) WHERE id = $5 RETURNING *",
+        [title, content, division, category, id]
       );
       if (rows.length === 0) return res.status(404).json({ error: "존재하지 않는 가이드라인" });
       res.json(rows[0]);

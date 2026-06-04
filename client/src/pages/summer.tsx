@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { SectionPage } from "@/components/layout";
-import { Loader2, User, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, CheckCircle2, Calendar, Bell } from "lucide-react";
+import { Loader2, User, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, CheckCircle2, Calendar, Bell, ClipboardList } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SummerImage {
@@ -11,6 +11,7 @@ interface SummerImage {
   teacher_id: number | null;
   teacher_name: string | null;
   division?: string;
+  category?: string;
 }
 
 const ICON_MAP: Record<string, any> = {
@@ -147,7 +148,7 @@ function ParsedNoticeCard({ title, content, date }: { title: string; content: st
     <div className="bg-white border border-gray-150 rounded-3xl p-6 sm:p-8 shadow-md hover:shadow-lg transition-shadow space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 pb-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-md bg-[#7B2332]/10 text-[#7B2332] text-xs font-bold">공지사항</span>
+          <span className="px-2.5 py-1 rounded-md bg-[#7B2332]/10 text-[#7B2332] text-xs font-bold">입반TEST 안내</span>
           <h3 className="text-xl font-black text-gray-900">{title}</h3>
         </div>
         <span className="text-xs font-semibold text-gray-400 sm:ml-auto">{date}</span>
@@ -290,25 +291,95 @@ export default function Summer() {
     queryKey: ["/api/summer-notices"],
   });
 
-  // Filter images and guidelines by the active tab
+  // Filter components by active division tab
   const filteredImages = images.filter((img) => (img.division || "중등") === activeTab);
   const filteredGuidelines = guidelines.filter((g) => g.division === activeTab);
   const filteredHighlights = highlights.filter((h) => h.division === activeTab);
   const filteredSchedules = schedules.filter((s) => s.division === activeTab);
   const filteredNotices = notices.filter((n) => n.division === activeTab && n.is_active);
 
-  const grouped = filteredImages.reduce((acc: Record<string, SummerImage[]>, img) => {
-    const key = img.teacher_name || "공통";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(img);
-    return acc;
-  }, {});
+  // Divide guidelines by category
+  const overviewGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'overview');
+  const timetableGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'timetable');
+  const curriculumGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'curriculum');
+  const guidelineGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'guideline');
 
-  const teacherNames = Object.keys(grouped).sort((a, b) => {
-    if (a === "공통") return -1;
-    if (b === "공통") return 1;
-    return 0;
-  });
+  // Divide images by category
+  const overviewImages = filteredImages.filter(img => (img.category || 'curriculum') === 'overview');
+  const timetableImages = filteredImages.filter(img => (img.category || 'curriculum') === 'timetable');
+  const curriculumImages = filteredImages.filter(img => (img.category || 'curriculum') === 'curriculum');
+  const guidelineImages = filteredImages.filter(img => (img.category || 'curriculum') === 'guideline');
+
+  const renderImageGroup = (imgList: SummerImage[]) => {
+    if (imgList.length === 0) return null;
+    
+    const groupedByTeacher = imgList.reduce((acc: Record<string, SummerImage[]>, img) => {
+      const key = img.teacher_name || "공통";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(img);
+      return acc;
+    }, {});
+
+    const sortedNames = Object.keys(groupedByTeacher).sort((a, b) => {
+      if (a === "공통") return -1;
+      if (b === "공통") return 1;
+      return 0;
+    });
+
+    return (
+      <div className="space-y-8">
+        {sortedNames.map((name) => (
+          <div key={name} className="space-y-4">
+            {(sortedNames.length > 1 || name !== "공통") && (
+              <div className="flex items-center gap-3 border-b border-gray-100 pb-2">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${name === "공통" ? "bg-gray-100" : "bg-[#7B2332]/10"}`}>
+                  <User className={`w-3.5 h-3.5 ${name === "공통" ? "text-gray-400" : "text-[#7B2332]"}`} />
+                </div>
+                <h3 className="text-sm font-bold text-gray-900">{name}</h3>
+              </div>
+            )}
+            
+            <div className="flex flex-col gap-6">
+              {groupedByTeacher[name].map((img) => (
+                <motion.div 
+                  key={img.id} 
+                  whileHover={{ scale: 1.005 }}
+                  className="overflow-hidden rounded-2xl shadow-md border border-gray-100 bg-white"
+                >
+                  <img
+                    src={img.image_url}
+                    alt={`${name} ${activeTab} 썸머스쿨`}
+                    className="w-full h-auto block"
+                    loading="lazy"
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderGuidelines = (guidelineList: any[]) => {
+    if (guidelineList.length === 0) return null;
+    return (
+      <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-2xl mb-6">
+        {guidelineList.map((g) => (
+          <div key={g.id} className="flex flex-col md:flex-row border-b border-gray-100 last:border-b-0">
+            <div className="w-full md:w-52 bg-slate-50/50 p-5 flex items-center justify-start md:justify-center border-b md:border-b-0 md:border-r border-gray-100">
+              <span className="font-extrabold text-gray-800 text-sm tracking-tight text-left md:text-center">
+                {g.title}
+              </span>
+            </div>
+            <div className="flex-1 p-5 bg-white whitespace-pre-line text-sm text-gray-600 leading-relaxed font-medium">
+              {g.content}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <SectionPage title={activeTab === "중등" ? "중3 썸머스쿨" : `${activeTab} 썸머스쿨`}>
@@ -413,7 +484,7 @@ export default function Summer() {
                   : "text-gray-400 hover:text-gray-600"
               }`}
             >
-              공지사항
+              입반TEST 안내
               {filteredNotices.length > 0 && (
                 <span className="flex h-2 w-2 rounded-full bg-red-500" />
               )}
@@ -438,7 +509,7 @@ export default function Summer() {
           >
             <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-5">
               <div className="w-1.5 h-6 bg-[#7B2332]" />
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">공지사항</h2>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">입반TEST 안내</h2>
               <span className="ml-3 text-xs bg-red-50 text-[#7B2332] font-bold px-2.5 py-1 rounded-full">
                 총 {filteredNotices.length}건
               </span>
@@ -447,8 +518,8 @@ export default function Summer() {
             {filteredNotices.length === 0 ? (
               <div className="text-center py-24 bg-white border border-gray-100 rounded-[2rem] shadow-sm space-y-4">
                 <Bell className="w-10 h-10 mx-auto text-gray-300 opacity-80" />
-                <p className="text-base font-semibold text-gray-500">등록된 공지사항이 없습니다.</p>
-                <p className="text-xs text-gray-400">새로운 공지사항이 등록되면 여기에 표시됩니다.</p>
+                <p className="text-base font-semibold text-gray-500">등록된 입반TEST 안내가 없습니다.</p>
+                <p className="text-xs text-gray-400">새로운 안내 사항이 등록되면 여기에 표시됩니다.</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -469,6 +540,21 @@ export default function Summer() {
                 })}
               </div>
             )}
+
+            {/* 수학 레벨테스트 바로가기 버튼 */}
+            <div className="pt-8 border-t border-gray-150 flex flex-col items-center text-center space-y-4">
+              <div className="space-y-1">
+                <p className="text-base font-extrabold text-gray-900">우리 아이에게 맞는 정확한 수학 실력 진단</p>
+                <p className="text-xs text-gray-500 font-semibold">체계적인 수학 실력 레벨테스트를 통해 완벽한 학습 설계를 제안합니다.</p>
+              </div>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent("open-math-level-test"))}
+                className="inline-flex items-center gap-2.5 px-8 py-4 bg-[#7B2332] hover:bg-[#8B3040] text-white text-base font-black rounded-2xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              >
+                <ClipboardList className="w-5 h-5" />
+                수학 레벨테스트 신청하기
+              </button>
+            </div>
           </motion.div>
         ) : activeTab !== "중등" &&
         filteredImages.length === 0 &&
@@ -496,16 +582,17 @@ export default function Summer() {
             </p>
           </motion.div>
         ) : (
-          <>
-            {/* Highlights Section */}
-            {filteredHighlights.length > 0 && (
-              <section className="space-y-12">
-                <div className="text-center space-y-3">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">영통이강만의 압도적인 관리 시스템</h2>
-                  <div className="w-16 h-1 bg-[#7B2332] mx-auto"></div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-20">
+            {/* 1. 프로그램 개요 (overview) */}
+            <section className="space-y-8">
+              <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-4">
+                <div className="w-1.5 h-6 bg-[#7B2332]" />
+                <h2 className="text-2xl font-black text-gray-900">프로그램 개요</h2>
+              </div>
+              
+              {/* Highlights Section */}
+              {filteredHighlights.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                   {filteredHighlights.map((h, idx) => {
                     const Icon = ICON_MAP[h.icon] || Target;
                     const num = String(idx + 1).padStart(2, "0");
@@ -515,59 +602,61 @@ export default function Summer() {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-red-900/5 hover:-translate-y-1 transition-all duration-300"
+                        transition={{ delay: idx * 0.05 }}
+                        className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-red-900/5 hover:-translate-y-1 transition-all duration-300"
                       >
-                        <div className="flex items-center justify-between mb-6">
-                          <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
-                            <Icon className="w-6 h-6 text-[#7B2332]" />
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
+                            <Icon className="w-5 h-5 text-[#7B2332]" />
                           </div>
-                          <span className="text-2xl font-black text-gray-100">{num}</span>
+                          <span className="text-xl font-black text-gray-100">{num}</span>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-3 leading-snug">{h.title}</h3>
-                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{h.content}</p>
+                        <h3 className="text-base font-bold text-gray-900 mb-2 leading-snug">{h.title}</h3>
+                        <p className="text-xs text-gray-500 leading-relaxed whitespace-pre-wrap">{h.content}</p>
                       </motion.div>
                     );
                   })}
                 </div>
-              </section>
-            )}
+              )}
 
-            {/* Schedule Section */}
-            {filteredSchedules.length > 0 && (
-              <section className="space-y-10">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b-2 border-gray-900 pb-5">
-                  <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-                      {activeTab === "중등" ? "스파르타 9 to 10 학습 시간표" : `${activeTab} 학습 시간표`}
-                    </h2>
-                    <p className="text-sm text-gray-500 font-medium">철저한 시간 관리와 몰입 학습을 통해 성적 향상을 보장합니다.</p>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-bold bg-gray-100 px-3 py-1.5 rounded-lg text-gray-600">
-                    <Clock className="w-3.5 h-3.5" />
-                    월 - 일 운영
-                  </div>
-                </div>
+              {renderGuidelines(overviewGuidelines)}
+              {renderImageGroup(overviewImages)}
+              
+              {overviewGuidelines.length === 0 && overviewImages.length === 0 && filteredHighlights.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-6">등록된 개요 정보가 없습니다.</p>
+              )}
+            </section>
 
-                <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm">
+            {/* 2. 고n시간표 (timetable) */}
+            <section className="space-y-8 pt-8 border-t border-gray-100">
+              <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-4">
+                <div className="w-1.5 h-6 bg-[#7B2332]" />
+                <h2 className="text-2xl font-black text-gray-900">
+                  {activeTab === "중등" ? "학습 시간표" : `${activeTab} 학습 시간표`}
+                </h2>
+              </div>
+
+              {/* Schedule Section */}
+              {filteredSchedules.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm mb-8">
                   <div className="grid grid-cols-1">
                     {filteredSchedules.map((s, idx) => (
                       <div 
                         key={s.id} 
-                        className={`flex flex-col sm:flex-row items-center p-6 gap-4 sm:gap-10 border-b border-gray-100 last:border-0 ${s.type === "red" ? "bg-red-50/50" : s.type === "blue" ? "bg-blue-50/50" : ""}`}
+                        className={`flex flex-col sm:flex-row items-center p-5 gap-4 sm:gap-10 border-b border-gray-100 last:border-0 ${s.type === "red" ? "bg-red-50/50" : s.type === "blue" ? "bg-blue-50/50" : ""}`}
                       >
-                        <div className="w-full sm:w-48 text-center sm:text-left">
+                        <div className="w-full sm:w-44 text-center sm:text-left">
                           <span className={`text-sm font-black tracking-wider ${s.type === "red" ? "text-[#7B2332]" : s.type === "blue" ? "text-blue-600" : "text-gray-400"}`}>
                             {s.time}
                           </span>
                         </div>
                         <div className="flex-1 text-center sm:text-left">
-                          <p className={`text-base font-bold ${s.type === "red" ? "text-[#7B2332]" : s.type === "blue" ? "text-blue-600" : "text-gray-900"}`}>
+                          <p className={`text-sm font-bold ${s.type === "red" ? "text-[#7B2332]" : s.type === "blue" ? "text-blue-600" : "text-gray-900"}`}>
                             {s.content}
                           </p>
                         </div>
                         {s.label && (
-                          <div className={`px-3 py-1 ${s.type === "red" ? "bg-[#7B2332]" : "bg-blue-600"} text-white text-[10px] font-bold rounded-full`}>
+                          <div className={`px-2.5 py-0.5 ${s.type === "red" ? "bg-[#7B2332]" : "bg-blue-600"} text-white text-[9px] font-bold rounded-full`}>
                             {s.label}
                           </div>
                         )}
@@ -575,89 +664,51 @@ export default function Summer() {
                     ))}
                   </div>
                 </div>
-              </section>
-            )}
+              )}
 
-            {/* 모집 요강 (Guidelines) Section */}
-            {filteredGuidelines.length > 0 && (
-              <section className="space-y-6 pt-10 border-t border-gray-100">
-                <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-6 bg-[#7B2332]" />
-                    <h2 className="text-2xl font-black text-gray-900">모집 요강</h2>
-                  </div>
-                  <div className="text-xs sm:text-sm font-semibold text-gray-400">
-                    2026 {activeTab === "중등" ? "중3" : activeTab} Summer School &nbsp;|&nbsp; Tel. 031-204-1353
-                  </div>
-                </div>
-                
-                <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-[2rem]">
-                  {filteredGuidelines.map((g) => (
-                    <div key={g.id} className="flex flex-col md:flex-row border-b border-gray-100 last:border-b-0">
-                      <div className="w-full md:w-56 bg-slate-50/50 p-6 flex items-center justify-start md:justify-center border-b md:border-b-0 md:border-r border-gray-100">
-                        <span className="font-bold text-gray-800 text-sm tracking-tight text-left md:text-center">
-                          {g.title}
-                        </span>
-                      </div>
-                      <div className="flex-1 p-6 bg-white whitespace-pre-line text-sm text-gray-600 leading-relaxed font-medium">
-                        {g.content}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+              {renderGuidelines(timetableGuidelines)}
+              {renderImageGroup(timetableImages)}
 
-            {/* Existing Image Gallery */}
-            {(activeTab === "중등" || filteredImages.length > 0) && (
-              <section className="space-y-10 pt-10 border-t border-gray-100">
-                <div className="text-center space-y-3">
-                  <h2 className="text-2xl font-extrabold text-gray-900">프로그램 상세 안내 및 브로셔</h2>
-                  <p className="text-sm text-gray-500">
-                    {activeTab === "중등" ? "각 선생님별 썸머스쿨 상세 계획을 확인하실 수 있습니다." : `${activeTab} 썸머스쿨의 상세 계획과 일정을 확인하실 수 있습니다.`}
-                  </p>
+              {timetableGuidelines.length === 0 && timetableImages.length === 0 && filteredSchedules.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-6">등록된 시간표 정보가 없습니다.</p>
+              )}
+            </section>
+
+            {/* 3. 강사별 커리큘럼 (curriculum) */}
+            <section className="space-y-8 pt-8 border-t border-gray-100">
+              <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-4">
+                <div className="w-1.5 h-6 bg-[#7B2332]" />
+                <h2 className="text-2xl font-black text-gray-900">강사별 커리큘럼</h2>
+              </div>
+
+              {renderGuidelines(curriculumGuidelines)}
+              {renderImageGroup(curriculumImages)}
+
+              {curriculumGuidelines.length === 0 && curriculumImages.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-6">등록된 커리큘럼 정보가 없습니다.</p>
+              )}
+            </section>
+
+            {/* 4. 모집 요강 (guideline) */}
+            <section className="space-y-8 pt-8 border-t border-gray-100">
+              <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-6 bg-[#7B2332]" />
+                  <h2 className="text-2xl font-black text-gray-900">모집 요강</h2>
                 </div>
-                
-                {isLoading ? (
-                  <div className="flex justify-center py-20">
-                    <Loader2 className="w-10 h-10 animate-spin text-[#7B2332]" />
-                  </div>
-                ) : filteredImages.length === 0 ? (
-                  <div className="text-center py-20 bg-gray-50 rounded-3xl">
-                    <p className="text-gray-400 font-medium">추가 등록된 브로셔가 없습니다.</p>
-                  </div>
-                ) : (
-                  teacherNames.map((name) => (
-                    <div key={name} className="space-y-6">
-                      <div className="flex items-center gap-3 border-b-2 border-gray-100 pb-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${name === "공통" ? "bg-gray-100" : "bg-[#7B2332]/10"}`}>
-                          <User className={`w-4 h-4 ${name === "공통" ? "text-gray-400" : "text-[#7B2332]"}`} />
-                        </div>
-                        <h2 className="text-lg font-bold text-gray-900">{name}</h2>
-                      </div>
-                      
-                      <div className="flex flex-col gap-10">
-                        {grouped[name].map((img) => (
-                          <motion.div 
-                            key={img.id} 
-                            whileHover={{ scale: 1.01 }}
-                            className="overflow-hidden rounded-[2rem] shadow-2xl shadow-black/5 border border-gray-100 bg-white"
-                          >
-                            <img
-                              src={img.image_url}
-                              alt={`${name} ${activeTab} 썸머스쿨`}
-                              className="w-full h-auto block"
-                              loading="lazy"
-                            />
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </section>
-            )}
-          </>
+                <div className="text-xs font-semibold text-gray-400">
+                  2026 {activeTab === "중등" ? "중3" : activeTab} Summer School
+                </div>
+              </div>
+
+              {renderGuidelines(guidelineGuidelines)}
+              {renderImageGroup(guidelineImages)}
+
+              {guidelineGuidelines.length === 0 && guidelineImages.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-6">등록된 모집 요강 정보가 없습니다.</p>
+              )}
+            </section>
+          </div>
         )}
 
         {/* Contact CTA */}

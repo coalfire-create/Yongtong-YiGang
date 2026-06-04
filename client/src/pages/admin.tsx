@@ -3660,6 +3660,7 @@ interface SummerGuideline {
   division: string;
   title: string;
   content: string;
+  category?: string;
   display_order: number;
 }
 
@@ -3675,6 +3676,14 @@ function SortableGuidelineRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   
+  const categoryLabelMap: Record<string, string> = {
+    overview: "프로그램 개요",
+    timetable: "고n시간표",
+    curriculum: "강사별 커리큘럼",
+    guideline: "모집 요강",
+  };
+  const categoryLabel = categoryLabelMap[item.category || "guideline"] || "모집 요강";
+
   return (
     <div
       ref={setNodeRef}
@@ -3690,11 +3699,14 @@ function SortableGuidelineRow({
         <GripVertical className="w-5 h-5" />
       </div>
       
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2 min-w-0">
-        <div className="font-bold text-gray-900 text-sm truncate md:col-span-1 border-r border-gray-200/50 pr-2">
-          {item.title}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-2 min-w-0">
+        <div className="font-bold text-gray-900 text-sm truncate md:col-span-1 border-r border-gray-200/50 pr-2 flex flex-col gap-1">
+          <span className="text-[10px] px-1.5 py-0.5 bg-red-50 text-[#7B2332] rounded font-semibold w-fit">
+            {categoryLabel}
+          </span>
+          <span className="truncate">{item.title}</span>
         </div>
-        <div className="text-xs text-gray-500 line-clamp-2 md:col-span-2 whitespace-pre-wrap">
+        <div className="text-xs text-gray-500 line-clamp-2 md:col-span-3 whitespace-pre-wrap">
           {item.content}
         </div>
       </div>
@@ -3722,7 +3734,9 @@ function SortableGuidelineRow({
 function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" | "고2" | "고3" }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [category, setCategory] = useState("guideline");
   const [editingGuideline, setEditingGuideline] = useState<any | null>(null);
+  const [filterCategory, setFilterCategory] = useState<string>("all");
 
   const { data: guidelines = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/summer-guidelines"],
@@ -3742,7 +3756,9 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     });
   }, [guidelines]);
 
-  const filteredGuidelines = localGuidelines.filter((g) => g.division === activeTab);
+  const filteredGuidelines = localGuidelines.filter(
+    (g) => g.division === activeTab && (filterCategory === "all" || (g.category || "guideline") === filterCategory)
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -3750,7 +3766,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   );
 
   const addMutation = useMutation({
-    mutationFn: async (data: { division: string; title: string; content: string }) => {
+    mutationFn: async (data: { division: string; title: string; content: string; category: string }) => {
       const res = await fetch("/api/summer-guidelines", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -3764,15 +3780,16 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
       queryClient.invalidateQueries({ queryKey: ["/api/summer-guidelines"] });
       setTitle("");
       setContent("");
+      setCategory("guideline");
     }
   });
 
   const editMutation = useMutation({
-    mutationFn: async (data: { id: number; title: string; content: string }) => {
+    mutationFn: async (data: { id: number; title: string; content: string; category: string }) => {
       const res = await fetch(`/api/summer-guidelines/${data.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: data.title, content: data.content }),
+        body: JSON.stringify({ title: data.title, content: data.content, category: data.category }),
         credentials: "include"
       });
       if (!res.ok) throw new Error("Failed to edit");
@@ -3818,6 +3835,10 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+    if (filterCategory === "all") {
+      alert("순서를 변경하려면 상단 필터에서 '전체'가 아닌 특정 카테고리를 선택해주세요.");
+      return;
+    }
     
     const oldIdx = filteredGuidelines.findIndex(g => g.id === Number(active.id));
     const newIdx = filteredGuidelines.findIndex(g => g.id === Number(over.id));
@@ -3838,7 +3859,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
-    addMutation.mutate({ division: activeTab, title, content });
+    addMutation.mutate({ division: activeTab, title, content, category });
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -3847,7 +3868,8 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     editMutation.mutate({
       id: editingGuideline.id,
       title: editingGuideline.title,
-      content: editingGuideline.content
+      content: editingGuideline.content,
+      category: editingGuideline.category || "guideline"
     });
   };
 
@@ -3858,19 +3880,34 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
         <form onSubmit={handleEditSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
             <Pencil className="w-4 h-4 text-[#7B2332]" />
-            모집 요강 항목 수정 ({activeTab})
+            텍스트 항목 수정 ({activeTab})
           </h3>
           <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분 / 분류 제목 (예: 수업 기간 및 시간)</label>
-              <input
-                type="text"
-                value={editingGuideline.title}
-                onChange={(e) => setEditingGuideline({ ...editingGuideline, title: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
-                placeholder="제목"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분 / 분류 제목 (예: 국어, 영어, 교습비 등)</label>
+                <input
+                  type="text"
+                  value={editingGuideline.title}
+                  onChange={(e) => setEditingGuideline({ ...editingGuideline, title: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
+                  placeholder="제목"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">표시할 섹션 위치</label>
+                <select
+                  value={editingGuideline.category || "guideline"}
+                  onChange={(e) => setEditingGuideline({ ...editingGuideline, category: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
+                >
+                  <option value="guideline">모집 요강</option>
+                  <option value="overview">프로그램 개요</option>
+                  <option value="timetable">고n시간표</option>
+                  <option value="curriculum">강사별 커리큘럼</option>
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">내용 (엔터로 줄바꿈 시 실제 사이트에도 줄바꿈이 반영됩니다)</label>
@@ -3905,19 +3942,34 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
         <form onSubmit={handleAddSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
             <Plus className="w-4 h-4 text-[#7B2332]" />
-            모집 요강 항목 추가 ({activeTab})
+            텍스트 항목 추가 ({activeTab})
           </h3>
           <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분 / 분류 제목 (예: 수업 기간 및 시간)</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
-                placeholder="예: 수업 기간 및 시간"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분 / 분류 제목 (예: 국어, 영어, 교습비 등)</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
+                  placeholder="예: 국어"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">표시할 섹션 위치</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
+                >
+                  <option value="guideline">모집 요강</option>
+                  <option value="overview">프로그램 개요</option>
+                  <option value="timetable">고n시간표</option>
+                  <option value="curriculum">강사별 커리큘럼</option>
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">내용 (엔터로 줄바꿈 시 실제 사이트에도 줄바꿈이 반영됩니다)</label>
@@ -3926,7 +3978,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                 onChange={(e) => setContent(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium resize-y"
                 rows={4}
-                placeholder="• 기간: 07/22 (수) - 08/13 (목)&#10;• 시간: 월-금 08:30 - 22:00"
+                placeholder="• [선생님 명] 반 정보 등 상세 설명 기재"
                 required
               />
             </div>
@@ -3944,9 +3996,29 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
 
       {/* Guidelines List */}
       <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
-          <h4 className="text-sm font-bold text-gray-800">등록된 항목 ({filteredGuidelines.length})</h4>
-          <p className="text-[10px] text-gray-400 font-semibold">≡ 드래그하여 순서 변경 가능</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-3 mb-4 gap-3">
+          <div className="flex items-center gap-4">
+            <h4 className="text-sm font-bold text-gray-800">등록된 항목 ({filteredGuidelines.length})</h4>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 font-semibold">카테고리 필터:</span>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="border border-gray-200 rounded px-2 py-1 text-xs bg-gray-50 text-gray-700 focus:outline-none"
+              >
+                <option value="all">전체</option>
+                <option value="guideline">모집 요강</option>
+                <option value="overview">프로그램 개요</option>
+                <option value="timetable">고n시간표</option>
+                <option value="curriculum">강사별 커리큘럼</option>
+              </select>
+            </div>
+          </div>
+          <p className="text-[10px] text-gray-400 font-semibold">
+            {filterCategory === "all" 
+              ? "※ 순서 변경(드래그)을 하려면 카테고리 필터를 특정 분류로 지정해 주세요." 
+              : "≡ 드래그하여 순서 변경 가능"}
+          </p>
         </div>
 
         {isLoading ? (
@@ -3954,7 +4026,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
             <Loader2 className="w-6 h-6 animate-spin text-gray-200" />
           </div>
         ) : filteredGuidelines.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-10">등록된 모집 요강 항목이 없습니다.</p>
+          <p className="text-sm text-gray-400 text-center py-10">등록된 항목이 없습니다.</p>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={filteredGuidelines.map(g => g.id)} strategy={verticalListSortingStrategy}>
@@ -3964,7 +4036,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                     key={item.id}
                     item={item}
                     onDelete={(id) => {
-                      if (confirm("이 모집 요강 항목을 정말 삭제하시겠습니까?")) {
+                      if (confirm("이 항목을 정말 삭제하시겠습니까?")) {
                         deleteMutation.mutate(id);
                       }
                     }}
@@ -4210,11 +4282,11 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
         <form onSubmit={handleEditSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
             <Pencil className="w-4 h-4 text-[#7B2332]" />
-            공지사항 수정 ({activeTab})
+            입반TEST 안내 수정 ({activeTab})
           </h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">공지 제목</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">안내 제목</label>
               <input
                 type="text"
                 value={editingNotice.title}
@@ -4225,7 +4297,7 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">공지 내용 (반 정보나 시험 일정이 들어갈 경우 정해진 포맷에 따라 적으면 사용자 페이지에 예쁜 카드 형태로 보입니다)</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">안내 내용 (반 정보나 시험 일정이 들어갈 경우 정해진 포맷에 따라 적으면 사용자 페이지에 예쁜 카드 형태로 보입니다)</label>
               <textarea
                 value={editingNotice.content}
                 onChange={(e) => setEditingNotice({ ...editingNotice, content: e.target.value })}
@@ -4257,11 +4329,11 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
         <form onSubmit={handleAddSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
             <Plus className="w-4 h-4 text-[#7B2332]" />
-            공지사항 추가 ({activeTab})
+            입반TEST 안내 추가 ({activeTab})
           </h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">공지 제목</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">안내 제목</label>
               <input
                 type="text"
                 value={title}
@@ -4272,7 +4344,7 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">공지 내용 (줄바꿈이 적용됩니다. S반/A반 포맷 입력 시 자동 카드 렌더링)</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">안내 내용 (줄바꿈이 적용됩니다. S반/A반 포맷 입력 시 자동 카드 렌더링)</label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -4289,7 +4361,7 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
             className="px-6 py-2.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-1.5 transition-colors"
           >
             {addMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-            공지 추가
+            안내 추가
           </button>
         </form>
       )}
@@ -4297,7 +4369,7 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
       {/* Notices List */}
       <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
-          <h4 className="text-sm font-bold text-gray-800">등록된 공지사항 ({filteredNotices.length})</h4>
+          <h4 className="text-sm font-bold text-gray-800">등록된 입반TEST 안내 ({filteredNotices.length})</h4>
           <p className="text-[10px] text-gray-400 font-semibold">≡ 드래그하여 순서 변경 가능</p>
         </div>
 
@@ -4306,7 +4378,7 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
             <Loader2 className="w-6 h-6 animate-spin text-gray-200" />
           </div>
         ) : filteredNotices.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-10">등록된 공지사항이 없습니다.</p>
+          <p className="text-sm text-gray-400 text-center py-10">등록된 입반TEST 안내가 없습니다.</p>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={filteredNotices.map(n => n.id)} strategy={verticalListSortingStrategy}>
@@ -4316,7 +4388,7 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
                     key={item.id}
                     item={item}
                     onDelete={(id) => {
-                      if (confirm("이 공지사항을 정말 삭제하시겠습니까?")) {
+                      if (confirm("이 입반TEST 안내를 정말 삭제하시겠습니까?")) {
                         deleteMutation.mutate(id);
                       }
                     }}
@@ -4333,11 +4405,55 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
   );
 }
 
+const SUMMER_CATEGORIES = [
+  { value: "overview", label: "프로그램 개요" },
+  { value: "timetable", label: "고n시간표" },
+  { value: "curriculum", label: "강사별 커리큘럼" },
+  { value: "guideline", label: "모집 요강" },
+] as const;
+
+function SortableSummerImageCard({ item, onDelete }: { item: any; onDelete: (id: number) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-start gap-3 border border-gray-200 p-3 bg-white rounded-lg hover:border-gray-300 transition-all shadow-sm"
+      data-testid={`card-summer-image-${item.id}`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 pt-2 cursor-grab active:cursor-grabbing text-gray-300 hover:text-[#7B2332] transition-colors"
+      >
+        <GripVertical className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${item.teacher_name ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-gray-50 text-gray-600 border border-gray-100'}`}>
+            {item.teacher_name ? `선생님: ${item.teacher_name}` : "공통 (선생님 미지정)"}
+          </span>
+        </div>
+        <img src={item.image_url} alt="브로셔 이미지" className="w-full max-w-sm border border-gray-100 rounded-md" />
+      </div>
+      <button
+        onClick={() => onDelete(item.id)}
+        className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        data-testid={`button-delete-summer-image-${item.id}`}
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 function SummerTab() {
   const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2" | "고3">("중등");
   const [subTab, setSubTab] = useState<"brochures" | "guidelines" | "notices">("brochures");
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("0");
   const [selectedDivision, setSelectedDivision] = useState<string>("중등");
+  const [selectedCategory, setSelectedCategory] = useState<string>("curriculum");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -4384,6 +4500,7 @@ function SummerTab() {
       setImageFiles([]);
       setImagePreviews([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      setSelectedCategory("curriculum");
     },
   });
 
@@ -4445,6 +4562,7 @@ function SummerTab() {
         formData.append("teacher_id", selectedTeacherId);
       }
       formData.append("division", selectedDivision);
+      formData.append("category", selectedCategory);
       addMutation.mutate(formData);
     });
   };
@@ -4452,20 +4570,10 @@ function SummerTab() {
   // Filter items by the active tab
   const filteredItems = localItems.filter((img) => (img.division || "중등") === activeTab);
 
-  // Group filtered items by teacher
-  const groupedItems: Record<string, any[]> = filteredItems.reduce((acc: any, item: any) => {
-    const key = item.teacher_id || "0";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(item);
-    return acc;
-  }, {});
-
-  // Get unique teacher IDs that have images, plus "0" for general
-  const sortedGroupKeys = Object.keys(groupedItems).sort((a, b) => {
-    if (a === "0") return -1;
-    if (b === "0") return 1;
-    return 0;
-  });
+  // Helper to get items by category
+  const getCategoryItems = (catValue: string) => {
+    return filteredItems.filter((img) => (img.category || "curriculum") === catValue);
+  };
 
   return (
     <div className="space-y-6" data-testid="section-summer-images">
@@ -4519,7 +4627,7 @@ function SummerTab() {
               : "text-gray-500 hover:text-gray-900"
           }`}
         >
-          공지사항 관리
+          입반TEST 안내 관리
         </button>
       </div>
 
@@ -4532,7 +4640,7 @@ function SummerTab() {
           <div className="bg-white border border-gray-200 p-6">
             <h3 className="text-sm font-bold text-gray-900 mb-4">{activeTab} 썸머스쿨 이미지 등록</h3>
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분</label>
                   <select
@@ -4557,6 +4665,19 @@ function SummerTab() {
                     {teachers.map(t => (
                       <option key={t.id} value={t.id}>{t.name} ({t.subject})</option>
                     ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">표시할 섹션 위치</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
+                  >
+                    <option value="overview">프로그램 개요</option>
+                    <option value="timetable">고n시간표</option>
+                    <option value="curriculum">강사별 커리큘럼</option>
+                    <option value="guideline">모집 요강</option>
                   </select>
                 </div>
                 <div>
@@ -4612,36 +4733,38 @@ function SummerTab() {
                 <p className="text-gray-400 text-sm">{activeTab} 썸머스쿨에 등록된 이미지가 없습니다.</p>
               </div>
             ) : (
-              sortedGroupKeys.map(key => {
-                const groupItems = groupedItems[key];
-                const teacherName = key === "0" ? "공통" : teachers.find(t => t.id === Number(key))?.name || "알 수 없는 선생님";
-                
+              SUMMER_CATEGORIES.map((cat) => {
+                const groupItems = getCategoryItems(cat.value);
                 return (
-                  <div key={key} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                  <div key={cat.value} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                     <div className="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center justify-between">
                       <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${key === "0" ? "bg-gray-400" : "bg-red-500"}`} />
-                        {teacherName} ({groupItems.length})
+                        <div className="w-2 h-2 rounded-full bg-[#7B2332]" />
+                        {cat.label} ({groupItems.length})
                       </h4>
                       <p className="text-[10px] text-gray-400 font-medium">드래그하여 순서 변경</p>
                     </div>
                     
                     <div className="p-5">
-                      <DndContext sensors={sumSensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEndSummer(e, groupItems)}>
-                        <SortableContext items={groupItems.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                          <div className="grid grid-cols-1 gap-3">
-                            {groupItems.map((item) => (
-                              <SortableSummaryCard
-                                key={item.id}
-                                item={item}
-                                onDelete={(id) => {
-                                  if (confirm("이 이미지를 삭제하시겠습니까?")) deleteMutation.mutate(id);
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </SortableContext>
-                      </DndContext>
+                      {groupItems.length === 0 ? (
+                        <p className="text-xs text-gray-400 text-center py-4">등록된 이미지가 없습니다.</p>
+                      ) : (
+                        <DndContext sensors={sumSensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEndSummer(e, groupItems)}>
+                          <SortableContext items={groupItems.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                            <div className="grid grid-cols-1 gap-3">
+                              {groupItems.map((item) => (
+                                <SortableSummerImageCard
+                                  key={item.id}
+                                  item={item}
+                                  onDelete={(id) => {
+                                    if (confirm("이 이미지를 삭제하시겠습니까?")) deleteMutation.mutate(id);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      )}
                     </div>
                   </div>
                 );
