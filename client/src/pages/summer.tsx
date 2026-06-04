@@ -245,11 +245,11 @@ function ParsedNoticeCard({ title, content, date }: { title: string; content: st
 
 export default function Summer() {
   const [location] = useLocation();
-  const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2" | "고3">(() => {
+  const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2">(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
-      if (tab === "중등" || tab === "고1" || tab === "고2" || tab === "고3") {
+      if (tab === "중등" || tab === "고1" || tab === "고2") {
         return tab;
       }
     }
@@ -261,7 +261,7 @@ export default function Summer() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
-      if (tab === "중등" || tab === "고1" || tab === "고2" || tab === "고3") {
+      if (tab === "중등" || tab === "고1" || tab === "고2") {
         setActiveTab(tab);
       }
     }
@@ -388,7 +388,7 @@ export default function Summer() {
         {/* Tab Switcher */}
         <div className="flex justify-center pt-6">
           <div className="inline-flex p-1.5 bg-gray-100/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-sm">
-            {(["중등", "고1", "고2", "고3"] as const).map((tab) => {
+            {(["중등", "고1", "고2"] as const).map((tab) => {
               const active = activeTab === tab;
               return (
                 <button
@@ -458,48 +458,50 @@ export default function Summer() {
         </motion.section>
 
         {/* Sub-Tab Switcher */}
-        <div className="flex justify-center border-b border-gray-200">
-          <div className="flex gap-8">
-            <button
-              onClick={() => setActiveSubTab("info")}
-              className={`pb-4 text-base font-bold transition-all relative ${
-                activeSubTab === "info"
-                  ? "text-[#7B2332]"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              상세 프로그램
-              {activeSubTab === "info" && (
-                <motion.div
-                  layoutId="activeSummerSubTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7B2332]"
-                />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveSubTab("notice")}
-              className={`pb-4 text-base font-bold transition-all relative flex items-center gap-1.5 ${
-                activeSubTab === "notice"
-                  ? "text-[#7B2332]"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              입반TEST 안내
-              {filteredNotices.length > 0 && (
-                <span className="flex h-2 w-2 rounded-full bg-red-500" />
-              )}
-              {activeSubTab === "notice" && (
-                <motion.div
-                  layoutId="activeSummerSubTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7B2332]"
-                />
-              )}
-            </button>
+        {activeTab === "중등" && (
+          <div className="flex justify-center border-b border-gray-200">
+            <div className="flex gap-8">
+              <button
+                onClick={() => setActiveSubTab("info")}
+                className={`pb-4 text-base font-bold transition-all relative ${
+                  activeSubTab === "info"
+                    ? "text-[#7B2332]"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                상세 프로그램
+                {activeSubTab === "info" && (
+                  <motion.div
+                    layoutId="activeSummerSubTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7B2332]"
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveSubTab("notice")}
+                className={`pb-4 text-base font-bold transition-all relative flex items-center gap-1.5 ${
+                  activeSubTab === "notice"
+                    ? "text-[#7B2332]"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                입반TEST 안내
+                {filteredNotices.length > 0 && (
+                  <span className="flex h-2 w-2 rounded-full bg-red-500" />
+                )}
+                {activeSubTab === "notice" && (
+                  <motion.div
+                    layoutId="activeSummerSubTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7B2332]"
+                  />
+                )}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Content Area */}
-        {activeSubTab === "notice" ? (
+        {activeTab === "중등" && activeSubTab === "notice" ? (
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

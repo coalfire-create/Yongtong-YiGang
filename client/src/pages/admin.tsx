@@ -3731,7 +3731,7 @@ function SortableGuidelineRow({
   );
 }
 
-function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" | "고2" | "고3" }) {
+function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" | "고2" }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("guideline");
@@ -4134,7 +4134,7 @@ function SortableNoticeRow({
   );
 }
 
-function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "고2" | "고3" }) {
+function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "고2" }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [editingNotice, setEditingNotice] = useState<SummerNotice | null>(null);
@@ -4449,7 +4449,7 @@ function SortableSummerImageCard({ item, onDelete }: { item: any; onDelete: (id:
 }
 
 function SummerTab() {
-  const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2" | "고3">("중등");
+  const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2">("중등");
   const [subTab, setSubTab] = useState<"brochures" | "guidelines" | "notices">("brochures");
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("0");
   const [selectedDivision, setSelectedDivision] = useState<string>("중등");
@@ -4461,6 +4461,12 @@ function SummerTab() {
   useEffect(() => {
     setSelectedDivision(activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "중등" && subTab === "notices") {
+      setSubTab("brochures");
+    }
+  }, [activeTab, subTab]);
 
   const { data: teachers = [] } = useQuery<Teacher[]>({
     queryKey: ["/api/teachers"],
@@ -4579,7 +4585,7 @@ function SummerTab() {
     <div className="space-y-6" data-testid="section-summer-images">
       {/* Division selection tabs at the top */}
       <div className="flex gap-2 border-b border-gray-200 pb-px">
-        {(["중등", "고1", "고2", "고3"] as const).map((tab) => {
+        {(["중등", "고1", "고2"] as const).map((tab) => {
           const active = activeTab === tab;
           return (
             <button
@@ -4619,16 +4625,18 @@ function SummerTab() {
         >
           모집 요강 관리
         </button>
-        <button
-          onClick={() => setSubTab("notices")}
-          className={`px-5 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
-            subTab === "notices"
-              ? "bg-[#7B2332] text-white shadow-md shadow-red-900/10"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          입반TEST 안내 관리
-        </button>
+        {activeTab === "중등" && (
+          <button
+            onClick={() => setSubTab("notices")}
+            className={`px-5 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
+              subTab === "notices"
+                ? "bg-[#7B2332] text-white shadow-md shadow-red-900/10"
+                : "text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            입반TEST 안내 관리
+          </button>
+        )}
       </div>
 
       {subTab === "guidelines" ? (
@@ -4651,7 +4659,6 @@ function SummerTab() {
                     <option value="중등">중등</option>
                     <option value="고1">고1</option>
                     <option value="고2">고2</option>
-                    <option value="고3">고3</option>
                   </select>
                 </div>
                 <div>
