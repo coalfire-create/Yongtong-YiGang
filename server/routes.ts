@@ -522,11 +522,11 @@ async function ensureSummerGuidelinesTable() {
 async function seedSummerCurriculumData() {
   try {
     const { rows } = await pool.query(
-      "SELECT COUNT(*) FROM summer_guidelines WHERE category IN ('curriculum','timetable') AND division IN ('고1', '고2')"
+      "SELECT COUNT(*) FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview') AND division IN ('고1', '고2')"
     );
-    if (parseInt(rows[0].count) >= 8) return; // already seeded
+    if (parseInt(rows[0].count) >= 14) return; // already seeded
 
-    await pool.query("DELETE FROM summer_guidelines WHERE category = 'curriculum'");
+    await pool.query("DELETE FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview')");
 
     const entries = [
       // ── 고1 시간표 ──
@@ -569,6 +569,27 @@ async function seedSummerCurriculumData() {
       { division:'고2', category:'curriculum', display_order:3,
         title:'[국어] 김현종T\n우문현답 ZERO\n고2 수능반',
         content:'강좌 특징: 수능 국어 독서·문학 주제별 글 읽기 / 거시+미시 독해 체계 / 14주 완성\n교재: 우문현답 ZERO (본교재) / 월간 김현종 1~3호 (과제)\n과제: 월간 김현종 하루 10문제·주간 50문제 / 필수 독서 배경지식 / 필수 고전시가 학습 / 복습지 첨삭\n관리: 개별 복습지 첨삭 → 사고 과정 교정 / 맞춤형 개별 플래너 → 학습 루틴 정착 / 매주 피드백 학부모 공유\n\n12주 완성 후 달라지는 것\n① 독서 시간 부족 현상 종결\n② 낯선 문학 작품 스스로 분석하는 능력\n③ 감으로 푸는 버릇 교정 (1:1 복습지 첨삭)\n④ 고전 어휘 및 독서 배경지식 상식화\n⑤ 매일 10문제 푸는 완벽한 루틴' },
+      // ── 고1 시간표: 국어/영어 학교별 시간 ──
+      { division:'고1', category:'timetable', display_order:2,
+        title:'국어',
+        content:'화성고1  •  일 10:00 – 13:00\n가온고1  •  일 18:30 – 21:30\n청명고1  •  일 14:00 – 17:00\n영덕고1  •  금 18:00 – 21:30\n병점고1  •  토 09:30 – 13:00\n수원고1  •  토 14:00 – 17:30' },
+      { division:'고1', category:'timetable', display_order:3,
+        title:'영어',
+        content:'화성고1  •  금 16:30 – 20:00 / 토 18:30 – 22:00\n가온고1  •  금 18:30 – 21:30\n병점고1  •  토 14:00 – 17:00\n수원고1  •  월 18:00 – 22:00\n청명고1  •  월 18:30 – 21:30\n영덕고1  •  월 18:00 – 22:00' },
+      // ── 고1 커리큘럼: 국어/영어 담당 강사 ──
+      { division:'고1', category:'curriculum', display_order:2,
+        title:'국어 담당',
+        content:'[정규영T] 화성고1\n[김홍석T] 가온고1\n[선화희T] 청명고1\n[박소현T] 영덕고1 / 병점고1 / 수원고1' },
+      { division:'고1', category:'curriculum', display_order:3,
+        title:'영어 담당',
+        content:'[데니얼T] 화성고1\n[양준민T] 가온고1\n[김유정T] 병점고1 / 청명고1\n[김연우T] 수원고1\n[박지원T] 영덕고1' },
+      // ── 고1 프로그램 개요 ──
+      { division:'고1', category:'overview', display_order:0,
+        title:'국어',
+        content:'학교별 전담 강사 배정 — 화성고·가온고·청명고·영덕고·병점고·수원고 내신 맞춤 수업\n각 학교 시험 범위·유형에 특화된 집중 관리' },
+      { division:'고1', category:'overview', display_order:1,
+        title:'영어',
+        content:'학교별 전담 강사 배정 — 화성고·가온고·병점고·수원고·청명고·영덕고 내신 맞춤 수업\n수능 영어 기반 실전 독해 + 학교별 내신 대비 병행' },
     ];
 
     for (const e of entries) {
