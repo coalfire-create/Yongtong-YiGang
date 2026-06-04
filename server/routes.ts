@@ -559,6 +559,180 @@ async function seedSummerGuidelines() {
   }
 }
 
+async function ensureSummerHighlightsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS summer_highlights (
+        id SERIAL PRIMARY KEY,
+        division TEXT NOT NULL DEFAULT '중등',
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        icon TEXT NOT NULL DEFAULT 'Target',
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure summer_highlights table:", err);
+  }
+}
+
+async function seedSummerHighlights() {
+  try {
+    const { rows } = await pool.query("SELECT COUNT(*) FROM summer_highlights");
+    if (parseInt(rows[0].count) > 0) return;
+
+    console.log("[seedSummerHighlights] Seeding default highlights for 중등...");
+    const defaultHighlights = [
+      {
+        division: "중등",
+        title: "1:1 개별 진단 & 학습 방향 설계",
+        content: "무분별한 선행보다 아이에게 맞는 공부 방향을 우선 분석합니다. 학생별 상담 후 취약점과 학습 이력을 바탕으로 개인별 진도 계획 및 관리 방향을 제시합니다.",
+        icon: "Target",
+        display_order: 0
+      },
+      {
+        division: "중등",
+        title: "영통 이강학원만의 자체 제작 콘텐츠 제공",
+        content: "수(秀) 모의고사·시크릿파일 등 학교별 유형을 반영한 콘텐츠를 제작합니다. 고난도 유형 훈련 및 성취도 분석 피드백을 진행합니다.",
+        icon: "BookOpen",
+        display_order: 1
+      },
+      {
+        division: "중등",
+        title: "주요 영어·수학 필수 테스트 진행",
+        content: "고등 수능 영단어 매일 20분 간 테스트 진행 후 피드백을 제공하며, 총 3회에 걸친 수학 단원별 이해도 점검 및 취약 유형 오답 관리를 철저히 합니다.",
+        icon: "CheckCircle2",
+        display_order: 2
+      },
+      {
+        division: "중등",
+        title: "실제 고등내신·수능 수업 담당 강사진 직접 투입",
+        content: "현 고등학생 취약 유형을 완벽히 파악한 영통이강 고등 수학 스쿨 강사진이 중3 썸머 수업을 직접 진행하고 핵심 유형을 집중 관리합니다.",
+        icon: "Users",
+        display_order: 3
+      },
+      {
+        division: "중등",
+        title: "9년 차 입학사정관 출신 입시 소장의 1:1 컨설팅",
+        content: "영통이강학원 상주 대학교 입학사정관 출신 한노아 소장이 1:1 맞춤 입시 전략을 직접 상담하고 관리합니다.",
+        icon: "GraduationCap",
+        display_order: 4
+      }
+    ];
+    for (const h of defaultHighlights) {
+      await pool.query(
+        "INSERT INTO summer_highlights (division, title, content, icon, display_order) VALUES ($1, $2, $3, $4, $5)",
+        [h.division, h.title, h.content, h.icon, h.display_order]
+      );
+    }
+    console.log("Successfully seeded default summer highlights.");
+  } catch (err) {
+    console.error("Failed to seed default summer highlights:", err);
+  }
+}
+
+async function ensureSummerSchedulesTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS summer_schedules (
+        id SERIAL PRIMARY KEY,
+        division TEXT NOT NULL DEFAULT '중등',
+        time TEXT NOT NULL,
+        content TEXT NOT NULL,
+        type TEXT,
+        label TEXT,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure summer_schedules table:", err);
+  }
+}
+
+async function seedSummerSchedules() {
+  try {
+    const { rows } = await pool.query("SELECT COUNT(*) FROM summer_schedules");
+    if (parseInt(rows[0].count) > 0) return;
+
+    console.log("[seedSummerSchedules] Seeding default schedules for 중등...");
+    const defaultSchedules = [
+      { division: "중등", time: "08:00 - 08:40", content: "등원 및 자습준비", type: null, label: null, display_order: 0 },
+      { division: "중등", time: "08:40 - 09:00", content: "영단어 테스트 (총 18회)", type: "blue", label: "MUST TEST", display_order: 1 },
+      { division: "중등", time: "09:00 - 12:30", content: "수학 공수1/공수2 (기본·심화), 통과/국어(정규)", type: "red", label: null, display_order: 2 },
+      { division: "중등", time: "12:30 - 13:30", content: "점심식사", type: null, label: null, display_order: 3 },
+      { division: "중등", time: "13:30 - 17:00", content: "영어, 국어(정규), 물리(정규), 수학클리닉", type: "red", label: null, display_order: 4 },
+      { division: "중등", time: "17:00 - 18:00", content: "저녁식사", type: null, label: null, display_order: 5 },
+      { division: "중등", time: "18:00 - 21:30", content: "자습 & 숙제 / 1:1 입시 컨설팅 / 수학 모의고사", type: "blue", label: null, display_order: 6 },
+      { division: "중등", time: "21:30 - 22:00", content: "자기점검 및 하원", type: null, label: null, display_order: 7 }
+    ];
+    for (const s of defaultSchedules) {
+      await pool.query(
+        "INSERT INTO summer_schedules (division, time, content, type, label, display_order) VALUES ($1, $2, $3, $4, $5, $6)",
+        [s.division, s.time, s.content, s.type, s.label, s.display_order]
+      );
+    }
+    console.log("Successfully seeded default summer schedules.");
+  } catch (err) {
+    console.error("Failed to seed default summer schedules:", err);
+  }
+}
+
+async function ensureSummerNoticesTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS summer_notices (
+        id SERIAL PRIMARY KEY,
+        division TEXT NOT NULL DEFAULT '중등',
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure summer_notices table:", err);
+  }
+}
+
+async function seedSummerNotices() {
+  try {
+    const { rows } = await pool.query("SELECT COUNT(*) FROM summer_notices");
+    if (parseInt(rows[0].count) > 0) return;
+
+    console.log("[seedSummerNotices] Seeding default notice for 중등...");
+    const defaultNotice = {
+      division: "중등",
+      title: "[중3 TEST 일정]",
+      content: `1. S반(최주용T, 권소영T)
+시험과목 : 공수1 / 공수2 / 대수
+시험시간 : 40분씩 총 120분
+시험 문항 수 : 각 15문항 총 45문항
+
+2. A반(박종윤T, 이재원T)
+시험과목 : 공수1, 공수2
+시험시간 : 30분씩 총 60분
+시험 문항 수 : 각 15문항 총 30문항
+
+시험일정
+1차 : 6/8~6/19 
+2차 : 7/6~7/10`,
+      display_order: 0,
+      is_active: true
+    };
+
+    await pool.query(
+      "INSERT INTO summer_notices (division, title, content, display_order, is_active) VALUES ($1, $2, $3, $4, $5)",
+      [defaultNotice.division, defaultNotice.title, defaultNotice.content, defaultNotice.display_order, defaultNotice.is_active]
+    );
+    console.log("Successfully seeded default summer notices.");
+  } catch (err) {
+    console.error("Failed to seed default summer notices:", err);
+  }
+}
+
 async function ensureTeacherImagesTable() {
   try {
     await pool.query(`
@@ -880,7 +1054,13 @@ export async function registerRoutes(
   await ensureSummaryTimetablesTable();
   await ensureSummerImagesTable();
   await ensureSummerGuidelinesTable();
-  // await seedSummerGuidelines();
+  await seedSummerGuidelines();
+  await ensureSummerHighlightsTable();
+  await seedSummerHighlights();
+  await ensureSummerSchedulesTable();
+  await seedSummerSchedules();
+  await ensureSummerNoticesTable();
+  await seedSummerNotices();
   await ensureBriefingEventsTable();
   await ensureTeacherImagesTable();
   await ensureTeachersTable();
@@ -1125,6 +1305,228 @@ export async function registerRoutes(
     if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
     try {
       await pool.query("DELETE FROM summer_guidelines WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== SUMMER HIGHLIGHTS ==========
+  app.get("/api/summer-highlights", async (_req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT * FROM summer_highlights
+        ORDER BY display_order ASC, created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/summer-highlights", requireAdmin, async (req, res) => {
+    const { division, title, content, icon } = req.body;
+    if (!division || !title || !content || !icon) {
+      return res.status(400).json({ error: "division, title, content, icon이 필요합니다." });
+    }
+    try {
+      const { rows: maxOrderRows } = await pool.query(
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_highlights WHERE division = $1",
+        [division]
+      );
+      const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
+      const { rows } = await pool.query(
+        "INSERT INTO summer_highlights (division, title, content, icon, display_order) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [division, title, content, icon, nextOrder]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summer-highlights/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await pool.query("UPDATE summer_highlights SET display_order = $1 WHERE id = $2", [i, ids[i]]);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summer-highlights/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    const { title, content, icon, division } = req.body;
+    try {
+      const { rows } = await pool.query(
+        "UPDATE summer_highlights SET title = COALESCE($1, title), content = COALESCE($2, content), icon = COALESCE($3, icon), division = COALESCE($4, division) WHERE id = $5 RETURNING *",
+        [title, content, icon, division, id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "존재하지 않는 하이라이트" });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/summer-highlights/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    try {
+      await pool.query("DELETE FROM summer_highlights WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== SUMMER SCHEDULES ==========
+  app.get("/api/summer-schedules", async (_req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT * FROM summer_schedules
+        ORDER BY display_order ASC, created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/summer-schedules", requireAdmin, async (req, res) => {
+    const { division, time, content, type, label } = req.body;
+    if (!division || !time || !content) {
+      return res.status(400).json({ error: "division, time, content가 필요합니다." });
+    }
+    try {
+      const { rows: maxOrderRows } = await pool.query(
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_schedules WHERE division = $1",
+        [division]
+      );
+      const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
+      const { rows } = await pool.query(
+        "INSERT INTO summer_schedules (division, time, content, type, label, display_order) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+        [division, time, content, type || null, label || null, nextOrder]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summer-schedules/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await pool.query("UPDATE summer_schedules SET display_order = $1 WHERE id = $2", [i, ids[i]]);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summer-schedules/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    const { time, content, type, label, division } = req.body;
+    try {
+      const { rows } = await pool.query(
+        "UPDATE summer_schedules SET time = COALESCE($1, time), content = COALESCE($2, content), type = COALESCE($3, type), label = COALESCE($4, label), division = COALESCE($5, division) WHERE id = $6 RETURNING *",
+        [time, content, type === undefined ? undefined : (type || null), label === undefined ? undefined : (label || null), division, id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "존재하지 않는 시간표" });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/summer-schedules/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    try {
+      await pool.query("DELETE FROM summer_schedules WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== SUMMER NOTICES ==========
+  app.get("/api/summer-notices", async (_req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT * FROM summer_notices
+        ORDER BY display_order ASC, created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/summer-notices", requireAdmin, async (req, res) => {
+    const { division, title, content, is_active } = req.body;
+    if (!division || !title || content === undefined) {
+      return res.status(400).json({ error: "division, title, content가 필요합니다." });
+    }
+    try {
+      const { rows: maxOrderRows } = await pool.query(
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_notices WHERE division = $1",
+        [division]
+      );
+      const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
+      const { rows } = await pool.query(
+        "INSERT INTO summer_notices (division, title, content, display_order, is_active) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [division, title, content, nextOrder, is_active === undefined ? true : !!is_active]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summer-notices/reorder", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        await pool.query("UPDATE summer_notices SET display_order = $1 WHERE id = $2", [i, ids[i]]);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/summer-notices/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    const { title, content, division, is_active } = req.body;
+    try {
+      const { rows } = await pool.query(
+        "UPDATE summer_notices SET title = COALESCE($1, title), content = COALESCE($2, content), division = COALESCE($3, division), is_active = COALESCE($4, is_active) WHERE id = $5 RETURNING *",
+        [title, content, division, is_active === undefined ? undefined : !!is_active, id]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "존재하지 않는 공지사항" });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/summer-notices/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    try {
+      await pool.query("DELETE FROM summer_notices WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

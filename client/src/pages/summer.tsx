@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { SectionPage } from "@/components/layout";
-import { Loader2, User, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, CheckCircle2 } from "lucide-react";
+import { Loader2, User, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, CheckCircle2, Calendar, Bell } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SummerImage {
@@ -13,49 +13,234 @@ interface SummerImage {
   division?: string;
 }
 
-const HIGHLIGHTS = [
-  {
-    num: "01",
-    icon: Target,
-    title: "1:1 개별 진단 & 학습 방향 설계",
-    desc: "무분별한 선행보다 아이에게 맞는 공부 방향을 우선 분석합니다. 학생별 상담 후 취약점과 학습 이력을 바탕으로 개인별 진도 계획 및 관리 방향을 제시합니다.",
-  },
-  {
-    num: "02",
-    icon: BookOpen,
-    title: "영통 이강학원만의 자체 제작 콘텐츠 제공",
-    desc: "수(秀) 모의고사·시크릿파일 등 학교별 유형을 반영한 콘텐츠를 제작합니다. 고난도 유형 훈련 및 성취도 분석 피드백을 진행합니다.",
-  },
-  {
-    num: "03",
-    icon: CheckCircle2,
-    title: "주요 영어·수학 필수 테스트 진행",
-    desc: "고등 수능 영단어 매일 20분 간 테스트 진행 후 피드백을 제공하며, 총 3회에 걸친 수학 단원별 이해도 점검 및 취약 유형 오답 관리를 철저히 합니다.",
-  },
-  {
-    num: "04",
-    icon: Users,
-    title: "실제 고등내신·수능 수업 담당 강사진 직접 투입",
-    desc: "현 고등학생 취약 유형을 완벽히 파악한 영통이강 고등 수학 스쿨 강사진이 중3 썸머 수업을 직접 진행하고 핵심 유형을 집중 관리합니다.",
-  },
-  {
-    num: "05",
-    icon: GraduationCap,
-    title: "9년 차 입학사정관 출신 입시 소장의 1:1 컨설팅",
-    desc: "영통이강학원 상주 대학교 입학사정관 출신 한노아 소장이 1:1 맞춤 입시 전략을 직접 상담하고 관리합니다.",
-  },
-];
+const ICON_MAP: Record<string, any> = {
+  Target,
+  BookOpen,
+  CheckCircle2,
+  Users,
+  GraduationCap,
+  Clock,
+};
 
-const SCHEDULE = [
-  { time: "08:00 - 08:40", content: "등원 및 자습준비" },
-  { time: "08:40 - 09:00", content: "영단어 테스트 (총 18회)", type: "blue", label: "MUST TEST" },
-  { time: "09:00 - 12:30", content: "수학 공수1/공수2 (기본·심화), 통과/국어(정규)", type: "red" },
-  { time: "12:30 - 13:30", content: "점심식사" },
-  { time: "13:30 - 17:00", content: "영어, 국어(정규), 물리(정규), 수학클리닉", type: "red" },
-  { time: "17:00 - 18:00", content: "저녁식사" },
-  { time: "18:00 - 21:30", content: "자습 & 숙제 / 1:1 입시 컨설팅 / 수학 모의고사", type: "blue" },
-  { time: "21:30 - 22:00", content: "자기점검 및 하원" },
-];
+interface ParsedClass {
+  className: string;
+  teachers: string;
+  subjects: string;
+  time: string;
+  questions: string;
+}
+
+interface ParsedSchedule {
+  round: string;
+  period: string;
+}
+
+interface ParsedNotice {
+  classes: ParsedClass[];
+  schedules: ParsedSchedule[];
+  otherText: string;
+  isParsed: boolean;
+}
+
+function parseSummerNotice(content: string): ParsedNotice {
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  const classes: ParsedClass[] = [];
+  const schedules: ParsedSchedule[] = [];
+  let currentClass: Partial<ParsedClass> | null = null;
+  let inSchedule = false;
+  let otherTextLines: string[] = [];
+  let hasParsedSomething = false;
+
+  for (const line of lines) {
+    const classMatch = line.match(/^(?:\d+\.\s*)?([A-Za-z0-9가-힣]+반)(?:\(([^)]+)\))?/);
+    if (classMatch) {
+      if (currentClass && currentClass.className) {
+        classes.push(currentClass as ParsedClass);
+      }
+      currentClass = {
+        className: classMatch[1],
+        teachers: classMatch[2] || '',
+        subjects: '',
+        time: '',
+        questions: ''
+      };
+      inSchedule = false;
+      hasParsedSomething = true;
+      continue;
+    }
+
+    if (line.includes('시험일정') || line.includes('시험 일정') || line === '일정') {
+      if (currentClass && currentClass.className) {
+        classes.push(currentClass as ParsedClass);
+        currentClass = null;
+      }
+      inSchedule = true;
+      hasParsedSomething = true;
+      continue;
+    }
+
+    if (currentClass) {
+      if (line.includes('시험과목') || line.includes('과목')) {
+        currentClass.subjects = line.split(/[:：]/)[1]?.trim() || '';
+      } else if (line.includes('시험시간') || line.includes('시간')) {
+        currentClass.time = line.split(/[:：]/)[1]?.trim() || '';
+      } else if (line.includes('문항')) {
+        currentClass.questions = line.split(/[:：]/)[1]?.trim() || '';
+      } else {
+        if (currentClass.subjects) {
+          currentClass.subjects += ' ' + line;
+        } else {
+          currentClass.subjects = line;
+        }
+      }
+      continue;
+    }
+
+    if (inSchedule) {
+      const scheduleMatch = line.match(/^([^\s:：]+)\s*[:：]\s*(.+)$/);
+      if (scheduleMatch) {
+        schedules.push({
+          round: scheduleMatch[1].trim(),
+          period: scheduleMatch[2].trim()
+        });
+      } else {
+        schedules.push({
+          round: '일정',
+          period: line
+        });
+      }
+      continue;
+    }
+
+    otherTextLines.push(line);
+  }
+
+  if (currentClass && currentClass.className) {
+    classes.push(currentClass as ParsedClass);
+  }
+
+  return {
+    classes,
+    schedules,
+    otherText: otherTextLines.join('\n'),
+    isParsed: hasParsedSomething && (classes.length > 0 || schedules.length > 0)
+  };
+}
+
+function ParsedNoticeCard({ title, content, date }: { title: string; content: string; date: string }) {
+  const parsed = parseSummerNotice(content);
+  
+  if (!parsed.isParsed) {
+    return (
+      <div className="bg-white border border-gray-150 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
+          <span className="px-2.5 py-1 rounded-md bg-[#7B2332]/10 text-[#7B2332] text-xs font-bold">공지</span>
+          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+          <span className="text-xs text-gray-400 ml-auto">{date}</span>
+        </div>
+        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{content}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-gray-150 rounded-3xl p-6 sm:p-8 shadow-md hover:shadow-lg transition-shadow space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 pb-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-1 rounded-md bg-[#7B2332]/10 text-[#7B2332] text-xs font-bold">공지사항</span>
+          <h3 className="text-xl font-black text-gray-900">{title}</h3>
+        </div>
+        <span className="text-xs font-semibold text-gray-400 sm:ml-auto">{date}</span>
+      </div>
+
+      {parsed.classes.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {parsed.classes.map((cls, idx) => {
+            const isSClass = cls.className.includes("S") || cls.className.toLowerCase().includes("s");
+            const colorClass = isSClass 
+              ? { bg: "bg-red-50/75", border: "border-red-100/80", title: "text-[#7B2332]", badge: "bg-[#7B2332]" }
+              : { bg: "bg-blue-50/75", border: "border-blue-100/80", title: "text-blue-700", badge: "bg-blue-600" };
+            
+            return (
+              <div 
+                key={idx} 
+                className={`p-6 rounded-2xl border ${colorClass.border} ${colorClass.bg} space-y-4`}
+              >
+                <div className="flex items-center justify-between pb-2 border-b border-gray-200/50">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2.5 py-0.5 text-white text-[11px] font-bold rounded ${colorClass.badge}`}>
+                      {cls.className}
+                    </span>
+                    {cls.teachers && (
+                      <span className="text-xs text-gray-500 font-bold">({cls.teachers})</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {cls.subjects && (
+                    <div className="flex items-start gap-2.5">
+                      <BookOpen className="w-4 h-4 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-[11px] font-bold text-gray-400">시험과목</p>
+                        <p className="text-sm font-bold text-gray-800">{cls.subjects}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {cls.time && (
+                    <div className="flex items-start gap-2.5">
+                      <Clock className="w-4 h-4 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-[11px] font-bold text-gray-400">시험시간</p>
+                        <p className="text-sm font-bold text-gray-800">{cls.time}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {cls.questions && (
+                    <div className="flex items-start gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-[11px] font-bold text-gray-400">시험 문항 수</p>
+                        <p className="text-sm font-bold text-gray-800">{cls.questions}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {parsed.schedules.length > 0 && (
+        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
+          <h4 className="text-sm font-black text-slate-800 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#7B2332]" />
+            시험 일정 안내
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {parsed.schedules.map((sched, idx) => (
+              <div key={idx} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100">
+                <span className="px-2.5 py-1 rounded-lg bg-[#7B2332]/5 text-[#7B2332] text-xs font-extrabold whitespace-nowrap">
+                  {sched.round}
+                </span>
+                <span className="text-sm font-bold text-gray-700">{sched.period}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {parsed.otherText && (
+        <p className="text-xs text-gray-400 pt-2 border-t border-gray-100 whitespace-pre-wrap">
+          {parsed.otherText}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function Summer() {
   const [location] = useLocation();
@@ -69,6 +254,7 @@ export default function Summer() {
     }
     return "중등";
   });
+  const [activeSubTab, setActiveSubTab] = useState<"info" | "notice">("info");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -80,6 +266,10 @@ export default function Summer() {
     }
   }, [location]);
 
+  useEffect(() => {
+    setActiveSubTab("info");
+  }, [activeTab]);
+
   const { data: images = [], isLoading } = useQuery<SummerImage[]>({
     queryKey: ["/api/summer-images"],
   });
@@ -88,9 +278,24 @@ export default function Summer() {
     queryKey: ["/api/summer-guidelines"],
   });
 
+  const { data: highlights = [] } = useQuery<any[]>({
+    queryKey: ["/api/summer-highlights"],
+  });
+
+  const { data: schedules = [] } = useQuery<any[]>({
+    queryKey: ["/api/summer-schedules"],
+  });
+
+  const { data: notices = [] } = useQuery<any[]>({
+    queryKey: ["/api/summer-notices"],
+  });
+
   // Filter images and guidelines by the active tab
   const filteredImages = images.filter((img) => (img.division || "중등") === activeTab);
   const filteredGuidelines = guidelines.filter((g) => g.division === activeTab);
+  const filteredHighlights = highlights.filter((h) => h.division === activeTab);
+  const filteredSchedules = schedules.filter((s) => s.division === activeTab);
+  const filteredNotices = notices.filter((n) => n.division === activeTab && n.is_active);
 
   const grouped = filteredImages.reduce((acc: Record<string, SummerImage[]>, img) => {
     const key = img.teacher_name || "공통";
@@ -181,8 +386,95 @@ export default function Summer() {
           </div>
         </motion.section>
 
+        {/* Sub-Tab Switcher */}
+        <div className="flex justify-center border-b border-gray-200">
+          <div className="flex gap-8">
+            <button
+              onClick={() => setActiveSubTab("info")}
+              className={`pb-4 text-base font-bold transition-all relative ${
+                activeSubTab === "info"
+                  ? "text-[#7B2332]"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              상세 프로그램
+              {activeSubTab === "info" && (
+                <motion.div
+                  layoutId="activeSummerSubTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7B2332]"
+                />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveSubTab("notice")}
+              className={`pb-4 text-base font-bold transition-all relative flex items-center gap-1.5 ${
+                activeSubTab === "notice"
+                  ? "text-[#7B2332]"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              공지사항
+              {filteredNotices.length > 0 && (
+                <span className="flex h-2 w-2 rounded-full bg-red-500" />
+              )}
+              {activeSubTab === "notice" && (
+                <motion.div
+                  layoutId="activeSummerSubTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7B2332]"
+                />
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Content Area */}
-        {activeTab !== "중등" && filteredImages.length === 0 && filteredGuidelines.length === 0 ? (
+        {activeSubTab === "notice" ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-8"
+          >
+            <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-5">
+              <div className="w-1.5 h-6 bg-[#7B2332]" />
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">공지사항</h2>
+              <span className="ml-3 text-xs bg-red-50 text-[#7B2332] font-bold px-2.5 py-1 rounded-full">
+                총 {filteredNotices.length}건
+              </span>
+            </div>
+
+            {filteredNotices.length === 0 ? (
+              <div className="text-center py-24 bg-white border border-gray-100 rounded-[2rem] shadow-sm space-y-4">
+                <Bell className="w-10 h-10 mx-auto text-gray-300 opacity-80" />
+                <p className="text-base font-semibold text-gray-500">등록된 공지사항이 없습니다.</p>
+                <p className="text-xs text-gray-400">새로운 공지사항이 등록되면 여기에 표시됩니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {filteredNotices.map((notice) => {
+                  const dateFormatted = new Date(notice.created_at).toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  });
+                  return (
+                    <ParsedNoticeCard
+                      key={notice.id}
+                      title={notice.title}
+                      content={notice.content}
+                      date={dateFormatted}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
+        ) : activeTab !== "중등" &&
+        filteredImages.length === 0 &&
+        filteredGuidelines.length === 0 &&
+        filteredHighlights.length === 0 &&
+        filteredSchedules.length === 0 ? (
           /* Coming Soon State */
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -205,83 +497,85 @@ export default function Summer() {
           </motion.div>
         ) : (
           <>
-            {/* Highlights & Schedule (Only for 중등) */}
-            {activeTab === "중등" && (
-              <>
-                {/* Highlights Section */}
-                <section className="space-y-12">
-                  <div className="text-center space-y-3">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">영통이강만의 압도적인 관리 시스템</h2>
-                    <div className="w-16 h-1 bg-[#7B2332] mx-auto"></div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {HIGHLIGHTS.map((h, idx) => {
-                      const Icon = h.icon;
-                      return (
-                        <motion.div 
-                          key={h.num}
-                          initial={{ opacity: 0, y: 20 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: idx * 0.1 }}
-                          className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-red-900/5 hover:-translate-y-1 transition-all duration-300"
-                        >
-                          <div className="flex items-center justify-between mb-6">
-                            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
-                              <Icon className="w-6 h-6 text-[#7B2332]" />
-                            </div>
-                            <span className="text-2xl font-black text-gray-100">{h.num}</span>
+            {/* Highlights Section */}
+            {filteredHighlights.length > 0 && (
+              <section className="space-y-12">
+                <div className="text-center space-y-3">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">영통이강만의 압도적인 관리 시스템</h2>
+                  <div className="w-16 h-1 bg-[#7B2332] mx-auto"></div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredHighlights.map((h, idx) => {
+                    const Icon = ICON_MAP[h.icon] || Target;
+                    const num = String(idx + 1).padStart(2, "0");
+                    return (
+                      <motion.div 
+                        key={h.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: idx * 0.1 }}
+                        className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-red-900/5 hover:-translate-y-1 transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
+                            <Icon className="w-6 h-6 text-[#7B2332]" />
                           </div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-3 leading-snug">{h.title}</h3>
-                          <p className="text-sm text-gray-600 leading-relaxed">{h.desc}</p>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </section>
-
-                {/* Schedule Section */}
-                <section className="space-y-10">
-                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b-2 border-gray-900 pb-5">
-                    <div className="space-y-2">
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">스파르타 9 to 10 학습 시간표</h2>
-                      <p className="text-sm text-gray-500 font-medium">철저한 시간 관리와 몰입 학습을 통해 성적 향상을 보장합니다.</p>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-bold bg-gray-100 px-3 py-1.5 rounded-lg text-gray-600">
-                      <Clock className="w-3.5 h-3.5" />
-                      월 - 일 운영
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm">
-                    <div className="grid grid-cols-1">
-                      {SCHEDULE.map((s, idx) => (
-                        <div 
-                          key={idx} 
-                          className={`flex flex-col sm:flex-row items-center p-6 gap-4 sm:gap-10 border-b border-gray-100 last:border-0 ${s.type === "red" ? "bg-red-50/50" : s.type === "blue" ? "bg-blue-50/50" : ""}`}
-                        >
-                          <div className="w-full sm:w-48 text-center sm:text-left">
-                            <span className={`text-sm font-black tracking-wider ${s.type === "red" ? "text-[#7B2332]" : s.type === "blue" ? "text-blue-600" : "text-gray-400"}`}>
-                              {s.time}
-                            </span>
-                          </div>
-                          <div className="flex-1 text-center sm:text-left">
-                            <p className={`text-base font-bold ${s.type === "red" ? "text-[#7B2332]" : s.type === "blue" ? "text-blue-600" : "text-gray-900"}`}>
-                              {s.content}
-                            </p>
-                          </div>
-                          {s.label && (
-                            <div className={`px-3 py-1 ${s.type === "red" ? "bg-[#7B2332]" : "bg-blue-600"} text-white text-[10px] font-bold rounded-full`}>
-                              {s.label}
-                            </div>
-                          )}
+                          <span className="text-2xl font-black text-gray-100">{num}</span>
                         </div>
-                      ))}
-                    </div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-3 leading-snug">{h.title}</h3>
+                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{h.content}</p>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Schedule Section */}
+            {filteredSchedules.length > 0 && (
+              <section className="space-y-10">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b-2 border-gray-900 pb-5">
+                  <div className="space-y-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                      {activeTab === "중등" ? "스파르타 9 to 10 학습 시간표" : `${activeTab} 학습 시간표`}
+                    </h2>
+                    <p className="text-sm text-gray-500 font-medium">철저한 시간 관리와 몰입 학습을 통해 성적 향상을 보장합니다.</p>
                   </div>
-                </section>
-              </>
+                  <div className="flex items-center gap-2 text-xs font-bold bg-gray-100 px-3 py-1.5 rounded-lg text-gray-600">
+                    <Clock className="w-3.5 h-3.5" />
+                    월 - 일 운영
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm">
+                  <div className="grid grid-cols-1">
+                    {filteredSchedules.map((s, idx) => (
+                      <div 
+                        key={s.id} 
+                        className={`flex flex-col sm:flex-row items-center p-6 gap-4 sm:gap-10 border-b border-gray-100 last:border-0 ${s.type === "red" ? "bg-red-50/50" : s.type === "blue" ? "bg-blue-50/50" : ""}`}
+                      >
+                        <div className="w-full sm:w-48 text-center sm:text-left">
+                          <span className={`text-sm font-black tracking-wider ${s.type === "red" ? "text-[#7B2332]" : s.type === "blue" ? "text-blue-600" : "text-gray-400"}`}>
+                            {s.time}
+                          </span>
+                        </div>
+                        <div className="flex-1 text-center sm:text-left">
+                          <p className={`text-base font-bold ${s.type === "red" ? "text-[#7B2332]" : s.type === "blue" ? "text-blue-600" : "text-gray-900"}`}>
+                            {s.content}
+                          </p>
+                        </div>
+                        {s.label && (
+                          <div className={`px-3 py-1 ${s.type === "red" ? "bg-[#7B2332]" : "bg-blue-600"} text-white text-[10px] font-bold rounded-full`}>
+                            {s.label}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
             )}
 
             {/* 모집 요강 (Guidelines) Section */}

@@ -3980,9 +3980,362 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   );
 }
 
+interface SummerNotice {
+  id: number;
+  division: string;
+  title: string;
+  content: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+function SortableNoticeRow({
+  item,
+  onDelete,
+  onEdit,
+  onToggleActive,
+}: {
+  item: SummerNotice;
+  onDelete: (id: number) => void;
+  onEdit: (item: SummerNotice) => void;
+  onToggleActive: (item: SummerNotice) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 border ${item.is_active ? 'border-gray-100 bg-gray-50/50' : 'border-gray-200 bg-gray-150/30 opacity-70'} rounded-lg p-3 hover:bg-gray-50 transition-colors`}
+      data-testid={`row-notice-${item.id}`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors"
+      >
+        <GripVertical className="w-5 h-5" />
+      </div>
+      
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-2 min-w-0">
+        <div className="font-bold text-gray-900 text-sm truncate md:col-span-1 border-r border-gray-200/50 pr-2">
+          {item.title}
+        </div>
+        <div className="text-xs text-gray-500 line-clamp-2 md:col-span-2 whitespace-pre-wrap">
+          {item.content}
+        </div>
+        <div className="text-xs font-semibold text-gray-400 flex items-center md:col-span-1">
+          {new Date(item.created_at).toLocaleDateString("ko-KR")}
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <button
+          onClick={() => onToggleActive(item)}
+          className={`px-2.5 py-1 text-[11px] font-bold rounded transition-colors ${
+            item.is_active
+              ? "bg-[#7B2332]/10 text-[#7B2332] hover:bg-[#7B2332]/25"
+              : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+          }`}
+          title={item.is_active ? "비활성화" : "활성화"}
+        >
+          {item.is_active ? "공개 중" : "비공개"}
+        </button>
+        <button
+          onClick={() => onEdit(item)}
+          className="p-2 text-gray-400 hover:text-[#7B2332] hover:bg-red-50 rounded transition-colors"
+          title="수정"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onDelete(item.id)}
+          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+          title="삭제"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "고2" | "고3" }) {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [editingNotice, setEditingNotice] = useState<SummerNotice | null>(null);
+  const [localNotices, setLocalNotices] = useState<SummerNotice[]>([]);
+
+  const { data: notices = [], isLoading } = useQuery<SummerNotice[]>({
+    queryKey: ["/api/summer-notices"],
+    queryFn: async () => {
+      const res = await fetch("/api/summer-notices", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch notices");
+      return res.json();
+    }
+  });
+
+  useEffect(() => {
+    setLocalNotices(prev => {
+      const prevKey = JSON.stringify(prev);
+      const newKey = JSON.stringify(notices);
+      return prevKey === newKey ? prev : notices;
+    });
+  }, [notices]);
+
+  const filteredNotices = localNotices.filter((n) => n.division === activeTab);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const addMutation = useMutation({
+    mutationFn: async (data: { division: string; title: string; content: string }) => {
+      const res = await fetch("/api/summer-notices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error("Failed to add notice");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summer-notices"] });
+      setTitle("");
+      setContent("");
+    }
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async (data: { id: number; title: string; content: string; is_active?: boolean }) => {
+      const res = await fetch(`/api/summer-notices/${data.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error("Failed to edit notice");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summer-notices"] });
+      setEditingNotice(null);
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/summer-notices/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summer-notices"] });
+    }
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/summer-notices/reorder", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ ids }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("순서 변경 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summer-notices"] });
+    },
+    onError: () => {
+      setLocalNotices(notices);
+    }
+  });
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    
+    const oldIdx = filteredNotices.findIndex(n => n.id === Number(active.id));
+    const newIdx = filteredNotices.findIndex(n => n.id === Number(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    
+    const reorderedFiltered = arrayMove(filteredNotices, oldIdx, newIdx);
+    
+    const updatedFullList = localNotices.map(item => {
+      const movedItem = reorderedFiltered.find(n => n.id === item.id);
+      return movedItem || item;
+    });
+    
+    setLocalNotices(updatedFullList);
+    reorderMutation.mutate(reorderedFiltered.map(n => n.id));
+  }
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !content.trim()) return;
+    addMutation.mutate({ division: activeTab, title, content });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingNotice || !editingNotice.title.trim() || !editingNotice.content.trim()) return;
+    editMutation.mutate({
+      id: editingNotice.id,
+      title: editingNotice.title,
+      content: editingNotice.content,
+      is_active: editingNotice.is_active
+    });
+  };
+
+  const handleToggleActive = (notice: SummerNotice) => {
+    editMutation.mutate({
+      id: notice.id,
+      title: notice.title,
+      content: notice.content,
+      is_active: !notice.is_active
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Editor Box */}
+      {editingNotice ? (
+        <form onSubmit={handleEditSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <Pencil className="w-4 h-4 text-[#7B2332]" />
+            공지사항 수정 ({activeTab})
+          </h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">공지 제목</label>
+              <input
+                type="text"
+                value={editingNotice.title}
+                onChange={(e) => setEditingNotice({ ...editingNotice, title: e.target.value })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
+                placeholder="제목"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">공지 내용 (반 정보나 시험 일정이 들어갈 경우 정해진 포맷에 따라 적으면 사용자 페이지에 예쁜 카드 형태로 보입니다)</label>
+              <textarea
+                value={editingNotice.content}
+                onChange={(e) => setEditingNotice({ ...editingNotice, content: e.target.value })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium resize-y font-mono text-xs"
+                rows={10}
+                placeholder="내용을 작성해주세요."
+                required
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="submit"
+              disabled={editMutation.isPending}
+              className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+            >
+              수정 저장
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingNotice(null)}
+              className="px-4 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              취소
+            </button>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={handleAddSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <Plus className="w-4 h-4 text-[#7B2332]" />
+            공지사항 추가 ({activeTab})
+          </h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">공지 제목</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
+                placeholder="예: [중3 TEST 일정]"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">공지 내용 (줄바꿈이 적용됩니다. S반/A반 포맷 입력 시 자동 카드 렌더링)</label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium resize-y font-mono text-xs"
+                rows={6}
+                placeholder={`1. S반(최주용T, 권소영T)\n시험과목 : 공수1 / 공수2 / 대수\n시험시간 : 40분씩 총 120분\n시험 문항 수 : 각 15문항 총 45문항\n\n시험일정\n1차 : 6/8~6/19`}
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={addMutation.isPending}
+            className="px-6 py-2.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-1.5 transition-colors"
+          >
+            {addMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+            공지 추가
+          </button>
+        </form>
+      )}
+
+      {/* Notices List */}
+      <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+          <h4 className="text-sm font-bold text-gray-800">등록된 공지사항 ({filteredNotices.length})</h4>
+          <p className="text-[10px] text-gray-400 font-semibold">≡ 드래그하여 순서 변경 가능</p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="w-6 h-6 animate-spin text-gray-200" />
+          </div>
+        ) : filteredNotices.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-10">등록된 공지사항이 없습니다.</p>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={filteredNotices.map(n => n.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2">
+                {filteredNotices.map((item) => (
+                  <SortableNoticeRow
+                    key={item.id}
+                    item={item}
+                    onDelete={(id) => {
+                      if (confirm("이 공지사항을 정말 삭제하시겠습니까?")) {
+                        deleteMutation.mutate(id);
+                      }
+                    }}
+                    onEdit={(n) => setEditingNotice({ ...n })}
+                    onToggleActive={handleToggleActive}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SummerTab() {
   const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2" | "고3">("중등");
-  const [subTab, setSubTab] = useState<"brochures" | "guidelines">("brochures");
+  const [subTab, setSubTab] = useState<"brochures" | "guidelines" | "notices">("brochures");
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("0");
   const [selectedDivision, setSelectedDivision] = useState<string>("중등");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -4158,10 +4511,22 @@ function SummerTab() {
         >
           모집 요강 관리
         </button>
+        <button
+          onClick={() => setSubTab("notices")}
+          className={`px-5 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
+            subTab === "notices"
+              ? "bg-[#7B2332] text-white shadow-md shadow-red-900/10"
+              : "text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          공지사항 관리
+        </button>
       </div>
 
       {subTab === "guidelines" ? (
         <SummerGuidelinesManager activeTab={activeTab} />
+      ) : subTab === "notices" ? (
+        <SummerNoticesManager activeTab={activeTab} />
       ) : (
         <>
           <div className="bg-white border border-gray-200 p-6">
