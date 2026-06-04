@@ -1191,6 +1191,49 @@ async function seedSummerTimetableSlots() {
     await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS sat TEXT NOT NULL DEFAULT \'\'');
     await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS sun TEXT NOT NULL DEFAULT \'\'');
     await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS timetable_title TEXT NOT NULL DEFAULT \'\'');
+
+    // Migration Check: If old subject-based G1 timetables exist, clean and re-seed G1 specifically
+    const { rows: oldG1Rows } = await pool.query(
+      "SELECT COUNT(*) FROM summer_timetable_slots WHERE division = '고1' AND timetable_title = '국어 시간표'"
+    );
+    if (parseInt(oldG1Rows[0].count) > 0) {
+      console.log("[seedSummerTimetableSlots] Old G1 timetables detected. Re-seeding G1 by school...");
+      await pool.query("DELETE FROM summer_timetable_slots WHERE division = '고1'");
+      const g1Slots = [
+        // 화성고 시간표
+        { division:'고1', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'[국어] 정규영T\n일 10:00-13:00', display_order:10 },
+        { division:'고1', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[물리] 유승진T\n역학특강\n금 14:00-17:30', sat:'', sun:'', display_order:11 },
+        { division:'고1', timetable_title:'화성고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[영어] 데니얼T\n금 16:30-20:00\n\n[물리] 유승진T\n역학과에너지\n금 19:30-22:30', sat:'[영어] 데니얼T\n토 18:30-22:00', sun:'', display_order:12 },
+        // 가온고 시간표
+        { division:'고1', timetable_title:'가온고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:13 },
+        { division:'고1', timetable_title:'가온고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:14 },
+        { division:'고1', timetable_title:'가온고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[영어] 양준민T\n금 18:30-21:30', sat:'[통과] 변현수T\n가온고1 중심\n토 18:30-21:30', sun:'[국어] 김홍석T\n일 18:30-21:30', display_order:15 },
+        // 병점고 시간표
+        { division:'고1', timetable_title:'병점고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[국어] 박소현T\n토 09:30-13:00', sun:'', display_order:16 },
+        { division:'고1', timetable_title:'병점고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 김유정T\n토 14:00-17:00', sun:'[통과] 황준우T\n일 13:30-17:00\n\n[통과] 곽은합T\n생명의전정', display_order:17 },
+        { division:'고1', timetable_title:'병점고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:18 },
+        // 영덕고 시간표
+        { division:'고1', timetable_title:'영덕고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:19 },
+        { division:'고1', timetable_title:'영덕고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 박지원T\n월 14:00-17:00', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:20 },
+        { division:'고1', timetable_title:'영덕고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 김유정T\n월 18:30-22:00', tue:'', wed:'', thu:'', fri:'[국어] 박소현T\n금 18:00-21:30', sat:'', sun:'[통과] 황준우T\n일 18:00-22:00', display_order:21 },
+        // 수원고 시간표
+        { division:'고1', timetable_title:'수원고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:22 },
+        { division:'고1', timetable_title:'수원고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[국어] 박소현T\n토 14:00-17:30', sun:'', display_order:23 },
+        { division:'고1', timetable_title:'수원고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 김연우T\n월 18:00-22:00', tue:'[통과] 임희민T\n화 18:00-21:00', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:24 },
+        // 청명고 시간표
+        { division:'고1', timetable_title:'청명고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:25 },
+        { division:'고1', timetable_title:'청명고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'[국어] 선화희T\n일 14:00-17:00', display_order:26 },
+        { division:'고1', timetable_title:'청명고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:27 }
+      ];
+      for (const s of g1Slots) {
+        await pool.query(
+          `INSERT INTO summer_timetable_slots (division, timetable_title, slot_label, slot_time, is_merged, merged_content, mon, tue, wed, thu, fri, sat, sun, display_order)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+          [s.division, s.timetable_title, s.slot_label, s.slot_time, s.is_merged, s.merged_content, s.mon, s.tue, s.wed, s.thu, s.fri, s.sat, s.sun, s.display_order]
+        );
+      }
+    }
+
     const { rows } = await pool.query("SELECT COUNT(*) FROM summer_timetable_slots");
     if (parseInt(rows[0].count) >= 15) return;
     await pool.query("DELETE FROM summer_timetable_slots");
@@ -1219,29 +1262,9 @@ async function seedSummerTimetableSlots() {
         mon:'', tue:'', wed:'', thu:'', fri:'',
         sat:'영어 (문브라더스T)\n고2수능 9:00-12:00\n\n영어 (양준민T)\n가온고2 6:30-9:30\n\n국어 (김현종T)\n고2 6:30-9:30\n(7/11, 18)\n\n국어 (박소현T)\n영덕고2 6:00-9:30',
         sun:'국어 (선화희T)\n청명고2 6:00-9:00', display_order:8 },
-      // 고1 물리 시간표
-      { division:'고1', timetable_title:'물리 시간표', slot_label:'물리', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
-        fri:'역학특강\n금 14:00-17:30\n(5회 / 7/17~)\n\n역학과에너지\n금 19:30-22:30\n(5회 / 7/17~)', sat:'', sun:'', display_order:6 },
       // 고2 물리 시간표
       { division:'고2', timetable_title:'물리 시간표', slot_label:'물리', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
         fri:'역학특강\n금 14:00-17:30\n(5회 / 7/17~)\n\n역학과에너지\n금 19:30-22:30\n(5회 / 7/17~)', sat:'', sun:'', display_order:7 },
-      // 고1 국어 시간표
-      { division:'고1', timetable_title:'국어 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'박소현T\n병점고1\n9:30-1', sun:'정규영T\n화성고1\n10-1', display_order:0 },
-      { division:'고1', timetable_title:'국어 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'',
-        sat:'박소현T\n수원고1\n2-5:30\n\n김현종T\n고3\n2-5', sun:'선화희T\n청명고1\n2-5\n\n박소현T\n중3\n10-1', display_order:1 },
-      { division:'고1', timetable_title:'국어 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
-        fri:'박소현T\n영덕고1\n6-9:30\n\n김홍석T\n가온고2\n6:15-9:15\n\n손자은T\n수능2\n6:30-9:30\n\n홍준석T\n고3\n6:30-10',
-        sat:'박소현T\n영덕고2\n6-9:30\n\n김현종T\n고2\n6:30-9:30\n(7/11,18)',
-        sun:'김홍석T\n가온고1\n6:30-9:30\n\n선화희T\n청명고2\n6-9', display_order:2 },
-      // 고1 영어 시간표
-      { division:'고1', timetable_title:'영어 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T\n고2수능\n9-12', sun:'', display_order:3 },
-      { division:'고1', timetable_title:'영어 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'',
-        mon:'박지원T\n영덕고1\n2-5', tue:'김유정T\n중3\n2-5', wed:'', thu:'김유정T\n중3\n2-5', fri:'', sat:'김유정T\n병점고1\n2-5', sun:'', display_order:4 },
-      { division:'고1', timetable_title:'영어 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'',
-        mon:'김연우T\n수원고1\n6-10\n\n김유정T\n영덕고1\n6:30-10',
-        tue:'김유정T\n청명고2\n6:30-9:30', wed:'', thu:'',
-        fri:'양준민T\n가온고1\n6:30-9:30\n\n데니얼T\n화성고1\n4:30-8',
-        sat:'데니얼T\n화성고1\n6:30-10\n\n양준민T\n가온고2\n6:30-9:30', sun:'', display_order:5 },
       // 중등 과탐 시간표
       { division:'중등', timetable_title:'과탐 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'황준우T\n중3 통과연합\n15회차 7/11\n10-1', sun:'황준우T\n고1 연합통과\n7/12 6회', display_order:0 },
       { division:'중등', timetable_title:'과탐 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
@@ -1253,6 +1276,30 @@ async function seedSummerTimetableSlots() {
         thu:'나진환T\n초6,중1,2\n통합과학 12주',
         fri:'중1,2 통과 15회\n황준우T\n7/17-11/20',
         sat:'중1,2 물리 15회\n황준우T\n7/18~11/21', sun:'', display_order:2 },
+      // 고1 화성고 시간표
+      { division:'고1', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'[국어] 정규영T\n일 10:00-13:00', display_order:10 },
+      { division:'고1', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[물리] 유승진T\n역학특강\n금 14:00-17:30', sat:'', sun:'', display_order:11 },
+      { division:'고1', timetable_title:'화성고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[영어] 데니얼T\n금 16:30-20:00\n\n[물리] 유승진T\n역학과에너지\n금 19:30-22:30', sat:'[영어] 데니얼T\n토 18:30-22:00', sun:'', display_order:12 },
+      // 고1 가온고 시간표
+      { division:'고1', timetable_title:'가온고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:13 },
+      { division:'고1', timetable_title:'가온고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:14 },
+      { division:'고1', timetable_title:'가온고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[영어] 양준민T\n금 18:30-21:30', sat:'[통과] 변현수T\n가온고1 중심\n토 18:30-21:30', sun:'[국어] 김홍석T\n일 18:30-21:30', display_order:15 },
+      // 고1 병점고 시간표
+      { division:'고1', timetable_title:'병점고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[국어] 박소현T\n토 09:30-13:00', sun:'', display_order:16 },
+      { division:'고1', timetable_title:'병점고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 김유정T\n토 14:00-17:00', sun:'[통과] 황준우T\n일 13:30-17:00\n\n[통과] 곽은합T\n생명의전정', display_order:17 },
+      { division:'고1', timetable_title:'병점고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:18 },
+      // 고1 영덕고 시간표
+      { division:'고1', timetable_title:'영덕고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:19 },
+      { division:'고1', timetable_title:'영덕고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 박지원T\n월 14:00-17:00', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:20 },
+      { division:'고1', timetable_title:'영덕고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 김유정T\n월 18:30-22:00', tue:'', wed:'', thu:'', fri:'[국어] 박소현T\n금 18:00-21:30', sat:'', sun:'[통과] 황준우T\n일 18:00-22:00', display_order:21 },
+      // 고1 수원고 시간표
+      { division:'고1', timetable_title:'수원고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:22 },
+      { division:'고1', timetable_title:'수원고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[국어] 박소현T\n토 14:00-17:30', sun:'', display_order:23 },
+      { division:'고1', timetable_title:'수원고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 김연우T\n월 18:00-22:00', tue:'[통과] 임희민T\n화 18:00-21:00', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:24 },
+      // 고1 청명고 시간표
+      { division:'고1', timetable_title:'청명고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:25 },
+      { division:'고1', timetable_title:'청명고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'[국어] 선화희T\n일 14:00-17:00', display_order:26 },
+      { division:'고1', timetable_title:'청명고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:27 }
     ];
 
     for (const s of slots) {
@@ -1262,7 +1309,7 @@ async function seedSummerTimetableSlots() {
         [s.division, s.timetable_title, s.slot_label, s.slot_time, s.is_merged, s.merged_content, s.mon, s.tue, s.wed, s.thu, s.fri, s.sat, s.sun, s.display_order]
       );
     }
-    console.log("Successfully seeded summer timetable slots for 고2.");
+    console.log("Successfully seeded summer timetable slots.");
   } catch (err) {
     console.error("Failed to seed summer_timetable_slots:", err);
   }
@@ -1738,6 +1785,111 @@ export async function registerRoutes(
       res.status(500).json({ error: err.message });
     }
   });
+
+  app.post("/api/summer-timetable-slots", requireAdmin, async (req, res) => {
+    const { division, timetable_title, slot_label, slot_time, is_merged, merged_content, mon, tue, wed, thu, fri, sat, sun } = req.body;
+    if (!division || !timetable_title || !slot_label) {
+      return res.status(400).json({ error: "division, timetable_title, slot_label이 필요합니다." });
+    }
+    try {
+      const { rows: maxOrderRows } = await pool.query(
+        "SELECT COALESCE(MAX(display_order), -1) AS max_order FROM summer_timetable_slots WHERE division = $1",
+        [division]
+      );
+      const nextOrder = (maxOrderRows[0]?.max_order ?? -1) + 1;
+      const { rows } = await pool.query(
+        `INSERT INTO summer_timetable_slots 
+         (division, timetable_title, slot_label, slot_time, is_merged, merged_content, mon, tue, wed, thu, fri, sat, sun, display_order)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         RETURNING *`,
+        [
+          division,
+          timetable_title,
+          slot_label,
+          slot_time || "",
+          !!is_merged,
+          merged_content || "",
+          mon || "",
+          tue || "",
+          wed || "",
+          thu || "",
+          fri || "",
+          sat || "",
+          sun || "",
+          nextOrder
+        ]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.put("/api/summer-timetable-slots/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    const { timetable_title, slot_label, slot_time, is_merged, merged_content, mon, tue, wed, thu, fri, sat, sun } = req.body;
+    try {
+      const { rows } = await pool.query(
+        `UPDATE summer_timetable_slots SET
+          timetable_title = COALESCE($1, timetable_title),
+          slot_label = COALESCE($2, slot_label),
+          slot_time = COALESCE($3, slot_time),
+          is_merged = COALESCE($4, is_merged),
+          merged_content = COALESCE($5, merged_content),
+          mon = COALESCE($6, mon),
+          tue = COALESCE($7, tue),
+          wed = COALESCE($8, wed),
+          thu = COALESCE($9, thu),
+          fri = COALESCE($10, fri),
+          sat = COALESCE($11, sat),
+          sun = COALESCE($12, sun)
+         WHERE id = $13
+         RETURNING *`,
+        [
+          timetable_title,
+          slot_label,
+          slot_time,
+          is_merged === undefined ? undefined : !!is_merged,
+          merged_content,
+          mon,
+          tue,
+          wed,
+          thu,
+          fri,
+          sat,
+          sun,
+          id
+        ]
+      );
+      if (rows.length === 0) return res.status(404).json({ error: "존재하지 않는 시간표 슬롯" });
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/summer-timetable-slots/:id", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
+    try {
+      await pool.query("DELETE FROM summer_timetable_slots WHERE id = $1", [id]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/summer-timetable-slots/reset", requireAdmin, async (req, res) => {
+    try {
+      await pool.query("DELETE FROM summer_timetable_slots");
+      await seedSummerTimetableSlots();
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
 
   // ========== SUMMER NOTICES ==========
   app.get("/api/summer-notices", async (_req, res) => {

@@ -454,6 +454,270 @@ export default function Summer() {
     );
   };
 
+  interface CurriculumParsed {
+    schedule?: string;
+    features?: string[];
+    materials?: string;
+    assignments?: string;
+    management?: string;
+    clinic?: string;
+    sessions?: { round: string; content: string }[];
+    nextCourse?: string;
+  }
+
+  const parseCurriculum = (content: string): CurriculumParsed | null => {
+    const hasKeywords = /수업\s*일정|강좌\s*특징|교재|과제|관리/i.test(content);
+    if (!hasKeywords) return null;
+
+    const sections: CurriculumParsed = {};
+    const lines = content.split("\n").map(line => line.trim());
+    
+    let currentKey: keyof CurriculumParsed | null = null;
+    let sessionList: { round: string; content: string }[] = [];
+    let featuresList: string[] = [];
+
+    for (let line of lines) {
+      if (!line) continue;
+
+      if (/^(수업\s*일정|일정)\s*[:：]/i.test(line)) {
+        currentKey = "schedule";
+        sections.schedule = line.replace(/^(수업\s*일정|일정)\s*[:：]/i, "").trim();
+      } else if (/^(강좌\s*특징|특징)\s*[:：]/i.test(line)) {
+        currentKey = "features";
+        const val = line.replace(/^(강좌\s*특징|특징)\s*[:：]/i, "").trim();
+        featuresList = val ? [val] : [];
+      } else if (/^(교재\s*\/?\s*제공\s*자료|교재|제공\s*자료)\s*[:：]/i.test(line)) {
+        currentKey = "materials";
+        sections.materials = line.replace(/^(교재\s*\/?\s*제공\s*자료|교재|제공\s*자료)\s*[:：]/i, "").trim();
+      } else if (/^(과제\s*\/?\s*TEST|과제\s*및\s*TEST|과제|TEST|과제\s*\/?\s*테스트)\s*[:：]/i.test(line)) {
+        currentKey = "assignments";
+        sections.assignments = line.replace(/^(과제\s*\/?\s*TEST|과제\s*및\s*TEST|과제|TEST|과제\s*\/?\s*테스트)\s*[:：]/i, "").trim();
+      } else if (/^(관리\s*SYSTEM\s*및\s*CLINIC|관리\s*SYSTEM|관리)\s*[:：]/i.test(line)) {
+        currentKey = "management";
+        sections.management = line.replace(/^(관리\s*SYSTEM\s*및\s*CLINIC|관리\s*SYSTEM|관리)\s*[:：]/i, "").trim();
+      } else if (/^(클리닉)\s*[:：]/i.test(line)) {
+        currentKey = "clinic";
+        sections.clinic = line.replace(/^(클리닉)\s*[:：]/i, "").trim();
+      } else if (/^\[?(회차별\s*내용|회차별\s*수업\s*내용|주별\s*내용)\]?/i.test(line)) {
+        currentKey = "sessions";
+      } else if (/^\[?(연계\s*강좌|연계강좌)\]?/i.test(line)) {
+        currentKey = "nextCourse";
+        const val = line.replace(/^\[?(연계\s*강좌|연계강좌)\]?\s*[:：]?/i, "").trim();
+        sections.nextCourse = val;
+      } else {
+        if (currentKey === "features") {
+          featuresList.push(line);
+        } else if (currentKey === "sessions") {
+          const match = line.match(/^(\d+회차(?:\s*\d+\/\d+\s*\([^)]+\))?)\s*[-–—:=]\s*(.+)$/) || line.match(/^(\d+회차)\s+(.+)$/);
+          if (match) {
+            sessionList.push({ round: match[1].trim(), content: match[2].trim() });
+          } else {
+            sessionList.push({ round: "", content: line });
+          }
+        } else if (currentKey === "management") {
+          sections.management = (sections.management ? sections.management + "\n" : "") + line;
+        } else if (currentKey === "clinic") {
+          sections.clinic = (sections.clinic ? sections.clinic + "\n" : "") + line;
+        } else if (currentKey === "schedule") {
+          sections.schedule = (sections.schedule ? sections.schedule + "\n" : "") + line;
+        } else if (currentKey === "materials") {
+          sections.materials = (sections.materials ? sections.materials + "\n" : "") + line;
+        } else if (currentKey === "assignments") {
+          sections.assignments = (sections.assignments ? sections.assignments + "\n" : "") + line;
+        } else if (currentKey === "nextCourse") {
+          sections.nextCourse = (sections.nextCourse ? sections.nextCourse + "\n" : "") + line;
+        }
+      }
+    }
+
+    if (sections.management && !sections.clinic) {
+      let mgmtText = sections.management.trim();
+      const clinicIndex = mgmtText.search(/[\/\s\n]+클리닉\s*[-–—:]/i);
+      if (clinicIndex !== -1) {
+        const rawMgmt = mgmtText.substring(0, clinicIndex).trim();
+        const rawClinic = mgmtText.substring(clinicIndex).replace(/^[\/\s\n]+클리닉\s*[-–—:]/i, "").trim();
+        sections.management = rawMgmt;
+        sections.clinic = rawClinic;
+      }
+    }
+
+    if (featuresList.length > 0) {
+      sections.features = featuresList;
+    }
+    if (sessionList.length > 0) {
+      sections.sessions = sessionList;
+    }
+
+    return sections;
+  };
+
+  const renderCurriculumGuidelines = (guidelineList: any[]) => {
+    if (guidelineList.length === 0) return null;
+
+    return (
+      <div className="space-y-12">
+        {guidelineList.map((g) => {
+          const parsed = parseCurriculum(g.content);
+          if (!parsed) {
+            // Fallback to original layout
+            return (
+              <div key={g.id} className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-2xl mb-6">
+                <div className="flex flex-col md:flex-row">
+                  <div className="w-full md:w-52 bg-slate-50/50 p-5 flex items-center justify-start md:justify-center border-b md:border-b-0 md:border-r border-gray-100">
+                    <span className="font-extrabold text-gray-800 text-sm tracking-tight text-left md:text-center whitespace-pre-line">
+                      {g.title}
+                    </span>
+                  </div>
+                  <div className="flex-1 p-5 bg-white whitespace-pre-line text-sm text-gray-600 leading-relaxed font-medium">
+                    {g.content}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          const titleLines = g.title.split('\n');
+          const mainTitle = titleLines[0];
+          const subTitle = titleLines.slice(1).join(' ');
+
+          return (
+            <div key={g.id} className="bg-white border border-gray-200 overflow-hidden shadow-md rounded-2xl">
+              {/* Title Banner */}
+              <div className="bg-[#7B2332] text-white px-6 py-4">
+                <h3 className="text-base font-black tracking-tight">{mainTitle}</h3>
+                {subTitle && <p className="text-xs font-semibold text-white/80 mt-1">{subTitle}</p>}
+              </div>
+
+              {/* Main Table Layout */}
+              <div className="divide-y divide-gray-200/80">
+                {/* 1. 수업 일정 */}
+                {parsed.schedule && (
+                  <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                      수업 일정
+                    </div>
+                    <div className="flex-1 p-4 text-xs font-semibold text-gray-700 whitespace-pre-line">
+                      {parsed.schedule}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. 강좌 특징 */}
+                {parsed.features && parsed.features.length > 0 && (
+                  <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                      강좌 특징
+                    </div>
+                    <div className="flex-1 p-4 text-xs font-semibold text-gray-600 space-y-2">
+                      {parsed.features.map((f, idx) => (
+                        <div key={idx} className="flex items-start gap-2">
+                          <span className="text-[#7B2332] mt-0.5">•</span>
+                          <span>{f.replace(/^[•\-\*]\s*/, "")}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. 교재/제공자료 */}
+                {parsed.materials && (
+                  <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                      교재/제공자료
+                    </div>
+                    <div className="flex-1 p-4 text-xs font-semibold text-gray-700 whitespace-pre-line">
+                      {parsed.materials}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. 과제/TEST */}
+                {parsed.assignments && (
+                  <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                      과제/TEST
+                    </div>
+                    <div className="flex-1 p-4 text-xs font-semibold text-gray-700 whitespace-pre-line">
+                      {parsed.assignments}
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. 관리 SYSTEM 및 CLINIC */}
+                {(parsed.management || parsed.clinic) && (
+                  <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                      관리 SYSTEM<br className="hidden md:inline" /> 및 CLINIC
+                    </div>
+                    <div className="flex-1 divide-y divide-gray-150">
+                      {parsed.management && (
+                        <div className="flex flex-col sm:flex-row p-4 gap-2 sm:gap-6">
+                          <div className="w-20 font-bold text-[#7B2332] text-xs uppercase tracking-wider flex-shrink-0 pt-0.5 whitespace-nowrap">
+                            관리
+                          </div>
+                          <div className="flex-1 text-xs font-semibold text-gray-600 whitespace-pre-line leading-relaxed">
+                            {parsed.management}
+                          </div>
+                        </div>
+                      )}
+                      {parsed.clinic && (
+                        <div className="flex flex-col sm:flex-row p-4 gap-2 sm:gap-6">
+                          <div className="w-20 font-bold text-blue-600 text-xs uppercase tracking-wider flex-shrink-0 pt-0.5 whitespace-nowrap">
+                            클리닉
+                          </div>
+                          <div className="flex-1 text-xs font-semibold text-gray-600 whitespace-pre-line leading-relaxed">
+                            {parsed.clinic}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. 회차별 내용 */}
+                {parsed.sessions && parsed.sessions.length > 0 && (
+                  <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                      회차별 내용
+                    </div>
+                    <div className="flex-1 overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <tbody>
+                          {parsed.sessions.map((s, idx) => (
+                            <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"}>
+                              <td className="p-3 font-extrabold text-[#7B2332] text-[11px] w-32 whitespace-nowrap border-b border-gray-100">
+                                {s.round}
+                              </td>
+                              <td className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-100 whitespace-pre-line leading-relaxed">
+                                {s.content}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* 7. 연계 강좌 */}
+                {parsed.nextCourse && (
+                  <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                      연계 강좌
+                    </div>
+                    <div className="flex-1 p-4 text-xs font-extrabold text-[#7B2332] whitespace-pre-line leading-relaxed">
+                      {parsed.nextCourse}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderGuidelines = (guidelineList: any[]) => {
     if (guidelineList.length === 0) return null;
     return (
@@ -796,7 +1060,7 @@ export default function Summer() {
                 <h2 className="text-2xl font-black text-gray-900">강사별 커리큘럼</h2>
               </div>
 
-              {renderGuidelines(curriculumGuidelines)}
+              {renderCurriculumGuidelines(curriculumGuidelines)}
               {renderImageGroup(curriculumImages)}
 
               {curriculumGuidelines.length === 0 && curriculumImages.length === 0 && (
