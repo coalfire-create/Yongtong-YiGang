@@ -1135,6 +1135,102 @@ async function autoRestoreTeachersAndTimetables() {
   }
 }
 
+async function ensureSummerTimetableSlotsTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS summer_timetable_slots (
+        id SERIAL PRIMARY KEY,
+        division TEXT NOT NULL DEFAULT '고2',
+        slot_label TEXT NOT NULL,
+        slot_time TEXT NOT NULL DEFAULT '',
+        mon TEXT NOT NULL DEFAULT '',
+        tue TEXT NOT NULL DEFAULT '',
+        wed TEXT NOT NULL DEFAULT '',
+        thu TEXT NOT NULL DEFAULT '',
+        fri TEXT NOT NULL DEFAULT '',
+        is_merged BOOLEAN NOT NULL DEFAULT false,
+        merged_content TEXT NOT NULL DEFAULT '',
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT now()
+      )
+    `);
+  } catch (err) {
+    console.error("Failed to ensure summer_timetable_slots table:", err);
+  }
+}
+
+async function seedSummerTimetableSlots() {
+  try {
+    await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS sat TEXT NOT NULL DEFAULT \'\'');
+    await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS sun TEXT NOT NULL DEFAULT \'\'');
+    await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS timetable_title TEXT NOT NULL DEFAULT \'\'');
+    const { rows } = await pool.query("SELECT COUNT(*) FROM summer_timetable_slots");
+    if (parseInt(rows[0].count) >= 15) return;
+    await pool.query("DELETE FROM summer_timetable_slots");
+
+    const slots = [
+      // 고2 일일 시간표
+      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'등원', slot_time:'', is_merged:true, merged_content:'월 – 금  8:30', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:0 },
+      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'TEST', slot_time:'8:30 – 9:00', is_merged:false, merged_content:'', mon:'수학 TEST', tue:'국어 TEST', wed:'수학 TEST', thu:'영어 TEST', fri:'수학 TEST', sat:'', sun:'', display_order:1 },
+      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'1교시', slot_time:'9:00 – 12:30', is_merged:false, merged_content:'',
+        mon:'수학 미적1\n실력+심화\n(이승철)\n\n수학 미적1\n기본+실력\n(서정인)',
+        tue:'수학 확통\n실력+심화\n(정석원)\n\n수학 확통\n기본+실력\n(김해인)',
+        wed:'수학 미적1\n실력+심화\n(이승철)\n\n수학 미적1\n기본+실력\n(서정인)',
+        thu:'수학 확통\n실력+심화\n(정석원)\n\n수학 확통\n기본+실력\n(김해인)',
+        fri:'수학 미적1\n실력+심화\n(이승철)\n\n수학 미적1\n기본+실력\n(서정인)', sat:'', sun:'', display_order:2 },
+      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'점심', slot_time:'12:30 – 13:30', is_merged:true, merged_content:'점심식사', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:3 },
+      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'2교시', slot_time:'13:30 – 17:00', is_merged:false, merged_content:'',
+        mon:'국어 수능\n화법과언어\n(윤지원)', tue:'국어 수능\n문학\n(윤난경)', wed:'영어 수능\n시작\n(김선덕)', thu:'국어 수능\n독서\n(이민수)', fri:'자습', sat:'', sun:'', display_order:4 },
+      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'저녁', slot_time:'17:00 – 18:30', is_merged:true, merged_content:'저녁식사 (개별)', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:5 },
+      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'3교시', slot_time:'18:30 – 22:00', is_merged:false, merged_content:'',
+        mon:'(진로선택)\n역학과에너지\n(장선균)\n18:00-21:00\n혹은 자습',
+        tue:'(진로선택)\n물질과에너지\n(윤용균)\n18:00-21:00\n혹은 자습',
+        wed:'(진로선택)\n지구시스템과학\n(최가형)\n18:00-21:00\n혹은 자습',
+        thu:'의무자습\n/ 클리닉',
+        fri:'(진로선택)\n세포와물질대사\n(황민준)\n18:00-21:00\n혹은 자습', sat:'', sun:'', display_order:6 },
+      // 고1 국어 시간표
+      { division:'고1', timetable_title:'국어 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'박소현T\n병점고1\n9:30-1', sun:'정규영T\n화성고1\n10-1', display_order:0 },
+      { division:'고1', timetable_title:'국어 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'',
+        sat:'박소현T\n수원고1\n2-5:30\n\n김현종T\n고3\n2-5', sun:'선화희T\n청명고1\n2-5\n\n박소현T\n중3\n10-1', display_order:1 },
+      { division:'고1', timetable_title:'국어 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
+        fri:'박소현T\n영덕고1\n6-9:30\n\n김홍석T\n가온고2\n6:15-9:15\n\n손자은T\n수능2\n6:30-9:30\n\n홍준석T\n고3\n6:30-10',
+        sat:'박소현T\n영덕고2\n6-9:30\n\n김현종T\n고2\n6:30-9:30\n(7/11,18)',
+        sun:'김홍석T\n가온고1\n6:30-9:30\n\n선화희T\n청명고2\n6-9', display_order:2 },
+      // 고1 영어 시간표
+      { division:'고1', timetable_title:'영어 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T\n고2수능\n9-12', sun:'', display_order:3 },
+      { division:'고1', timetable_title:'영어 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'',
+        mon:'박지원T\n영덕고1\n2-5', tue:'김유정T\n중3\n2-5', wed:'', thu:'김유정T\n중3\n2-5', fri:'', sat:'김유정T\n병점고1\n2-5', sun:'', display_order:4 },
+      { division:'고1', timetable_title:'영어 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'',
+        mon:'김연우T\n수원고1\n6-10\n\n김유정T\n영덕고1\n6:30-10',
+        tue:'김유정T\n청명고2\n6:30-9:30', wed:'', thu:'',
+        fri:'양준민T\n가온고1\n6:30-9:30\n\n데니얼T\n화성고1\n4:30-8',
+        sat:'데니얼T\n화성고1\n6:30-10\n\n양준민T\n가온고2\n6:30-9:30', sun:'', display_order:5 },
+      // 중등 과탐 시간표
+      { division:'중등', timetable_title:'과탐 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'황준우T\n중3 통과연합\n15회차 7/11\n10-1', sun:'황준우T\n고1 연합통과\n7/12 6회', display_order:0 },
+      { division:'중등', timetable_title:'과탐 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
+        fri:'유승진T (물리연합)\n중3,고1 대상\n역학특강 5회\n7/17-8/14\n2:30-5:30',
+        sat:'황준우T\n가온고 물리연합\n개강 7/11', sun:'황준우T\n병점1 통과 7/12\n(중3,조교클리닉)', display_order:1 },
+      { division:'중등', timetable_title:'과탐 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'',
+        tue:'임희민T (통과연합)\n2학기 통과 5회\n7/15 6-9\n수원고 중심',
+        wed:'변현수T (화학연합)\n중3/고1 화학 특강\n화목 7-10시',
+        thu:'나진환T\n초6,중1,2\n통합과학 12주',
+        fri:'중1,2 통과 15회\n황준우T\n7/17-11/20',
+        sat:'중1,2 물리 15회\n황준우T\n7/18~11/21', sun:'', display_order:2 },
+    ];
+
+    for (const s of slots) {
+      await pool.query(
+        `INSERT INTO summer_timetable_slots (division, timetable_title, slot_label, slot_time, is_merged, merged_content, mon, tue, wed, thu, fri, sat, sun, display_order)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+        [s.division, s.timetable_title, s.slot_label, s.slot_time, s.is_merged, s.merged_content, s.mon, s.tue, s.wed, s.thu, s.fri, s.sat, s.sun, s.display_order]
+      );
+    }
+    console.log("Successfully seeded summer timetable slots for 고2.");
+  } catch (err) {
+    console.error("Failed to seed summer_timetable_slots:", err);
+  }
+}
+
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
@@ -1190,6 +1286,8 @@ export async function registerRoutes(
   await seedSummerSchedules();
   await ensureSummerNoticesTable();
   await seedSummerNotices();
+  await ensureSummerTimetableSlotsTable();
+  await seedSummerTimetableSlots();
   await ensureBriefingEventsTable();
   await ensureTeacherImagesTable();
   await ensureTeachersTable();
@@ -1583,6 +1681,22 @@ export async function registerRoutes(
     try {
       await pool.query("DELETE FROM summer_schedules WHERE id = $1", [id]);
       res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ========== SUMMER TIMETABLE SLOTS ==========
+  app.get("/api/summer-timetable-slots", async (req, res) => {
+    const division = req.query.division as string | undefined;
+    try {
+      const query = division
+        ? "SELECT * FROM summer_timetable_slots WHERE division = $1 ORDER BY display_order ASC"
+        : "SELECT * FROM summer_timetable_slots ORDER BY division ASC, display_order ASC";
+      const result = division
+        ? await pool.query(query, [division])
+        : await pool.query(query);
+      res.json(result.rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

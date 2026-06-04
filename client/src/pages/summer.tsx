@@ -14,6 +14,86 @@ interface SummerImage {
   category?: string;
 }
 
+interface TimetableSlot {
+  id: number;
+  division: string;
+  timetable_title: string;
+  slot_label: string;
+  slot_time: string;
+  mon: string;
+  tue: string;
+  wed: string;
+  thu: string;
+  fri: string;
+  sat: string;
+  sun: string;
+  is_merged: boolean;
+  merged_content: string;
+  display_order: number;
+}
+
+function TimetableGrid({ title, slots }: { title: string; slots: TimetableSlot[] }) {
+  if (slots.length === 0) return null;
+  const hasSat = slots.some(s => s.sat);
+  const hasSun = slots.some(s => s.sun);
+  const days = [
+    { key: "mon", label: "월" },
+    { key: "tue", label: "화" },
+    { key: "wed", label: "수" },
+    { key: "thu", label: "목" },
+    { key: "fri", label: "금" },
+    ...(hasSat ? [{ key: "sat", label: "토" }] : []),
+    ...(hasSun ? [{ key: "sun", label: "일" }] : []),
+  ] as { key: keyof TimetableSlot; label: string }[];
+
+  return (
+    <div className="mb-8">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
+        <table className="w-full text-xs border-collapse" style={{ minWidth: hasSun ? 700 : hasSat ? 620 : 520 }}>
+          <thead>
+            <tr>
+              <th className="bg-[#7B2332] text-white p-2.5 text-center font-bold w-20 border-r border-red-800/30" colSpan={2}>
+                {title}
+              </th>
+              {days.map(d => (
+                <th key={d.key} className="bg-[#7B2332] text-white p-2.5 text-center font-bold border-l border-red-800/30">
+                  {d.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {slots.map((slot, i) => (
+              <tr key={slot.id} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/60"}>
+                <td className="bg-slate-100/80 border-r border-gray-200 p-2.5 align-middle text-center font-extrabold text-gray-700 whitespace-nowrap">
+                  {slot.slot_label}
+                </td>
+                <td className="bg-slate-50/80 border-r border-gray-200 p-2 align-middle text-center text-[10px] text-gray-400 whitespace-nowrap">
+                  {slot.slot_time}
+                </td>
+                {slot.is_merged ? (
+                  <td colSpan={days.length} className="p-3 text-center text-gray-600 font-semibold border-t border-gray-100">
+                    {slot.merged_content}
+                  </td>
+                ) : (
+                  days.map(d => {
+                    const val = slot[d.key] as string;
+                    return (
+                      <td key={d.key} className="p-2 text-center align-middle border-l border-gray-100 border-t border-gray-100 whitespace-pre-line leading-relaxed text-gray-700">
+                        {val || ""}
+                      </td>
+                    );
+                  })
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 const ICON_MAP: Record<string, any> = {
   Target,
   BookOpen,
@@ -290,6 +370,19 @@ export default function Summer() {
   const { data: notices = [] } = useQuery<any[]>({
     queryKey: ["/api/summer-notices"],
   });
+
+  const { data: timetableSlots = [] } = useQuery<TimetableSlot[]>({
+    queryKey: ["/api/summer-timetable-slots", activeTab],
+    queryFn: () => fetch(`/api/summer-timetable-slots?division=${encodeURIComponent(activeTab)}`).then(r => r.json()),
+  });
+
+  // Group slots by timetable_title
+  const timetableGroups = timetableSlots.reduce((acc: Record<string, TimetableSlot[]>, slot) => {
+    const key = slot.timetable_title || "시간표";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(slot);
+    return acc;
+  }, {});
 
   // Filter components by active division tab
   const filteredImages = images.filter((img) => (img.division || "중등") === activeTab);
@@ -686,10 +779,15 @@ export default function Summer() {
                 </div>
               )}
 
+              {/* 타임라인 그리드 */}
+              {Object.entries(timetableGroups).map(([title, slots]) => (
+                <TimetableGrid key={title} title={title} slots={slots} />
+              ))}
+
               {renderGuidelines(timetableGuidelines)}
               {renderImageGroup(timetableImages)}
 
-              {timetableGuidelines.length === 0 && timetableImages.length === 0 && filteredSchedules.length === 0 && (
+              {Object.keys(timetableGroups).length === 0 && timetableGuidelines.length === 0 && timetableImages.length === 0 && filteredSchedules.length === 0 && (
                 <p className="text-sm text-gray-400 text-center py-6">등록된 시간표 정보가 없습니다.</p>
               )}
             </section>
