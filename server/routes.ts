@@ -1185,161 +1185,75 @@ async function seedSummerTimetableSlots() {
     await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS sun TEXT NOT NULL DEFAULT \'\'');
     await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS timetable_title TEXT NOT NULL DEFAULT \'\'');
 
-    // Migration Check: If old subject-based G1 timetables exist, clean and re-seed G1 specifically
-    const { rows: oldG1Rows } = await pool.query(
-      "SELECT COUNT(*) FROM summer_timetable_slots WHERE division = '고1' AND timetable_title = '국어 시간표'"
+    // Migration Check: If old format slots (starting with '[') exist, clear all to trigger full re-seed
+    const { rows: oldFormatRows } = await pool.query(
+      "SELECT COUNT(*) FROM summer_timetable_slots WHERE mon LIKE '[%' OR tue LIKE '[%' OR wed LIKE '[%' OR thu LIKE '[%' OR fri LIKE '[%' OR sat LIKE '[%' OR sun LIKE '[%'"
     );
-    if (parseInt(oldG1Rows[0].count) > 0) {
-      console.log("[seedSummerTimetableSlots] Old G1 timetables detected. Re-seeding G1 by school...");
-      await pool.query("DELETE FROM summer_timetable_slots WHERE division = '고1'");
-      const g1Slots = [
-        // 화성고 시간표
-        { division:'고1', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'[국어] 정규영T\n일 10:00-13:00', display_order:10 },
-        { division:'고1', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[물리] 유승진T\n역학특강\n금 14:00-17:30', sat:'', sun:'', display_order:11 },
-        { division:'고1', timetable_title:'화성고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[영어] 데니얼T\n금 16:30-20:00\n\n[물리] 유승진T\n역학과에너지\n금 19:30-22:30', sat:'[영어] 데니얼T\n토 18:30-22:00', sun:'', display_order:12 },
-        // 가온고 시간표
-        { division:'고1', timetable_title:'가온고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:13 },
-        { division:'고1', timetable_title:'가온고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:14 },
-        { division:'고1', timetable_title:'가온고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[영어] 양준민T\n금 18:30-21:30', sat:'[통과] 변현수T\n가온고1 중심\n토 18:30-21:30', sun:'[국어] 김홍석T\n일 18:30-21:30', display_order:15 },
-        // 병점고 시간표
-        { division:'고1', timetable_title:'병점고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[국어] 박소현T\n토 09:30-13:00', sun:'', display_order:16 },
-        { division:'고1', timetable_title:'병점고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 김유정T\n토 14:00-17:00', sun:'[통과] 황준우T\n일 13:30-17:00\n\n[통과] 곽은합T\n생명의전정', display_order:17 },
-        { division:'고1', timetable_title:'병점고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:18 },
-        // 영덕고 시간표
-        { division:'고1', timetable_title:'영덕고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:19 },
-        { division:'고1', timetable_title:'영덕고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 박지원T\n월 14:00-17:00', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:20 },
-        { division:'고1', timetable_title:'영덕고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 김유정T\n월 18:30-22:00', tue:'', wed:'', thu:'', fri:'[국어] 박소현T\n금 18:00-21:30', sat:'', sun:'[통과] 황준우T\n일 18:00-22:00', display_order:21 },
-        // 수원고 시간표
-        { division:'고1', timetable_title:'수원고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:22 },
-        { division:'고1', timetable_title:'수원고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[국어] 박소현T\n토 14:00-17:30', sun:'', display_order:23 },
-        { division:'고1', timetable_title:'수원고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 김연우T\n월 18:00-22:00', tue:'[통과] 임희민T\n화 18:00-21:00', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:24 },
-        // 청명고 시간표
-        { division:'고1', timetable_title:'청명고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:25 },
-        { division:'고1', timetable_title:'청명고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'[국어] 선화희T\n일 14:00-17:00', display_order:26 },
-        { division:'고1', timetable_title:'청명고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:27 }
-      ];
-      for (const s of g1Slots) {
-        await pool.query(
-          `INSERT INTO summer_timetable_slots (division, timetable_title, slot_label, slot_time, is_merged, merged_content, mon, tue, wed, thu, fri, sat, sun, display_order)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-          [s.division, s.timetable_title, s.slot_label, s.slot_time, s.is_merged, s.merged_content, s.mon, s.tue, s.wed, s.thu, s.fri, s.sat, s.sun, s.display_order]
-        );
-      }
-    }
-
-    // Migration Check: If old '고2 썸머스쿨 시간표' exists, clean and re-seed G2 specifically
-    const { rows: oldG2Rows } = await pool.query(
-      "SELECT COUNT(*) FROM summer_timetable_slots WHERE division = '고2' AND timetable_title = '고2 썸머스쿨 시간표'"
-    );
-    if (parseInt(oldG2Rows[0].count) > 0) {
-      console.log("[seedSummerTimetableSlots] Old G2 daily schedule detected. Re-seeding G2 by school...");
-      await pool.query("DELETE FROM summer_timetable_slots WHERE division = '고2'");
-      const g2Slots = [
-        // 고2 화성고 시간표
-        { division:'고2', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:10 },
-        { division:'고2', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[화학] 장해든누리T\n2학기 물질과에너지\n금 16:30-19:30\n(5회 / 7/17)', sat:'[영어] 데니얼T\n토 14:00-17:00', sun:'', display_order:11 },
-        { division:'고2', timetable_title:'화성고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[물리] 유승진T\n역학과에너지\n금 19:30-22:30\n(5회 / 7/17)\n\n[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'', display_order:12 },
-        // 고2 가온고 시간표
-        { division:'고2', timetable_title:'가온고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:13 },
-        { division:'고2', timetable_title:'가온고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[물리] 심규원T\n역학과에너지\n토 13:30-16:30\n(5회 / 7/18)', sun:'', display_order:14 },
-        { division:'고2', timetable_title:'가온고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 김홍석T\n금 18:15-21:15\n\n[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[영어] 양준민T\n토 18:30-21:30\n\n[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'[화학] 변현수T\n고2 물질과에너지\n일 18:30-21:30\n(5회 예상)', display_order:15 },
-        // 고2 병점고 시간표
-        { division:'고2', timetable_title:'병점고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:16 },
-        { division:'고2', timetable_title:'병점고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:17 },
-        { division:'고2', timetable_title:'병점고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'', display_order:18 },
-        // 고2 영덕고 시간표
-        { division:'고2', timetable_title:'영덕고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:19 },
-        { division:'고2', timetable_title:'영덕고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:20 },
-        { division:'고2', timetable_title:'영덕고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 박소현T\n토 18:00-21:30\n\n[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'', display_order:21 },
-        // 고2 수원고 시간표
-        { division:'고2', timetable_title:'수원고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:22 },
-        { division:'고2', timetable_title:'수원고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:23 },
-        { division:'고2', timetable_title:'수원고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'', display_order:24 },
-        // 고2 청명고 시간표
-        { division:'고2', timetable_title:'청명고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:25 },
-        { division:'고2', timetable_title:'청명고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:26 },
-        { division:'고2', timetable_title:'청명고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'[영어] 김유정T\n화 18:30-21:30', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'[국어] 선화희T\n일 18:00-21:00', display_order:27 },
-        // 연합/수능 시간표
-        { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:28 },
-        { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[화학] 김종인T\n연합2 화학\n토 14:00-17:00\n(5회 / 7/18)', sun:'', display_order:29 },
-        { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)\n\n[생명] 최은석T\n고2 생명\n토 16:00-18:30', sun:'', display_order:30 }
-      ];
-      for (const s of g2Slots) {
-        await pool.query(
-          `INSERT INTO summer_timetable_slots (division, timetable_title, slot_label, slot_time, is_merged, merged_content, mon, tue, wed, thu, fri, sat, sun, display_order)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-          [s.division, s.timetable_title, s.slot_label, s.slot_time, s.is_merged, s.merged_content, s.mon, s.tue, s.wed, s.thu, s.fri, s.sat, s.sun, s.display_order]
-        );
-      }
+    if (parseInt(oldFormatRows[0].count) > 0) {
+      console.log("[seedSummerTimetableSlots] Old bracket-format slots detected. Clearing table to trigger full re-seed...");
+      await pool.query("DELETE FROM summer_timetable_slots");
     }
 
     const { rows } = await pool.query("SELECT COUNT(*) FROM summer_timetable_slots");
-    if (parseInt(rows[0].count) >= 15) return;
+    if (parseInt(rows[0].count) >= 42) return;
     await pool.query("DELETE FROM summer_timetable_slots");
 
     const slots = [
       // 고2 화성고 시간표
-      { division:'고2', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:10 },
-      { division:'고2', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[화학] 장해든누리T\n2학기 물질과에너지\n금 16:30-19:30\n(5회 / 7/17)', sat:'[영어] 데니얼T\n토 14:00-17:00', sun:'', display_order:11 },
-      { division:'고2', timetable_title:'화성고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[물리] 유승진T\n역학과에너지\n금 19:30-22:30\n(5회 / 7/17)\n\n[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'', display_order:12 },
+      { division:'고2', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T 화성고 영어 09:00-12:00', sun:'', display_order:10 },
+      { division:'고2', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'장해든누리T 화성고 화학 (5회) 16:30-19:30 [7/17]', sat:'데니얼T 화성고 영어 14:00-17:00', sun:'', display_order:11 },
+      { division:'고2', timetable_title:'화성고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'유승진T 화성고 물리 (5회) 19:30-22:30 [7/17]\n\n손자은T 화성고 국어 18:30-21:30', sat:'김현종T 화성고 국어 18:30-21:30 [7/11, 18]', sun:'', display_order:12 },
       // 고2 가온고 시간표
-      { division:'고2', timetable_title:'가온고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:13 },
-      { division:'고2', timetable_title:'가온고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[물리] 심규원T\n역학과에너지\n토 13:30-16:30\n(5회 / 7/18)', sun:'', display_order:14 },
-      { division:'고2', timetable_title:'가온고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 김홍석T\n금 18:15-21:15\n\n[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[영어] 양준민T\n토 18:30-21:30\n\n[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'[화학] 변현수T\n고2 물질과에너지\n일 18:30-21:30\n(5회 예상)', display_order:15 },
+      { division:'고2', timetable_title:'가온고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T 가온고 영어 09:00-12:00', sun:'', display_order:13 },
+      { division:'고2', timetable_title:'가온고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'심규원T 가온고 물리 (5회) 13:30-16:30 [7/18]', sun:'', display_order:14 },
+      { division:'고2', timetable_title:'가온고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'김홍석T 가온고 국어 18:15-21:15\n\n손자은T 가온고 국어 18:30-21:30', sat:'양준민T 가온고 영어 18:30-21:30\n\n김현종T 가온고 국어 18:30-21:30 [7/11, 18]', sun:'변현수T 가온고 화학 (5회 예상) 18:30-21:30', display_order:15 },
       // 고2 병점고 시간표
-      { division:'고2', timetable_title:'병점고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:16 },
+      { division:'고2', timetable_title:'병점고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T 병점고 영어 09:00-12:00', sun:'', display_order:16 },
       { division:'고2', timetable_title:'병점고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:17 },
-      { division:'고2', timetable_title:'병점고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'', display_order:18 },
+      { division:'고2', timetable_title:'병점고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'손자은T 병점고 국어 18:30-21:30', sat:'김현종T 병점고 국어 18:30-21:30 [7/11, 18]', sun:'', display_order:18 },
       // 고2 영덕고 시간표
-      { division:'고2', timetable_title:'영덕고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:19 },
+      { division:'고2', timetable_title:'영덕고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T 영덕고 영어 09:00-12:00', sun:'', display_order:19 },
       { division:'고2', timetable_title:'영덕고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:20 },
-      { division:'고2', timetable_title:'영덕고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 박소현T\n토 18:00-21:30\n\n[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'', display_order:21 },
+      { division:'고2', timetable_title:'영덕고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'손자은T 영덕고 국어 18:30-21:30', sat:'박소현T 영덕고 국어 18:00-21:30\n\n김현종T 영덕고 국어 18:30-21:30 [7/11, 18]', sun:'', display_order:21 },
       // 고2 수원고 시간표
-      { division:'고2', timetable_title:'수원고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:22 },
+      { division:'고2', timetable_title:'수원고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T 수원고 영어 09:00-12:00', sun:'', display_order:22 },
       { division:'고2', timetable_title:'수원고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:23 },
-      { division:'고2', timetable_title:'수원고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'', display_order:24 },
+      { division:'고2', timetable_title:'수원고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'손자은T 수원고 국어 18:30-21:30', sat:'김현종T 수원고 국어 18:30-21:30 [7/11, 18]', sun:'', display_order:24 },
       // 고2 청명고 시간표
-      { division:'고2', timetable_title:'청명고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:25 },
+      { division:'고2', timetable_title:'청명고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T 청명고 영어 09:00-12:00', sun:'', display_order:25 },
       { division:'고2', timetable_title:'청명고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:26 },
-      { division:'고2', timetable_title:'청명고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'[영어] 김유정T\n화 18:30-21:30', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)', sun:'[국어] 선화희T\n일 18:00-21:00', display_order:27 },
+      { division:'고2', timetable_title:'청명고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'김유정T 청명고 영어 18:30-21:30', wed:'', thu:'', fri:'손자은T 청명고 국어 18:30-21:30', sat:'김현종T 청명고 국어 18:30-21:30 [7/11, 18]', sun:'선화희T 청명고 국어 18:00-21:00', display_order:27 },
       // 연합/수능 시간표
-      { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:28 },
-      { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[화학] 김종인T\n연합2 화학\n토 14:00-17:00\n(5회 / 7/18)', sun:'', display_order:29 },
-      { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)\n\n[생명] 최은석T\n고2 생명\n토 16:00-18:30', sun:'', display_order:30 },
+      { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T 연합 영어 09:00-12:00', sun:'', display_order:28 },
+      { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'김종인T 연합 화학 (5회) 14:00-17:00 [7/18]', sun:'', display_order:29 },
+      { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'손자은T 연합 국어 18:30-21:30', sat:'최은석T 연합 생명 16:00-18:30\n\n김현종T 연합 국어 18:30-21:30 [7/11, 18]', sun:'', display_order:30 },
       // 중등 과탐 시간표
-      { division:'중등', timetable_title:'과탐 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'황준우T\n중3 통과연합\n15회차 7/11\n10-1', sun:'황준우T\n고1 연합통과\n7/12 6회', display_order:0 },
-      { division:'중등', timetable_title:'과탐 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
-        fri:'유승진T (물리연합)\n중3,고1 대상\n역학특강 5회\n7/17-8/14\n2:30-5:30',
-        sat:'황준우T\n가온고 물리연합\n개강 7/11', sun:'황준우T\n병점1 통과 7/12\n(중3,조교클리닉)', display_order:1 },
-      { division:'중등', timetable_title:'과탐 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'',
-        tue:'임희민T (통과연합)\n2학기 통과 5회\n7/15 6-9\n수원고 중심',
-        wed:'변현수T (화학연합)\n중3/고1 화학 특강\n화목 7-10시',
-        thu:'나진환T\n초6,중1,2\n통합과학 12주',
-        fri:'중1,2 통과 15회\n황준우T\n7/17-11/20',
-        sat:'중1,2 물리 15회\n황준우T\n7/18~11/21', sun:'', display_order:2 },
+      { division:'중등', timetable_title:'과탐 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'황준우T 연합 통합과학 (15회) 10:00-13:00 [7/11]', sun:'황준우T 연합 통합과학 (6회) 10:00-13:00 [7/12]', display_order:0 },
+      { division:'중등', timetable_title:'과탐 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'유승진T 연합 물리 (5회) 14:30-17:30 [7/17]', sat:'황준우T 가온고 물리 [7/11]', sun:'황준우T 병점고 통합과학 [7/12]', display_order:1 },
+      { division:'중등', timetable_title:'과탐 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'임희민T 수원고 통합과학 (5회) 18:00-21:00 [7/15]', wed:'변현수T 연합 화학 19:00-22:00', thu:'나진환T 연합 통합과학 (12주)', fri:'황준우T 연합 통합과학 (15회) [7/17]', sat:'황준우T 연합 물리 (15회) [7/18]', sun:'', display_order:2 },
       // 고1 화성고 시간표
-      { division:'고1', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'[국어] 정규영T\n일 10:00-13:00', display_order:10 },
-      { division:'고1', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[물리] 유승진T\n역학특강\n금 14:00-17:30', sat:'', sun:'', display_order:11 },
-      { division:'고1', timetable_title:'화성고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[영어] 데니얼T\n금 16:30-20:00\n\n[물리] 유승진T\n역학과에너지\n금 19:30-22:30', sat:'[영어] 데니얼T\n토 18:30-22:00', sun:'', display_order:12 },
+      { division:'고1', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'정규영T 화성고 국어 10:00-13:00', display_order:10 },
+      { division:'고1', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'유승진T 화성고 물리 (5회) 14:00-17:30 [7/17]', sat:'', sun:'', display_order:11 },
+      { division:'고1', timetable_title:'화성고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'데니얼T 화성고 영어 16:30-20:00\n\n유승진T 화성고 물리 (5회) 19:30-22:30 [7/17]', sat:'데니얼T 화성고 영어 18:30-22:00', sun:'', display_order:12 },
       // 고1 가온고 시간표
       { division:'고1', timetable_title:'가온고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:13 },
       { division:'고1', timetable_title:'가온고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:14 },
-      { division:'고1', timetable_title:'가온고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[영어] 양준민T\n금 18:30-21:30', sat:'[통과] 변현수T\n가온고1 중심\n토 18:30-21:30', sun:'[국어] 김홍석T\n일 18:30-21:30', display_order:15 },
+      { division:'고1', timetable_title:'가온고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'양준민T 가온고 영어 18:30-21:30', sat:'변현수T 가온고 통합과학 18:30-21:30', sun:'김홍석T 가온고 국어 18:30-21:30', display_order:15 },
       // 고1 병점고 시간표
-      { division:'고1', timetable_title:'병점고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[국어] 박소현T\n토 09:30-13:00', sun:'', display_order:16 },
-      { division:'고1', timetable_title:'병점고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 김유정T\n토 14:00-17:00', sun:'[통과] 황준우T\n일 13:30-17:00\n\n[통과] 곽은합T\n생명의전정', display_order:17 },
+      { division:'고1', timetable_title:'병점고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'박소현T 병점고 국어 09:30-13:00', sun:'', display_order:16 },
+      { division:'고1', timetable_title:'병점고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'김유정T 병점고 영어 14:00-17:00', sun:'황준우T 병점고 통합과학 13:30-17:00\n\n곽은합T 병점고 통합과학', display_order:17 },
       { division:'고1', timetable_title:'병점고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:18 },
       // 고1 영덕고 시간표
       { division:'고1', timetable_title:'영덕고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:19 },
-      { division:'고1', timetable_title:'영덕고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 박지원T\n월 14:00-17:00', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:20 },
-      { division:'고1', timetable_title:'영덕고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 김유정T\n월 18:30-22:00', tue:'', wed:'', thu:'', fri:'[국어] 박소현T\n금 18:00-21:30', sat:'', sun:'[통과] 황준우T\n일 18:00-22:00', display_order:21 },
+      { division:'고1', timetable_title:'영덕고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'박지원T 영덕고 영어 14:00-17:00', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:20 },
+      { division:'고1', timetable_title:'영덕고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'김유정T 영덕고 영어 18:30-22:00', tue:'', wed:'', thu:'', fri:'박소현T 영덕고 국어 18:00-21:30', sat:'', sun:'황준우T 영덕고 통합과학 18:00-22:00', display_order:21 },
       // 고1 수원고 시간표
       { division:'고1', timetable_title:'수원고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:22 },
-      { division:'고1', timetable_title:'수원고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[국어] 박소현T\n토 14:00-17:30', sun:'', display_order:23 },
-      { division:'고1', timetable_title:'수원고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'[영어] 김연우T\n월 18:00-22:00', tue:'[통과] 임희민T\n화 18:00-21:00', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:24 },
+      { division:'고1', timetable_title:'수원고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'박소현T 수원고 국어 14:00-17:30', sun:'', display_order:23 },
+      { division:'고1', timetable_title:'수원고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'김연우T 수원고 영어 18:00-22:00', tue:'임희민T 수원고 통합과학 18:00-21:00', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:24 },
       // 고1 청명고 시간표
       { division:'고1', timetable_title:'청명고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:25 },
-      { division:'고1', timetable_title:'청명고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'[국어] 선화희T\n일 14:00-17:00', display_order:26 },
+      { division:'고1', timetable_title:'청명고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'선화희T 청명고 국어 14:00-17:00', display_order:26 },
       { division:'고1', timetable_title:'청명고 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:27 }
     ];
 
