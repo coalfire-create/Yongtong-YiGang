@@ -576,13 +576,6 @@ async function seedSummerCurriculumData() {
       { division:'고1', category:'timetable', display_order:3,
         title:'영어',
         content:'[데니얼T] 화성고1\n• 금 16:30-20:00\n• 토 18:30-22:00\n\n[양준민T] 가온고1\n• 금 18:30-21:30\n\n[김유정T] 병점고1\n• 토 14:00-17:00\n\n[김연우T] 수원고1\n• 월 18:00-22:00\n\n[김유정T] 청명고1\n• 월 18:30-21:30\n\n[박지원T] 영덕고1\n• 월 18:00-22:00' },
-      // ── 고1 커리큘럼: 국어/영어 담당 강사 ──
-      { division:'고1', category:'curriculum', display_order:2,
-        title:'국어 담당',
-        content:'[정규영T] 화성고1\n[김홍석T] 가온고1\n[선화희T] 청명고1\n[박소현T] 영덕고1 / 병점고1 / 수원고1' },
-      { division:'고1', category:'curriculum', display_order:3,
-        title:'영어 담당',
-        content:'[데니얼T] 화성고1\n[양준민T] 가온고1\n[김유정T] 병점고1 / 청명고1\n[김연우T] 수원고1\n[박지원T] 영덕고1' },
       // ── 고1 프로그램 개요 ──
       { division:'고1', category:'overview', display_order:0,
         title:'국어',
@@ -1262,9 +1255,18 @@ async function seedSummerTimetableSlots() {
         mon:'', tue:'', wed:'', thu:'', fri:'',
         sat:'영어 (문브라더스T)\n고2수능 9:00-12:00\n\n영어 (양준민T)\n가온고2 6:30-9:30\n\n국어 (김현종T)\n고2 6:30-9:30\n(7/11, 18)\n\n국어 (박소현T)\n영덕고2 6:00-9:30',
         sun:'국어 (선화희T)\n청명고2 6:00-9:00', display_order:8 },
-      // 고2 물리 시간표
-      { division:'고2', timetable_title:'물리 시간표', slot_label:'물리', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
-        fri:'역학특강\n금 14:00-17:30\n(5회 / 7/17~)\n\n역학과에너지\n금 19:30-22:30\n(5회 / 7/17~)', sat:'', sun:'', display_order:7 },
+      // 고2 국어 시간표
+      { division:'고2', timetable_title:'고2 국어 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:30 },
+      { division:'고2', timetable_title:'고2 국어 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:31 },
+      { division:'고2', timetable_title:'고2 국어 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[국어] 김홍석T\n가온고2\n18:15-21:15\n\n[국어] 손자은T\n고2 수능\n18:30-21:30', sat:'[국어] 김현종T\n고2\n18:30-21:30\n(7/11, 18)\n\n[국어] 박소현T\n영덕고2\n18:00-21:30', sun:'[국어] 선화희T\n청명고2\n18:00-21:00', display_order:32 },
+      // 고2 영어 시간표
+      { division:'고2', timetable_title:'고2 영어 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:40 },
+      { division:'고2', timetable_title:'고2 영어 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 데니얼T\n화성고2\n14:00-17:00', sun:'', display_order:41 },
+      { division:'고2', timetable_title:'고2 영어 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'[영어] 김유정T\n청명고2\n18:30-21:30', wed:'', thu:'', fri:'', sat:'[영어] 양준민T\n가온고2\n18:30-21:30', sun:'', display_order:42 },
+      // 고2 과탐 시간표
+      { division:'고2', timetable_title:'고2 과탐 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:50 },
+      { division:'고2', timetable_title:'고2 과탐 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[화학] 장해든누리T\n화성고2 중심\n16:30-19:30\n(5회 / 7/17)', sat:'[물리] 심규원T\n가온고 위주\n13:30-16:30\n(5회 / 7/18)\n\n[화학] 김종인T\n연합2 화학\n14:00-17:00\n(5회 / 7/18)', sun:'', display_order:51 },
+      { division:'고2', timetable_title:'고2 과탐 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[물리] 유승진T\n화성고 중심\n19:30-22:30\n(5회 / 7/17)', sat:'[생명] 최은석T\n고2 생명\n16:00-18:30', sun:'[화학] 변현수T\n가온고 중심\n18:30-21:30\n(5회 예상)', display_order:52 },
       // 중등 과탐 시간표
       { division:'중등', timetable_title:'과탐 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'황준우T\n중3 통과연합\n15회차 7/11\n10-1', sun:'황준우T\n고1 연합통과\n7/12 6회', display_order:0 },
       { division:'중등', timetable_title:'과탐 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',

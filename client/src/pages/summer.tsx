@@ -422,7 +422,7 @@ export default function Summer() {
     return (
       <div className="space-y-8">
         {sortedNames.map((name) => (
-          <div key={name} className="space-y-4">
+          <div key={name} className="space-y-2">
             {(sortedNames.length > 1 || name !== "공통") && (
               <div className="flex items-center gap-3 border-b border-gray-100 pb-2">
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${name === "공통" ? "bg-gray-100" : "bg-[#7B2332]/10"}`}>
@@ -508,7 +508,7 @@ export default function Summer() {
         if (currentKey === "features") {
           featuresList.push(line);
         } else if (currentKey === "sessions") {
-          const match = line.match(/^(\d+회차(?:\s*\d+\/\d+\s*\([^)]+\))?)\s*[-–—:=]\s*(.+)$/) || line.match(/^(\d+회차)\s+(.+)$/);
+          const match = line.match(/^(\d+(?:회차|주차|회)(?:\s*\d+\/\d+\s*\([^)]+\))?)\s*[-–—:=.]\s*(.+)$/) || line.match(/^(\d+(?:회차|주차|회))\s+(.+)$/);
           if (match) {
             sessionList.push({ round: match[1].trim(), content: match[2].trim() });
           } else {
@@ -563,7 +563,7 @@ export default function Summer() {
             return (
               <div key={g.id} className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-2xl mb-6">
                 <div className="flex flex-col md:flex-row">
-                  <div className="w-full md:w-52 bg-slate-50/50 p-5 flex items-center justify-start md:justify-center border-b md:border-b-0 md:border-r border-gray-100">
+                  <div className="w-full md:w-40 bg-slate-50/50 p-5 flex items-center justify-start md:justify-center border-b md:border-b-0 md:border-r border-gray-100">
                     <span className="font-extrabold text-gray-800 text-sm tracking-tight text-left md:text-center whitespace-pre-line">
                       {g.title}
                     </span>
@@ -593,7 +593,7 @@ export default function Summer() {
                 {/* 1. 수업 일정 */}
                 {parsed.schedule && (
                   <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
                       수업 일정
                     </div>
                     <div className="flex-1 p-4 text-xs font-semibold text-gray-700 whitespace-pre-line">
@@ -605,7 +605,7 @@ export default function Summer() {
                 {/* 2. 강좌 특징 */}
                 {parsed.features && parsed.features.length > 0 && (
                   <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
                       강좌 특징
                     </div>
                     <div className="flex-1 p-4 text-xs font-semibold text-gray-600 space-y-2">
@@ -622,7 +622,7 @@ export default function Summer() {
                 {/* 3. 교재/제공자료 */}
                 {parsed.materials && (
                   <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
                       교재/제공자료
                     </div>
                     <div className="flex-1 p-4 text-xs font-semibold text-gray-700 whitespace-pre-line">
@@ -634,7 +634,7 @@ export default function Summer() {
                 {/* 4. 과제/TEST */}
                 {parsed.assignments && (
                   <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
                       과제/TEST
                     </div>
                     <div className="flex-1 p-4 text-xs font-semibold text-gray-700 whitespace-pre-line">
@@ -646,7 +646,7 @@ export default function Summer() {
                 {/* 5. 관리 SYSTEM 및 CLINIC */}
                 {(parsed.management || parsed.clinic) && (
                   <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
                       관리 SYSTEM<br className="hidden md:inline" /> 및 CLINIC
                     </div>
                     <div className="flex-1 divide-y divide-gray-150">
@@ -677,7 +677,7 @@ export default function Summer() {
                 {/* 6. 회차별 내용 */}
                 {parsed.sessions && parsed.sessions.length > 0 && (
                   <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
                       회차별 내용
                     </div>
                     <div className="flex-1 overflow-x-auto">
@@ -702,7 +702,7 @@ export default function Summer() {
                 {/* 7. 연계 강좌 */}
                 {parsed.nextCourse && (
                   <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-52 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
+                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
                       연계 강좌
                     </div>
                     <div className="flex-1 p-4 text-xs font-extrabold text-[#7B2332] whitespace-pre-line leading-relaxed">
@@ -724,7 +724,7 @@ export default function Summer() {
       <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-2xl mb-6">
         {guidelineList.map((g) => (
           <div key={g.id} className="flex flex-col md:flex-row border-b border-gray-100 last:border-b-0">
-            <div className="w-full md:w-52 bg-slate-50/50 p-5 flex items-center justify-start md:justify-center border-b md:border-b-0 md:border-r border-gray-100">
+            <div className="w-full md:w-40 bg-slate-50/50 p-5 flex items-center justify-start md:justify-center border-b md:border-b-0 md:border-r border-gray-100">
               <span className="font-extrabold text-gray-800 text-sm tracking-tight text-left md:text-center">
                 {g.title}
               </span>
