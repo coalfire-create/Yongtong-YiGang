@@ -585,21 +585,40 @@ export default function Summer() {
           </motion.div>
         ) : (
           <div className="space-y-20">
-            {/* 1. 프로그램 개요 (overview) */}
+            {/* 1. 모집 요강 (guideline) */}
             <section className="space-y-8">
+              <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-6 bg-[#7B2332]" />
+                  <h2 className="text-2xl font-black text-gray-900">모집 요강</h2>
+                </div>
+                <div className="text-xs font-semibold text-gray-400">
+                  2026 {activeTab === "중등" ? "중3" : activeTab} Summer School
+                </div>
+              </div>
+
+              {renderGuidelines(guidelineGuidelines)}
+              {renderImageGroup(guidelineImages)}
+
+              {guidelineGuidelines.length === 0 && guidelineImages.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-6">등록된 모집 요강 정보가 없습니다.</p>
+              )}
+            </section>
+
+            {/* 2. 프로그램 개요 (overview) */}
+            <section className="space-y-8 pt-8 border-t border-gray-100">
               <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-4">
                 <div className="w-1.5 h-6 bg-[#7B2332]" />
                 <h2 className="text-2xl font-black text-gray-900">프로그램 개요</h2>
               </div>
-              
-              {/* Highlights Section */}
+
               {filteredHighlights.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                   {filteredHighlights.map((h, idx) => {
                     const Icon = ICON_MAP[h.icon] || Target;
                     const num = String(idx + 1).padStart(2, "0");
                     return (
-                      <motion.div 
+                      <motion.div
                         key={h.id}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -623,13 +642,13 @@ export default function Summer() {
 
               {renderGuidelines(overviewGuidelines)}
               {renderImageGroup(overviewImages)}
-              
+
               {overviewGuidelines.length === 0 && overviewImages.length === 0 && filteredHighlights.length === 0 && (
                 <p className="text-sm text-gray-400 text-center py-6">등록된 개요 정보가 없습니다.</p>
               )}
             </section>
 
-            {/* 2. 고n시간표 (timetable) */}
+            {/* 3. 시간표 (timetable) */}
             <section className="space-y-8 pt-8 border-t border-gray-100">
               <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-4">
                 <div className="w-1.5 h-6 bg-[#7B2332]" />
@@ -638,13 +657,12 @@ export default function Summer() {
                 </h2>
               </div>
 
-              {/* Schedule Section */}
               {filteredSchedules.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm mb-8">
                   <div className="grid grid-cols-1">
                     {filteredSchedules.map((s, idx) => (
-                      <div 
-                        key={s.id} 
+                      <div
+                        key={s.id}
                         className={`flex flex-col sm:flex-row items-center p-5 gap-4 sm:gap-10 border-b border-gray-100 last:border-0 ${s.type === "red" ? "bg-red-50/50" : s.type === "blue" ? "bg-blue-50/50" : ""}`}
                       >
                         <div className="w-full sm:w-44 text-center sm:text-left">
@@ -676,7 +694,7 @@ export default function Summer() {
               )}
             </section>
 
-            {/* 3. 강사별 커리큘럼 (curriculum) */}
+            {/* 4. 강사별 커리큘럼 (curriculum) */}
             <section className="space-y-8 pt-8 border-t border-gray-100">
               <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-4">
                 <div className="w-1.5 h-6 bg-[#7B2332]" />
@@ -688,26 +706,6 @@ export default function Summer() {
 
               {curriculumGuidelines.length === 0 && curriculumImages.length === 0 && (
                 <p className="text-sm text-gray-400 text-center py-6">등록된 커리큘럼 정보가 없습니다.</p>
-              )}
-            </section>
-
-            {/* 4. 모집 요강 (guideline) */}
-            <section className="space-y-8 pt-8 border-t border-gray-100">
-              <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-6 bg-[#7B2332]" />
-                  <h2 className="text-2xl font-black text-gray-900">모집 요강</h2>
-                </div>
-                <div className="text-xs font-semibold text-gray-400">
-                  2026 {activeTab === "중등" ? "중3" : activeTab} Summer School
-                </div>
-              </div>
-
-              {renderGuidelines(guidelineGuidelines)}
-              {renderImageGroup(guidelineImages)}
-
-              {guidelineGuidelines.length === 0 && guidelineImages.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-6">등록된 모집 요강 정보가 없습니다.</p>
               )}
             </section>
           </div>
