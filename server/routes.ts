@@ -1232,29 +1232,6 @@ async function seedSummerTimetableSlots() {
     await pool.query("DELETE FROM summer_timetable_slots");
 
     const slots = [
-      // 고2 일일 시간표
-      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'등원', slot_time:'', is_merged:true, merged_content:'월 – 금  8:30', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:0 },
-      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'TEST', slot_time:'8:30 – 9:00', is_merged:false, merged_content:'', mon:'수학 TEST', tue:'국어 TEST', wed:'수학 TEST', thu:'영어 TEST', fri:'수학 TEST', sat:'', sun:'', display_order:1 },
-      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'1교시', slot_time:'9:00 – 12:30', is_merged:false, merged_content:'',
-        mon:'수학 미적1\n실력+심화\n(이승철)\n\n수학 미적1\n기본+실력\n(서정인)',
-        tue:'수학 확통\n실력+심화\n(정석원)\n\n수학 확통\n기본+실력\n(김해인)',
-        wed:'수학 미적1\n실력+심화\n(이승철)\n\n수학 미적1\n기본+실력\n(서정인)',
-        thu:'수학 확통\n실력+심화\n(정석원)\n\n수학 확통\n기본+실력\n(김해인)',
-        fri:'수학 미적1\n실력+심화\n(이승철)\n\n수학 미적1\n기본+실력\n(서정인)', sat:'', sun:'', display_order:2 },
-      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'점심', slot_time:'12:30 – 13:30', is_merged:true, merged_content:'점심식사', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:3 },
-      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'2교시', slot_time:'13:30 – 17:00', is_merged:false, merged_content:'',
-        mon:'국어 수능\n화법과언어\n(윤지원)', tue:'국어 수능\n문학\n(윤난경)', wed:'영어 수능\n시작\n(김선덕)', thu:'국어 수능\n독서\n(이민수)', fri:'자습', sat:'', sun:'', display_order:4 },
-      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'저녁', slot_time:'17:00 – 18:30', is_merged:true, merged_content:'저녁식사 (개별)', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:5 },
-      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'3교시', slot_time:'18:30 – 22:00', is_merged:false, merged_content:'',
-        mon:'(진로선택)\n역학과에너지\n(장선균)\n18:00-21:00\n혹은 자습',
-        tue:'(진로선택)\n물질과에너지\n(윤용균)\n18:00-21:00\n혹은 자습',
-        wed:'(진로선택)\n지구시스템과학\n(최가형)\n18:00-21:00\n혹은 자습',
-        thu:'의무자습\n/ 클리닉',
-        fri:'(진로선택)\n세포와물질대사\n(황민준)\n18:00-21:00\n혹은 자습', sat:'', sun:'', display_order:6 },
-      { division:'고2', timetable_title:'고2 썸머스쿨 시간표', slot_label:'주말 단과', slot_time:'', is_merged:false, merged_content:'',
-        mon:'', tue:'', wed:'', thu:'', fri:'',
-        sat:'영어 (문브라더스T)\n고2수능 9:00-12:00\n\n영어 (양준민T)\n가온고2 6:30-9:30\n\n국어 (김현종T)\n고2 6:30-9:30\n(7/11, 18)\n\n국어 (박소현T)\n영덕고2 6:00-9:30',
-        sun:'국어 (선화희T)\n청명고2 6:00-9:00', display_order:8 },
       // 고2 화성고 시간표
       { division:'고2', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'[영어] 문브라더스T\n고2 수능\n09:00-12:00', sun:'', display_order:10 },
       { division:'고2', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'[화학] 장해든누리T\n2학기 물질과에너지\n금 16:30-19:30\n(5회 / 7/17)', sat:'[영어] 데니얼T\n토 14:00-17:00', sun:'', display_order:11 },
