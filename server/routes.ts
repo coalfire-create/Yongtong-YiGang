@@ -524,7 +524,7 @@ async function seedSummerCurriculumData() {
     const { rows } = await pool.query(
       "SELECT COUNT(*) FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview','guideline') AND division IN ('고1', '고2')"
     );
-    if (parseInt(rows[0].count) >= 25) return; // already seeded
+    if (parseInt(rows[0].count) >= 27) return; // already seeded
 
     await pool.query("DELETE FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview','guideline') AND division IN ('고1','고2')");
 
@@ -539,10 +539,10 @@ async function seedSummerCurriculumData() {
       // ── 고1 커리큘럼 ──
       { division:'고1', category:'curriculum', display_order:0,
         title:'[물리] 유승진T\n역학특강\n고1·2 연합',
-        content:'강좌 특징: 물리학 역학파트 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test (20문항)\n관리: 현장 과제체크 / 금요일 수업 직후·토요일 저녁 Zoom 클리닉\n연계 강좌: 썸머 종강 후 – 겨울방학 물리학 특강' },
+        content:'수업 일정: 금 14:00-17:30 (총 5회 / 7/17 개강)\n강좌 특징: 물리학 역학파트 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test (20문항)\n관리: 현장 과제체크 / 금요일 수업 직후·토요일 저녁 Zoom 클리닉\n연계 강좌: 썸머 종강 후 – 겨울방학 물리학 특강\n\n[회차별 수업 내용]\n1회차 – 등가속도운동\n2회차 – 뉴턴운동법칙\n3회차 – 운동량과 충격량 / 돌림힘\n4회차 – 일과 에너지\n5회차 – 역학 전 영역 모의고사 및 총 정리' },
       { division:'고1', category:'curriculum', display_order:1,
         title:'[물리] 유승진T\n역학과에너지\n고1·2 연합',
-        content:'강좌 특징: 2학년 2학기 역학과 에너지 전범위 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test (20문항)\n관리: 현장 과제체크 / 토요일 저녁 Zoom 클리닉\n연계 강좌: 썸머 종강 후 – 2학기 중간고사 대비 역학과 에너지' },
+        content:'수업 일정: 금 19:30-22:30 (총 5회 / 7/17 개강)\n강좌 특징: 2학년 2학기 역학과 에너지 전범위 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test (20문항)\n관리: 현장 과제체크 / 토요일 저녁 Zoom 클리닉\n연계 강좌: 썸머 종강 후 – 2학기 중간고사 대비 역학과 에너지\n\n[회차별 수업 내용]\n1회차 – 힘의 평형과 포물선운동\n2회차 – 등속원운동과 케플러법칙\n3회차 – 역학적 에너지 보존과 일반 상대성이론\n4회차 – 단진동과 열역학 법칙\n5회차 – 파동' },
       // ── 고2 시간표 ──
       { division:'고2', category:'timetable', display_order:0,
         title:'[물리] 유승진T\n역학특강\n고1·2 연합',
@@ -559,10 +559,10 @@ async function seedSummerCurriculumData() {
       // ── 고2 커리큘럼 ──
       { division:'고2', category:'curriculum', display_order:0,
         title:'[물리] 유승진T\n역학특강\n고1·2 연합',
-        content:'강좌 특징: 물리학 역학파트 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test (20문항)\n관리: 현장 과제체크 / 금요일 수업 직후·토요일 저녁 Zoom 클리닉\n연계 강좌: 썸머 종강 후 – 겨울방학 물리학 특강' },
+        content:'수업 일정: 금 14:00-17:30 (총 5회 / 7/17 개강)\n강좌 특징: 물리학 역학파트 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test (20문항)\n관리: 현장 과제체크 / 금요일 수업 직후·토요일 저녁 Zoom 클리닉\n연계 강좌: 썸머 종강 후 – 겨울방학 물리학 특강\n\n[회차별 수업 내용]\n1회차 – 등가속도운동\n2회차 – 뉴턴운동법칙\n3회차 – 운동량과 충격량 / 돌림힘\n4회차 – 일과 에너지\n5회차 – 역학 전 영역 모의고사 및 총 정리' },
       { division:'고2', category:'curriculum', display_order:1,
         title:'[물리] 유승진T\n역학과에너지\n고1·2 연합',
-        content:'강좌 특징: 2학년 2학기 역학과 에너지 전범위 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test (20문항)\n관리: 현장 과제체크 / 토요일 저녁 Zoom 클리닉\n연계 강좌: 썸머 종강 후 – 2학기 중간고사 대비 역학과 에너지' },
+        content:'수업 일정: 금 19:30-22:30 (총 5회 / 7/17 개강)\n강좌 특징: 2학년 2학기 역학과 에너지 전범위 개념 + 문풀 수업\n교재/제공자료: 개념서 / 워크북 / 솔루션 + 매주 오답노트·풀이영상\n과제/TEST: 워크북 매주 50문항 / 직전 수업 복습 Test (20문항)\n관리: 현장 과제체크 / 토요일 저녁 Zoom 클리닉\n연계 강좌: 썸머 종강 후 – 2학기 중간고사 대비 역학과 에너지\n\n[회차별 수업 내용]\n1회차 – 힘의 평형과 포물선운동\n2회차 – 등속원운동과 케플러법칙\n3회차 – 역학적 에너지 보존과 일반 상대성이론\n4회차 – 단진동과 열역학 법칙\n5회차 – 파동' },
       { division:'고2', category:'curriculum', display_order:2,
         title:'[영어] 문브라더스T\n독해의 올인원\n고2',
         content:'강좌 특징: 학생별 약점 분석 시스템 + 실전 능력 극대화를 통한 수능 영어 완성\n교재: 독해의 올인원 / 단어전쟁 50 / 심폐소생영문법 / 신세계 구문\n과제: 올인원 수업 복습 / 매주 신세계 구문 2강 / 문브라더스 단어앱 100개씩 / 구문앱 하루 5구문 / Voyage 주간지\nTEST: 지난 수업 주관식 피드백 / 단어 TEST / 학생별 개별 피드백\n관리: 문브라더스 앱으로 단어·구문·계획·피드백 통합 관리\n\n핵심 포인트\n① 올해 평가원 핵심 어휘·표현·논리 흐름 완벽 정리\n② 30번 이후 고난도 문항 실전 대응력 극대화\n③ 학생별 맞춤 어휘 관리 (문브라더스 단어 앱)\n④ 매주 개별 피드백으로 약점 분석 + 학습 방향 교정\n⑤ 두 선생님의 직접 관리 및 동기부여' },
@@ -1188,6 +1188,12 @@ async function seedSummerTimetableSlots() {
         wed:'(진로선택)\n지구시스템과학\n(최가형)\n18:00-21:00\n혹은 자습',
         thu:'의무자습\n/ 클리닉',
         fri:'(진로선택)\n세포와물질대사\n(황민준)\n18:00-21:00\n혹은 자습', sat:'', sun:'', display_order:6 },
+      // 고1 물리 시간표
+      { division:'고1', timetable_title:'물리 시간표', slot_label:'물리', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
+        fri:'역학특강\n금 14:00-17:30\n(5회 / 7/17~)\n\n역학과에너지\n금 19:30-22:30\n(5회 / 7/17~)', sat:'', sun:'', display_order:6 },
+      // 고2 물리 시간표
+      { division:'고2', timetable_title:'물리 시간표', slot_label:'물리', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'',
+        fri:'역학특강\n금 14:00-17:30\n(5회 / 7/17~)\n\n역학과에너지\n금 19:30-22:30\n(5회 / 7/17~)', sat:'', sun:'', display_order:7 },
       // 고1 국어 시간표
       { division:'고1', timetable_title:'국어 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'박소현T\n병점고1\n9:30-1', sun:'정규영T\n화성고1\n10-1', display_order:0 },
       { division:'고1', timetable_title:'국어 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'',
