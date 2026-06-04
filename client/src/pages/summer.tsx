@@ -784,10 +784,7 @@ export default function Summer() {
                 <TimetableGrid key={title} title={title} slots={slots} />
               ))}
 
-              {renderGuidelines(timetableGuidelines)}
-              {renderImageGroup(timetableImages)}
-
-              {Object.keys(timetableGroups).length === 0 && timetableGuidelines.length === 0 && timetableImages.length === 0 && filteredSchedules.length === 0 && (
+              {Object.keys(timetableGroups).length === 0 && filteredSchedules.length === 0 && (
                 <p className="text-sm text-gray-400 text-center py-6">등록된 시간표 정보가 없습니다.</p>
               )}
             </section>
