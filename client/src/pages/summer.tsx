@@ -610,9 +610,8 @@ export default function Summer() {
                     </div>
                     <div className="flex-1 p-4 text-xs font-semibold text-gray-600 space-y-2">
                       {parsed.features.map((f, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <span className="text-[#7B2332] mt-0.5">•</span>
-                          <span>{f.replace(/^[•\-\*]\s*/, "")}</span>
+                        <div key={idx}>
+                          {f.replace(/^[•\-\*]\s*/, "")}
                         </div>
                       ))}
                     </div>
@@ -685,7 +684,7 @@ export default function Summer() {
                         <tbody>
                           {parsed.sessions.map((s, idx) => (
                             <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"}>
-                              <td className="p-3 font-extrabold text-[#7B2332] text-[11px] w-32 whitespace-nowrap border-b border-gray-100">
+                              <td className="p-3 font-extrabold text-[#7B2332] text-[11px] w-20 whitespace-nowrap border-b border-gray-100">
                                 {s.round}
                               </td>
                               <td className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-100 whitespace-pre-line leading-relaxed">
