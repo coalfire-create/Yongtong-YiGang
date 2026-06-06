@@ -987,13 +987,13 @@ async function seedFilterTabs() {
 
 async function autoRestoreTeachersAndTimetables() {
   try {
-    console.log("[autoRestore] Checking if teachers Kwon So-young and Jung Seung-jun exist...");
+    console.log("[autoRestore] Checking if teachers exist in the database...");
     
     // 1. Get teachers
     const { data: existingTeachers, error: fetchErr } = await supabase
       .from("teachers")
       .select("id, name")
-      .in("name", ["정승준", "권소영"]);
+      .in("name", ["정승준", "권소영", "최주용", "임서원", "황해룡"]);
       
     if (fetchErr) {
       console.error("[autoRestore] Error fetching teachers from Supabase:", fetchErr);
@@ -1002,6 +1002,9 @@ async function autoRestoreTeachersAndTimetables() {
     
     let soyoung = existingTeachers?.find((t: any) => t.name === "권소영");
     let seungjun = existingTeachers?.find((t: any) => t.name === "정승준");
+    let juyong = existingTeachers?.find((t: any) => t.name === "최주용");
+    let seowon = existingTeachers?.find((t: any) => t.name === "임서원");
+    let haeryong = existingTeachers?.find((t: any) => t.name === "황해룡");
     
     // 2. Insert Kwon So-young if missing
     if (!soyoung) {
@@ -1051,6 +1054,81 @@ async function autoRestoreTeachersAndTimetables() {
       }
     } else {
       console.log("[autoRestore] Jung Seung-jun exists with ID:", seungjun?.id);
+    }
+
+    // 3b. Insert Choi Ju-yong if missing
+    if (!juyong) {
+      console.log("[autoRestore] Choi Ju-yong is missing. Inserting...");
+      const { data: newJuyong, error: insertJuyongErr } = await supabase
+        .from("teachers")
+        .insert({
+          name: "최주용",
+          subject: "고등관::수학",
+          description: "현) 영통이강학원 고등부 수학 강사\n전) 대치동 고등부 수학 전문 강사\n최상위권을 확실하게 만드는 최상위권 전문반",
+          image_url: "/images/teachers/choi-juyong.png",
+          display_order: 8
+        })
+        .select()
+        .single();
+        
+      if (insertJuyongErr) {
+        console.error("[autoRestore] Error inserting Choi Ju-yong:", insertJuyongErr);
+      } else {
+        juyong = newJuyong;
+        console.log("[autoRestore] Choi Ju-yong successfully restored with ID:", juyong?.id);
+      }
+    } else {
+      console.log("[autoRestore] Choi Ju-yong exists with ID:", juyong?.id);
+    }
+
+    // 3c. Insert Lim Seo-won if missing
+    if (!seowon) {
+      console.log("[autoRestore] Lim Seo-won is missing. Inserting...");
+      const { data: newSeowon, error: insertSeowonErr } = await supabase
+        .from("teachers")
+        .insert({
+          name: "임서원",
+          subject: "고등관::수학",
+          description: "현) 영통이강학원 고등부 수학 강사\n기초부터 확실히 잡는 개념 및 성적 상승 기반 구축",
+          image_url: "/images/teachers/lim-seowon.png",
+          display_order: 12
+        })
+        .select()
+        .single();
+        
+      if (insertSeowonErr) {
+        console.error("[autoRestore] Error inserting Lim Seo-won:", insertSeowonErr);
+      } else {
+        seowon = newSeowon;
+        console.log("[autoRestore] Lim Seo-won successfully restored with ID:", seowon?.id);
+      }
+    } else {
+      console.log("[autoRestore] Lim Seo-won exists with ID:", seowon?.id);
+    }
+
+    // 3d. Insert Hwang Hae-ryong if missing
+    if (!haeryong) {
+      console.log("[autoRestore] Hwang Hae-ryong is missing. Inserting...");
+      const { data: newHaeryong, error: insertHaeryongErr } = await supabase
+        .from("teachers")
+        .insert({
+          name: "황해룡",
+          subject: "고등관::수학",
+          description: "현) 영통이강학원 고등부 수학 강사\n전) 대치동 고등부 수학 전문 강사\n성적 상승을 이끌어내는 실전 응용 및 오답 관리",
+          image_url: "/images/teachers/hwang-haeryong.png",
+          display_order: 11
+        })
+        .select()
+        .single();
+        
+      if (insertHaeryongErr) {
+        console.error("[autoRestore] Error inserting Hwang Hae-ryong:", insertHaeryongErr);
+      } else {
+        haeryong = newHaeryong;
+        console.log("[autoRestore] Hwang Hae-ryong successfully restored with ID:", haeryong?.id);
+      }
+    } else {
+      console.log("[autoRestore] Hwang Hae-ryong exists with ID:", haeryong?.id);
     }
     
     // 4. Restore timetables

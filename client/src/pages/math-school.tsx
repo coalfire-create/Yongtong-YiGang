@@ -37,6 +37,7 @@ const CLASS_INFO = [
     grade: "고2",
     classes: [
       { name: "S반", teacher: "최주용T", image: "/images/teachers/choi-juyong.png", description: "최상위권을 확실하게 만드는 최상위권 전문반", highlight: true },
+      { name: "A1반", teacher: "황해룡T", image: "/images/teachers/hwang-haeryong.png", description: "성적 상승을 이끌어내는 실전 응용 및 오답 관리", highlight: false },
       { name: "A1반", teacher: "권소영T", image: "/images/teachers/kwon-soyoung.png", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
       { name: "A2반", teacher: "임서원T", image: "/images/teachers/lim-seowon.png", description: "기초부터 확실히 잡는 개념 및 성적 상승 기반 구축", highlight: false },
     ]
