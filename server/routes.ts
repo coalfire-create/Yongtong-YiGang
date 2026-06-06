@@ -524,7 +524,7 @@ async function seedSummerCurriculumData() {
     const { rows } = await pool.query(
       "SELECT COUNT(*) FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview','guideline') AND division IN ('고1', '고2')"
     );
-    if (parseInt(rows[0].count) >= 29) return; // already seeded
+    if (parseInt(rows[0].count) > 0) return; // already seeded
 
     await pool.query("DELETE FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview','guideline') AND division IN ('고1','고2')");
 
@@ -596,22 +596,7 @@ async function seedSummerCurriculumData() {
       { division:'고2', category:'guideline', display_order:3,
         title:'교습비',
         content:'1,770,000 (17일) (식비/교재비/자습관 비용 별도)\n※ 과학 (진로선택) 과목 추가 시 단과 수강료의 30% 할인\n\n중도 환불 시 교육청 환불 기준에 준함\n- 시작 후부터 1/3 경과 전까지: 2/3 환불\n- 1/3 경과 후부터 1/2 경과 전까지: 1/2 환불\n- 1/2 경과 이후: 환불 불가' },
-      // ── 고2 프로그램 개요 ──
-      { division:'고2', category:'overview', display_order:0,
-        title:'모닝 TEST',
-        content:'• 데일리 과목별 모닝 리뷰 TEST 진행' },
-      { division:'고2', category:'overview', display_order:1,
-        title:'수업 구성',
-        content:'• 국어: 문학 / 독서 / 화법과 언어\n• 수학: 미적분1 / 확률과 통계\n• 영어\n• (선택) 과학 진로선택: 역학과 에너지 / 물질과 에너지 / 세포와 물질대사 / 지구시스템과학' },
-      { division:'고2', category:'overview', display_order:2,
-        title:'자습',
-        content:'• 당일 학습 내용 복습 + 과제 해결 / 전문 관리 조교 밀착 관리' },
-      { division:'고2', category:'overview', display_order:3,
-        title:'클리닉',
-        content:'• 과목별/강사별 별도 진행 (개별 커리큘럼 참고)' },
-      { division:'고2', category:'overview', display_order:4,
-        title:'썸머 재원생\n프리미엄 특강',
-        content:'• 주제: 미리 준비하는 SKY 입시 전략\n• 대상: 학생 및 학부모\n• 일정: 추후 공지' },
+
       // ── 고2 시간표: 강사진 + 주간 스케줄 ──
       { division:'고2', category:'timetable', display_order:4,
         title:'강사진',
@@ -1293,7 +1278,7 @@ async function seedSummerTimetableSlots() {
     }
 
     const { rows } = await pool.query("SELECT COUNT(*) FROM summer_timetable_slots");
-    if (parseInt(rows[0].count) >= 47) return;
+    if (parseInt(rows[0].count) > 0) return;
     await pool.query("DELETE FROM summer_timetable_slots");
 
     const slots = [
