@@ -1273,7 +1273,7 @@ async function seedSummerTimetableSlots() {
     }
 
     const { rows } = await pool.query("SELECT COUNT(*) FROM summer_timetable_slots");
-    if (parseInt(rows[0].count) >= 42) return;
+    if (parseInt(rows[0].count) >= 47) return;
     await pool.query("DELETE FROM summer_timetable_slots");
 
     const slots = [
@@ -1305,10 +1305,39 @@ async function seedSummerTimetableSlots() {
       { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'문브라더스T 연합 영어 (5회) 09:00-12:00 [7/18]', sun:'', display_order:28 },
       { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'김종인T 연합 화학 (5회) 14:00-17:00 [7/18]', sun:'', display_order:29 },
       { division:'고2', timetable_title:'연합/수능 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'손자은T 연합 국어 (5회) 18:30-21:30 [7/17]', sat:'최은석T 연합 생명 (5회) 16:00-18:30 [7/18]\n\n김현종T 연합 국어 (5회) 18:30-21:30 [7/11, 18]', sun:'', display_order:30 },
-      // 중등 과탐 시간표
-      { division:'중등', timetable_title:'과탐 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'황준우T 연합 통합과학 (15회) 10:00-13:00 [7/11]', sun:'황준우T 연합 통합과학 (6회) 10:00-13:00 [7/12]', display_order:0 },
-      { division:'중등', timetable_title:'과탐 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'유승진T 연합 물리 (5회) 14:30-17:30 [7/17]', sat:'황준우T 가온고 물리 (5회) [7/11]', sun:'황준우T 병점고 통합과학 (5회) [7/12]', display_order:1 },
-      { division:'중등', timetable_title:'과탐 시간표', slot_label:'저녁', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'임희민T 수원고 통합과학 (5회) 18:00-21:00 [7/15]', wed:'변현수T 연합 화학 (5회) 19:00-22:00 [7/15]', thu:'나진환T 연합 통합과학 (12주) [7/16]', fri:'황준우T 연합 통합과학 (15회) [7/17]', sat:'황준우T 연합 물리 (15회) [7/18]', sun:'', display_order:2 },
+      // 중등 중3 썸머 시간표
+      { division:'중등', timetable_title:'중3 썸머 시간표', slot_label:'등원/자습준비', slot_time:'8:00-8:40', is_merged:false, merged_content:'', mon:'등원 및 자습준비', tue:'등원 및 자습준비', wed:'등원 및 자습준비', thu:'등원 및 자습준비', fri:'등원 및 자습준비', sat:'자습없음', sun:'자습없음', display_order:0 },
+      { division:'중등', timetable_title:'중3 썸머 시간표', slot_label:'단어테스트', slot_time:'8:40-9:00', is_merged:false, merged_content:'', mon:'영단어테스트 18회', tue:'영단어테스트 18회', wed:'영단어테스트 18회', thu:'영단어테스트 18회', fri:'영단어테스트 18회', sat:'자습없음', sun:'자습없음', display_order:1 },
+      { division:'중등', timetable_title:'중3 썸머 시간표', slot_label:'오전수업', slot_time:'09:00-12:30', is_merged:false, merged_content:'', 
+        mon:'공수1 기본실력 박종윤T\n월수금 9-1230\n7/22개강 10회\n대상: 0.5~1회독\n특강 이후 정규반 월수6-10\n대수기본 > 미적분1\n\n공수1 기본 이재원T\n월수금 9-1230\n7/22개강 10회\n대상: 0회독\n특강 이후 정규반 화목6-10\n공수1+2 실력 > 대수기본', 
+        tue:'공수2 기본실력 박종윤T\n화목 9-1230\n7/23개강 8회\n\n공수2 기본 이재원T\n화목 9-1230\n7/23개강 8회\n\n공수2 실력심화 최주용T\n화목 9-1230\n7/23개강 10회\n7회까지 화목\n8회부터 일6-930 정규수업', 
+        wed:'공수1 기본실력 박종윤T\n월수금 9-1230\n7/22개강 10회\n\n공수1 기본 이재원T\n월수금 9-1230\n7/22개강 10회', 
+        thu:'공수2 기본실력 박종윤T\n화목 9-1230\n7/23개강 8회\n\n공수2 기본 이재원T\n화목 9-1230\n7/23개강 8회\n\n공수2 실력심화 최주용T\n화목 9-1230\n7/23개강 10회\n7회까지 화목\n8회부터 일6-930 정규수업', 
+        fri:'공수1 기본실력 박종윤T\n월수금 9-1230\n7/22개강 10회\n\n공수1 기본 이재원T\n월수금 9-1230\n7/22개강 10회', 
+        sat:'중3 통과(정규) 황준우T\n7/11(토) 개강 15회\n(10시~13시)', 
+        sun:'박소현쌤 중3 시즌별 커리\n(7월부터~12월까지 중간에 내신휴강있음)\n시즌 1 : 현대시 + 필수 현대 문법\n시즌 2 : 고전시\n시즌 3 : 현대 소설 + 고전 소설', 
+        display_order:2 },
+      { division:'중등', timetable_title:'중3 썸머 시간표', slot_label:'점심식사', slot_time:'12:30-1:30', is_merged:true, merged_content:'점심식사', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:3 },
+      { division:'중등', timetable_title:'중3 썸머 시간표', slot_label:'오후수업', slot_time:'1:30-17:00', is_merged:false, merged_content:'', 
+        mon:'영어 박지원T\n1:30-17:00\n7/27(금) 개강~8/17까지\n4회', 
+        tue:'김유정 영어\n7/23-8/13\n7회(2-5시)\n\n직클(월화수목):\n박종윤/이재원/(월화수목금)최주용/권소영', 
+        wed:'직클(월화수목):\n박종윤/이재원/(월화수목금)최주용/권소영', 
+        thu:'김유정 영어\n7/23-8/13\n7회(2-5시)\n\n직클(월화수목):\n박종윤/이재원/(월화수목금)최주용/권소영', 
+        fri:'김홍석 국어 2-5시\n7/24(금)-8/14\n현대시+문법4회\n\n유승진 역학 5회\n7/17-8/14 2:30-5:30', 
+        sat:'중3 물리(정규) 황준우T\n7/11(토) 개강 15회\n(2-5시)', 
+        sun:'국어(정규) 박소현T\n7/12(일) 개강 (2-5시)\n상세커리는 위에', 
+        display_order:4 },
+      { division:'중등', timetable_title:'중3 썸머 시간표', slot_label:'저녁식사', slot_time:'17:00-18:00', is_merged:true, merged_content:'저녁식사', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'', display_order:5 },
+      { division:'중등', timetable_title:'중3 썸머 시간표', slot_label:'저녁수업', slot_time:'18:00-21:30', is_merged:false, merged_content:'', 
+        mon:'자습&숙제\n1회 고교선택 한노아소장님 25분 무료 컨설팅', 
+        tue:'변현수T 7/21~8/13\n예비고1 화학 특강 8회\n화목 7-10시', 
+        wed:'수학모의고사\n(18:00~18:50) 3회\n(7/29, 8/5, 8/12)\n일반고 기출 +\n화가병 기출 +\n전사고 기출', 
+        thu:'변현수T\n예비고1 화학 특강 8회\n화목 7-10시\n\n자습&숙제\n1회 고교선택 한노아소장님 25분 무료 컨설팅', 
+        fri:'장해든누리 T(화학연합)\n중3 고1 개정화학 선행\n화학반응식과 몰 1, 중화반응 4단원\n5회 / 7/17 7-10', 
+        sat:'권소영 공수1(실력/심화)\n토요일 6-9:30\n이후 정규로 (토 6-9:30 이어짐)', 
+        sun:'공수1(실력/심화) 권소영T\n7/25(토) 개강 / 토일 6-9:30 / 9회\n\n공수2(실력/심화) 최주용T\n7/23(목) 개강 / 8,9,10회(8회부터 일)\n이후 정규로 (일 6-9:30 이어짐)', 
+        display_order:6 },
+      { division:'중등', timetable_title:'중3 썸머 시간표', slot_label:'자기점검/하원', slot_time:'21:30-22:00', is_merged:false, merged_content:'', mon:'자기점검 및 하원', tue:'자기점검 및 하원', wed:'자기점검 및 하원', thu:'자기점검 및 하원', fri:'자기점검 및 하원', sat:'없음', sun:'없음', display_order:7 },
       // 고1 화성고 시간표
       { division:'고1', timetable_title:'화성고 시간표', slot_label:'오전', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'', sat:'', sun:'정규영T 화성고 국어 (5회) 10:00-13:00 [7/17]', display_order:10 },
       { division:'고1', timetable_title:'화성고 시간표', slot_label:'오후', slot_time:'', is_merged:false, merged_content:'', mon:'', tue:'', wed:'', thu:'', fri:'유승진T 화성고 물리 (5회) 14:00-17:30 [7/17]', sat:'', sun:'', display_order:11 },
