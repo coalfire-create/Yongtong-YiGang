@@ -692,8 +692,8 @@ export default function Summer() {
                     </div>
                     <div className="flex-1 divide-y divide-gray-150">
                       {parsed.management && (
-                        <div className="flex flex-col sm:flex-row p-4 gap-2 sm:gap-6">
-                          <div className="w-20 font-bold text-[#7B2332] text-xs uppercase tracking-wider flex-shrink-0 pt-0.5 whitespace-nowrap">
+                        <div className="flex flex-col sm:flex-row p-4 gap-2 sm:gap-3">
+                          <div className="w-14 font-bold text-[#7B2332] text-xs uppercase tracking-wider flex-shrink-0 pt-0.5 whitespace-nowrap">
                             관리
                           </div>
                           <div className="flex-1 text-xs font-semibold text-gray-600 whitespace-pre-line leading-relaxed">
@@ -702,8 +702,8 @@ export default function Summer() {
                         </div>
                       )}
                       {parsed.clinic && (
-                        <div className="flex flex-col sm:flex-row p-4 gap-2 sm:gap-6">
-                          <div className="w-20 font-bold text-blue-600 text-xs uppercase tracking-wider flex-shrink-0 pt-0.5 whitespace-nowrap">
+                        <div className="flex flex-col sm:flex-row p-4 gap-2 sm:gap-3">
+                          <div className="w-14 font-bold text-blue-600 text-xs uppercase tracking-wider flex-shrink-0 pt-0.5 whitespace-nowrap">
                             클리닉
                           </div>
                           <div className="flex-1 text-xs font-semibold text-gray-600 whitespace-pre-line leading-relaxed">
