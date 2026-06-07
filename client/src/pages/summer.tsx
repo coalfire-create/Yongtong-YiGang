@@ -325,11 +325,11 @@ function ParsedNoticeCard({ title, content, date }: { title: string; content: st
 
 export default function Summer() {
   const [location] = useLocation();
-  const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2" | "고3">(() => {
+  const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2">(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
-      if (tab === "중등" || tab === "고1" || tab === "고2" || tab === "고3") {
+      if (tab === "중등" || tab === "고1" || tab === "고2") {
         return tab;
       }
     }
@@ -341,8 +341,8 @@ export default function Summer() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
-      if (tab === "중등" || tab === "고1" || tab === "고2" || tab === "고3") {
-        setActiveTab(tab as any);
+      if (tab === "중등" || tab === "고1" || tab === "고2") {
+        setActiveTab(tab);
       }
     }
   }, [location]);
@@ -786,7 +786,7 @@ export default function Summer() {
         {/* Tab Switcher */}
         <div className="flex justify-center pt-6">
           <div className="inline-flex p-1.5 bg-gray-100/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-sm">
-            {(["중등", "고1", "고2", "고3"] as const).map((tab) => {
+            {(["중등", "고1", "고2"] as const).map((tab) => {
               const active = activeTab === tab;
               return (
                 <button
