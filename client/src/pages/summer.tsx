@@ -52,7 +52,7 @@ function TimetableGrid({ title, slots }: { title: string; slots: TimetableSlot[]
         <table className="w-full text-xs border-collapse" style={{ minWidth: hasSun ? 700 : hasSat ? 620 : 520 }}>
           <thead>
             <tr>
-              <th className="bg-[#7B2332] text-white p-2.5 text-center font-bold w-20 border-r border-red-800/30" colSpan={2}>
+              <th className="bg-[#7B2332] text-white p-2.5 text-center font-bold whitespace-nowrap px-4 border-r border-red-800/30" colSpan={2}>
                 {title}
               </th>
               {days.map(d => (
@@ -391,16 +391,58 @@ export default function Summer() {
   const filteredSchedules = schedules.filter((s) => s.division === activeTab);
   const filteredNotices = notices.filter((n) => n.division === activeTab && n.is_active);
 
+  const sortCurriculum = <T extends any>(items: T[]): T[] => {
+    return [...items].sort((a, b) => {
+      const getSubject = (str: string) => {
+        if (!str) return "기타";
+        const s = str.toLowerCase();
+        if (s.includes("국어")) return "국어";
+        if (s.includes("영어")) return "영어";
+        if (s.includes("수학") || s.includes("공수") || s.includes("미적") || s.includes("확통") || s.includes("대수")) return "수학";
+        if (s.includes("물리") || s.includes("화학") || s.includes("생명") || s.includes("지학") || s.includes("통과") || s.includes("과학") || s.includes("탐구")) return "탐구";
+        return "기타";
+      };
+
+      const subjA = getSubject((a.title || a.teacher_name || "") + " " + (a.content || ""));
+      const subjB = getSubject((b.title || b.teacher_name || "") + " " + (b.content || ""));
+
+      let order = ["수학", "국어", "영어", "탐구", "기타"];
+      if (activeTab === "고3") {
+        order = ["국어", "영어", "수학", "탐구", "기타"];
+      }
+
+      const orderA = order.indexOf(subjA);
+      const orderB = order.indexOf(subjB);
+
+      if (orderA !== orderB) return orderA - orderB;
+
+      if (subjA === "수학") {
+        const getMathLevel = (str: string) => {
+          const s = str.toLowerCase();
+          if (s.includes("s반")) return 1;
+          if (s.includes("a1반") || s.includes("a1")) return 2;
+          if (s.includes("a2반") || s.includes("a2")) return 3;
+          return 4;
+        };
+        const levelA = getMathLevel((a.title || "") + " " + (a.content || ""));
+        const levelB = getMathLevel((b.title || "") + " " + (b.content || ""));
+        if (levelA !== levelB) return levelA - levelB;
+      }
+
+      return (a.display_order || 0) - (b.display_order || 0);
+    });
+  };
+
   // Divide guidelines by category
   const overviewGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'overview');
   const timetableGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'timetable');
-  const curriculumGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'curriculum');
+  const curriculumGuidelines = sortCurriculum(filteredGuidelines.filter(g => (g.category || 'guideline') === 'curriculum'));
   const guidelineGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'guideline');
 
   // Divide images by category
   const overviewImages = filteredImages.filter(img => (img.category || 'curriculum') === 'overview');
   const timetableImages = filteredImages.filter(img => (img.category || 'curriculum') === 'timetable');
-  const curriculumImages = filteredImages.filter(img => (img.category || 'curriculum') === 'curriculum');
+  const curriculumImages = sortCurriculum(filteredImages.filter(img => (img.category || 'curriculum') === 'curriculum'));
   const guidelineImages = filteredImages.filter(img => (img.category || 'curriculum') === 'guideline');
 
   const renderImageGroup = (imgList: SummerImage[]) => {
@@ -1047,7 +1089,10 @@ export default function Summer() {
                 <TimetableGrid key={title} title={title} slots={slots} />
               ))}
 
-              {Object.keys(timetableGroups).length === 0 && filteredSchedules.length === 0 && (
+              {renderGuidelines(timetableGuidelines)}
+              {renderImageGroup(timetableImages)}
+
+              {Object.keys(timetableGroups).length === 0 && filteredSchedules.length === 0 && timetableGuidelines.length === 0 && timetableImages.length === 0 && (
                 <p className="text-sm text-gray-400 text-center py-6">등록된 시간표 정보가 없습니다.</p>
               )}
             </section>
