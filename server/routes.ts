@@ -519,7 +519,7 @@ async function ensureSummerGuidelinesTable() {
   }
 }
 
-async function seedSummerCurriculumData() {
+export async function seedSummerCurriculumData() {
   try {
     const { rows } = await pool.query(
       "SELECT COUNT(*) FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview','guideline') AND division IN ('고1', '고2')"
@@ -1236,7 +1236,7 @@ async function ensureSummerTimetableSlotsTable() {
   }
 }
 
-async function seedSummerTimetableSlots() {
+export async function seedSummerTimetableSlots() {
   try {
     await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS sat TEXT NOT NULL DEFAULT \'\'');
     await pool.query('ALTER TABLE summer_timetable_slots ADD COLUMN IF NOT EXISTS sun TEXT NOT NULL DEFAULT \'\'');
@@ -1664,7 +1664,7 @@ export async function registerRoutes(
     try {
       const { rows } = await pool.query(
         "UPDATE summer_guidelines SET title = COALESCE($1, title), content = COALESCE($2, content), division = COALESCE($3, division), category = COALESCE($4, category) WHERE id = $5 RETURNING *",
-        [title, content, division, category, id]
+        [title ?? null, content ?? null, division ?? null, category ?? null, id]
       );
       if (rows.length === 0) return res.status(404).json({ error: "존재하지 않는 가이드라인" });
       res.json(rows[0]);
