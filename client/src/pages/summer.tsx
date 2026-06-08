@@ -72,14 +72,14 @@ function TimetableGrid({ title, slots }: { title: string; slots: TimetableSlot[]
                   {slot.slot_time}
                 </td>
                 {slot.is_merged ? (
-                  <td colSpan={days.length} className="p-3 text-center text-gray-600 font-semibold border-t border-gray-100">
+                  <td colSpan={days.length} className="p-3 text-center text-gray-600 font-semibold border-t border-gray-100 break-keep break-words">
                     {slot.merged_content}
                   </td>
                 ) : (
                   days.map(d => {
                     const val = slot[d.key] as string;
                     return (
-                      <td key={d.key} className="p-2 text-center align-middle border-l border-gray-100 border-t border-gray-100 whitespace-pre-line leading-relaxed text-gray-700">
+                      <td key={d.key} className="p-2 text-center align-middle border-l border-gray-100 border-t border-gray-100 whitespace-pre-line leading-relaxed text-gray-700 break-keep break-words">
                         {val || ""}
                       </td>
                     );
@@ -248,8 +248,8 @@ function ParsedNoticeCard({ title, content, date }: { title: string; content: st
                 className={`p-6 rounded-2xl border ${colorClass.border} ${colorClass.bg} space-y-4`}
               >
                 <div className="flex items-center justify-between pb-2 border-b border-gray-200/50">
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-0.5 text-white text-[11px] font-bold rounded ${colorClass.badge}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`px-2.5 py-0.5 text-white text-[11px] font-bold rounded break-keep break-words ${colorClass.badge}`}>
                       {cls.className}
                     </span>
                     {cls.teachers && (
@@ -336,6 +336,7 @@ export default function Summer() {
     return "중등";
   });
   const [activeSubTab, setActiveSubTab] = useState<"info" | "notice">("info");
+  const [curriculumSubjectFilter, setCurriculumSubjectFilter] = useState<string>("전체");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -391,18 +392,18 @@ export default function Summer() {
   const filteredSchedules = schedules.filter((s) => s.division === activeTab);
   const filteredNotices = notices.filter((n) => n.division === activeTab && n.is_active);
 
+  const getSubject = (str: string) => {
+    if (!str) return "기타";
+    const s = str.toLowerCase();
+    if (s.includes("국어")) return "국어";
+    if (s.includes("영어")) return "영어";
+    if (s.includes("수학") || s.includes("공수") || s.includes("미적") || s.includes("확통") || s.includes("대수")) return "수학";
+    if (s.includes("물리") || s.includes("화학") || s.includes("생명") || s.includes("지학") || s.includes("통과") || s.includes("과학") || s.includes("탐구")) return "탐구";
+    return "기타";
+  };
+
   const sortCurriculum = <T extends any>(items: T[]): T[] => {
     return [...items].sort((a, b) => {
-      const getSubject = (str: string) => {
-        if (!str) return "기타";
-        const s = str.toLowerCase();
-        if (s.includes("국어")) return "국어";
-        if (s.includes("영어")) return "영어";
-        if (s.includes("수학") || s.includes("공수") || s.includes("미적") || s.includes("확통") || s.includes("대수")) return "수학";
-        if (s.includes("물리") || s.includes("화학") || s.includes("생명") || s.includes("지학") || s.includes("통과") || s.includes("과학") || s.includes("탐구")) return "탐구";
-        return "기타";
-      };
-
       const subjA = getSubject((a.title || a.teacher_name || "") + " " + (a.content || ""));
       const subjB = getSubject((b.title || b.teacher_name || "") + " " + (b.content || ""));
 
@@ -436,13 +437,27 @@ export default function Summer() {
   // Divide guidelines by category
   const overviewGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'overview');
   const timetableGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'timetable');
-  const curriculumGuidelines = sortCurriculum(filteredGuidelines.filter(g => (g.category || 'guideline') === 'curriculum'));
+  const curriculumGuidelines = sortCurriculum(filteredGuidelines.filter(g => {
+    if ((g.category || 'guideline') !== 'curriculum') return false;
+    if (curriculumSubjectFilter !== "전체") {
+      const subj = getSubject((g.title || g.teacher_name || "") + " " + (g.content || ""));
+      if (subj !== curriculumSubjectFilter) return false;
+    }
+    return true;
+  }));
   const guidelineGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'guideline');
 
   // Divide images by category
   const overviewImages = filteredImages.filter(img => (img.category || 'curriculum') === 'overview');
   const timetableImages = filteredImages.filter(img => (img.category || 'curriculum') === 'timetable');
-  const curriculumImages = sortCurriculum(filteredImages.filter(img => (img.category || 'curriculum') === 'curriculum'));
+  const curriculumImages = sortCurriculum(filteredImages.filter(img => {
+    if ((img.category || 'curriculum') !== 'curriculum') return false;
+    if (curriculumSubjectFilter !== "전체") {
+      const subj = getSubject((img.title || img.teacher_name || "") + " " + (img.content || ""));
+      if (subj !== curriculumSubjectFilter) return false;
+    }
+    return true;
+  }));
   const guidelineImages = filteredImages.filter(img => (img.category || 'curriculum') === 'guideline');
 
   const renderImageGroup = (imgList: SummerImage[]) => {
@@ -729,7 +744,7 @@ export default function Summer() {
                               <td className="p-3 font-extrabold text-[#7B2332] text-[11px] w-20 whitespace-nowrap border-b border-gray-100">
                                 {s.round}
                               </td>
-                              <td className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-100 whitespace-pre-line leading-relaxed">
+                              <td className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-100 whitespace-pre-line leading-relaxed break-keep break-words">
                                 {s.content}
                               </td>
                             </tr>
@@ -1096,9 +1111,26 @@ export default function Summer() {
 
             {/* 4. 강사별 커리큘럼 (curriculum) */}
             <section className="space-y-8 pt-8 border-t border-gray-100">
-              <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-4">
-                <div className="w-1.5 h-6 bg-[#7B2332]" />
-                <h2 className="text-2xl font-black text-gray-900">강사별 커리큘럼</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-gray-900 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-6 bg-[#7B2332]" />
+                  <h2 className="text-2xl font-black text-gray-900">강사별 커리큘럼</h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {["전체", "국어", "영어", "수학", "탐구"].map(subj => (
+                    <button
+                      key={subj}
+                      onClick={() => setCurriculumSubjectFilter(subj)}
+                      className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                        curriculumSubjectFilter === subj 
+                          ? "bg-[#7B2332] text-white" 
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {subj}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {renderCurriculumGuidelines(curriculumGuidelines)}
@@ -1137,7 +1169,7 @@ export default function Summer() {
                 <MessageSquare className="w-6 h-6" />
               </div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">문자 전용</p>
-              <a href="tel:01077372843" className="text-xl sm:text-2xl font-black text-white hover:text-blue-400 transition-colors">010-7737-2843</a>
+              <a href="sms:01097641353" className="text-xl sm:text-2xl font-black text-white hover:text-blue-400 transition-colors">010-9764-1353</a>
             </div>
           </div>
         </section>
