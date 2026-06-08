@@ -407,7 +407,7 @@ export default function Summer() {
       const subjA = getSubject((a.title || a.teacher_name || "") + " " + (a.content || ""));
       const subjB = getSubject((b.title || b.teacher_name || "") + " " + (b.content || ""));
 
-      let order = ["수학", "국어", "영어", "탐구", "기타"];
+      let order = ["수학", "국어", "탐구", "영어", "기타"];
       if (activeTab === "고3") {
         order = ["국어", "영어", "수학", "탐구", "기타"];
       }
@@ -1117,7 +1117,7 @@ export default function Summer() {
                   <h2 className="text-2xl font-black text-gray-900">강사별 커리큘럼</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {["전체", "국어", "영어", "수학", "탐구"].map(subj => (
+                  {["전체", "수학", "국어", "탐구", "영어"].map(subj => (
                     <button
                       key={subj}
                       onClick={() => setCurriculumSubjectFilter(subj)}
