@@ -527,7 +527,7 @@ export default function Summer() {
     if (!hasKeywords) return null;
 
     const sections: CurriculumParsed = {};
-    const lines = content.split("\n").map(line => line.trim());
+    const lines = content.split("\n").map(line => line.trim()).filter(line => line && !/^[-•*]\s*$/.test(line));
     
     let currentKey: keyof CurriculumParsed | null = null;
     let sessionList: { round: string; content: string }[] = [];
