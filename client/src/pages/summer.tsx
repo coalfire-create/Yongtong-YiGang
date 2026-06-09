@@ -591,7 +591,8 @@ export default function Summer() {
       let mgmtText = sections.management.trim();
       const clinicIndex = mgmtText.search(/[\/\s\n]+클리닉\s*[-–—:]/i);
       if (clinicIndex !== -1) {
-        const rawMgmt = mgmtText.substring(0, clinicIndex).trim();
+        let rawMgmt = mgmtText.substring(0, clinicIndex).trim();
+        rawMgmt = rawMgmt.replace(/[\n\s]*[•\-*]\s*$/, "").trim();
         const rawClinic = mgmtText.substring(clinicIndex).replace(/^[\/\s\n]+클리닉\s*[-–—:]/i, "").trim();
         sections.management = rawMgmt;
         sections.clinic = rawClinic;
