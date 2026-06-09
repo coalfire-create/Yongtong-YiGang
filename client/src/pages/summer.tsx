@@ -536,25 +536,25 @@ export default function Summer() {
     for (let line of lines) {
       if (!line) continue;
 
-      if (/^(수업\s*일정|일정)\s*[:：]/i.test(line)) {
+      if (/^\[?(수업\s*일정|일정)\]?\s*[:：]?/i.test(line)) {
         currentKey = "schedule";
-        sections.schedule = line.replace(/^(수업\s*일정|일정)\s*[:：]/i, "").trim();
-      } else if (/^(강좌\s*특징|특징)\s*[:：]/i.test(line)) {
+        sections.schedule = line.replace(/^\[?(수업\s*일정|일정)\]?\s*[:：]?/i, "").trim();
+      } else if (/^\[?(강좌\s*특징|특징)\]?\s*[:：]?/i.test(line)) {
         currentKey = "features";
-        const val = line.replace(/^(강좌\s*특징|특징)\s*[:：]/i, "").trim();
+        const val = line.replace(/^\[?(강좌\s*특징|특징)\]?\s*[:：]?/i, "").trim();
         featuresList = val ? [val] : [];
-      } else if (/^(교재\s*\/?\s*제공\s*자료|교재|제공\s*자료)\s*[:：]/i.test(line)) {
+      } else if (/^\[?(교재\s*\/?\s*제공\s*자료|교재|제공\s*자료)\]?\s*[:：]?/i.test(line)) {
         currentKey = "materials";
-        sections.materials = line.replace(/^(교재\s*\/?\s*제공\s*자료|교재|제공\s*자료)\s*[:：]/i, "").trim();
-      } else if (/^(과제\s*\/?\s*TEST|과제\s*및\s*TEST|과제|TEST|과제\s*\/?\s*테스트)\s*[:：]/i.test(line)) {
+        sections.materials = line.replace(/^\[?(교재\s*\/?\s*제공\s*자료|교재|제공\s*자료)\]?\s*[:：]?/i, "").trim();
+      } else if (/^\[?(과제\s*\/?\s*TEST|과제\s*및\s*TEST|과제|TEST|과제\s*\/?\s*테스트)\]?\s*[:：]?/i.test(line)) {
         currentKey = "assignments";
-        sections.assignments = line.replace(/^(과제\s*\/?\s*TEST|과제\s*및\s*TEST|과제|TEST|과제\s*\/?\s*테스트)\s*[:：]/i, "").trim();
-      } else if (/^(관리\s*SYSTEM\s*및\s*CLINIC|관리\s*SYSTEM|관리)\s*[:：]/i.test(line)) {
+        sections.assignments = line.replace(/^\[?(과제\s*\/?\s*TEST|과제\s*및\s*TEST|과제|TEST|과제\s*\/?\s*테스트)\]?\s*[:：]?/i, "").trim();
+      } else if (/^\[?(관리\s*SYSTEM\s*및\s*CLINIC|관리\s*SYSTEM|관리|및\s*CLINIC)\]?\s*[:：]?/i.test(line)) {
         currentKey = "management";
-        sections.management = line.replace(/^(관리\s*SYSTEM\s*및\s*CLINIC|관리\s*SYSTEM|관리)\s*[:：]/i, "").trim();
-      } else if (/^(클리닉)\s*[:：]/i.test(line)) {
+        sections.management = line.replace(/^\[?(관리\s*SYSTEM\s*및\s*CLINIC|관리\s*SYSTEM|관리|및\s*CLINIC)\]?\s*[:：]?/i, "").trim();
+      } else if (/^\[?(클리닉)\]?\s*[:：]?/i.test(line)) {
         currentKey = "clinic";
-        sections.clinic = line.replace(/^(클리닉)\s*[:：]/i, "").trim();
+        sections.clinic = line.replace(/^\[?(클리닉)\]?\s*[:：]?/i, "").trim();
       } else if (/^\[?(회차별\s*내용|회차별\s*수업\s*내용|주별\s*내용)\]?/i.test(line)) {
         currentKey = "sessions";
       } else if (/^\[?(연계\s*강좌|연계강좌)\]?/i.test(line)) {
