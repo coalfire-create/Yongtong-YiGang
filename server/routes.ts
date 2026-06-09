@@ -524,7 +524,7 @@ export async function seedSummerCurriculumData() {
     const { rows } = await pool.query(
       "SELECT COUNT(*) FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview','guideline') AND division IN ('고1', '고2')"
     );
-    // if (parseInt(rows[0].count) > 0) return; // FORCE RESEED
+    if (parseInt(rows[0].count) > 0) return; // FORCE RESEED
 
     await pool.query("DELETE FROM summer_guidelines WHERE category IN ('curriculum','timetable','overview','guideline') AND division IN ('고1','고2')");
 
