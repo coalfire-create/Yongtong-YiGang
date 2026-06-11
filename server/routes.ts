@@ -895,6 +895,132 @@ export async function registerRoutes(
     }
   });
 
+
+  app.get("/api/dev/fix-db-format", async (req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM summer_guidelines ORDER BY id ASC");
+      
+      const seen = {};
+      let count = 0;
+      let dupCount = 0;
+
+      for (let row of rows) {
+        let title = row.title;
+        let c = row.content || "";
+        
+        // --- 1. Deduplicate ---
+        // If exact same title and division exists, delete the older one
+        const key = title + "|" + row.division;
+        if (seen[key]) {
+          await pool.query("DELETE FROM summer_guidelines WHERE id = $1", [row.id]);
+          dupCount++;
+          continue;
+        }
+        seen[key] = row.id;
+
+        // --- 2. Fix line breaks in "회차별 내용" and Remove "수업 후 ~22" ---
+        c = c.replace(/수업 후 ~22/g, "");
+
+        let inSessionContent = false;
+        let formattedLines = [];
+        let sessionLines = [];
+
+        const lines = c.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i];
+          if (line.match(/^\[.*\]$/)) {
+            if (inSessionContent) {
+              formattedLines.push(sessionLines.join('\n'));
+              sessionLines = [];
+              inSessionContent = false;
+            }
+            if (line === "[회차별 내용]") {
+              inSessionContent = true;
+              formattedLines.push(line);
+              continue;
+            }
+          }
+
+          if (inSessionContent) {
+            // Remove dates
+            let m = line.match(/^(\d+회차\s*-\s*)\d{1,2}\/\d{1,2}(?:\([가-힣]\))?\s*(.*)$/);
+            if (m) line = m[1] + m[2];
+            let m2 = line.match(/^(\d+회차\s*-\s*)\d{1,2}월\s*\d{1,2}일\s*(.*)$/);
+            if (m2) line = m2[1] + m2[2];
+
+            if (line.trim() !== "") {
+              if (line.match(/^\d+회차/) || line.match(/^개강일/)) {
+                sessionLines.push(line.trim());
+              } else {
+                if (sessionLines.length > 0) {
+                  sessionLines[sessionLines.length - 1] += " " + line.trim();
+                } else {
+                  sessionLines.push(line.trim());
+                }
+              }
+            }
+          } else {
+            formattedLines.push(line);
+          }
+        }
+        if (inSessionContent) {
+          formattedLines.push(sessionLines.join('\n'));
+        }
+        c = formattedLines.join('\n');
+
+        // --- 3. Fix Yoo Seung-jin and title formatting ---
+        title = title.replace(/TT/g, "T");
+        title = title.replace(/유승진T\s*\[/g, "유승진T [");
+        title = title.replace(/유승진\s*\[/g, "유승진T [");
+        title = title.replace(/유승진(\s*)\(/g, "유승진T$1(");
+        title = title.replace(/역학특강-\s*유승진/g, "역학특강 - 유승진T");
+        title = title.replace(/김종인\s*\[/g, "김종인T [");
+
+        let tMatch = title.match(/^(\[[^\]]+\])\s*(.*?)\s*-\s*([^T]+T(?:[ ]+\w+)?)\s*(?:\[([^\]]+)\])?\s*(\([^\)]+\))?$/);
+        if (tMatch) {
+          let grade = tMatch[1].trim();
+          let subject = tMatch[2].trim();
+          let teacher = tMatch[3].trim();
+          let school = tMatch[4] ? tMatch[4].trim() : "";
+          let schedule = tMatch[5] ? tMatch[5].trim() : "";
+          
+          if (school && !subject.includes(school)) {
+            title = `${grade} ${school} ${subject} - ${teacher} ${schedule}`.trim();
+          } else {
+            title = `${grade} ${subject} - ${teacher} ${schedule}`.trim();
+          }
+        }
+        
+        await pool.query("UPDATE summer_guidelines SET title = $1, content = $2 WHERE id = $3", [title, c, row.id]);
+        count++;
+      }
+      
+      // Merge Park Jong-yoon
+      const pj1 = (await pool.query("SELECT * FROM summer_guidelines WHERE title LIKE '%박종윤%' AND title LIKE '%공통수학1%'")).rows[0];
+      const pj2 = (await pool.query("SELECT * FROM summer_guidelines WHERE title LIKE '%박종윤%' AND title LIKE '%공통수학2%'")).rows[0];
+      if (pj1 && pj2) {
+        const combinedTitle = `[중3] 공통수학1+공통수학2 수학 - 박종윤T`;
+        const combinedContent = `[공통수학1]\n${pj1.content}\n\n[공통수학2]\n${pj2.content}`;
+        await pool.query("UPDATE summer_guidelines SET title = $1, content = $2 WHERE id = $3", [combinedTitle, combinedContent, pj1.id]);
+        await pool.query("DELETE FROM summer_guidelines WHERE id = $1", [pj2.id]);
+      }
+
+      // Merge Hwang Jun-woo
+      const hw1 = (await pool.query("SELECT * FROM summer_guidelines WHERE title LIKE '%황준우%' AND title LIKE '%물리%' AND division = '중등'")).rows[0];
+      const hw2 = (await pool.query("SELECT * FROM summer_guidelines WHERE title LIKE '%황준우%' AND title LIKE '%통과%' AND division = '중등'")).rows[0];
+      if (hw1 && hw2) {
+        const combinedTitle = `[중등] 물리+통과 - 황준우T (7/11(토) 개강, 15회)`;
+        const combinedContent = `[물리]\n${hw1.content}\n\n[통과]\n${hw2.content}`;
+        await pool.query("UPDATE summer_guidelines SET title = $1, content = $2 WHERE id = $3", [combinedTitle, combinedContent, hw1.id]);
+        await pool.query("DELETE FROM summer_guidelines WHERE id = $1", [hw2.id]);
+      }
+
+      res.send(`Database formatting completed successfully! Deduplicated ${dupCount} rows, formatted ${count} rows.`);
+    } catch (err: any) {
+      res.status(500).send(err.message);
+    }
+  });
+
   app.post("/api/dev/update-curriculums", express.json({ limit: "50mb" }), async (req, res) => {
     try {
       const updates = req.body; // array of { title, content }
