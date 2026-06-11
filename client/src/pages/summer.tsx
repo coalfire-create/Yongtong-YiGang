@@ -393,20 +393,41 @@ export default function Summer() {
   const filteredSchedules = schedules.filter((s) => s.division === activeTab);
   const filteredNotices = notices.filter((n) => n.division === activeTab && n.is_active);
 
-  const getSubject = (str: string) => {
-    if (!str) return "기타";
-    const s = str.toLowerCase();
-    if (s.includes("국어")) return "국어";
-    if (s.includes("영어")) return "영어";
+  const getSubject = (s: string) => {
     if (s.includes("수학") || s.includes("공수") || s.includes("미적") || s.includes("확통") || s.includes("대수")) return "수학";
+    if (s.includes("국어")) return "국어";
     if (s.includes("물리") || s.includes("화학") || s.includes("생명") || s.includes("지학") || s.includes("통과") || s.includes("과학") || s.includes("탐구")) return "탐구";
+    if (s.includes("영어")) return "영어";
     return "기타";
+  };
+
+  const getSchoolGroupScore = (title: string) => {
+    if (title.includes("연합")) return 1;
+    if (title.match(/화성|가온|병점/)) return 2;
+    if (title.match(/영덕|수원|청명/)) return 3;
+    if (title.match(/고색|동탄국제/)) return 4;
+    if (title.includes("특강")) return 5;
+    return 6;
+  };
+
+  const getLevelScore = (title: string) => {
+    const s = title.toUpperCase();
+    if (s.includes("의치서")) return 1;
+    if (s.includes("S1")) return 2;
+    if (s.includes("S2")) return 3;
+    if (s.match(/S반|S\]|\sS\s|\sS$/) || s.includes("S등급")) return 4;
+    if (s.includes("A1")) return 5;
+    if (s.includes("A2")) return 6;
+    return 7;
   };
 
   const sortCurriculum = <T extends any>(items: T[]): T[] => {
     return [...items].sort((a, b) => {
-      const subjA = getSubject((a.title || a.teacher_name || "") + " " + (a.content || ""));
-      const subjB = getSubject((b.title || b.teacher_name || "") + " " + (b.content || ""));
+      const titleA = (a.title || a.teacher_name || "") + " " + (a.content || "");
+      const titleB = (b.title || b.teacher_name || "") + " " + (b.content || "");
+
+      const subjA = getSubject(titleA);
+      const subjB = getSubject(titleB);
 
       let order = ["수학", "국어", "탐구", "영어", "기타"];
       if (activeTab === "고3") {
@@ -418,18 +439,13 @@ export default function Summer() {
 
       if (orderA !== orderB) return orderA - orderB;
 
-      if (subjA === "수학") {
-        const getMathLevel = (str: string) => {
-          const s = str.toLowerCase();
-          if (s.includes("s반")) return 1;
-          if (s.includes("a1반") || s.includes("a1")) return 2;
-          if (s.includes("a2반") || s.includes("a2")) return 3;
-          return 4;
-        };
-        const levelA = getMathLevel((a.title || "") + " " + (a.content || ""));
-        const levelB = getMathLevel((b.title || "") + " " + (b.content || ""));
-        if (levelA !== levelB) return levelA - levelB;
-      }
+      const groupA = getSchoolGroupScore(titleA);
+      const groupB = getSchoolGroupScore(titleB);
+      if (groupA !== groupB) return groupA - groupB;
+
+      const levelA = getLevelScore(titleA);
+      const levelB = getLevelScore(titleB);
+      if (levelA !== levelB) return levelA - levelB;
 
       return (a.display_order || 0) - (b.display_order || 0);
     });
