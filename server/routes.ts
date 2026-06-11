@@ -901,7 +901,7 @@ export async function registerRoutes(
       let count = 0;
       for (const u of updates) {
         const resDb = await pool.query("UPDATE summer_guidelines SET content = $1 WHERE title = $2", [u.content, u.title]);
-        if (resDb.rowCount > 0) count++;
+        if (resDb.rowCount && resDb.rowCount > 0) count++;
       }
       res.send(`Updated ${count} curriculums`);
     } catch (err: any) {

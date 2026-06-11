@@ -451,7 +451,7 @@ export default function Summer() {
       const subjB = getSubject(titleB);
 
       let order = ["수학", "국어", "탐구", "영어", "기타"];
-      if (activeTab === "고3") {
+      if ((activeTab as any) === "고3") {
         order = ["국어", "영어", "수학", "탐구", "기타"];
       }
 
@@ -468,7 +468,7 @@ export default function Summer() {
       const levelB = getLevelScore(titleB);
       if (levelA !== levelB) return levelA - levelB;
 
-      return (a.display_order || 0) - (b.display_order || 0);
+      return ((a as any).display_order || 0) - ((b as any).display_order || 0);
     });
   };
 
@@ -478,7 +478,7 @@ export default function Summer() {
   const curriculumGuidelines = sortCurriculum(filteredGuidelines.filter(g => {
     if ((g.category || 'guideline') !== 'curriculum') return false;
     if (curriculumSubjectFilter !== "전체") {
-      const subj = getSubject((g.title || g.teacher_name || "") + " " + (g.content || ""));
+      const subj = getSubject(((g as any).title || (g as any).teacher_name || "") + " " + ((g as any).content || ""));
       if (subj !== curriculumSubjectFilter) return false;
     }
     return true;
@@ -491,7 +491,7 @@ export default function Summer() {
   const curriculumImages = sortCurriculum(filteredImages.filter(img => {
     if ((img.category || 'curriculum') !== 'curriculum') return false;
     if (curriculumSubjectFilter !== "전체") {
-      const subj = getSubject((img.title || img.teacher_name || "") + " " + (img.content || ""));
+      const subj = getSubject(((img as any).title || img.teacher_name || "") + " " + ((img as any).content || ""));
       if (subj !== curriculumSubjectFilter) return false;
     }
     return true;
@@ -548,6 +548,14 @@ export default function Summer() {
       </div>
     );
   };
+
+  interface TableSection {
+    category: string;
+    items: {
+      subCategory: string;
+      content: string;
+    }[];
+  }
 
   const parseToTable = (content: string): TableSection[] => {
     const lines = content.split("\n").map(l => l.replace(/^ +| +$/g, '')).filter(l => l.trim() !== "");
@@ -618,7 +626,7 @@ export default function Summer() {
     if (guidelineList.length === 0) return null;
 
     let order = ["수학", "국어", "탐구", "영어", "기타"];
-    if (activeTab === "고3") {
+    if ((activeTab as any) === "고3") {
       order = ["국어", "영어", "수학", "탐구", "기타"];
     }
 
