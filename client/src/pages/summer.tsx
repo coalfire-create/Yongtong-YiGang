@@ -659,7 +659,7 @@ export default function Summer() {
               
               <div className="space-y-12">
                 {subjectsList.map((g, gIdx) => {
-                  const sections = parseToTable(g.content || "");
+                  const sections = parseToTable(g.content || "").filter(sec => sec.category !== "수업 일정");
                   if (sections.length === 0) return null;
 
                   const titleLines = g.title.split('\n');
