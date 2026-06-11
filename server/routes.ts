@@ -968,13 +968,15 @@ export async function registerRoutes(
         }
         c = formattedLines.join('\n');
 
-        // --- 3. Fix Yoo Seung-jin and title formatting ---
+        // --- 3. Fix names and rename Gaon High ---
         title = title.replace(/TT/g, "T");
         title = title.replace(/유승진T\s*\[/g, "유승진T [");
         title = title.replace(/유승진\s*\[/g, "유승진T [");
         title = title.replace(/유승진(\s*)\(/g, "유승진T$1(");
         title = title.replace(/역학특강-\s*유승진/g, "역학특강 - 유승진T");
         title = title.replace(/김종인\s*\[/g, "김종인T [");
+        title = title.replace(/\[가온고1\]$/, "[가온고1 정규반]");
+        title = title.replace(/\[가온고2\]$/, "[가온고2 정규반]");
 
         let tMatch = title.match(/^(\[[^\]]+\])\s*(.*?)\s*-\s*([^T]+T(?:[ ]+\w+)?)\s*(?:\[([^\]]+)\])?\s*(\([^\)]+\))?$/);
         if (tMatch) {
@@ -1003,6 +1005,20 @@ export async function registerRoutes(
         const combinedContent = `[공통수학1]\n${pj1.content}\n\n[공통수학2]\n${pj2.content}`;
         await pool.query("UPDATE summer_guidelines SET title = $1, content = $2 WHERE id = $3", [combinedTitle, combinedContent, pj1.id]);
         await pool.query("DELETE FROM summer_guidelines WHERE id = $1", [pj2.id]);
+        
+        // Remove ALL other Park Jong-yoon classes to prevent 3 duplicates
+        const allPj = (await pool.query("SELECT id FROM summer_guidelines WHERE title LIKE '%박종윤%' AND id != $1", [pj1.id])).rows;
+        for (let r of allPj) {
+           await pool.query("DELETE FROM summer_guidelines WHERE id = $1", [r.id]);
+        }
+      } else {
+        // If only one exists, make sure no duplicates of that one exist
+        const allPj = (await pool.query("SELECT id FROM summer_guidelines WHERE title LIKE '%박종윤%'")).rows;
+        if (allPj.length > 1) {
+          for (let i = 1; i < allPj.length; i++) {
+            await pool.query("DELETE FROM summer_guidelines WHERE id = $1", [allPj[i].id]);
+          }
+        }
       }
 
       // Merge Hwang Jun-woo
