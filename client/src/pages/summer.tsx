@@ -633,22 +633,19 @@ export default function Summer() {
                   const subTitle = titleLines.slice(1).join(' ');
 
                   return (
-                    <div key={g.id} className="bg-white border border-gray-200 overflow-hidden shadow-md rounded-2xl">
-                      <div className="bg-[#7B2332] text-white px-6 py-4">
-                        <h3 className="text-base font-black tracking-tight">{mainTitle}</h3>
-                        {subTitle && <p className="text-xs font-semibold text-white/80 mt-1">{subTitle}</p>}
-                      </div>
+                    <div key={g.id} className="mb-14">
+                      <h3 className="text-[17px] font-bold text-gray-900 mb-3 whitespace-pre-line leading-snug">{g.title}</h3>
 
                       <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left border-collapse">
+                        <table className="w-full text-[13px] sm:text-sm text-center border-collapse border border-gray-300">
                           <thead className="bg-[#f8f9fa] border-b border-gray-300 text-[#333] font-bold">
                             <tr>
-                              <th className="py-3 px-4 border-r border-gray-300 w-[20%] text-center">구분</th>
-                              <th className="py-3 px-4 border-r border-gray-300 w-[20%] text-center">세부 항목</th>
-                              <th className="py-3 px-4 w-[60%] text-center">내용</th>
+                              <th className="py-3 px-4 border border-gray-300 w-[20%] text-center">구분</th>
+                              <th className="py-3 px-4 border border-gray-300 w-[20%] text-center">세부 항목</th>
+                              <th className="py-3 px-4 border border-gray-300 w-[60%] text-center">내용</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-gray-300">
+                          <tbody>
                             {sections.map((section, sIdx) => {
                               const rowCount = Math.max(1, section.items.length);
                               return section.items.length > 0 ? (
@@ -659,40 +656,35 @@ export default function Summer() {
                                   let contentToRender: React.ReactNode = item.content;
                                   let alignmentClass = "text-center";
                                   
-                                  if (section.category.includes("특징") || section.category.includes("교재") || section.category.includes("자료") || section.category.includes("과제") || section.category.includes("TEST") || section.category.includes("테스트") || section.category.includes("내용") || section.category.includes("클리닉") || section.category.includes("일정") || section.category.includes("강좌")) {
-                                    alignmentClass = "text-left";
-                                    contentToRender = (
-                                      <div className="flex flex-col items-start">
-                                        <span>{item.content || "-"}</span>
-                                      </div>
-                                    );
+                                  if (section.category.includes("관리") || section.category.includes("회차별 내용") || section.category.includes("연계 강좌") || section.category.includes("클리닉")) {
+                                    alignmentClass = "text-left px-6";
                                   }
 
                                   return (
-                                    <tr key={`${sIdx}-${iIdx}`} className="bg-white hover:bg-gray-50/50 transition-colors">
+                                    <tr key={`${sIdx}-${iIdx}`} className="bg-white">
                                       {iIdx === 0 && (
                                         <td 
                                           rowSpan={rowCount} 
-                                          className="py-3 px-4 border-r border-gray-300 font-bold text-gray-800 text-center bg-[#fcfcfc] align-middle"
+                                          className="py-3 px-4 border border-gray-300 font-bold text-gray-800 text-center align-middle whitespace-pre-line"
                                         >
                                           {section.category.replace(/\\n/g, '\n')}
                                         </td>
                                       )}
                                       
                                       {isSubcatEmpty ? (
-                                        <td colSpan={2} className={`py-3 px-4 whitespace-pre-line text-gray-600 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
+                                        <td colSpan={2} className={`py-3 px-4 border border-gray-300 whitespace-pre-line text-gray-700 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
                                           {contentToRender}
                                         </td>
                                       ) : isContentEmpty ? (
-                                        <td colSpan={2} className="py-3 px-4 whitespace-pre-line text-[#7B2332] font-bold bg-slate-50/50 align-middle text-left border-l border-r border-gray-200">
+                                        <td colSpan={2} className="py-3 px-4 border border-gray-300 whitespace-pre-line text-gray-800 font-bold bg-[#f8f9fa] align-middle text-center">
                                           {item.subCategory}
                                         </td>
                                       ) : (
                                         <>
-                                          <td className="py-3 px-4 border-r border-gray-300 font-semibold text-gray-700 text-center bg-[#fdfdfd] align-middle whitespace-pre-line">
+                                          <td className="py-3 px-4 border border-gray-300 font-semibold text-gray-700 text-center align-middle whitespace-pre-line">
                                             {item.subCategory}
                                           </td>
-                                          <td className={`py-3 px-4 whitespace-pre-line text-gray-600 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
+                                          <td className={`py-3 px-4 border border-gray-300 whitespace-pre-line text-gray-700 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
                                             {contentToRender}
                                           </td>
                                         </>
