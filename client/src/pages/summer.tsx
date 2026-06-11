@@ -402,9 +402,8 @@ export default function Summer() {
   };
 
   const getSchoolGroupScore = (title: string) => {
-    if (title.includes("의치서")) return 0;
     if (title.includes("특강")) return 6;
-    if (title.includes("연합")) return 1;
+    if (title.includes("의치서") || title.includes("연합")) return 1;
     if (title.match(/화성|가온|병점/)) return 2;
     if (title.match(/영덕|수원|청명/)) return 3;
     if (title.match(/고색|동탄국제/)) return 4;
