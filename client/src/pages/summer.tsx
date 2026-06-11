@@ -564,8 +564,6 @@ export default function Summer() {
       "연계 강좌", "연계강좌"
     ];
 
-    const stripDots = (str: string) => str.replace(/^[•·■\s]+/, '').trim();
-
     for (const line of lines) {
       let categoryName = "";
       let catMatch = line.trim().match(/^[\[【]([^\]】]+)[\]】]$/);
@@ -601,55 +599,15 @@ export default function Summer() {
         sections.push(currentSection);
 
         if (inlineContent) {
-          if (inlineContent.includes('\t') && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
-            const parts = inlineContent.split('\t').map(p => p.trim()).filter(Boolean);
-            if (parts.length >= 2) {
-              currentSection.items.push({ subCategory: stripDots(parts[0]), content: parts.slice(1).join(' ') });
-            } else {
-              currentSection.items.push({ subCategory: "", content: inlineContent });
-            }
-          } else {
-            const splitMatch = inlineContent.match(/^([^:\-–—]{1,40}?)\s*[:\-–—]\s*(.*)$/);
-            if (splitMatch && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
-              currentSection.items.push({ subCategory: stripDots(splitMatch[1]), content: splitMatch[2].trim() });
-            } else {
-              currentSection.items.push({ subCategory: "", content: inlineContent });
-            }
-          }
+          currentSection.items.push({ subCategory: "", content: inlineContent });
         }
       } else if (currentSection) {
-        let isSubCat = false;
-        let subCategory = "";
-        let contentPart = "";
-
         const cleanLine = line.replace(/^\t+/, '').trim();
-        const splitMatch = cleanLine.match(/^([^:\-–—]{1,40}?)\s*[:\-–—]\s*(.*)$/);
-        
-        if (cleanLine.includes('\t') && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
-          const parts = cleanLine.split('\t').map(p => p.trim()).filter(Boolean);
-          if (parts.length >= 2) {
-            isSubCat = true;
-            subCategory = stripDots(parts[0]);
-            contentPart = parts.slice(1).join(' ');
-          }
-        } else if (splitMatch && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
-          isSubCat = true;
-          subCategory = stripDots(splitMatch[1]);
-          contentPart = splitMatch[2].trim();
-        }
-
-        if (!isSubCat) {
-          if (currentSection.items.length === 0) {
-            currentSection.items.push({ subCategory: "", content: cleanLine });
-          } else {
-            const lastItem = currentSection.items[currentSection.items.length - 1];
-            lastItem.content = lastItem.content ? lastItem.content + "\n" + cleanLine : cleanLine;
-          }
+        if (currentSection.items.length === 0) {
+          currentSection.items.push({ subCategory: "", content: cleanLine });
         } else {
-          currentSection.items.push({
-            subCategory: subCategory,
-            content: contentPart
-          });
+          const lastItem = currentSection.items[currentSection.items.length - 1];
+          lastItem.content = lastItem.content ? lastItem.content + "\n" + cleanLine : cleanLine;
         }
       }
     }
@@ -708,9 +666,8 @@ export default function Summer() {
                         <table className="w-full text-[13px] sm:text-sm text-center border-collapse border border-gray-300">
                           <thead className="bg-[#f8f9fa] border-b border-gray-300 text-[#333] font-bold">
                             <tr>
-                              <th className="py-3 px-4 border border-gray-300 w-[20%] text-center">구분</th>
-                              <th className="py-3 px-4 border border-gray-300 w-[20%] text-center">세부 항목</th>
-                              <th className="py-3 px-4 border border-gray-300 w-[60%] text-center">내용</th>
+                              <th className="py-3 px-4 border border-gray-300 w-[25%] text-center">구분</th>
+                              <th className="py-3 px-4 border border-gray-300 w-[75%] text-center">내용</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -722,10 +679,10 @@ export default function Summer() {
                                   const isContentEmpty = !item.content || item.content === "-" || item.content === " -";
 
                                   let contentToRender: React.ReactNode = item.content;
-                                  let alignmentClass = "text-center";
+                                  let alignmentClass = "text-left px-6";
                                   
-                                  if (section.category.includes("강좌 특징") || section.category.includes("관리") || section.category.includes("회차별 내용") || section.category.includes("연계 강좌") || section.category.includes("클리닉")) {
-                                    alignmentClass = "text-left px-6";
+                                  if (section.category === "수업 일정") {
+                                    alignmentClass = "text-center";
                                   }
 
                                   return (
@@ -739,24 +696,9 @@ export default function Summer() {
                                         </td>
                                       )}
                                       
-                                      {isSubcatEmpty ? (
-                                        <td colSpan={2} className={`py-3 px-4 border border-gray-300 whitespace-pre-line text-gray-700 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
-                                          {contentToRender}
-                                        </td>
-                                      ) : isContentEmpty ? (
-                                        <td colSpan={2} className="py-3 px-4 border border-gray-300 whitespace-pre-line text-gray-800 font-bold bg-[#f8f9fa] align-middle text-center">
-                                          {item.subCategory}
-                                        </td>
-                                      ) : (
-                                        <>
-                                          <td className="py-3 px-4 border border-gray-300 font-semibold text-gray-700 text-center align-middle whitespace-pre-line">
-                                            {item.subCategory}
-                                          </td>
-                                          <td className={`py-3 px-4 border border-gray-300 whitespace-pre-line text-gray-700 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
-                                            {contentToRender}
-                                          </td>
-                                        </>
-                                      )}
+                                      <td className={`py-3 px-4 border border-gray-300 whitespace-pre-line text-gray-700 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
+                                        {contentToRender}
+                                      </td>
                                     </tr>
                                   );
                                 })
