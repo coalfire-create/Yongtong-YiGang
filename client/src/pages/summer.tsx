@@ -335,6 +335,7 @@ export default function Summer() {
     }
     return "중등";
   });
+  const [expandedFeatures, setExpandedFeatures] = useState<Record<string, boolean>>({});
   const [activeSubTab, setActiveSubTab] = useState<"info" | "notice">("info");
   const [curriculumSubjectFilter, setCurriculumSubjectFilter] = useState<string>("전체");
 
@@ -522,88 +523,64 @@ export default function Summer() {
     nextCourse?: string;
   }
 
-  const parseCurriculum = (content: string): CurriculumParsed | null => {
-    const hasKeywords = /수업\s*일정|강좌\s*특징|교재|과제|관리/i.test(content);
-    if (!hasKeywords) return null;
 
-    const sections: CurriculumParsed = {};
-    const lines = content.split("\n").map(line => line.trim()).filter(line => line && !/^[-•*]\s*$/.test(line));
+  interface TableSection {
+    category: string;
+    items: { subCategory: string; content: string }[];
+  }
+
+  const parseToTable = (content: string): TableSection[] => {
+    const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
+    const sections: TableSection[] = [];
+    let currentSection: TableSection | null = null;
     
-    let currentKey: keyof CurriculumParsed | null = null;
-    let sessionList: { round: string; content: string }[] = [];
-    let featuresList: string[] = [];
-
-    for (let line of lines) {
-      if (!line) continue;
-
-      if (/^\[?(수업\s*일정|일정)\]?\s*[:：]?/i.test(line)) {
-        currentKey = "schedule";
-        sections.schedule = line.replace(/^\[?(수업\s*일정|일정)\]?\s*[:：]?/i, "").trim();
-      } else if (/^\[?(강좌\s*특징|특징)\]?\s*[:：]?/i.test(line)) {
-        currentKey = "features";
-        const val = line.replace(/^\[?(강좌\s*특징|특징)\]?\s*[:：]?/i, "").trim();
-        featuresList = val ? [val] : [];
-      } else if (/^\[?(교재\s*\/?\s*제공\s*자료|교재|제공\s*자료)\]?\s*[:：]?/i.test(line)) {
-        currentKey = "materials";
-        sections.materials = line.replace(/^\[?(교재\s*\/?\s*제공\s*자료|교재|제공\s*자료)\]?\s*[:：]?/i, "").trim();
-      } else if (/^\[?(과제\s*\/?\s*TEST|과제\s*및\s*TEST|과제|TEST|과제\s*\/?\s*테스트)\]?\s*[:：]?/i.test(line)) {
-        currentKey = "assignments";
-        sections.assignments = line.replace(/^\[?(과제\s*\/?\s*TEST|과제\s*및\s*TEST|과제|TEST|과제\s*\/?\s*테스트)\]?\s*[:：]?/i, "").trim();
-      } else if (/^\[?(관리\s*SYSTEM\s*및\s*CLINIC|관리\s*SYSTEM|관리|및\s*CLINIC)\]?\s*[:：]?/i.test(line)) {
-        currentKey = "management";
-        sections.management = line.replace(/^\[?(관리\s*SYSTEM\s*및\s*CLINIC|관리\s*SYSTEM|관리|및\s*CLINIC)\]?\s*[:：]?/i, "").trim();
-      } else if (/^\[?(클리닉)\]?\s*[:：]?/i.test(line)) {
-        currentKey = "clinic";
-        sections.clinic = line.replace(/^\[?(클리닉)\]?\s*[:：]?/i, "").trim();
-      } else if (/^\[?(회차별\s*내용|회차별\s*수업\s*내용|주별\s*내용)\]?/i.test(line)) {
-        currentKey = "sessions";
-      } else if (/^\[?(연계\s*강좌|연계강좌)\]?/i.test(line)) {
-        currentKey = "nextCourse";
-        const val = line.replace(/^\[?(연계\s*강좌|연계강좌)\]?\s*[:：]?/i, "").trim();
-        sections.nextCourse = val;
-      } else {
-        if (currentKey === "features") {
-          featuresList.push(line);
-        } else if (currentKey === "sessions") {
-          const match = line.match(/^(\d+(?:회차|주차|회)(?:\s*\d+\/\d+\s*\([^)]+\))?)\s*[-–—:=.]\s*(.+)$/) || line.match(/^(\d+(?:회차|주차|회))\s+(.+)$/);
-          if (match) {
-            sessionList.push({ round: match[1].trim(), content: match[2].trim() });
-          } else {
-            sessionList.push({ round: "", content: line });
+    for (const line of lines) {
+      const catMatch = line.match(/^\[([^\]]+)\]$/);
+      if (catMatch) {
+        currentSection = { category: catMatch[1].trim(), items: [] };
+        sections.push(currentSection);
+      } else if (currentSection) {
+        const splitMatch = line.match(/^([^-–—]+)[-–—](.*)$/);
+        
+        let isSubCat = false;
+        if (splitMatch && currentSection.category !== "수업 일정") {
+          const possibleSubCat = splitMatch[1].trim();
+          if (possibleSubCat.length <= 15 || possibleSubCat.includes("회차") || possibleSubCat.includes("방학") || possibleSubCat.includes("종강") || possibleSubCat.includes("체크") || possibleSubCat.includes("테스트") || possibleSubCat.includes("클리닉")) {
+            currentSection.items.push({
+              subCategory: possibleSubCat,
+              content: splitMatch[2].trim()
+            });
+            isSubCat = true;
           }
-        } else if (currentKey === "management") {
-          sections.management = (sections.management ? sections.management + "\n" : "") + line;
-        } else if (currentKey === "clinic") {
-          sections.clinic = (sections.clinic ? sections.clinic + "\n" : "") + line;
-        } else if (currentKey === "schedule") {
-          sections.schedule = (sections.schedule ? sections.schedule + "\n" : "") + line;
-        } else if (currentKey === "materials") {
-          sections.materials = (sections.materials ? sections.materials + "\n" : "") + line;
-        } else if (currentKey === "assignments") {
-          sections.assignments = (sections.assignments ? sections.assignments + "\n" : "") + line;
-        } else if (currentKey === "nextCourse") {
-          sections.nextCourse = (sections.nextCourse ? sections.nextCourse + "\n" : "") + line;
+        }
+        
+        if (!isSubCat) {
+          if (currentSection.items.length === 0) {
+            currentSection.items.push({ subCategory: "", content: line });
+          } else {
+            const lastItem = currentSection.items[currentSection.items.length - 1];
+            lastItem.content = lastItem.content ? lastItem.content + "\n" + line : line;
+          }
         }
       }
     }
 
-    if (sections.management && !sections.clinic) {
-      let mgmtText = sections.management.trim();
-      const clinicIndex = mgmtText.search(/[\/\s\n]+클리닉\s*[-–—:]/i);
-      if (clinicIndex !== -1) {
-        let rawMgmt = mgmtText.substring(0, clinicIndex).trim();
-        rawMgmt = rawMgmt.replace(/[\n\s]*[•\-*]\s*$/, "").trim();
-        const rawClinic = mgmtText.substring(clinicIndex).replace(/^[\/\s\n]+클리닉\s*[-–—:]/i, "").trim();
-        sections.management = rawMgmt;
-        sections.clinic = rawClinic;
-      }
-    }
+    for (const section of sections) {
+      section.items = section.items.filter(item => {
+        // Keep items even if they are empty, but trim them
+        item.content = item.content.trim();
+        return true;
+      });
 
-    if (featuresList.length > 0) {
-      sections.features = featuresList;
-    }
-    if (sessionList.length > 0) {
-      sections.sessions = sessionList;
+      if (section.items.length === 0) {
+        section.items.push({ subCategory: "", content: "-" });
+      } else {
+        section.items.forEach(item => {
+          if (!item.content || item.content === "-" || item.content === " -") {
+            item.content = "-";
+          }
+        });
+      }
     }
 
     return sections;
@@ -614,25 +591,9 @@ export default function Summer() {
 
     return (
       <div className="space-y-12">
-        {guidelineList.map((g) => {
-          const parsed = parseCurriculum(g.content);
-          if (!parsed) {
-            // Fallback to original layout
-            return (
-              <div key={g.id} className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-2xl mb-6">
-                <div className="flex flex-col md:flex-row">
-                  <div className="w-full md:w-40 bg-slate-50/50 p-5 flex items-center justify-start md:justify-center border-b md:border-b-0 md:border-r border-gray-100">
-                    <span className="font-extrabold text-gray-800 text-sm tracking-tight text-left md:text-center whitespace-pre-line">
-                      {g.title}
-                    </span>
-                  </div>
-                  <div className="flex-1 p-5 bg-white whitespace-pre-line text-sm text-gray-600 leading-relaxed font-medium">
-                    {g.content}
-                  </div>
-                </div>
-              </div>
-            );
-          }
+        {guidelineList.map((g, gIdx) => {
+          const sections = parseToTable(g.content || "");
+          if (sections.length === 0) return null;
 
           const titleLines = g.title.split('\n');
           const mainTitle = titleLines[0];
@@ -640,133 +601,70 @@ export default function Summer() {
 
           return (
             <div key={g.id} className="bg-white border border-gray-200 overflow-hidden shadow-md rounded-2xl">
-              {/* Title Banner */}
               <div className="bg-[#7B2332] text-white px-6 py-4">
                 <h3 className="text-base font-black tracking-tight">{mainTitle}</h3>
                 {subTitle && <p className="text-xs font-semibold text-white/80 mt-1">{subTitle}</p>}
               </div>
 
-              {/* Main Table Layout */}
-              <div className="divide-y divide-gray-200/80">
-                {/* 1. 수업 일정 */}
-                {parsed.schedule && (
-                  <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
-                      수업 일정
-                    </div>
-                    <div className="flex-1 p-4 text-xs font-semibold text-gray-700 whitespace-pre-line">
-                      {parsed.schedule}
-                    </div>
-                  </div>
-                )}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left border-collapse">
+                  <thead className="bg-[#f8f9fa] border-b border-gray-300 text-[#333] font-bold">
+                    <tr>
+                      <th className="py-3 px-4 border-r border-gray-300 w-[20%] text-center">구분</th>
+                      <th className="py-3 px-4 border-r border-gray-300 w-[20%] text-center">세부 항목</th>
+                      <th className="py-3 px-4 w-[60%] text-center">내용</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-300">
+                    {sections.map((section, sIdx) => {
+                      const rowCount = Math.max(1, section.items.length);
+                      return section.items.length > 0 ? (
+                        section.items.map((item, iIdx) => {
+                          const isSubcatEmpty = !item.subCategory || item.subCategory === "-" || item.subCategory === " -";
+                          
+                          let contentToRender = item.content;
+                          let alignmentClass = "text-center";
+                          
+                          if (section.category.includes("특징") || section.category.includes("교재") || section.category.includes("자료") || section.category.includes("과제") || section.category.includes("TEST") || section.category.includes("테스트")) {
+                            alignmentClass = "text-left";
+                            contentToRender = (
+                              <div className="flex flex-col items-start">
+                                <span>{item.content}</span>
+                              </div>
+                            );
+                          }
 
-                {/* 2. 강좌 특징 */}
-                {parsed.features && parsed.features.length > 0 && (
-                  <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
-                      강좌 특징
-                    </div>
-                    <div className="flex-1 p-4 text-xs font-semibold text-gray-600 space-y-2">
-                      {parsed.features.map((f, idx) => (
-                        <div key={idx}>
-                          {f.replace(/^[•\-\*]\s*/, "")}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 3. 교재/제공자료 */}
-                {parsed.materials && (
-                  <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
-                      교재/제공자료
-                    </div>
-                    <div className="flex-1 p-4 text-xs font-semibold text-gray-700 whitespace-pre-line">
-                      {parsed.materials}
-                    </div>
-                  </div>
-                )}
-
-                {/* 4. 과제/TEST */}
-                {parsed.assignments && (
-                  <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
-                      과제/TEST
-                    </div>
-                    <div className="flex-1 p-4 text-xs font-semibold text-gray-700 whitespace-pre-line">
-                      {parsed.assignments}
-                    </div>
-                  </div>
-                )}
-
-                {/* 5. 관리 SYSTEM 및 CLINIC */}
-                {(parsed.management || parsed.clinic) && (
-                  <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
-                      관리 SYSTEM<br className="hidden md:inline" /> 및 CLINIC
-                    </div>
-                    <div className="flex-1 divide-y divide-gray-150">
-                      {parsed.management && (
-                        <div className="flex flex-col sm:flex-row p-4 gap-2 sm:gap-3">
-                          <div className="w-14 font-bold text-[#7B2332] text-xs uppercase tracking-wider flex-shrink-0 pt-0.5 whitespace-nowrap">
-                            관리
-                          </div>
-                          <div className="flex-1 text-xs font-semibold text-gray-600 whitespace-pre-line leading-relaxed">
-                            {parsed.management}
-                          </div>
-                        </div>
-                      )}
-                      {parsed.clinic && (
-                        <div className="flex flex-col sm:flex-row p-4 gap-2 sm:gap-3">
-                          <div className="w-14 font-bold text-blue-600 text-xs uppercase tracking-wider flex-shrink-0 pt-0.5 whitespace-nowrap">
-                            클리닉
-                          </div>
-                          <div className="flex-1 text-xs font-semibold text-gray-600 whitespace-pre-line leading-relaxed">
-                            {parsed.clinic}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* 6. 회차별 내용 */}
-                {parsed.sessions && parsed.sessions.length > 0 && (
-                  <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
-                      회차별 내용
-                    </div>
-                    <div className="flex-1 overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <tbody>
-                          {parsed.sessions.map((s, idx) => (
-                            <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"}>
-                              <td className="p-3 font-extrabold text-[#7B2332] text-[11px] w-20 whitespace-nowrap border-b border-gray-100">
-                                {s.round}
-                              </td>
-                              <td className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-100 whitespace-pre-line leading-relaxed break-keep break-words">
-                                {s.content}
-                              </td>
+                          return (
+                            <tr key={`${sIdx}-${iIdx}`} className="bg-white hover:bg-gray-50/50 transition-colors">
+                              {iIdx === 0 && (
+                                <td 
+                                  rowSpan={rowCount} 
+                                  className="py-3 px-4 border-r border-gray-300 font-bold text-gray-800 text-center bg-[#fcfcfc] align-middle"
+                                >
+                                  {section.category.replace(/\\n/g, '\n')}
+                                </td>
+                              )}
+                              {isSubcatEmpty ? (
+                                <td colSpan={2} className={`py-3 px-4 whitespace-pre-line text-gray-600 leading-relaxed ${alignmentClass} align-middle`}>
+                                  {contentToRender}
+                                </td>
+                              ) : (
+                                <>
+                                  <td className="py-3 px-4 border-r border-gray-300 font-semibold text-gray-700 text-center bg-[#fcfcfc] align-middle whitespace-pre-line">
+                                    {item.subCategory}
+                                  </td>
+                                  <td className={`py-3 px-4 whitespace-pre-line text-gray-600 leading-relaxed ${alignmentClass}`}>
+                                    {contentToRender}
+                                  </td>
+                                </>
+                              )}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* 7. 연계 강좌 */}
-                {parsed.nextCourse && (
-                  <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-40 bg-slate-50/80 p-4 flex items-center md:justify-center font-extrabold text-gray-800 text-xs md:border-r border-gray-200/80 whitespace-nowrap">
-                      연계 강좌
-                    </div>
-                    <div className="flex-1 p-4 text-xs font-extrabold text-[#7B2332] whitespace-pre-line leading-relaxed">
-                      {parsed.nextCourse}
-                    </div>
-                  </div>
-                )}
+                          );
+                        })
+                      ) : null;
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           );
@@ -1105,7 +1003,10 @@ export default function Summer() {
                 <TimetableGrid key={title} title={title} slots={slots} />
               ))}
 
-              {Object.keys(timetableGroups).length === 0 && filteredSchedules.length === 0 && (
+              {renderGuidelines(timetableGuidelines)}
+              {renderImageGroup(timetableImages)}
+
+              {Object.keys(timetableGroups).length === 0 && filteredSchedules.length === 0 && timetableGuidelines.length === 0 && timetableImages.length === 0 && (
                 <p className="text-sm text-gray-400 text-center py-6">등록된 시간표 정보가 없습니다.</p>
               )}
             </section>

@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { supabase } from "./supabase";
 import { appendReservationRow, appendSmsRow, appendLevelTestRow } from "./sheets-sync";
@@ -886,7 +886,97 @@ export async function registerRoutes(
   });
 
   // ========== SUMMER GUIDELINES ==========
-  app.get("/api/summer-guidelines", async (_req, res) => {
+  app.get("/api/dev/delete-curriculum-images", async (req, res) => {
+    try {
+      await pool.query("DELETE FROM summer_images WHERE category = 'curriculum'");
+      res.send("Deleted curriculum images using db");
+    } catch (err: any) {
+      res.status(500).send(err.message);
+    }
+  });
+
+  app.post("/api/dev/update-curriculums", express.json({ limit: "50mb" }), async (req, res) => {
+    try {
+      const updates = req.body; // array of { title, content }
+      let count = 0;
+      for (const u of updates) {
+        const resDb = await pool.query("UPDATE summer_guidelines SET content = $1 WHERE title = $2", [u.content, u.title]);
+        if (resDb.rowCount > 0) count++;
+      }
+      res.send(`Updated ${count} curriculums`);
+    } catch (err: any) {
+      res.status(500).send(err.message);
+    }
+  });
+
+  app.get("/api/dev/split-hwang", async (req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT id, title, content, division FROM summer_guidelines WHERE title = '[중등] 통과 - 황준우T [중3]'");
+      if (rows.length === 0) return res.send("Row not found.");
+      
+      const row = rows[0];
+      const parts = row.content.split('\n[[중등] 물리 - 황준우T [중3]]\n');
+      
+      if (parts.length === 2) {
+        const part1 = parts[0].trim();
+        const part2 = parts[1].trim();
+        
+        await pool.query("UPDATE summer_guidelines SET content = $1 WHERE id = $2", [part1, row.id]);
+        
+        const existing = await pool.query("SELECT id FROM summer_guidelines WHERE title = '[중등] 물리 - 황준우T [중3]'");
+        if (existing.rows.length === 0) {
+          await pool.query(
+            "INSERT INTO summer_guidelines (title, content, division) VALUES ($1, $2, $3)",
+            ["[중등] 물리 - 황준우T [중3]", part2, row.division]
+          );
+          res.send("Successfully split into two curriculums!");
+        } else {
+          await pool.query("UPDATE summer_guidelines SET content = $1 WHERE title = $2", [part2, "[중등] 물리 - 황준우T [중3]"]);
+          res.send("Updated existing second curriculum!");
+        }
+      } else {
+        res.send("Could not split properly, parts count: " + parts.length);
+      }
+    } catch(err: any) {
+      res.status(500).send(err.message);
+    }
+  });
+
+  app.get("/api/dev/check-hwang", async (req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT id, title, content, division FROM summer_guidelines WHERE title LIKE '%황준우%'");
+      res.json(rows.map(r => ({ ...r, content: r.content.substring(0, 100) + '... (length: ' + r.content.length + ')' })));
+    } catch(err: any) {
+      res.status(500).send(err.message);
+    }
+  });
+
+
+
+  app.get("/api/dev/upload-curriculums", async (req, res) => {
+    try {
+      const fs = await import('fs');
+      const data = JSON.parse(fs.readFileSync('scratch/curriculums.json', 'utf8'));
+      
+      // Delete old curriculums
+      await supabase.from("summer_guidelines").delete().eq("category", "curriculum");
+      
+      for (const item of data) {
+        await supabase.from("summer_guidelines").insert({
+          division: item.division,
+          category: 'curriculum',
+          title: item.title,
+          content: item.content,
+          display_order: 100
+        });
+      }
+      res.send(`Cleared and uploaded ${data.length} curriculums`);
+    } catch (e) {
+      res.status(500).send(String(e));
+    }
+  });
+
+  app.get("/api/summer-guidelines", async (req, res) => {
     try {
       const result = await pool.query(`
         SELECT * FROM summer_guidelines

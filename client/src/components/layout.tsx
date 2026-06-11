@@ -4,6 +4,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { FloatingSidebar } from "./floating-sidebar";
 import logoImg from "@assets/ikang_small.webp";
+import motiveLogoImg from "@assets/motive_logo.png";
 
 
 
@@ -34,30 +35,43 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200" data-testid="header">
       <div className="px-4 sm:px-6 lg:px-10">
         <div className="flex items-center h-[72px] lg:h-[80px] gap-2 sm:gap-4">
-          <Link
-            href="/"
-            className="flex-shrink-0 flex items-center gap-2 sm:gap-3 mr-auto lg:mr-0 min-w-0"
-            data-testid="link-logo"
-          >
-            <img src={logoImg} alt="이강학원 로고" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md object-cover flex-shrink-0" data-testid="img-header-logo" fetchPriority="high" />
-            <span className="text-base sm:text-xl font-extrabold tracking-tight whitespace-nowrap" style={{ color: "#7B2332" }}>영통이강학원</span>
-            {location.startsWith("/high-school") && (
-              <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">고등관</span>
-            )}
-            {location.startsWith("/junior-school") && (
-              <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">초/중등관</span>
-            )}
-            {location.startsWith("/owl") && (
-              <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">올빼미 스파르타</span>
-            )}
-          </Link>
+          <div className="flex items-center gap-3 sm:gap-5 mr-auto lg:mr-0 min-w-0">
+            <Link
+              href="/"
+              className="flex-shrink-0 flex items-center gap-2 sm:gap-3 min-w-0"
+              data-testid="link-logo"
+            >
+              <img src={logoImg} alt="이강학원 로고" className="h-8 w-8 sm:h-10 sm:w-10 rounded-md object-cover flex-shrink-0" data-testid="img-header-logo" fetchPriority="high" />
+              <span className="text-base sm:text-xl font-extrabold tracking-tight whitespace-nowrap" style={{ color: "#7B2332" }}>영통이강학원</span>
+              {location.startsWith("/high-school") && (
+                <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">고등관</span>
+              )}
+              {location.startsWith("/junior-school") && (
+                <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">초/중등관</span>
+              )}
+              {location.startsWith("/owl") && (
+                <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">올빼미 스파르타</span>
+              )}
+            </Link>
+
+            <div className="w-[1px] h-4 sm:h-6 bg-gray-300"></div>
+
+            <a
+              href="https://blog.naver.com/motiveacademy/224312061111"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 flex items-center"
+            >
+              <img src={motiveLogoImg} alt="모티브학원 로고" className="w-[72px] h-[32px] sm:w-[90px] sm:h-[40px] rounded-md object-cover object-center flex-shrink-0" />
+            </a>
+          </div>
 
           <nav className="hidden lg:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
             {navItems.map((item) => (
               <div key={item.label} className="relative group" data-testid={`nav-item-${item.label}`}>
                 <Link
                   href={item.path}
-                  className={`block px-7 py-6 text-[16px] font-bold transition-colors duration-200 border-b-[3px] ${
+                  className={`block px-3 lg:px-4 xl:px-6 py-6 text-[14px] xl:text-[16px] font-bold whitespace-nowrap transition-colors duration-200 border-b-[3px] ${
                     location === item.path || (item.path !== "/" && location.startsWith(item.path))
                       ? "text-[#7B2332] border-[#7B2332]"
                       : "text-gray-800 border-transparent hover:text-[#7B2332] hover:border-[#7B2332]"

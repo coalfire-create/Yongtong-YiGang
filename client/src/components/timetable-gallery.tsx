@@ -25,7 +25,7 @@ interface Timetable {
 
 const SUBJECT_ORDER = ["수학", "국어", "영어", "통합과학", "통합사회/한국사", "생명과학", "사회문화", "생윤", "탐구", "논술"];
 
-// 학교/그룹 표시 순서: 연합반 -> 화성/가온/병점 -> 영덕/수원/청명 -> 고색/동탄국제
+// 학교/그룹 표시 순서: 연합반 -> 화성/가온/병점 -> 영덕/수원/청명 -> 고색/동탄국제고 -> 특강
 const SCHOOL_ORDER = [
   "연합반",
   "화성고",
@@ -36,6 +36,7 @@ const SCHOOL_ORDER = [
   "청명고",
   "고색고",
   "동탄국제고",
+  "특강",
 ];
 
 const getSchoolRank = (name: string): number => {
@@ -378,7 +379,14 @@ function GroupCard({
     }
   });
 
-  // Stable sort mergedTimetables: 의치서M -> S -> A1 -> A2
+  // Stable sort mergedTimetables by class level priority
+  // Priority 1: 의치서 M반 / M반 / 의치반 / 의치 / 의치한
+  // Priority 2: S-1 / S1
+  // Priority 3: S-2 / S2
+  // Priority 4: S반 / S
+  // Priority 5: A1반 / A1 / A반 / A
+  // Priority 6: A2반 / A2 / B반 / B
+  // Priority 7: Others
   const getPriority = (name: string) => {
     const cleanName = name.replace(/\s+/g, '').toUpperCase();
     
@@ -392,23 +400,38 @@ function GroupCard({
       return 5;
     }
     
-    // Exact or substring matches
-    if (cleanName.includes("의치서M반") || cleanName.includes("의치서M") || cleanName.includes("의치서") || cleanName.includes("의치반") || cleanName.includes("M반") || cleanName.includes("의치한")) return 1;
-    if (cleanName.includes("S-1") || cleanName.includes("S1")) return 2;
-    if (cleanName.includes("S-2") || cleanName.includes("S2")) return 3;
-    if (cleanName.includes("S반") || cleanName === "S") return 4;
-    if (cleanName.includes("A1반") || cleanName.includes("A1") || cleanName.includes("A반") || cleanName === "A") return 5;
-    if (cleanName.includes("A2반") || cleanName.includes("A2") || cleanName.includes("B반") || cleanName === "B") return 6;
+    // Priority 1: 의치서 M반 / M반 / 의치반 / 의치 / 의치한
+    if (
+      cleanName.includes("의치서M반") || cleanName.includes("의치서M") ||
+      cleanName.includes("의치서") || cleanName.includes("의치반") ||
+      cleanName.includes("의치한") ||
+      /(?:^|[^가-힣A-Z0-9])M반(?:[^가-힣A-Z0-9]|$)/i.test(cleanName) ||
+      /(?:^|[^가-힣A-Z0-9])의치(?:[^가-힣A-Z0-9]|$)/.test(cleanName)
+    ) return 1;
     
-    // Boundary matches (fallback)
-    if (/(?:^|[^a-zA-Z0-9])(?:의치서M반|의치서M|의치서|의치반|M반|의치한)(?:[^a-zA-Z0-9]|$)/i.test(name)) return 1;
-    if (/(?:^|[^a-zA-Z0-9])S-1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
-    if (/(?:^|[^a-zA-Z0-9])S1(?:[^a-zA-Z0-9]|$)/i.test(name)) return 2;
-    if (/(?:^|[^a-zA-Z0-9])S-2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 3;
-    if (/(?:^|[^a-zA-Z0-9])S2(?:[^a-zA-Z0-9]|$)/i.test(name)) return 3;
-    if (/(?:^|[^a-zA-Z0-9])S(?:[^a-zA-Z0-9]|$)/i.test(name)) return 4;
-    if (/(?:^|[^a-zA-Z0-9])(?:A1|A)(?:[^a-zA-Z0-9]|$)/i.test(name)) return 5;
-    if (/(?:^|[^a-zA-Z0-9])(?:A2|B)(?:[^a-zA-Z0-9]|$)/i.test(name)) return 6;
+    // Priority 2: S-1 / S1
+    if (/S-?1(?:[^0-9]|$)/i.test(cleanName)) return 2;
+    
+    // Priority 3: S-2 / S2
+    if (/S-?2(?:[^0-9]|$)/i.test(cleanName)) return 3;
+    
+    // Priority 4: S반 / S (standalone S, not S1/S2)
+    if (/(?:^|[^가-힣A-Z0-9])S반(?:[^가-힣A-Z0-9]|$)/i.test(cleanName)) return 4;
+    if (/(?:^|[^가-힣A-Z0-9])S(?:[^가-힣A-Z0-9]|$)/i.test(cleanName) && !/S-?[12]/i.test(cleanName)) return 4;
+    
+    // Priority 5: A1반 / A1 / A반 / A
+    if (
+      cleanName.includes("A1반") || /(?:^|[^가-힣A-Z0-9])A1(?:[^0-9]|$)/i.test(cleanName) ||
+      cleanName.includes("A반") ||
+      /(?:^|[^가-힣A-Z0-9])A(?:[^가-힣A-Z0-9]|$)/i.test(cleanName)
+    ) return 5;
+    
+    // Priority 6: A2반 / A2 / B반 / B
+    if (
+      cleanName.includes("A2반") || /(?:^|[^가-힣A-Z0-9])A2(?:[^0-9]|$)/i.test(cleanName) ||
+      cleanName.includes("B반") ||
+      /(?:^|[^가-힣A-Z0-9])B(?:[^가-힣A-Z0-9]|$)/i.test(cleanName)
+    ) return 6;
 
     return 7;
   };

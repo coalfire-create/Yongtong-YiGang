@@ -118,6 +118,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve attached_assets statically so uploaded images can be accessed directly
+app.use('/attached_assets', express.static(path.resolve(process.cwd(), 'attached_assets')));
+
 (async () => {
   await registerRoutes(httpServer, app);
 

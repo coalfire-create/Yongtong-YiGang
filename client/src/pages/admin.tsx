@@ -3678,7 +3678,7 @@ function SortableGuidelineRow({
   
   const categoryLabelMap: Record<string, string> = {
     overview: "프로그램 개요",
-    timetable: "고n시간표",
+
     curriculum: "강사별 커리큘럼",
     guideline: "모집 요강",
   };
@@ -3904,7 +3904,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                 >
                   <option value="guideline">모집 요강</option>
                   <option value="overview">프로그램 개요</option>
-                  <option value="timetable">고n시간표</option>
+
                   <option value="curriculum">강사별 커리큘럼</option>
                 </select>
               </div>
@@ -3966,7 +3966,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                 >
                   <option value="guideline">모집 요강</option>
                   <option value="overview">프로그램 개요</option>
-                  <option value="timetable">고n시간표</option>
+
                   <option value="curriculum">강사별 커리큘럼</option>
                 </select>
               </div>
@@ -4009,7 +4009,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                 <option value="all">전체</option>
                 <option value="guideline">모집 요강</option>
                 <option value="overview">프로그램 개요</option>
-                <option value="timetable">고n시간표</option>
+
                 <option value="curriculum">강사별 커리큘럼</option>
               </select>
             </div>
@@ -4822,7 +4822,7 @@ function SummerTimetableManager({ activeTab }: { activeTab: "중등" | "고1" | 
 
 const SUMMER_CATEGORIES = [
   { value: "overview", label: "프로그램 개요" },
-  { value: "timetable", label: "고n시간표" },
+
   { value: "curriculum", label: "강사별 커리큘럼" },
   { value: "guideline", label: "모집 요강" },
 ] as const;
@@ -5109,7 +5109,7 @@ function SummerTab() {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
                   >
                     <option value="overview">프로그램 개요</option>
-                    <option value="timetable">고n시간표</option>
+
                     <option value="curriculum">강사별 커리큘럼</option>
                     <option value="guideline">모집 요강</option>
                   </select>
