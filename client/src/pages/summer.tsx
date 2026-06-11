@@ -599,18 +599,37 @@ export default function Summer() {
         }
       } else if (currentSection) {
         let isSubCat = false;
-            });
-            isSubCat = true;
-          }
-        }
+        let subCategory = "";
+        let contentPart = "";
+
+        const cleanLine = line.replace(/^\t+/, '').trim();
+        const splitMatch = cleanLine.match(/^([^:\-–—]{1,40}?)\s*[:\-–—]\s*(.*)$/);
         
+        if (cleanLine.includes('\t') && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
+          const parts = cleanLine.split('\t').map(p => p.trim()).filter(Boolean);
+          if (parts.length >= 2) {
+            isSubCat = true;
+            subCategory = stripDots(parts[0]);
+            contentPart = parts.slice(1).join(' ');
+          }
+        } else if (splitMatch && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
+          isSubCat = true;
+          subCategory = stripDots(splitMatch[1]);
+          contentPart = splitMatch[2].trim();
+        }
+
         if (!isSubCat) {
           if (currentSection.items.length === 0) {
-            currentSection.items.push({ subCategory: "", content: line });
+            currentSection.items.push({ subCategory: "", content: cleanLine });
           } else {
             const lastItem = currentSection.items[currentSection.items.length - 1];
-            lastItem.content = lastItem.content ? lastItem.content + "\n" + line : line;
+            lastItem.content = lastItem.content ? lastItem.content + "\n" + cleanLine : cleanLine;
           }
+        } else {
+          currentSection.items.push({
+            subCategory: subCategory,
+            content: contentPart
+          });
         }
       }
     }
