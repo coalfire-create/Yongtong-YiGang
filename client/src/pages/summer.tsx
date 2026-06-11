@@ -435,8 +435,17 @@ export default function Summer() {
 
   const sortCurriculum = <T extends any>(items: T[]): T[] => {
     return [...items].sort((a, b) => {
-      const titleA = (a.title || a.teacher_name || "") + " " + (a.content || "");
-      const titleB = (b.title || b.teacher_name || "") + " " + (b.content || "");
+      // 정렬 키: 제목 + 강좌 특징 섹션만 사용 (연계강좌·회차별 내용 등 제외)
+      const extractSortKey = (item: any) => {
+        const title = item.title || item.teacher_name || "";
+        const content = item.content || "";
+        // [강좌 특징] 섹션만 추출
+        const featMatch = content.match(/\[강좌\s*특징\]([\s\S]*?)(?=\[|$)/);
+        const featText = featMatch ? featMatch[1] : "";
+        return title + " " + featText;
+      };
+      const titleA = extractSortKey(a);
+      const titleB = extractSortKey(b);
 
       const subjA = getSubject(titleA);
       const subjB = getSubject(titleB);
