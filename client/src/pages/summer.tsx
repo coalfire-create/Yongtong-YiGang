@@ -565,60 +565,95 @@ export default function Summer() {
   const renderCurriculumGuidelines = (guidelineList: any[]) => {
     if (guidelineList.length === 0) return null;
 
-    return (
-      <div className="space-y-12">
-        {guidelineList.map((g, gIdx) => {
-          const sections = parseToTable(g.content || "");
-          if (sections.length === 0) return null;
+    let order = ["수학", "국어", "탐구", "영어", "기타"];
+    if (activeTab === "고3") {
+      order = ["국어", "영어", "수학", "탐구", "기타"];
+    }
 
-          const titleLines = g.title.split('\n');
-          const mainTitle = titleLines[0];
-          const subTitle = titleLines.slice(1).join(' ');
+    const grouped: Record<string, any[]> = {};
+    order.forEach(subj => grouped[subj] = []);
+
+    guidelineList.forEach(g => {
+      const subj = getSubject((g.title || g.teacher_name || "") + " " + (g.content || ""));
+      if (grouped[subj]) {
+        grouped[subj].push(g);
+      } else {
+        if (!grouped["기타"]) grouped["기타"] = [];
+        grouped["기타"].push(g);
+      }
+    });
+
+    return (
+      <div className="space-y-20">
+        {order.map(subj => {
+          const subjectsList = grouped[subj];
+          if (!subjectsList || subjectsList.length === 0) return null;
 
           return (
-            <div key={g.id} className="bg-white border border-gray-200 overflow-hidden shadow-md rounded-2xl">
-              <div className="bg-[#7B2332] text-white px-6 py-4">
-                <h3 className="text-base font-black tracking-tight">{mainTitle}</h3>
-                {subTitle && <p className="text-xs font-semibold text-white/80 mt-1">{subTitle}</p>}
+            <div key={subj} className="space-y-8">
+              <div className="flex items-center gap-3 border-b-2 border-gray-900 pb-3">
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                  {subj} <span className="text-[#7B2332] text-xl">과목 커리큘럼</span>
+                </h2>
               </div>
+              
+              <div className="space-y-12">
+                {subjectsList.map((g, gIdx) => {
+                  const sections = parseToTable(g.content || "");
+                  if (sections.length === 0) return null;
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left border-collapse">
-                  <thead className="bg-[#f8f9fa] border-b border-gray-300 text-[#333] font-bold">
-                    <tr>
-                      <th className="py-3 px-4 border-r border-gray-300 w-[25%] text-center">구분</th>
-                      <th className="py-3 px-4 w-[75%] text-center">내용</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-300">
-                    {sections.map((section, sIdx) => {
-                      let contentToRender: React.ReactNode = section.content || "-";
-                      let alignmentClass = "text-center";
-                      
-                      if (section.category.includes("특징") || section.category.includes("교재") || section.category.includes("자료") || section.category.includes("과제") || section.category.includes("TEST") || section.category.includes("테스트") || section.category.includes("내용") || section.category.includes("클리닉") || section.category.includes("일정") || section.category.includes("강좌")) {
-                        alignmentClass = "text-left";
-                        contentToRender = (
-                          <div className="flex flex-col items-start">
-                            <span>{section.content || "-"}</span>
-                          </div>
-                        );
-                      }
+                  const titleLines = g.title.split('\n');
+                  const mainTitle = titleLines[0];
+                  const subTitle = titleLines.slice(1).join(' ');
 
-                      return (
-                        <tr key={sIdx} className="bg-white hover:bg-gray-50/50 transition-colors">
-                          <td 
-                            className="py-3 px-4 border-r border-gray-300 font-bold text-gray-800 text-center bg-[#fcfcfc] align-middle"
-                          >
-                            {section.category.replace(/\\n/g, '\n')}
-                          </td>
-                          <td className={`py-3 px-4 whitespace-pre-line text-gray-600 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
-                            {contentToRender}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                  return (
+                    <div key={g.id} className="bg-white border border-gray-200 overflow-hidden shadow-md rounded-2xl">
+                      <div className="bg-[#7B2332] text-white px-6 py-4">
+                        <h3 className="text-base font-black tracking-tight">{mainTitle}</h3>
+                        {subTitle && <p className="text-xs font-semibold text-white/80 mt-1">{subTitle}</p>}
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left border-collapse">
+                          <thead className="bg-[#f8f9fa] border-b border-gray-300 text-[#333] font-bold">
+                            <tr>
+                              <th className="py-3 px-4 border-r border-gray-300 w-[25%] text-center">구분</th>
+                              <th className="py-3 px-4 w-[75%] text-center">내용</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-300">
+                            {sections.map((section, sIdx) => {
+                              let contentToRender: React.ReactNode = section.content || "-";
+                              let alignmentClass = "text-center";
+                              
+                              if (section.category.includes("특징") || section.category.includes("교재") || section.category.includes("자료") || section.category.includes("과제") || section.category.includes("TEST") || section.category.includes("테스트") || section.category.includes("내용") || section.category.includes("클리닉") || section.category.includes("일정") || section.category.includes("강좌")) {
+                                alignmentClass = "text-left";
+                                contentToRender = (
+                                  <div className="flex flex-col items-start">
+                                    <span>{section.content || "-"}</span>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <tr key={sIdx} className="bg-white hover:bg-gray-50/50 transition-colors">
+                                  <td 
+                                    className="py-3 px-4 border-r border-gray-300 font-bold text-gray-800 text-center bg-[#fcfcfc] align-middle"
+                                  >
+                                    {section.category.replace(/\\n/g, '\n')}
+                                  </td>
+                                  <td className={`py-3 px-4 whitespace-pre-line text-gray-600 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
+                                    {contentToRender}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
