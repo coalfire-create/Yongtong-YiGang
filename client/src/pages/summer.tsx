@@ -402,22 +402,33 @@ export default function Summer() {
   };
 
   const getSchoolGroupScore = (title: string) => {
-    if (title.includes("특강")) return 6;
+    // 연합 계열은 그룹1 (내부 레벨은 getLevelScore로 세분화)
     if (title.includes("의치서") || title.includes("연합")) return 1;
+    // 학교별 그룹
     if (title.match(/화성|가온|병점/)) return 2;
     if (title.match(/영덕|수원|청명/)) return 3;
     if (title.match(/고색|동탄국제/)) return 4;
+    // 기타 (학교 표기 없는 반)
+    if (title.includes("특강")) return 6;
     return 5;
   };
 
   const getLevelScore = (title: string) => {
     const s = title.toUpperCase();
+    // 연합 그룹 내 레벨 순서
+    // 1: 의치서
     if (s.includes("의치서")) return 1;
-    if (s.includes("S1")) return 2;
-    if (s.includes("S2")) return 3;
-    if (s.match(/S반|S\]|\sS\s|\sS$/) || s.includes("S등급")) return 4;
-    if (s.includes("A1")) return 5;
-    if (s.includes("A2")) return 6;
+    // 2: S1
+    if (s.match(/\bS1\b|S1반|[연합\s]S1/)) return 2;
+    // 3: S2
+    if (s.match(/\bS2\b|S2반|[연합\s]S2/)) return 3;
+    // 4: S반 / S등급 / 연합S (S로 끝나거나 S반)
+    if (s.match(/S반|S등급|연합\s*S(?!\d)|\[연합\s*S(?!\d)|\sS(?!\d)\]|\sS(?!\d)\s|\sS(?!\d)$|연합S$/)) return 4;
+    // 5: A1 (또는 숫자 없는 연합A = A1 취급)
+    if (s.match(/\bA1\b|A1반|\[연합\s*A(?![\d])|연합\s*A(?!\d)(?:\]|\s|$)/)) return 5;
+    // 6: A2
+    if (s.match(/\bA2\b|A2반/)) return 6;
+    // 7: 레벨 표시 없는 연합반
     return 7;
   };
 
