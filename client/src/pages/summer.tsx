@@ -402,6 +402,8 @@ export default function Summer() {
   };
 
   const getSchoolGroupScore = (title: string) => {
+    // 특강은 항상 맨 마지막 (학교명이 포함되어 있어도)
+    if (title.includes("특강")) return 6;
     // 연합 계열은 그룹1 (내부 레벨은 getLevelScore로 세분화)
     if (title.includes("의치서") || title.includes("연합")) return 1;
     // 학교별 그룹
@@ -409,7 +411,6 @@ export default function Summer() {
     if (title.match(/영덕|수원|청명/)) return 3;
     if (title.match(/고색|동탄국제/)) return 4;
     // 기타 (학교 표기 없는 반)
-    if (title.includes("특강")) return 6;
     return 5;
   };
 
