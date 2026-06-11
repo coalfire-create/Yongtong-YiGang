@@ -561,7 +561,7 @@ export default function Summer() {
         currentSection = { category: catMatch[1].trim(), items: [] };
         sections.push(currentSection);
       } else if (currentSection) {
-        const splitMatch = line.match(/^([^\(\):-]{1,30}?)\s*[:-]\s*(.*)$/);
+        const splitMatch = line.match(/^([^\(\):-–—]{1,30}?)\s*[:-–—]\s*(.*)$/);
         let isSubCat = false;
         
         if (splitMatch && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
