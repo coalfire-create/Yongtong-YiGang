@@ -402,6 +402,7 @@ export default function Summer() {
   };
 
   const getSchoolGroupScore = (title: string) => {
+    if (title.includes("의치서")) return 0;
     if (title.includes("특강")) return 6;
     if (title.includes("연합")) return 1;
     if (title.match(/화성|가온|병점/)) return 2;
@@ -528,30 +529,8 @@ export default function Summer() {
     );
   };
 
-  interface CurriculumParsed {
-    schedule?: string;
-    features?: string[];
-    materials?: string;
-    assignments?: string;
-    management?: string;
-    clinic?: string;
-    sessions?: { round: string; content: string }[];
-    nextCourse?: string;
-  }
-
-
-  interface TableItem {
-    subCategory: string;
-    content: string;
-  }
-
-  interface TableSection {
-    category: string;
-    items: TableItem[];
-  }
-
   const parseToTable = (content: string): TableSection[] => {
-    const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
+    const lines = content.split("\n").map(l => l.replace(/^ +| +$/g, '')).filter(l => l.trim() !== "");
     const sections: TableSection[] = [];
     let currentSection: TableSection | null = null;
     
@@ -565,18 +544,27 @@ export default function Summer() {
       "연계 강좌", "연계강좌"
     ];
 
+    const stripDots = (str: string) => str.replace(/^[•·■\s]+/, '').trim();
+
     for (const line of lines) {
       let categoryName = "";
-      let catMatch = line.match(/^[\[【]([^\]】]+)[\]】]$/);
+      let catMatch = line.trim().match(/^[\[【]([^\]】]+)[\]】]$/);
+      let inlineContent = "";
       
       if (catMatch) {
         categoryName = catMatch[1].trim();
       } else {
-        const lineClean = line.replace(/\s+/g, '').replace(':', '');
-        const found = standardCategories.find(c => c.replace(/\s+/g, '') === lineClean);
-        if (found) {
-          categoryName = found;
-          catMatch = [line, found];
+        const sortedCats = [...standardCategories].sort((a, b) => b.length - a.length);
+        for (const cat of sortedCats) {
+          const catRegexStr = cat.split('').map(char => char === ' ' ? '\\s*' : char.replace(/[\/]/g, '\\/')).join('');
+          const regex = new RegExp(`^(${catRegexStr})(?:\\s*[:\\-]+\\s*|\\t+|\\s+|$)(.*)$`, 'i');
+          const match = line.trim().match(regex);
+          if (match) {
+            categoryName = cat;
+            catMatch = [line, cat];
+            inlineContent = match[2].trim();
+            break;
+          }
         }
       }
 
@@ -591,16 +579,26 @@ export default function Summer() {
 
         currentSection = { category: categoryName, items: [] };
         sections.push(currentSection);
+
+        if (inlineContent) {
+          if (inlineContent.includes('\t') && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
+            const parts = inlineContent.split('\t').map(p => p.trim()).filter(Boolean);
+            if (parts.length >= 2) {
+              currentSection.items.push({ subCategory: stripDots(parts[0]), content: parts.slice(1).join(' ') });
+            } else {
+              currentSection.items.push({ subCategory: "", content: inlineContent });
+            }
+          } else {
+            const splitMatch = inlineContent.match(/^([^:\-–—]{1,40}?)\s*[:\-–—]\s*(.*)$/);
+            if (splitMatch && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
+              currentSection.items.push({ subCategory: stripDots(splitMatch[1]), content: splitMatch[2].trim() });
+            } else {
+              currentSection.items.push({ subCategory: "", content: inlineContent });
+            }
+          }
+        }
       } else if (currentSection) {
-        const splitMatch = line.match(/^([^:\-–—]{1,40}?)\s*[:\-–—]\s*(.*)$/);
         let isSubCat = false;
-        
-        if (splitMatch && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
-          const possibleSubCat = splitMatch[1].trim();
-          if (possibleSubCat.length > 0 && possibleSubCat.length <= 20) {
-            currentSection.items.push({
-              subCategory: possibleSubCat,
-              content: splitMatch[2].trim()
             });
             isSubCat = true;
           }
@@ -687,7 +685,7 @@ export default function Summer() {
                                   let contentToRender: React.ReactNode = item.content;
                                   let alignmentClass = "text-center";
                                   
-                                  if (section.category.includes("관리") || section.category.includes("회차별 내용") || section.category.includes("연계 강좌") || section.category.includes("클리닉")) {
+                                  if (section.category.includes("강좌 특징") || section.category.includes("관리") || section.category.includes("회차별 내용") || section.category.includes("연계 강좌") || section.category.includes("클리닉")) {
                                     alignmentClass = "text-left px-6";
                                   }
 
