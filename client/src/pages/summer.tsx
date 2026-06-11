@@ -540,9 +540,14 @@ export default function Summer() {
   }
 
 
+  interface TableItem {
+    subCategory: string;
+    content: string;
+  }
+
   interface TableSection {
     category: string;
-    content: string;
+    items: TableItem[];
   }
 
   const parseToTable = (content: string): TableSection[] => {
@@ -553,10 +558,31 @@ export default function Summer() {
     for (const line of lines) {
       const catMatch = line.match(/^\[([^\]]+)\]$/);
       if (catMatch) {
-        currentSection = { category: catMatch[1].trim(), content: "" };
+        currentSection = { category: catMatch[1].trim(), items: [] };
         sections.push(currentSection);
       } else if (currentSection) {
-        currentSection.content = currentSection.content ? currentSection.content + "\n" + line : line;
+        const splitMatch = line.match(/^([^\(\):-]{1,30}?)\s*[:-]\s*(.*)$/);
+        let isSubCat = false;
+        
+        if (splitMatch && currentSection.category !== "수업 일정" && currentSection.category !== "교재/제공자료" && currentSection.category !== "강좌 특징") {
+          const possibleSubCat = splitMatch[1].trim();
+          if (possibleSubCat.length > 0 && possibleSubCat.length <= 20) {
+            currentSection.items.push({
+              subCategory: possibleSubCat,
+              content: splitMatch[2].trim()
+            });
+            isSubCat = true;
+          }
+        }
+        
+        if (!isSubCat) {
+          if (currentSection.items.length === 0) {
+            currentSection.items.push({ subCategory: "", content: line });
+          } else {
+            const lastItem = currentSection.items[currentSection.items.length - 1];
+            lastItem.content = lastItem.content ? lastItem.content + "\n" + line : line;
+          }
+        }
       }
     }
     return sections;
@@ -617,36 +643,64 @@ export default function Summer() {
                         <table className="w-full text-sm text-left border-collapse">
                           <thead className="bg-[#f8f9fa] border-b border-gray-300 text-[#333] font-bold">
                             <tr>
-                              <th className="py-3 px-4 border-r border-gray-300 w-[25%] text-center">구분</th>
-                              <th className="py-3 px-4 w-[75%] text-center">내용</th>
+                              <th className="py-3 px-4 border-r border-gray-300 w-[20%] text-center">구분</th>
+                              <th className="py-3 px-4 border-r border-gray-300 w-[20%] text-center">세부 항목</th>
+                              <th className="py-3 px-4 w-[60%] text-center">내용</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-300">
                             {sections.map((section, sIdx) => {
-                              let contentToRender: React.ReactNode = section.content || "-";
-                              let alignmentClass = "text-center";
-                              
-                              if (section.category.includes("특징") || section.category.includes("교재") || section.category.includes("자료") || section.category.includes("과제") || section.category.includes("TEST") || section.category.includes("테스트") || section.category.includes("내용") || section.category.includes("클리닉") || section.category.includes("일정") || section.category.includes("강좌")) {
-                                alignmentClass = "text-left";
-                                contentToRender = (
-                                  <div className="flex flex-col items-start">
-                                    <span>{section.content || "-"}</span>
-                                  </div>
-                                );
-                              }
+                              const rowCount = Math.max(1, section.items.length);
+                              return section.items.length > 0 ? (
+                                section.items.map((item, iIdx) => {
+                                  const isSubcatEmpty = !item.subCategory || item.subCategory === "-" || item.subCategory === " -";
+                                  const isContentEmpty = !item.content || item.content === "-" || item.content === " -";
 
-                              return (
-                                <tr key={sIdx} className="bg-white hover:bg-gray-50/50 transition-colors">
-                                  <td 
-                                    className="py-3 px-4 border-r border-gray-300 font-bold text-gray-800 text-center bg-[#fcfcfc] align-middle"
-                                  >
-                                    {section.category.replace(/\\n/g, '\n')}
-                                  </td>
-                                  <td className={`py-3 px-4 whitespace-pre-line text-gray-600 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
-                                    {contentToRender}
-                                  </td>
-                                </tr>
-                              );
+                                  let contentToRender: React.ReactNode = item.content;
+                                  let alignmentClass = "text-center";
+                                  
+                                  if (section.category.includes("특징") || section.category.includes("교재") || section.category.includes("자료") || section.category.includes("과제") || section.category.includes("TEST") || section.category.includes("테스트") || section.category.includes("내용") || section.category.includes("클리닉") || section.category.includes("일정") || section.category.includes("강좌")) {
+                                    alignmentClass = "text-left";
+                                    contentToRender = (
+                                      <div className="flex flex-col items-start">
+                                        <span>{item.content || "-"}</span>
+                                      </div>
+                                    );
+                                  }
+
+                                  return (
+                                    <tr key={`${sIdx}-${iIdx}`} className="bg-white hover:bg-gray-50/50 transition-colors">
+                                      {iIdx === 0 && (
+                                        <td 
+                                          rowSpan={rowCount} 
+                                          className="py-3 px-4 border-r border-gray-300 font-bold text-gray-800 text-center bg-[#fcfcfc] align-middle"
+                                        >
+                                          {section.category.replace(/\\n/g, '\n')}
+                                        </td>
+                                      )}
+                                      
+                                      {isSubcatEmpty ? (
+                                        <td colSpan={2} className={`py-3 px-4 whitespace-pre-line text-gray-600 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
+                                          {contentToRender}
+                                        </td>
+                                      ) : isContentEmpty ? (
+                                        <td colSpan={2} className="py-3 px-4 whitespace-pre-line text-[#7B2332] font-bold bg-slate-50/50 align-middle text-left border-l border-r border-gray-200">
+                                          {item.subCategory}
+                                        </td>
+                                      ) : (
+                                        <>
+                                          <td className="py-3 px-4 border-r border-gray-300 font-semibold text-gray-700 text-center bg-[#fdfdfd] align-middle whitespace-pre-line">
+                                            {item.subCategory}
+                                          </td>
+                                          <td className={`py-3 px-4 whitespace-pre-line text-gray-600 leading-relaxed ${alignmentClass} align-middle break-keep break-words`}>
+                                            {contentToRender}
+                                          </td>
+                                        </>
+                                      )}
+                                    </tr>
+                                  );
+                                })
+                              ) : null;
                             })}
                           </tbody>
                         </table>
