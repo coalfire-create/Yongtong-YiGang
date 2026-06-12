@@ -388,7 +388,98 @@ export default function Summer() {
 
   // Filter components by active division tab
   const filteredImages = images.filter((img) => (img.division || "중등") === activeTab);
-  const filteredGuidelines = guidelines.filter((g) => g.division === activeTab);
+  
+  const filteredGuidelines = guidelines
+    .filter((g) => g.division === activeTab)
+    .reduce((acc, curr) => {
+      // Deduplicate by title
+      const existing = acc.find(item => item.title === curr.title);
+      if (!existing || curr.id < existing.id) {
+        if (existing) acc = acc.filter(item => item.title !== curr.title);
+        acc.push({...curr});
+      }
+      return acc;
+    }, [])
+    .map(curr => {
+      // Format the content line breaks
+      let c = curr.content || "";
+      c = c.replace(/수업 후 ~22/g, "");
+
+      let inSessionContent = false;
+      let formattedLines = [];
+      let sessionLines = [];
+
+      const lines = c.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        if (line.match(/^\[.*\]$/)) {
+          if (inSessionContent) {
+            formattedLines.push(sessionLines.join('\n'));
+            sessionLines = [];
+            inSessionContent = false;
+          }
+          if (line === "[회차별 내용]") {
+            inSessionContent = true;
+            formattedLines.push(line);
+            continue;
+          }
+        }
+
+        if (inSessionContent) {
+          // Remove dates
+          let m = line.match(/^(\d+회차\s*-\s*)\d{1,2}\/\d{1,2}(?:\([가-힣]\))?\s*(.*)$/);
+          if (m) line = m[1] + m[2];
+          let m2 = line.match(/^(\d+회차\s*-\s*)\d{1,2}월\s*\d{1,2}일\s*(.*)$/);
+          if (m2) line = m2[1] + m2[2];
+
+          if (line.trim() !== "") {
+            if (line.match(/^\d+회차/) || line.match(/^개강일/)) {
+              sessionLines.push(line.trim());
+            } else {
+              if (sessionLines.length > 0) {
+                sessionLines[sessionLines.length - 1] += " " + line.trim();
+              } else {
+                sessionLines.push(line.trim());
+              }
+            }
+          }
+        } else {
+          formattedLines.push(line);
+        }
+      }
+      if (inSessionContent) {
+        formattedLines.push(sessionLines.join('\n'));
+      }
+      curr.content = formattedLines.join('\n');
+      
+      // Fix Yoo Seung-jin and title formatting
+      let title = curr.title || "";
+      title = title.replace(/TT/g, "T");
+      title = title.replace(/유승진T\s*\[/g, "유승진T [");
+      title = title.replace(/유승진\s*\[/g, "유승진T [");
+      title = title.replace(/유승진(\s*)\(/g, "유승진T$1(");
+      title = title.replace(/역학특강-\s*유승진/g, "역학특강 - 유승진T");
+      title = title.replace(/김종인\s*\[/g, "김종인T [");
+      
+      let tMatch = title.match(/^(\[[^\]]+\])\s*(.*?)\s*-\s*([^T]+T(?:[ ]+\w+)?)\s*(?:\[([^\]]+)\])?\s*(\([^\)]+\))?$/);
+      if (tMatch) {
+        let grade = tMatch[1].trim();
+        let subject = tMatch[2].trim();
+        let teacher = tMatch[3].trim();
+        let school = tMatch[4] ? tMatch[4].trim() : "";
+        let schedule = tMatch[5] ? tMatch[5].trim() : "";
+        
+        if (school && !subject.includes(school)) {
+          title = `${grade} ${school} ${subject} - ${teacher} ${schedule}`.trim();
+        } else {
+          title = `${grade} ${subject} - ${teacher} ${schedule}`.trim();
+        }
+      }
+      curr.title = title;
+      
+      return curr;
+    });
+
   const filteredHighlights = highlights.filter((h) => h.division === activeTab);
   const filteredSchedules = schedules.filter((s) => s.division === activeTab);
   const filteredNotices = notices.filter((n) => n.division === activeTab && n.is_active);
