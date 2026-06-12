@@ -705,15 +705,20 @@ export default function Summer() {
 
   const getSchoolGroupScore = (title: string) => {
     // 특강은 항상 맨 마지막 (학교명이 포함되어 있어도)
-    if (title.includes("특강")) return 6;
+    if (title.includes("특강") || title.includes("올데이")) return 10;
     // 연합 계열은 그룹1 (내부 레벨은 getLevelScore로 세분화)
     if (title.includes("의치서") || title.includes("연합")) return 1;
-    // 학교별 그룹
-    if (title.match(/화성|가온|병점/)) return 2;
-    if (title.match(/영덕|수원|청명/)) return 3;
-    if (title.match(/고색|동탄국제/)) return 4;
+    // 학교별 그룹 개별화
+    if (title.includes("화성")) return 2;
+    if (title.includes("가온")) return 3;
+    if (title.includes("병점")) return 4;
+    if (title.includes("영덕")) return 5;
+    if (title.includes("수원")) return 6;
+    if (title.includes("청명")) return 7;
+    if (title.includes("고색")) return 8;
+    if (title.includes("동탄국제")) return 9;
     // 기타 (학교 표기 없는 반)
-    return 5;
+    return 9.5;
   };
 
   const getLevelScore = (title: string) => {
@@ -782,6 +787,21 @@ export default function Summer() {
       const groupA = getSchoolGroupScore(titleA);
       const groupB = getSchoolGroupScore(titleB);
       if (groupA !== groupB) return groupA - groupB;
+
+      // 동일 학교/특강 내에서 수학 과목이면 강사(최주용->황해룡->권소영->정찬영->임서원) 정렬 추가
+      if (subjA === "수학" && subjB === "수학") {
+        const getMathTeacherScore = (title: string) => {
+          if (title.includes("최주용")) return 1;
+          if (title.includes("황해룡")) return 2;
+          if (title.includes("권소영")) return 3;
+          if (title.includes("정찬영")) return 4;
+          if (title.includes("임서원")) return 5;
+          return 6;
+        };
+        const teacherA = getMathTeacherScore(titleA);
+        const teacherB = getMathTeacherScore(titleB);
+        if (teacherA !== teacherB) return teacherA - teacherB;
+      }
 
       const levelA = getLevelScore(titleA);
       const levelB = getLevelScore(titleB);
