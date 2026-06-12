@@ -35,7 +35,7 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200" data-testid="header">
       <div className="px-4 sm:px-6 lg:px-10">
         <div className="flex items-center h-[72px] lg:h-[80px] gap-2 sm:gap-4">
-          <div className="flex items-center gap-3 sm:gap-5 mr-auto lg:mr-0 min-w-0">
+          <div className="flex items-center gap-3 sm:gap-5 mr-auto xl:mr-0 min-w-0">
             <Link
               href="/"
               className="flex-shrink-0 flex items-center gap-2 sm:gap-3 min-w-0"
@@ -66,12 +66,12 @@ export function Header() {
             </a>
           </div>
 
-          <nav className="hidden lg:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
+          <nav className="hidden xl:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
             {navItems.map((item) => (
               <div key={item.label} className="relative group" data-testid={`nav-item-${item.label}`}>
                 <Link
                   href={item.path}
-                  className={`block px-3 lg:px-4 xl:px-6 py-6 text-[14px] xl:text-[16px] font-bold whitespace-nowrap transition-colors duration-200 border-b-[3px] ${
+                  className={`block px-2 xl:px-3 2xl:px-4 py-6 text-[13px] xl:text-[14px] 2xl:text-[16px] font-bold whitespace-nowrap transition-colors duration-200 border-b-[3px] ${
                     location === item.path || (item.path !== "/" && location.startsWith(item.path))
                       ? "text-[#7B2332] border-[#7B2332]"
                       : "text-gray-800 border-transparent hover:text-[#7B2332] hover:border-[#7B2332]"
@@ -98,7 +98,7 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex items-center gap-2 xl:hidden">
             <button
               className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -112,7 +112,7 @@ export function Header() {
       </div>
 
       <div
-        className={`lg:hidden fixed inset-0 top-[72px] bg-white z-40 transition-transform duration-300 ease-in-out ${
+        className={`xl:hidden fixed inset-0 top-[72px] lg:top-[80px] bg-white z-40 transition-transform duration-300 ease-in-out ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
         data-testid="nav-mobile"
