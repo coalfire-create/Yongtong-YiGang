@@ -393,14 +393,14 @@ export default function Summer() {
     .filter((g) => g.division === activeTab)
     .reduce((acc, curr) => {
       // Deduplicate by title
-      const existing = acc.find(item => item.title === curr.title);
+      const existing = acc.find((item: any) => item.title === curr.title);
       if (!existing || curr.id < existing.id) {
-        if (existing) acc = acc.filter(item => item.title !== curr.title);
+        if (existing) acc = acc.filter((item: any) => item.title !== curr.title);
         acc.push({...curr});
       }
       return acc;
     }, [])
-    .map(curr => {
+    .map((curr: any) => {
       // Format the content line breaks
       let c = curr.content || "";
       c = c.replace(/수업 후 ~22/g, "");
@@ -564,9 +564,9 @@ export default function Summer() {
   };
 
   // Divide guidelines by category
-  const overviewGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'overview');
-  const timetableGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'timetable');
-  const curriculumGuidelines = sortCurriculum(filteredGuidelines.filter(g => {
+  const overviewGuidelines = filteredGuidelines.filter((g: any) => (g.category || 'guideline') === 'overview');
+  const timetableGuidelines = filteredGuidelines.filter((g: any) => (g.category || 'guideline') === 'timetable');
+  const curriculumGuidelines = sortCurriculum(filteredGuidelines.filter((g: any) => {
     if ((g.category || 'guideline') !== 'curriculum') return false;
     if (curriculumSubjectFilter !== "전체") {
       const subj = getSubject(((g as any).title || (g as any).teacher_name || "") + " " + ((g as any).content || ""));
@@ -574,7 +574,7 @@ export default function Summer() {
     }
     return true;
   }));
-  const guidelineGuidelines = filteredGuidelines.filter(g => (g.category || 'guideline') === 'guideline');
+  const guidelineGuidelines = filteredGuidelines.filter((g: any) => (g.category || 'guideline') === 'guideline');
 
   // Divide images by category
   const overviewImages = filteredImages.filter(img => (img.category || 'curriculum') === 'overview');
@@ -652,6 +652,7 @@ export default function Summer() {
     const lines = content.split("\n").map(l => l.replace(/^ +| +$/g, '')).filter(l => l.trim() !== "");
     const sections: TableSection[] = [];
     let currentSection: TableSection | null = null;
+    let startDateInfo = "";
     
     const standardCategories = [
       "수업 일정", "수업일정", 
@@ -659,6 +660,7 @@ export default function Summer() {
       "교재/제공자료", "교재/제공 자료", "교재/자료", "교재 / 제공자료",
       "과제/TEST", "과제/테스트", "과제 / TEST",
       "관리 SYSTEM 및 CLINIC", "관리 SYSTEM", "관리 시스템", "관리시스템", "관리 SYSTEM 및 클리닉", "관리SYSTEM",
+      "클리닉",
       "회차별 내용", "회차별내용", 
       "연계 강좌", "연계강좌"
     ];
@@ -668,6 +670,17 @@ export default function Summer() {
       let catMatch = line.trim().match(/^[\[【]([^\]】]+)[\]】]$/);
       let inlineContent = "";
       
+      const startMatch = line.match(/^(?:-|•)?\s*개강일\s*\/?\s*회차\s*[:\-]\s*(.*)$/);
+      if (startMatch) {
+        startDateInfo = startMatch[1].trim();
+        continue;
+      }
+      
+      if (line.match(/^(?:-|•)?\s*\d+회차\s*[:\-]/) && (!currentSection || currentSection.category !== "회차별 내용")) {
+         currentSection = { category: "회차별 내용", items: [] };
+         sections.push(currentSection);
+      }
+
       if (catMatch) {
         categoryName = catMatch[1].trim();
       } else {
@@ -678,7 +691,7 @@ export default function Summer() {
           const match = line.trim().match(regex);
           if (match) {
             categoryName = cat;
-            catMatch = [line, cat];
+            catMatch = [line, cat] as any;
             inlineContent = match[2].trim();
             break;
           }
@@ -701,15 +714,52 @@ export default function Summer() {
           currentSection.items.push({ subCategory: "", content: inlineContent });
         }
       } else if (currentSection) {
-        const cleanLine = line.replace(/^\t+/, '').trim();
+        let cleanLine = line.replace(/^\t+/, '').trim();
+        
+        if (currentSection.category === "회차별 내용") {
+          let m = cleanLine.match(/^(?:-|•)?\s*(\d+회차\s*[:\-]\s*)\d{1,2}\/\d{1,2}(?:\([가-힣]\))?\s*(.*)$/);
+          if (m) cleanLine = m[1] + m[2];
+          let m2 = cleanLine.match(/^(?:-|•)?\s*(\d+회차\s*[:\-]\s*)\d{1,2}월\s*\d{1,2}일\s*(.*)$/);
+          if (m2) cleanLine = m2[1] + m2[2];
+        }
+
         if (currentSection.items.length === 0) {
           currentSection.items.push({ subCategory: "", content: cleanLine });
         } else {
           const lastItem = currentSection.items[currentSection.items.length - 1];
-          lastItem.content = lastItem.content ? lastItem.content + "\n" + cleanLine : cleanLine;
+          const isNewBullet = cleanLine.match(/^(?:-|•|\d+\.)/);
+          const isNewSession = cleanLine.match(/^(?:-|•)?\s*\d+회차\s*[:\-]/);
+          
+          if (currentSection.category === "회차별 내용") {
+            if (isNewSession) {
+              lastItem.content += "\n" + cleanLine;
+            } else {
+              lastItem.content += " " + cleanLine;
+            }
+          } else if (currentSection.category.includes("관리 SYSTEM") || currentSection.category.includes("과제")) {
+            if (isNewBullet && cleanLine.match(/^(?:-|•)/)) {
+              lastItem.content += "\n" + cleanLine;
+            } else {
+              lastItem.content += " " + cleanLine;
+            }
+          } else {
+            if (isNewBullet) {
+              lastItem.content += "\n" + cleanLine;
+            } else {
+              lastItem.content += " " + cleanLine;
+            }
+          }
         }
       }
     }
+    
+    if (startDateInfo) {
+      sections.unshift({
+        category: "개강일 / 회차",
+        items: [{ subCategory: "", content: startDateInfo }]
+      });
+    }
+
     return sections;
   };
 
