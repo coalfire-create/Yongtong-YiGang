@@ -780,8 +780,13 @@ export default function Summer() {
   const curriculumGuidelines = sortCurriculum(filteredGuidelines.filter((g: any) => {
     if ((g.category || 'guideline') !== 'curriculum') return false;
     if (curriculumSubjectFilter !== "전체") {
-      const subj = getSubject(((g as any).title || (g as any).teacher_name || "") + " " + ((g as any).content || ""));
-      if (subj !== curriculumSubjectFilter) return false;
+      const title = ((g as any).title || (g as any).teacher_name || "");
+      if (curriculumSubjectFilter === "수학특강") {
+        if (!(title.includes("올데이") || title.includes("특강"))) return false;
+      } else {
+        const subj = getSubject(title + " " + ((g as any).content || ""));
+        if (subj !== curriculumSubjectFilter) return false;
+      }
     }
     return true;
   }));
@@ -793,8 +798,13 @@ export default function Summer() {
   const curriculumImages = sortCurriculum(filteredImages.filter(img => {
     if ((img.category || 'curriculum') !== 'curriculum') return false;
     if (curriculumSubjectFilter !== "전체") {
-      const subj = getSubject(((img as any).title || img.teacher_name || "") + " " + ((img as any).content || ""));
-      if (subj !== curriculumSubjectFilter) return false;
+      const title = ((img as any).title || img.teacher_name || "");
+      if (curriculumSubjectFilter === "수학특강") {
+        if (!(title.includes("올데이") || title.includes("특강"))) return false;
+      } else {
+        const subj = getSubject(title + " " + ((img as any).content || ""));
+        if (subj !== curriculumSubjectFilter) return false;
+      }
     }
     return true;
   }));
@@ -1493,7 +1503,7 @@ export default function Summer() {
                   <h2 className="text-2xl font-black text-gray-900">강사별 커리큘럼</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {["전체", "수학", "국어", "탐구", "영어"].map(subj => (
+                  {["전체", "수학", "수학특강", "국어", "영어", "탐구"].map(subj => (
                     <button
                       key={subj}
                       onClick={() => setCurriculumSubjectFilter(subj)}
