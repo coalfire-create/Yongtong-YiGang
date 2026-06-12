@@ -547,10 +547,16 @@ export default function Summer() {
   }, {});
 
   // Filter components by active division tab
-  const filteredImages = images.filter((img) => (img.division || "중등") === activeTab);
+  const filteredImages = images.filter((img) => {
+    const div = img.division === "중3" ? "중등" : (img.division || "중등");
+    return div === activeTab;
+  });
   
   const filteredGuidelines = guidelines
-    .filter((g) => g.division === activeTab)
+    .filter((g) => {
+      const div = g.division === "중3" ? "중등" : g.division;
+      return div === activeTab;
+    })
     .reduce((acc, curr) => {
       // Deduplicate by title
       const existing = acc.find((item: any) => item.title === curr.title);
@@ -629,9 +635,18 @@ export default function Summer() {
       return curr;
     });
 
-  const filteredHighlights = highlights.filter((h) => h.division === activeTab);
-  const filteredSchedules = schedules.filter((s) => s.division === activeTab);
-  const filteredNotices = notices.filter((n) => n.division === activeTab && n.is_active);
+  const filteredHighlights = highlights.filter((h) => {
+    const div = h.division === "중3" ? "중등" : h.division;
+    return div === activeTab;
+  });
+  const filteredSchedules = schedules.filter((s) => {
+    const div = s.division === "중3" ? "중등" : s.division;
+    return div === activeTab;
+  });
+  const filteredNotices = notices.filter((n) => {
+    const div = n.division === "중3" ? "중등" : n.division;
+    return div === activeTab && n.is_active;
+  });
 
   const getSubject = (s: string) => {
     if (s.includes("수학") || s.includes("공수") || s.includes("미적") || s.includes("확통") || s.includes("대수")) return "수학";
@@ -806,9 +821,9 @@ export default function Summer() {
     const standardCategories = [
       "수업 일정", "수업일정", 
       "강좌 특징", "강좌특징", 
-      "교재/제공자료", "교재/제공 자료", "교재/자료", "교재 / 제공자료",
-      "과제/TEST", "과제/테스트", "과제 / TEST",
-      "관리 SYSTEM 및 CLINIC", "관리 SYSTEM", "관리 시스템", "관리시스템", "관리 SYSTEM 및 클리닉", "관리SYSTEM",
+      "교재/제공자료", "교재/제공 자료", "교재/자료", "교재 / 제공자료", "교재",
+      "과제/TEST", "과제/테스트", "과제 / TEST", "과제",
+      "관리 SYSTEM 및 CLINIC", "관리 SYSTEM", "관리 시스템", "관리시스템", "관리 SYSTEM 및 클리닉", "관리SYSTEM", "관리",
       "클리닉",
       "회차별 내용", "회차별내용", 
       "연계 강좌", "연계강좌"
