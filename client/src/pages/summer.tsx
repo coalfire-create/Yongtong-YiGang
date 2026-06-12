@@ -323,6 +323,166 @@ function ParsedNoticeCard({ title, content, date }: { title: string; content: st
   );
 }
 
+function formatSummerCurriculumTitle(rawTitle: string, content: string, division: string): string {
+  let title = (rawTitle || "").replace(/\r/g, "").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+  content = content || "";
+
+  // Grade
+  let grade = "고1";
+  if (title.includes("고3")) grade = "고3";
+  else if (title.includes("고2")) grade = "고2";
+  else if (title.includes("고1")) grade = "고1";
+  else if (title.includes("중3")) grade = "중3";
+  else if (title.includes("중등")) grade = "중3";
+  else if (title.includes("초중등")) grade = "중3";
+  else if (division === "고2") grade = "고2";
+  else if (division === "중3") grade = "중3";
+  else if (division === "고3") grade = "고3";
+
+  // Teacher
+  const teachersList = [
+    "최주용", "정찬영", "황준우", "변현수", "박소현", "박지원",
+    "권소영", "박병조", "임서원", "황해룡", "김현종", "김종인",
+    "심규원", "유승진", "곽윤협", "장해든누리", "임희민", "김연우",
+    "김유정", "대니얼", "문브라더스", "양준민"
+  ];
+  let teacher = "";
+  for (const t of teachersList) {
+    if (title.includes(t)) {
+      teacher = t + "T";
+      break;
+    }
+  }
+  if (!teacher) {
+    const m = title.match(/([가-힣]{2,4})T/);
+    if (m) {
+      teacher = m[0];
+    } else {
+      teacher = "강사T";
+    }
+  }
+
+  // Subject
+  const subjectsList = ["수학", "영어", "국어", "통과", "화학", "물리", "생명", "통합과학"];
+  let subject = "";
+  for (const s of subjectsList) {
+    if (title.includes(s)) {
+      subject = s;
+      break;
+    }
+  }
+  if (!subject) {
+    if (title.includes("공수") || title.includes("미적") || title.includes("대수") || title.includes("기하") || title.includes("확통")) {
+      subject = "수학";
+    } else {
+      subject = "기타";
+    }
+  }
+  if (subject === "통합과학") subject = "통과";
+
+  // Course
+  let course = title;
+  course = course.replace(/\[[^\]]+\]/g, "");
+  if (teacher) {
+    const tBase = teacher.replace("T", "");
+    course = course.replace(new RegExp(tBase + "T?"), "");
+  }
+  course = course.replace(new RegExp(subject), "");
+  if (subject === "통과") {
+    course = course.replace(/통합과학/g, "");
+  }
+  course = course.replace(/공통수학\d?/g, "");
+  course = course.replace(/통합과학연합/g, "");
+  course = course.replace(/화학연합/g, "");
+  course = course.replace(/통과연합/g, "");
+  course = course.replace(/연합 화학/g, "");
+  course = course.replace(/-\s*/g, "");
+  course = course.replace(/\(\d+회\)/g, "");
+  
+  // Clean grade words using spaces instead of \b for Hangul
+  course = course.replace(/(?:\s|^)(?:고[1-3]|중3|중등|고등)(?:\s|$)/g, " ");
+  course = course.replace(/\s+/g, " ").trim();
+
+  if (!course) {
+    const brackets = title.match(/\[([^\]]+)\]/g);
+    if (brackets && brackets.length > 1) {
+      course = brackets[brackets.length - 1].replace(/[\[\]]/g, "");
+    }
+  }
+  course = course.replace(/[\[\]]/g, "").replace(/\s+/g, " ").trim();
+
+  // If course starts and ends with "연합", strip the duplicate leading "연합"
+  if (course.startsWith("연합") && course.endsWith("연합")) {
+    course = course.substring(2).trim();
+  }
+
+  // Sessions
+  let sessions = "";
+  let sessionsSection = "";
+  const sMatch = content.match(/\[회차별\s*내용\]([\s\S]*?)(?=\n\s*\[|$)/);
+  if (sMatch) {
+    sessionsSection = sMatch[1];
+  }
+  const sessionCount = (sessionsSection.match(/\d+회차/g) || []).length;
+  if (sessionCount > 0) {
+    sessions = sessionCount + "회";
+  } else {
+    let sm = title.match(/(\d+)\s*회/);
+    if (sm) {
+      sessions = sm[1] + "회";
+    }
+  }
+
+  // Start Date
+  let startDate = "";
+  let scheduleText = "";
+  const schedMatch = content.match(/\[수업\s*일정\]([\s\S]*?)(?=\n\s*\[|$)/);
+  if (schedMatch) {
+    scheduleText = schedMatch[1];
+  }
+  let dateMatch = scheduleText.match(/(\d{1,2}\/\d{1,2})/) || scheduleText.match(/(\d{1,2}월\s*\d{1,2}일)/);
+  if (dateMatch) {
+    startDate = dateMatch[1].trim();
+  }
+
+  if (!startDate && sessionsSection) {
+    const firstSessionMatch = sessionsSection.match(/1회차[^\n•]*?(\d{1,2}\/\d{1,2}|\d{1,2}월\s*\d{1,2}일)/);
+    if (firstSessionMatch) {
+      startDate = firstSessionMatch[1].trim();
+    }
+  }
+
+  if (!startDate) {
+    const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      let m = line.match(/개강일\s*[:\-]\s*([^\n]+)/) || line.match(/개강\s*[:\-]\s*([^\n]+)/);
+      if (m) {
+        let dm = m[1].match(/(\d{1,2}\/\d{1,2})/) || m[1].match(/(\d{1,2}월\s*\d{1,2}일)/);
+        if (dm) {
+          startDate = dm[1].trim();
+        }
+        break;
+      }
+    }
+  }
+
+  if (!startDate) {
+    let dm = title.match(/(\d{1,2}\/\d{1,2})/) || title.match(/(\d{1,2}월\s*\d{1,2}일)/);
+    if (dm) startDate = dm[1];
+  }
+
+  let infoParts = [];
+  if (startDate) {
+    infoParts.push(startDate + " 개강");
+  }
+  if (sessions) {
+    infoParts.push(sessions);
+  }
+
+  let infoString = infoParts.length > 0 ? ` (${infoParts.join(", ")})` : "";
+  return `[${grade}] ${course} ${subject} - ${teacher}${infoString}`;
+}
+
 export default function Summer() {
   const [location] = useLocation();
   const [activeTab, setActiveTab] = useState<"중등" | "고1" | "고2">(() => {
@@ -452,30 +612,19 @@ export default function Summer() {
       }
       curr.content = formattedLines.join('\n');
       
-      // Fix Yoo Seung-jin and title formatting
-      let title = curr.title || "";
-      title = title.replace(/TT/g, "T");
-      title = title.replace(/유승진T\s*\[/g, "유승진T [");
-      title = title.replace(/유승진\s*\[/g, "유승진T [");
-      title = title.replace(/유승진(\s*)\(/g, "유승진T$1(");
-      title = title.replace(/역학특강-\s*유승진/g, "역학특강 - 유승진T");
-      title = title.replace(/김종인\s*\[/g, "김종인T [");
-      
-      let tMatch = title.match(/^(\[[^\]]+\])\s*(.*?)\s*-\s*([^T]+T(?:[ ]+\w+)?)\s*(?:\[([^\]]+)\])?\s*(\([^\)]+\))?$/);
-      if (tMatch) {
-        let grade = tMatch[1].trim();
-        let subject = tMatch[2].trim();
-        let teacher = tMatch[3].trim();
-        let school = tMatch[4] ? tMatch[4].trim() : "";
-        let schedule = tMatch[5] ? tMatch[5].trim() : "";
-        
-        if (school && !subject.includes(school)) {
-          title = `${grade} ${school} ${subject} - ${teacher} ${schedule}`.trim();
-        } else {
-          title = `${grade} ${subject} - ${teacher} ${schedule}`.trim();
-        }
+      if ((curr.category || 'guideline') === 'curriculum') {
+        curr.title = formatSummerCurriculumTitle(curr.title, curr.content, curr.division);
+      } else {
+        // Fix Yoo Seung-jin and title formatting for non-curriculums if needed
+        let title = curr.title || "";
+        title = title.replace(/TT/g, "T");
+        title = title.replace(/유승진T\s*\[/g, "유승진T [");
+        title = title.replace(/유승진\s*\[/g, "유승진T [");
+        title = title.replace(/유승진(\s*)\(/g, "유승진T$1(");
+        title = title.replace(/역학특강-\s*유승진/g, "역학특강 - 유승진T");
+        title = title.replace(/김종인\s*\[/g, "김종인T [");
+        curr.title = title;
       }
-      curr.title = title;
       
       return curr;
     });
@@ -797,14 +946,11 @@ export default function Summer() {
                   const sections = parsed.sections.filter(sec => sec.category !== "수업 일정");
                   if (sections.length === 0) return null;
 
-                  let titleLines = g.title.split('\n');
-                  if (parsed.startDateInfo) {
-                    titleLines[0] = `${titleLines[0]} (${parsed.startDateInfo.replace(/[()]/g, '')})`;
-                  }
+                  let displayTitle = g.title;
 
                   return (
                     <div key={g.id} className="mb-14">
-                      <h3 className="text-[17px] font-bold text-gray-900 mb-3 whitespace-pre-line leading-snug">{titleLines.join('\n')}</h3>
+                      <h3 className="text-[17px] font-bold text-gray-900 mb-3 whitespace-pre-line leading-snug">{displayTitle}</h3>
 
                       <div className="overflow-x-auto">
                         <table className="w-full text-[13px] sm:text-sm text-center border-collapse border border-gray-300">
