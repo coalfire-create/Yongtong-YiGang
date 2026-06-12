@@ -823,6 +823,11 @@ export default function Summer() {
                                   const isContentEmpty = !item.content || item.content === "-" || item.content === " -";
 
                                   let contentToRender: React.ReactNode = item.content;
+                                  
+                                  if (typeof contentToRender === 'string' && section.category === "회차별 내용") {
+                                    contentToRender = contentToRender.split('\n').map(line => line.replace(/^(?:-|•)\s*/, '')).join('\n');
+                                  }
+
                                   let alignmentClass = "text-left px-6";
                                   
                                   if (section.category === "수업 일정") {
