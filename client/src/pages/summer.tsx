@@ -411,7 +411,6 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   }
   course = course.replace(/[\[\]]/g, "").replace(/\s+/g, " ").trim();
 
-  // If course starts and ends with "연합", strip the duplicate leading "연합"
   if (course.startsWith("연합") && course.endsWith("연합")) {
     course = course.substring(2).trim();
   }
@@ -433,47 +432,94 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     }
   }
 
-  // Start Date
+  // Start Date & Day of Week Extraction
   let startDate = "";
-  let scheduleText = "";
-  const schedMatch = content.match(/\[수업\s*일정\]([\s\S]*?)(?=\n\s*\[|$)/);
-  if (schedMatch) {
-    scheduleText = schedMatch[1];
-  }
-  let dateMatch = scheduleText.match(/(\d{1,2}\/\d{1,2})/) || scheduleText.match(/(\d{1,2}월\s*\d{1,2}일)/);
-  if (dateMatch) {
-    startDate = dateMatch[1].trim();
+  let dayOfWeek = "";
+
+  // 1. Try in title e.g. 7/18(토) 개강
+  let dateTitleMatch = title.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)\s*개강/) || 
+                       title.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)\s*개강/);
+  if (dateTitleMatch) {
+    startDate = dateTitleMatch[1];
   }
 
-  if (!startDate && sessionsSection) {
-    const firstSessionMatch = sessionsSection.match(/1회차[^\n•]*?(\d{1,2}\/\d{1,2}|\d{1,2}월\s*\d{1,2}일)/);
-    if (firstSessionMatch) {
-      startDate = firstSessionMatch[1].trim();
+  // 2. Try in [수업 일정]
+  if (!startDate) {
+    const schedMatch = content.match(/\[수업\s*일정\]([\s\S]*?)(?=\n\s*\[|$)/);
+    if (schedMatch) {
+      const scheduleText = schedMatch[1];
+      let m = scheduleText.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || 
+              scheduleText.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
+      if (m) {
+        startDate = m[1];
+      }
     }
   }
 
+  // 3. Try in "개강일" line in content
   if (!startDate) {
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
     for (const line of lines) {
-      let m = line.match(/개강일\s*[:\-]\s*([^\n]+)/) || line.match(/개강\s*[:\-]\s*([^\n]+)/);
+      let m = line.match(/(?:개강일|개강)\s*(?:\/\s*회차)?\s*[:\-]\s*([^\n]+)/);
       if (m) {
-        let dm = m[1].match(/(\d{1,2}\/\d{1,2})/) || m[1].match(/(\d{1,2}월\s*\d{1,2}일)/);
+        let dm = m[1].match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || 
+                 m[1].match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
         if (dm) {
-          startDate = dm[1].trim();
+          startDate = dm[1];
         }
         break;
       }
     }
   }
 
+  // 4. Try in 1회차 line in [회차별 내용]
+  if (!startDate && sessionsSection) {
+    let m = sessionsSection.match(/1회차[^\n•]*?(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?|\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
+    if (m) {
+      startDate = m[1];
+    }
+  }
+
+  // 5. Fallback to any date in title
   if (!startDate) {
-    let dm = title.match(/(\d{1,2}\/\d{1,2})/) || title.match(/(\d{1,2}월\s*\d{1,2}일)/);
-    if (dm) startDate = dm[1];
+    let dm = title.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || title.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
+    if (dm) startDate = dm[0];
+  }
+
+  // Extract day match
+  if (startDate) {
+    const dayMatch = startDate.match(/\(([가-힣])\)/);
+    if (dayMatch) {
+      dayOfWeek = dayMatch[1];
+      startDate = startDate.replace(/\([가-힣]\)/, "");
+    }
+  }
+
+  // Normalize to M/D
+  if (startDate) {
+    const korDateMatch = startDate.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
+    if (korDateMatch) {
+      startDate = `${korDateMatch[1]}/${korDateMatch[2]}`;
+    }
+    startDate = startDate.trim();
+  }
+
+  // Calculate dayOfWeek if missing
+  if (startDate && !dayOfWeek) {
+    const mMatch = startDate.match(/^(\d{1,2})\/(\d{1,2})$/);
+    if (mMatch) {
+      const month = parseInt(mMatch[1], 10);
+      const day = parseInt(mMatch[2], 10);
+      const date = new Date(2026, month - 1, day);
+      const days = ["일", "월", "화", "수", "목", "금", "토"];
+      dayOfWeek = days[date.getDay()];
+    }
   }
 
   let infoParts = [];
   if (startDate) {
-    infoParts.push(startDate + " 개강");
+    const dateStr = dayOfWeek ? `${startDate}(${dayOfWeek})` : startDate;
+    infoParts.push(dateStr + " 개강");
   }
   if (sessions) {
     infoParts.push(sessions);
@@ -616,10 +662,11 @@ export default function Summer() {
       if (inSessionContent) {
         formattedLines.push(sessionLines.join('\n'));
       }
+      const originalContent = curr.content || "";
       curr.content = formattedLines.join('\n');
       
       if ((curr.category || 'guideline') === 'curriculum') {
-        curr.title = formatSummerCurriculumTitle(curr.title, curr.content, curr.division);
+        curr.title = formatSummerCurriculumTitle(curr.title, originalContent, curr.division);
       } else {
         // Fix Yoo Seung-jin and title formatting for non-curriculums if needed
         let title = curr.title || "";
@@ -813,7 +860,9 @@ export default function Summer() {
   }
 
   const parseToTable = (content: string): { sections: TableSection[], startDateInfo: string } => {
-    const preprocessed = content.replace(/\s+•\s*/g, '\n• ');
+    const preprocessed = content
+      .replace(/\s+•\s*/g, '\n• ')
+      .replace(/\[([^\]\n]*?)\r?\n([^\]\n]*?)\]/g, '[$1 $2]');
     const lines = preprocessed.split("\n").map(l => l.replace(/^ +| +$/g, '')).filter(l => l.trim() !== "");
     const sections: TableSection[] = [];
     let currentSection: TableSection | null = null;
@@ -987,27 +1036,70 @@ export default function Summer() {
                                   let contentToRender: React.ReactNode = item.content;
                                   
                                   if (typeof contentToRender === 'string' && section.category === "회차별 내용") {
-                                    let lines = [];
-                                    if (contentToRender.includes('\n')) {
-                                      lines = contentToRender.split('\n');
-                                    } else if (contentToRender.includes('•')) {
-                                      lines = contentToRender.split('•');
-                                    } else {
-                                      const spaced = contentToRender.replace(/(\d+회차)/g, '\n$1');
-                                      lines = spaced.split('\n');
-                                    }
+                                    // First replace bullets/stars with newlines
+                                    let normalizedText = contentToRender
+                                      .replace(/[•*]/g, '\n');
+                                    
+                                    // Also insert newlines before session numbers if they are on the same line without a newline
+                                    // Avoid splitting combined sessions like "1,2회차" or "1/2회차"
+                                    normalizedText = normalizedText.replace(/([^\n,/\d])\s*(\d+\s*회차)/g, '$1\n$2');
+                                    normalizedText = normalizedText.replace(/([^\n,/\d])\s*(\d+,\d+\s*회차)/g, '$1\n$2');
+                                    
+                                    // Also insert newlines before headers
+                                    normalizedText = normalizedText.replace(/([^\n])\s*(방학 기간 중|썸머 종강 후|연계 강좌)/g, '$1\n$2');
+
+                                    const lines = normalizedText.split('\n');
                                     
                                     contentToRender = lines
                                       .map(line => line.trim())
                                       .filter(Boolean)
                                       .filter(line => !line.match(/개강일/))
                                       .map(line => {
+                                        // Clean bullets
                                         let cleaned = line.replace(/^(?:-|•|\*)\s*/, '').trim();
                                         cleaned = cleaned.replace(/^[.\-:]\s*/, '').trim();
+                                        
+                                        // Normalize to "1회차: 내용"
+                                        const sessionMatch = cleaned.match(/^(\d+,\d+\s*회차|\d+\s*회차)\s*[\-–—:：]?\s*(.*)$/);
+                                        if (sessionMatch) {
+                                          cleaned = `${sessionMatch[1]}: ${sessionMatch[2].trim()}`;
+                                        }
                                         return cleaned;
                                       })
                                       .filter(Boolean)
                                       .join('\n');
+                                  }
+
+                                  if (typeof contentToRender === 'string' && section.category === "관리 SYSTEM 및 CLINIC") {
+                                    const lines = contentToRender.split('\n').map(l => l.trim()).filter(Boolean);
+                                    contentToRender = (
+                                      <div className="bg-slate-50/80 border border-slate-200/50 rounded-xl p-4 space-y-2.5 text-left text-xs sm:text-sm shadow-sm">
+                                        {lines.map((line, lIdx) => {
+                                          let cleaned = line.replace(/^(?:-|•|\*)\s*/, '').trim();
+                                          cleaned = cleaned.replace(/^[.\-:]\s*/, '').trim();
+                                          
+                                          const labelMatch = cleaned.match(/^([가-힣a-zA-Z\s]{2,10})\s*[:\-]\s*(.*)$/);
+                                          if (labelMatch) {
+                                            return (
+                                              <div key={lIdx} className="flex flex-col sm:flex-row sm:items-start gap-1.5 border-b border-dashed border-slate-100 last:border-b-0 pb-2 last:pb-0">
+                                                <span className="font-extrabold text-[#7B2332] whitespace-nowrap min-w-[70px] flex items-center gap-1.5">
+                                                  <span className="w-1.5 h-1.5 rounded-full bg-[#7B2332] inline-block" />
+                                                  {labelMatch[1]}
+                                                </span>
+                                                <span className="text-gray-600 font-medium leading-relaxed break-keep">{labelMatch[2]}</span>
+                                              </div>
+                                            );
+                                          }
+                                          
+                                          return (
+                                            <div key={lIdx} className="text-gray-600 font-medium leading-relaxed flex items-start gap-1.5">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 flex-shrink-0" />
+                                              <span className="break-keep">{cleaned}</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    );
                                   }
 
                                   let alignmentClass = "text-left px-6";
