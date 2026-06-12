@@ -66,12 +66,12 @@ export function Header() {
             </a>
           </div>
 
-          <nav className="hidden xl:flex items-center flex-1 justify-center gap-0" data-testid="nav-desktop">
+          <nav className="hidden xl:flex items-center flex-1 justify-end gap-1.5 xl:gap-2.5 2xl:gap-4" data-testid="nav-desktop">
             {navItems.map((item) => (
               <div key={item.label} className="relative group" data-testid={`nav-item-${item.label}`}>
                 <Link
                   href={item.path}
-                  className={`block px-1.5 xl:px-2 2xl:px-4 py-6 text-[12px] xl:text-[13px] 2xl:text-[15px] font-bold whitespace-nowrap transition-colors duration-200 border-b-[3px] ${
+                  className={`block px-2 xl:px-3 2xl:px-4 py-6 text-[14px] xl:text-[15px] 2xl:text-[16px] font-extrabold whitespace-nowrap transition-colors duration-200 border-b-[3px] ${
                     location === item.path || (item.path !== "/" && location.startsWith(item.path))
                       ? "text-[#7B2332] border-[#7B2332]"
                       : "text-gray-800 border-transparent hover:text-[#7B2332] hover:border-[#7B2332]"
