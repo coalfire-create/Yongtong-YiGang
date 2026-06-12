@@ -763,6 +763,22 @@ export default function Summer() {
 
       if (orderA !== orderB) return orderA - orderB;
 
+      // 탐구 과목인 경우 세부 과목(통과 -> 물리 -> 화학 -> 생명) 순서로 1차 정렬
+      if (subjA === "탐구" && subjB === "탐구") {
+        const getScienceScore = (title: string) => {
+          const s = title.toUpperCase();
+          if (s.includes("통합과학") || s.includes("통과")) return 1;
+          if (s.includes("물리")) return 2;
+          if (s.includes("화학")) return 3;
+          if (s.includes("생명")) return 4;
+          if (s.includes("지학") || s.includes("지구과학")) return 5;
+          return 6;
+        };
+        const sciA = getScienceScore(titleA);
+        const sciB = getScienceScore(titleB);
+        if (sciA !== sciB) return sciA - sciB;
+      }
+
       const groupA = getSchoolGroupScore(titleA);
       const groupB = getSchoolGroupScore(titleB);
       if (groupA !== groupB) return groupA - groupB;
