@@ -758,11 +758,7 @@ export default function Summer() {
       const subjA = getSubject((a as any).title || (a as any).teacher_name || "");
       const subjB = getSubject((b as any).title || (b as any).teacher_name || "");
 
-      let order = ["수학", "국어", "영어", "탐구", "기타"];
-      if ((activeTab as any) === "고3") {
-        order = ["국어", "영어", "수학", "탐구", "기타"];
-      }
-
+      const order = ["수학", "국어", "영어", "탐구", "기타"];
       const orderA = order.indexOf(subjA);
       const orderB = order.indexOf(subjB);
 
@@ -1042,10 +1038,7 @@ export default function Summer() {
   const renderCurriculumGuidelines = (guidelineList: any[]) => {
     if (guidelineList.length === 0) return null;
 
-    let order = ["수학", "국어", "영어", "탐구", "기타"];
-    if ((activeTab as any) === "고3") {
-      order = ["국어", "영어", "수학", "탐구", "기타"];
-    }
+    const order = ["수학", "국어", "영어", "탐구", "기타"];
 
     const grouped: Record<string, any[]> = {};
     order.forEach(subj => grouped[subj] = []);
