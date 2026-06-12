@@ -813,7 +813,8 @@ export default function Summer() {
   }
 
   const parseToTable = (content: string): { sections: TableSection[], startDateInfo: string } => {
-    const lines = content.split("\n").map(l => l.replace(/^ +| +$/g, '')).filter(l => l.trim() !== "");
+    const preprocessed = content.replace(/\s+•\s*/g, '\n• ');
+    const lines = preprocessed.split("\n").map(l => l.replace(/^ +| +$/g, '')).filter(l => l.trim() !== "");
     const sections: TableSection[] = [];
     let currentSection: TableSection | null = null;
     let startDateInfo = "";
@@ -986,7 +987,27 @@ export default function Summer() {
                                   let contentToRender: React.ReactNode = item.content;
                                   
                                   if (typeof contentToRender === 'string' && section.category === "회차별 내용") {
-                                    contentToRender = contentToRender.split('\n').map(line => line.replace(/^(?:-|•)\s*/, '')).join('\n');
+                                    let lines = [];
+                                    if (contentToRender.includes('\n')) {
+                                      lines = contentToRender.split('\n');
+                                    } else if (contentToRender.includes('•')) {
+                                      lines = contentToRender.split('•');
+                                    } else {
+                                      const spaced = contentToRender.replace(/(\d+회차)/g, '\n$1');
+                                      lines = spaced.split('\n');
+                                    }
+                                    
+                                    contentToRender = lines
+                                      .map(line => line.trim())
+                                      .filter(Boolean)
+                                      .filter(line => !line.match(/개강일/))
+                                      .map(line => {
+                                        let cleaned = line.replace(/^(?:-|•|\*)\s*/, '').trim();
+                                        cleaned = cleaned.replace(/^[.\-:]\s*/, '').trim();
+                                        return cleaned;
+                                      })
+                                      .filter(Boolean)
+                                      .join('\n');
                                   }
 
                                   let alignmentClass = "text-left px-6";
