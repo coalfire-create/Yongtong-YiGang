@@ -3688,7 +3688,7 @@ function SortableGuidelineRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 border border-gray-100 rounded-lg p-3 bg-gray-50/50 hover:bg-gray-50 transition-colors"
+      className="flex items-center gap-3 border border-gray-100 rounded-lg p-3.5 bg-gray-50/50 hover:bg-gray-50 transition-colors shadow-sm"
       data-testid={`row-guideline-${item.id}`}
     >
       <div
@@ -3699,19 +3699,19 @@ function SortableGuidelineRow({
         <GripVertical className="w-5 h-5" />
       </div>
       
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-2 min-w-0">
-        <div className="font-bold text-gray-900 text-sm truncate md:col-span-1 border-r border-gray-200/50 pr-2 flex flex-col gap-1">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-3 min-w-0">
+        <div className="font-bold text-gray-900 text-sm md:col-span-2 border-r border-gray-200/50 pr-3 flex flex-col gap-1.5 break-words break-all whitespace-pre-wrap">
           <span className="text-[10px] px-1.5 py-0.5 bg-red-50 text-[#7B2332] rounded font-semibold w-fit">
             {categoryLabel}
           </span>
-          <span className="truncate">{item.title}</span>
+          <span>{item.title}</span>
         </div>
-        <div className="text-xs text-gray-500 line-clamp-2 md:col-span-3 whitespace-pre-wrap">
+        <div className="text-xs text-gray-600 md:col-span-3 whitespace-pre-wrap break-words break-all leading-relaxed">
           {item.content}
         </div>
       </div>
       
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex items-center gap-1 flex-shrink-0 border-l border-gray-100 pl-2">
         <button
           onClick={() => onEdit(item)}
           className="p-2 text-gray-400 hover:text-[#7B2332] hover:bg-red-50 rounded transition-colors"
@@ -3877,67 +3877,85 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     <div className="space-y-6">
       {/* Editor Box */}
       {editingGuideline ? (
-        <form onSubmit={handleEditSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
-          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-            <Pencil className="w-4 h-4 text-[#7B2332]" />
-            텍스트 항목 수정 ({activeTab})
-          </h3>
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <form 
+            onSubmit={handleEditSubmit} 
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-[#7B2332]" />
+                텍스트 항목 수정 ({activeTab})
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setEditingGuideline(null)} 
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분 / 분류 제목 (예: 국어, 영어, 교습비 등)</label>
+                  <input
+                    type="text"
+                    value={editingGuideline.title}
+                    onChange={(e) => setEditingGuideline({ ...editingGuideline, title: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
+                    placeholder="제목"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">표시할 섹션 위치</label>
+                  <select
+                    value={editingGuideline.category || "guideline"}
+                    onChange={(e) => setEditingGuideline({ ...editingGuideline, category: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
+                  >
+                    <option value="guideline">모집 요강</option>
+                    <option value="overview">프로그램 개요</option>
+                    <option value="curriculum">강사별 커리큘럼</option>
+                  </select>
+                </div>
+              </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분 / 분류 제목 (예: 국어, 영어, 교습비 등)</label>
-                <input
-                  type="text"
-                  value={editingGuideline.title}
-                  onChange={(e) => setEditingGuideline({ ...editingGuideline, title: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
-                  placeholder="제목"
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">내용 (엔터로 줄바꿈 시 실제 사이트에도 줄바꿈이 반영됩니다)</label>
+                <textarea
+                  value={editingGuideline.content}
+                  onChange={(e) => setEditingGuideline({ ...editingGuideline, content: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium resize-y font-mono"
+                  rows={12}
+                  placeholder="내용을 작성해주세요."
                   required
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">표시할 섹션 위치</label>
-                <select
-                  value={editingGuideline.category || "guideline"}
-                  onChange={(e) => setEditingGuideline({ ...editingGuideline, category: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
-                >
-                  <option value="guideline">모집 요강</option>
-                  <option value="overview">프로그램 개요</option>
+            </div>
 
-                  <option value="curriculum">강사별 커리큘럼</option>
-                </select>
-              </div>
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-2 bg-gray-50">
+              <button
+                type="submit"
+                disabled={editMutation.isPending}
+                className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                수정 저장
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingGuideline(null)}
+                className="px-4 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">내용 (엔터로 줄바꿈 시 실제 사이트에도 줄바꿈이 반영됩니다)</label>
-              <textarea
-                value={editingGuideline.content}
-                onChange={(e) => setEditingGuideline({ ...editingGuideline, content: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium resize-y"
-                rows={5}
-                placeholder="내용을 작성해주세요."
-                required
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="submit"
-              disabled={editMutation.isPending}
-              className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              수정 저장
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditingGuideline(null)}
-              className="px-4 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              취소
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       ) : (
         <form onSubmit={handleAddSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
@@ -4080,7 +4098,7 @@ function SortableNoticeRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 border ${item.is_active ? 'border-gray-100 bg-gray-50/50' : 'border-gray-200 bg-gray-150/30 opacity-70'} rounded-lg p-3 hover:bg-gray-50 transition-colors`}
+      className={`flex items-center gap-3 border ${item.is_active ? 'border-gray-100 bg-gray-50/50' : 'border-gray-200 bg-gray-150/30 opacity-70'} rounded-lg p-3.5 hover:bg-gray-50 transition-colors shadow-sm`}
       data-testid={`row-notice-${item.id}`}
     >
       <div
@@ -4091,19 +4109,19 @@ function SortableNoticeRow({
         <GripVertical className="w-5 h-5" />
       </div>
       
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-2 min-w-0">
-        <div className="font-bold text-gray-900 text-sm truncate md:col-span-1 border-r border-gray-200/50 pr-2">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-3 min-w-0">
+        <div className="font-bold text-gray-900 text-sm md:col-span-2 border-r border-gray-200/50 pr-3 break-words break-all whitespace-pre-wrap">
           {item.title}
         </div>
-        <div className="text-xs text-gray-500 line-clamp-2 md:col-span-2 whitespace-pre-wrap">
+        <div className="text-xs text-gray-600 md:col-span-2 whitespace-pre-wrap break-words break-all leading-relaxed">
           {item.content}
         </div>
-        <div className="text-xs font-semibold text-gray-400 flex items-center md:col-span-1">
+        <div className="text-xs font-semibold text-gray-400 flex items-center md:col-span-1 border-l border-gray-150/50 pl-2">
           {new Date(item.created_at).toLocaleDateString("ko-KR")}
         </div>
       </div>
       
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex items-center gap-1 flex-shrink-0 border-l border-gray-100 pl-2">
         <button
           onClick={() => onToggleActive(item)}
           className={`px-2.5 py-1 text-[11px] font-bold rounded transition-colors ${
@@ -4279,52 +4297,71 @@ function SummerNoticesManager({ activeTab }: { activeTab: "중등" | "고1" | "�
     <div className="space-y-6">
       {/* Editor Box */}
       {editingNotice ? (
-        <form onSubmit={handleEditSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
-          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-            <Pencil className="w-4 h-4 text-[#7B2332]" />
-            입반TEST 안내 수정 ({activeTab})
-          </h3>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">안내 제목</label>
-              <input
-                type="text"
-                value={editingNotice.title}
-                onChange={(e) => setEditingNotice({ ...editingNotice, title: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
-                placeholder="제목"
-                required
-              />
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <form 
+            onSubmit={handleEditSubmit} 
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-[#7B2332]" />
+                입반TEST 안내 수정 ({activeTab})
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setEditingNotice(null)} 
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">안내 내용 (반 정보나 시험 일정이 들어갈 경우 정해진 포맷에 따라 적으면 사용자 페이지에 예쁜 카드 형태로 보입니다)</label>
-              <textarea
-                value={editingNotice.content}
-                onChange={(e) => setEditingNotice({ ...editingNotice, content: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium resize-y font-mono text-xs"
-                rows={10}
-                placeholder="내용을 작성해주세요."
-                required
-              />
+            
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">안내 제목</label>
+                <input
+                  type="text"
+                  value={editingNotice.title}
+                  onChange={(e) => setEditingNotice({ ...editingNotice, title: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium"
+                  placeholder="제목"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">안내 내용 (반 정보나 시험 일정이 들어갈 경우 정해진 포맷에 따라 적으면 사용자 페이지에 예쁜 카드 형태로 보입니다)</label>
+                <textarea
+                  value={editingNotice.content}
+                  onChange={(e) => setEditingNotice({ ...editingNotice, content: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 font-medium resize-y font-mono"
+                  rows={12}
+                  placeholder="내용을 작성해주세요."
+                  required
+                />
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="submit"
-              disabled={editMutation.isPending}
-              className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              수정 저장
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditingNotice(null)}
-              className="px-4 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              취소
-            </button>
-          </div>
-        </form>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-2 bg-gray-50">
+              <button
+                type="submit"
+                disabled={editMutation.isPending}
+                className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                수정 저장
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingNotice(null)}
+                className="px-4 py-2 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
       ) : (
         <form onSubmit={handleAddSubmit} className="bg-white border border-gray-200 p-6 space-y-4 shadow-sm rounded-lg">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">

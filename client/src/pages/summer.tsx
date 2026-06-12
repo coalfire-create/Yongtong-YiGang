@@ -749,10 +749,11 @@ export default function Summer() {
       const titleA = extractSortKey(a);
       const titleB = extractSortKey(b);
 
-      const subjA = getSubject(titleA);
-      const subjB = getSubject(titleB);
+      // 과목 분류는 제목만 기준으로 (본문에 '수학특강' 등 다른 과목 단어가 섞여 오분류되는 것 방지)
+      const subjA = getSubject((a as any).title || (a as any).teacher_name || "");
+      const subjB = getSubject((b as any).title || (b as any).teacher_name || "");
 
-      let order = ["수학", "국어", "탐구", "영어", "기타"];
+      let order = ["수학", "국어", "영어", "탐구", "기타"];
       if ((activeTab as any) === "고3") {
         order = ["국어", "영어", "수학", "탐구", "기타"];
       }
@@ -782,9 +783,10 @@ export default function Summer() {
     if (curriculumSubjectFilter !== "전체") {
       const title = ((g as any).title || (g as any).teacher_name || "");
       if (curriculumSubjectFilter === "수학특강") {
-        if (!(title.includes("올데이") || title.includes("특강"))) return false;
+        const isMath = getSubject(title) === "수학";
+        if (!(isMath && (title.includes("올데이") || title.includes("특강")))) return false;
       } else {
-        const subj = getSubject(title + " " + ((g as any).content || ""));
+        const subj = getSubject(title);
         if (subj !== curriculumSubjectFilter) return false;
       }
     }
@@ -800,9 +802,10 @@ export default function Summer() {
     if (curriculumSubjectFilter !== "전체") {
       const title = ((img as any).title || img.teacher_name || "");
       if (curriculumSubjectFilter === "수학특강") {
-        if (!(title.includes("올데이") || title.includes("특강"))) return false;
+        const isMath = getSubject(title) === "수학";
+        if (!(isMath && (title.includes("올데이") || title.includes("특강")))) return false;
       } else {
-        const subj = getSubject(title + " " + ((img as any).content || ""));
+        const subj = getSubject(title);
         if (subj !== curriculumSubjectFilter) return false;
       }
     }
@@ -983,7 +986,7 @@ export default function Summer() {
   const renderCurriculumGuidelines = (guidelineList: any[]) => {
     if (guidelineList.length === 0) return null;
 
-    let order = ["수학", "국어", "탐구", "영어", "기타"];
+    let order = ["수학", "국어", "영어", "탐구", "기타"];
     if ((activeTab as any) === "고3") {
       order = ["국어", "영어", "수학", "탐구", "기타"];
     }
@@ -992,7 +995,7 @@ export default function Summer() {
     order.forEach(subj => grouped[subj] = []);
 
     guidelineList.forEach(g => {
-      const subj = getSubject((g.title || g.teacher_name || "") + " " + (g.content || ""));
+      const subj = getSubject(g.title || g.teacher_name || "");
       if (grouped[subj]) {
         grouped[subj].push(g);
       } else {
@@ -1112,7 +1115,7 @@ export default function Summer() {
                                           
                                           return (
                                             <div key={lIdx} className="text-gray-600 font-medium leading-relaxed flex items-start gap-1.5">
-                                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 flex-shrink-0" />
+                                              <span className="w-1.5 h-1.5 rounded-full bg-[#7B2332] mt-2 flex-shrink-0" />
                                               <span className="break-keep">{cleaned}</span>
                                             </div>
                                           );
