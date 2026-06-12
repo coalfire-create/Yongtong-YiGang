@@ -790,6 +790,26 @@ export default function Summer() {
 
       // 동일 학교/특강 내에서 수학 과목이면 강사(최주용->황해룡->권소영->정찬영->임서원) 정렬 추가
       if (subjA === "수학" && subjB === "수학") {
+        // 만약 둘 다 특강(groupScore === 10)인 경우 특강 세부 분류로 먼저 묶어준다.
+        if (groupA === 10 && groupB === 10) {
+          const getSpecialLectureSubGroupScore = (title: string) => {
+            const t = title.toUpperCase();
+            if (t.includes("대수")) return 1;
+            if (t.includes("화성")) return 2;
+            if (t.includes("가온")) return 3;
+            if (t.includes("병점")) return 4;
+            if (t.includes("영덕")) return 5;
+            if (t.includes("수원")) return 6;
+            if (t.includes("청명")) return 7;
+            if (t.includes("고색")) return 8;
+            if (t.includes("동탄국제")) return 9;
+            return 10;
+          };
+          const specA = getSpecialLectureSubGroupScore(titleA);
+          const specB = getSpecialLectureSubGroupScore(titleB);
+          if (specA !== specB) return specA - specB;
+        }
+
         const getMathTeacherScore = (title: string) => {
           if (title.includes("최주용")) return 1;
           if (title.includes("황해룡")) return 2;
