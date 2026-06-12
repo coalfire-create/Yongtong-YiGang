@@ -327,6 +327,13 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   let title = (rawTitle || "").replace(/\r/g, "").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
   content = content || "";
 
+  // 1. Clean .xlsx, trailing [고1] etc, and date brackets from title BEFORE parsing
+  if (title.toLowerCase().includes(".xlsx")) {
+    title = title.split(/\.xlsx/i)[0].trim();
+  }
+  title = title.replace(/\(\d{2,4}[^)]*\)/g, "").trim();
+  title = title.replace(/\s*\[고[1-3]\]\s*$/, "").trim();
+
   // Grade
   let grade = "고1";
   if (title.includes("고3")) grade = "고3";
@@ -363,7 +370,7 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   }
 
   // Subject
-  const subjectsList = ["수학", "영어", "국어", "통과", "화학", "물리", "생명", "통합과학"];
+  const subjectsList = ["수학", "영어", "국어", "통과", "화학", "물리", "생명", "통합과학", "과학", "과탐", "탐구"];
   let subject = "";
   for (const s of subjectsList) {
     if (title.includes(s)) {
@@ -378,41 +385,82 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
       subject = "기타";
     }
   }
+  if (subject === "통합과학" || subject === "과학" || subject === "과탐" || subject === "탐구") {
+    if (title.includes("물리")) subject = "물리";
+    else if (title.includes("화학")) subject = "화학";
+    else if (title.includes("생명")) subject = "생명";
+    else if (title.includes("지학") || title.includes("지구과학")) subject = "지학";
+    else subject = "과학";
+  }
   if (subject === "통합과학") subject = "통과";
 
   // Course
   let course = title;
-  course = course.replace(/\[[^\]]+\]/g, "");
-  if (teacher) {
-    const tBase = teacher.replace("T", "");
-    course = course.replace(new RegExp(tBase + "T?"), "");
-  }
-  course = course.replace(new RegExp(subject), "");
-  if (subject === "통과") {
-    course = course.replace(/통합과학/g, "");
-  }
-  course = course.replace(/공통수학\d?/g, "");
-  course = course.replace(/통합과학연합/g, "");
-  course = course.replace(/화학연합/g, "");
-  course = course.replace(/통과연합/g, "");
-  course = course.replace(/연합 화학/g, "");
-  course = course.replace(/-\s*/g, "");
-  course = course.replace(/\(\d+회\)/g, "");
   
-  // Clean grade words using spaces instead of \b for Hangul
-  course = course.replace(/(?:\s|^)(?:고[1-3]|중3|중등|고등)(?:\s|$)/g, " ");
-  course = course.replace(/\s+/g, " ").trim();
-
-  if (!course) {
-    const brackets = title.match(/\[([^\]]+)\]/g);
-    if (brackets && brackets.length > 1) {
-      course = brackets[brackets.length - 1].replace(/[\[\]]/g, "");
+  // Extract course if specific pattern exists
+  let extractedCourse = "";
+  if (title.includes("커리큘럼")) {
+    const parts = title.split("커리큘럼");
+    const after = parts[1] ? parts[1].replace(/[-\s]/g, "").trim() : "";
+    if (after) {
+      extractedCourse = parts[1].trim();
+    }
+  } else if (title.includes("강의계획서")) {
+    const parts = title.split("강의계획서");
+    const after = parts[1] ? parts[1].replace(/[-\s]/g, "").trim() : "";
+    if (after) {
+      extractedCourse = parts[1].trim();
     }
   }
-  course = course.replace(/[\[\]]/g, "").replace(/\s+/g, " ").trim();
 
-  if (course.startsWith("연합") && course.endsWith("연합")) {
-    course = course.substring(2).trim();
+  if (extractedCourse) {
+    course = extractedCourse;
+  } else {
+    course = course.replace(/\[[^\]]+\]/g, "");
+    if (teacher) {
+      const tBase = teacher.replace("T", "");
+      course = course.replace(new RegExp(tBase + "T?"), "");
+    }
+    course = course.replace(new RegExp(subject), "");
+    if (subject === "통과") {
+      course = course.replace(/통합과학/g, "");
+    }
+    course = course.replace(/공통수학\d?/g, "");
+    course = course.replace(/통합과학연합/g, "");
+    course = course.replace(/화학연합/g, "");
+    course = course.replace(/통과연합/g, "");
+    course = course.replace(/연합 화학/g, "");
+    course = course.replace(/과탐/g, "");
+    course = course.replace(/과학/g, "");
+    course = course.replace(/탐구/g, "");
+    course = course.replace(/커리큘럼/g, "");
+    course = course.replace(/강의계획서/g, "");
+    course = course.replace(/-\s*/g, "");
+    course = course.replace(/\(\d+회\)/g, "");
+    
+    course = course.replace(/(?:\s|^)(?:고[1-3]|중3|중등|고등)(?:\s|$)/g, " ");
+    course = course.replace(/\s+/g, " ").trim();
+
+    if (!course) {
+      const brackets = title.match(/\[([^\]]+)\]/g);
+      if (brackets && brackets.length > 1) {
+        course = brackets[brackets.length - 1].replace(/[\[\]]/g, "");
+      }
+    }
+    course = course.replace(/[\[\]]/g, "").replace(/\s+/g, " ").trim();
+
+    if (course.startsWith("연합") && course.endsWith("연합")) {
+      course = course.substring(2).trim();
+    }
+  }
+
+  // Fallback if course ends up empty or too short
+  if (!course || course.length <= 1) {
+    if (subject === "과학" || subject === "통과") {
+      course = "통합과학";
+    } else {
+      course = subject;
+    }
   }
 
   // Sessions
