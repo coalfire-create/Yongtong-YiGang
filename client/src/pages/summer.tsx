@@ -327,6 +327,12 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   let title = (rawTitle || "").replace(/\r/g, "").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
   content = content || "";
 
+  // 0. If title is already normalized, bypass to avoid double formatting
+  const alreadyFormatted = /^\[[가-힣0-9]+\]\s*.+\s*(수학|영어|국어|통과|물리|화학|생명|지학|과학|기타)\s*-\s*[^\s]+T/i.test(title);
+  if (alreadyFormatted && !title.toLowerCase().includes(".xlsx")) {
+    return title;
+  }
+
   // 1. Clean .xlsx, trailing [고1] etc, and date brackets from title BEFORE parsing
   if (title.toLowerCase().includes(".xlsx")) {
     title = title.split(/\.xlsx/i)[0].trim();
