@@ -1062,7 +1062,16 @@ export default function Summer() {
                                         // Normalize to "1회차: 내용"
                                         const sessionMatch = cleaned.match(/^(\d+,\d+\s*회차|\d+\s*회차)\s*[\-–—:：]?\s*(.*)$/);
                                         if (sessionMatch) {
-                                          cleaned = `${sessionMatch[1]}: ${sessionMatch[2].trim()}`;
+                                          let desc = sessionMatch[2].trim();
+                                          
+                                          // Strip starting dates from desc, e.g. "7/10(금):", "(7월 8일):", "7월 8일"
+                                          // Pattern 1: (7월 8일) or (7/10) with optional day of week and colon
+                                          desc = desc.replace(/^\s*\(\s*\d{1,2}\s*[월\/]\s*\d{1,2}\s*일?\s*(?:\([가-힣]\))?\s*\)\s*[:\-：]?\s*/, "");
+                                          
+                                          // Pattern 2: 7/10(금) or 7월 8일 with optional day of week and colon
+                                          desc = desc.replace(/^\s*\d{1,2}\s*[월\/]\s*\d{1,2}\s*일?\s*(?:\([가-힣]\))?\s*[:\-：]?\s*/, "");
+                                          
+                                          cleaned = `${sessionMatch[1]}: ${desc.trim()}`;
                                         }
                                         return cleaned;
                                       })
