@@ -648,7 +648,7 @@ export default function Summer() {
     }[];
   }
 
-  const parseToTable = (content: string): TableSection[] => {
+  const parseToTable = (content: string): { sections: TableSection[], startDateInfo: string } => {
     const lines = content.split("\n").map(l => l.replace(/^ +| +$/g, '')).filter(l => l.trim() !== "");
     const sections: TableSection[] = [];
     let currentSection: TableSection | null = null;
@@ -753,14 +753,7 @@ export default function Summer() {
       }
     }
     
-    if (startDateInfo) {
-      sections.unshift({
-        category: "개강일 / 회차",
-        items: [{ subCategory: "", content: startDateInfo }]
-      });
-    }
-
-    return sections;
+    return { sections, startDateInfo };
   };
 
   const renderCurriculumGuidelines = (guidelineList: any[]) => {
@@ -800,16 +793,18 @@ export default function Summer() {
               
               <div className="space-y-12">
                 {subjectsList.map((g, gIdx) => {
-                  const sections = parseToTable(g.content || "").filter(sec => sec.category !== "수업 일정");
+                  const parsed = parseToTable(g.content || "");
+                  const sections = parsed.sections.filter(sec => sec.category !== "수업 일정");
                   if (sections.length === 0) return null;
 
-                  const titleLines = g.title.split('\n');
-                  const mainTitle = titleLines[0];
-                  const subTitle = titleLines.slice(1).join(' ');
+                  let titleLines = g.title.split('\n');
+                  if (parsed.startDateInfo) {
+                    titleLines[0] = `${titleLines[0]} (${parsed.startDateInfo.replace(/[()]/g, '')})`;
+                  }
 
                   return (
                     <div key={g.id} className="mb-14">
-                      <h3 className="text-[17px] font-bold text-gray-900 mb-3 whitespace-pre-line leading-snug">{g.title}</h3>
+                      <h3 className="text-[17px] font-bold text-gray-900 mb-3 whitespace-pre-line leading-snug">{titleLines.join('\n')}</h3>
 
                       <div className="overflow-x-auto">
                         <table className="w-full text-[13px] sm:text-sm text-center border-collapse border border-gray-300">
