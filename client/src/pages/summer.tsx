@@ -492,6 +492,7 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
 
   // 1. Try in title e.g. 7/18(토) 개강
   let dateTitleMatch = title.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)\s*개강/) || 
+                       title.match(/(\d{1,2}\.\d{1,2}(?:\([가-힣]\))?)\s*개강/) ||
                        title.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)\s*개강/);
   if (dateTitleMatch) {
     startDate = dateTitleMatch[1];
@@ -503,6 +504,7 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     if (schedMatch) {
       const scheduleText = schedMatch[1];
       let m = scheduleText.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || 
+              scheduleText.match(/(\d{1,2}\.\d{1,2}(?:\([가-힣]\))?)/) || 
               scheduleText.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
       if (m) {
         startDate = m[1];
@@ -514,9 +516,10 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   if (!startDate) {
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
     for (const line of lines) {
-      let m = line.match(/(?:개강일|개강)\s*(?:\/\s*회차)?\s*[:\-]\s*([^\n]+)/);
+      let m = line.match(/(?:개강일|개강)\s*(?:\/\s*회차|\([^)]*\))?\s*[:\-]\s*([^\n]+)/);
       if (m) {
         let dm = m[1].match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || 
+                 m[1].match(/(\d{1,2}\.\d{1,2}(?:\([가-힣]\))?)/) || 
                  m[1].match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
         if (dm) {
           startDate = dm[1];
@@ -528,7 +531,7 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
 
   // 4. Try in 1회차 line in [회차별 내용]
   if (!startDate && sessionsSection) {
-    let m = sessionsSection.match(/1회차[^\n•]*?(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?|\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
+    let m = sessionsSection.match(/1회차[^\n•]*?(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?|\d{1,2}\.\d{1,2}(?:\([가-힣]\))?|\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
     if (m) {
       startDate = m[1];
     }
@@ -536,7 +539,9 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
 
   // 5. Fallback to any date in title
   if (!startDate) {
-    let dm = title.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || title.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
+    let dm = title.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || 
+             title.match(/(\d{1,2}\.\d{1,2}(?:\([가-힣]\))?)/) || 
+             title.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
     if (dm) startDate = dm[0];
   }
 
@@ -551,6 +556,10 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
 
   // Normalize to M/D
   if (startDate) {
+    const dotDateMatch = startDate.match(/(\d{1,2})\s*\.\s*(\d{1,2})/);
+    if (dotDateMatch) {
+      startDate = `${dotDateMatch[1]}/${dotDateMatch[2]}`;
+    }
     const korDateMatch = startDate.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
     if (korDateMatch) {
       startDate = `${korDateMatch[1]}/${korDateMatch[2]}`;
