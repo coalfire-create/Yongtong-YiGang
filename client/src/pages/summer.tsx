@@ -323,36 +323,43 @@ function ParsedNoticeCard({ title, content, date }: { title: string; content: st
   );
 }
 
+function cleanParentheses(title: string): string {
+  // 1. Strip the standard date/session pattern like (7/17(금) 개강, 5회) or (7/13 개강, 6회)
+  title = title.replace(/\(\d{1,2}[\/\.]\d{1,2}(?:\([가-힣]\))?\s*개강(?:일)?(?:,\s*\d+회(?:차)?)?\)/gi, "");
+  
+  // 2. Strip single sessions pattern like (1회)
+  title = title.replace(/\(\d+회(?:차)?\)/gi, "");
+
+  return title.trim();
+}
+
 function formatSummerCurriculumTitle(rawTitle: string, content: string, division: string): string {
-  let title = (rawTitle || "").replace(/\r/g, "").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+  let title = (rawTitle || "").normalize('NFC').replace(/\r/g, "").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
   content = content || "";
 
-  // 0. If title is already normalized, bypass to avoid double formatting
-  const alreadyFormatted = /^\[[가-힣0-9]+\]\s*.+\s*(수학|영어|국어|통과|물리|화학|생명|지학|과학|기타)\s*-\s*[^\s]+T/i.test(title);
-  if (alreadyFormatted && !title.toLowerCase().includes(".xlsx")) {
-    return title;
-  }
-
-  // 1. Clean .xlsx, trailing [고1] etc, and date brackets from title BEFORE parsing
+  // 1. Initial Cleaning: strip .xlsx
   if (title.toLowerCase().includes(".xlsx")) {
     title = title.split(/\.xlsx/i)[0].trim();
   }
-  title = title.replace(/\(\d{2,4}[^)]*\)/g, "").trim();
-  title = title.replace(/\s*\[고[1-3]\]\s*$/, "").trim();
 
-  // Grade
+  // 2. Strip parenthesized dates and sessions
+  title = cleanParentheses(title);
+
+  // 3. Determine Grade
   let grade = "고1";
-  if (title.includes("고3")) grade = "고3";
-  else if (title.includes("고2")) grade = "고2";
-  else if (title.includes("고1")) grade = "고1";
-  else if (title.includes("중3")) grade = "중3";
-  else if (title.includes("중등")) grade = "중3";
-  else if (title.includes("초중등")) grade = "중3";
+  if (division === "고3") grade = "고3";
   else if (division === "고2") grade = "고2";
-  else if (division === "중3") grade = "중3";
-  else if (division === "고3") grade = "고3";
+  else if (division === "고1") grade = "고1";
+  else if (division === "중3" || division === "중등") grade = "중3";
+  else {
+    const tLower = title.toLowerCase();
+    if (tLower.includes("고3")) grade = "고3";
+    else if (tLower.includes("고2")) grade = "고2";
+    else if (tLower.includes("고1")) grade = "고1";
+    else if (tLower.includes("중3") || tLower.includes("중등") || tLower.includes("초중등")) grade = "중3";
+  }
 
-  // Teacher
+  // 4. Extract Teacher
   const teachersList = [
     "최주용", "정찬영", "황준우", "변현수", "박소현", "박지원",
     "권소영", "박병조", "임서원", "황해룡", "김현종", "김종인",
@@ -375,7 +382,7 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     }
   }
 
-  // Subject
+  // 5. Extract Subject
   const subjectsList = ["수학", "영어", "국어", "통과", "화학", "물리", "생명", "통합과학", "과학", "과탐", "탐구"];
   let subject = "";
   for (const s of subjectsList) {
@@ -400,76 +407,53 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   }
   if (subject === "통합과학") subject = "통과";
 
-  // Course
+  // Override subject for Yoo Seung-jin
+  if (teacher === "유승진T") {
+    subject = "물리";
+  }
+
+  // 6. Extract Course
   let course = title;
-  
-  // Extract course if specific pattern exists
-  let extractedCourse = "";
-  if (title.includes("커리큘럼")) {
-    const parts = title.split("커리큘럼");
-    const after = parts[1] ? parts[1].replace(/[-\s]/g, "").trim() : "";
-    if (after) {
-      extractedCourse = parts[1].trim();
-    }
-  } else if (title.includes("강의계획서")) {
-    const parts = title.split("강의계획서");
-    const after = parts[1] ? parts[1].replace(/[-\s]/g, "").trim() : "";
-    if (after) {
-      extractedCourse = parts[1].trim();
-    }
+
+  // Strip grade brackets/markers
+  course = course.replace(/\[(?:고[1-3]|중3|중등|고등|초중등|초·중등|고1,2|고1,고2|고1,2\s*연합|고1,2\s*중심\s*연합|화성고1,2\s*중심\s*연합|중3\/고1|중3,고1)\]/g, "");
+  // Strip grade words without brackets
+  course = course.replace(/(?:\s|^)(?:고[1-3]|중3|중등|고등)(?:\s|$)/g, " ");
+
+  // Strip standalone subject name right before the hyphen/teacher
+  course = course.replace(/\s*(수학|영어|국어|통과|물리|화학|생명|지학|과학|과탐|탐구)\s*-\s*/gi, " - ");
+
+  // Strip teacher name
+  if (teacher) {
+    const tBase = teacher.replace("T", "");
+    course = course.replace(new RegExp(tBase + "T?"), "");
+  }
+  course = course.replace(/강사T?/g, "");
+
+  // Strip other common extra subject/course words if they are standalone
+  course = course.replace(/커리큘럼/g, "");
+  course = course.replace(/강의계획서/g, "");
+
+  // Clean brackets and hyphens
+  course = course.replace(/[\[\]]/g, " ").replace(/-\s*/g, " ").replace(/\s+/g, " ").trim();
+
+  // If the course starts or ends with "연합", clean it if it is redundant
+  if (course.startsWith("연합") && course.endsWith("연합") && course !== "연합") {
+    course = course.substring(2).trim();
   }
 
-  if (extractedCourse) {
-    course = extractedCourse;
-  } else {
-    course = course.replace(/\[[^\]]+\]/g, "");
-    if (teacher) {
-      const tBase = teacher.replace("T", "");
-      course = course.replace(new RegExp(tBase + "T?"), "");
-    }
-    course = course.replace(new RegExp(subject), "");
-    if (subject === "통과") {
-      course = course.replace(/통합과학/g, "");
-    }
-    course = course.replace(/공통수학\d?/g, "");
-    course = course.replace(/통합과학연합/g, "");
-    course = course.replace(/화학연합/g, "");
-    course = course.replace(/통과연합/g, "");
-    course = course.replace(/연합 화학/g, "");
-    course = course.replace(/과탐/g, "");
-    course = course.replace(/과학/g, "");
-    course = course.replace(/탐구/g, "");
-    course = course.replace(/커리큘럼/g, "");
-    course = course.replace(/강의계획서/g, "");
-    course = course.replace(/-\s*/g, "");
-    course = course.replace(/\(\d+회\)/g, "");
-    
-    course = course.replace(/(?:\s|^)(?:고[1-3]|중3|중등|고등)(?:\s|$)/g, " ");
-    course = course.replace(/\s+/g, " ").trim();
-
-    if (!course) {
-      const brackets = title.match(/\[([^\]]+)\]/g);
-      if (brackets && brackets.length > 1) {
-        course = brackets[brackets.length - 1].replace(/[\[\]]/g, "");
-      }
-    }
-    course = course.replace(/[\[\]]/g, "").replace(/\s+/g, " ").trim();
-
-    if (course.startsWith("연합") && course.endsWith("연합")) {
-      course = course.substring(2).trim();
-    }
+  // Clean redundant subject prefix from course name
+  if (course && subject) {
+    const cleanSubjectPrefixRegex = new RegExp(`^\\s*${subject}`, "i");
+    course = course.replace(cleanSubjectPrefixRegex, "").trim();
   }
 
-  // Fallback if course ends up empty or too short
-  if (!course || course.length <= 1) {
-    if (subject === "과학" || subject === "통과") {
-      course = "통합과학";
-    } else {
-      course = subject;
-    }
+  // Fallback if course ends up empty or matches subject name
+  if (!course || course.length <= 1 || course.toLowerCase() === subject.toLowerCase()) {
+    course = "";
   }
 
-  // Sessions
+  // 7. Sessions count
   let sessions = "";
   let sessionsSection = "";
   const sMatch = content.match(/\[회차별\s*내용\]([\s\S]*?)(?=\n\s*\[|$)/);
@@ -480,25 +464,23 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   if (sessionCount > 0) {
     sessions = sessionCount + "회";
   } else {
-    let sm = title.match(/(\d+)\s*회/);
+    let sm = rawTitle.match(/(\d+)\s*회/);
     if (sm) {
       sessions = sm[1] + "회";
     }
   }
 
-  // Start Date & Day of Week Extraction
+  // 8. Start Date
   let startDate = "";
   let dayOfWeek = "";
 
-  // 1. Try in title e.g. 7/18(토) 개강
-  let dateTitleMatch = title.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)\s*개강/) || 
-                       title.match(/(\d{1,2}\.\d{1,2}(?:\([가-힣]\))?)\s*개강/) ||
-                       title.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)\s*개강/);
+  let dateTitleMatch = rawTitle.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)\s*개강/) || 
+                       rawTitle.match(/(\d{1,2}\.\d{1,2}(?:\([가-힣]\))?)\s*개강/) ||
+                       rawTitle.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)\s*개강/);
   if (dateTitleMatch) {
     startDate = dateTitleMatch[1];
   }
 
-  // 2. Try in [수업 일정]
   if (!startDate) {
     const schedMatch = content.match(/\[수업\s*일정\]([\s\S]*?)(?=\n\s*\[|$)/);
     if (schedMatch) {
@@ -512,7 +494,6 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     }
   }
 
-  // 3. Try in "개강일" line in content
   if (!startDate) {
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
     for (const line of lines) {
@@ -529,7 +510,6 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     }
   }
 
-  // 4. Try in 1회차 line in [회차별 내용]
   if (!startDate && sessionsSection) {
     let m = sessionsSection.match(/1회차[^\n•]*?(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?|\d{1,2}\.\d{1,2}(?:\([가-힣]\))?|\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
     if (m) {
@@ -537,15 +517,13 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     }
   }
 
-  // 5. Fallback to any date in title
   if (!startDate) {
-    let dm = title.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || 
-             title.match(/(\d{1,2}\.\d{1,2}(?:\([가-힣]\))?)/) || 
-             title.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
+    let dm = rawTitle.match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || 
+             rawTitle.match(/(\d{1,2}\.\d{1,2}(?:\([가-힣]\))?)/) || 
+             rawTitle.match(/(\d{1,2}월\s*\d{1,2}일(?:\([가-힣]\))?)/);
     if (dm) startDate = dm[0];
   }
 
-  // Extract day match
   if (startDate) {
     const dayMatch = startDate.match(/\(([가-힣])\)/);
     if (dayMatch) {
@@ -554,7 +532,6 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     }
   }
 
-  // Normalize to M/D
   if (startDate) {
     const dotDateMatch = startDate.match(/(\d{1,2})\s*\.\s*(\d{1,2})/);
     if (dotDateMatch) {
@@ -567,7 +544,6 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     startDate = startDate.trim();
   }
 
-  // Calculate dayOfWeek if missing
   if (startDate && !dayOfWeek) {
     const mMatch = startDate.match(/^(\d{1,2})\/(\d{1,2})$/);
     if (mMatch) {
@@ -589,7 +565,10 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   }
 
   let infoString = infoParts.length > 0 ? ` (${infoParts.join(", ")})` : "";
-  return `[${grade}] ${course} ${subject} - ${teacher}${infoString}`;
+  
+  // Construct final title
+  const courseStr = course ? ` ${course}` : "";
+  return `[${grade}]${courseStr} ${subject} - ${teacher}${infoString}`;
 }
 
 export default function Summer() {
@@ -676,6 +655,11 @@ export default function Summer() {
       return acc;
     }, [])
     .map((curr: any) => {
+      // Normalize to NFC to prevent NFD issues
+      if (curr.title) curr.title = curr.title.normalize('NFC');
+      if (curr.content) curr.content = curr.content.normalize('NFC');
+      if (curr.division) curr.division = curr.division.normalize('NFC');
+
       // Format the content line breaks
       let c = curr.content || "";
       c = c.replace(/수업 후 ~22/g, "");
@@ -708,7 +692,10 @@ export default function Summer() {
           if (m2) line = m2[1] + m2[2];
 
           if (line.trim() !== "") {
-            if (line.match(/^\d+회차/) || line.match(/^개강일/)) {
+            if (line.match(/^개강일/)) {
+              continue;
+            }
+            if (line.match(/^\d+회차/)) {
               sessionLines.push(line.trim());
             } else {
               if (sessionLines.length > 0) {
