@@ -364,7 +364,8 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     "최주용", "정찬영", "황준우", "변현수", "박소현", "박지원",
     "권소영", "박병조", "임서원", "황해룡", "김현종", "김종인",
     "심규원", "유승진", "곽윤협", "장해든누리", "임희민", "김연우",
-    "김유정", "대니얼", "문브라더스", "양준민", "정규영", "김홍석"
+    "김유정", "대니얼", "문브라더스", "양준민", "정규영", "김홍석",
+    "선화희"
   ];
   let teacher = "";
   for (const t of teachersList) {
