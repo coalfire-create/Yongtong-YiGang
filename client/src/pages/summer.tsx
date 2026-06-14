@@ -1077,6 +1077,76 @@ export default function Summer() {
     return { sections, startDateInfo };
   };
 
+  const parseSchedule = (text: string): { day: string; time: string }[] => {
+    if (!text) return [];
+    
+    let cleaned = text.trim();
+    cleaned = cleaned.replace(/\s+\/\s+/g, '\n');
+    
+    cleaned = cleaned.replace(/^\d+월\s*\d+일\s*개강\s*[\/,:\-–—~]\s*/i, '');
+    cleaned = cleaned.replace(/^\d+[\/\.]\d+(?:\([월화수목금토일]\))?\s*개강\s*[\/,:\-–—~]\s*/i, '');
+    cleaned = cleaned.replace(/^\d+[\/\.]\d+(?:\([월화수목금토일]\))?\s*개강(?:\s|$)/i, '');
+    cleaned = cleaned.replace(/^\d+[\/\.]\d+(?:\([월화수목금토일]\))?\s*오픈\s*[\/,:\-–—~]\s*/i, '');
+
+    const hasTimeIndicator = (s: string) => {
+      return /\d/.test(s) || s.includes('오전') || s.includes('오후') || s.includes('시') || s.includes('영상') || s.includes('업로드');
+    };
+
+    const rawParts: { text: string; separator: string }[] = [];
+    let currentWord = '';
+    for (let i = 0; i < cleaned.length; i++) {
+      const char = cleaned[i];
+      if (char === ',' || char === '\n' || char === ';') {
+        rawParts.push({ text: currentWord, separator: char });
+        currentWord = '';
+      } else {
+        currentWord += char;
+      }
+    }
+    rawParts.push({ text: currentWord, separator: '' });
+
+    const parts: string[] = [];
+    let temp = '';
+    for (let i = 0; i < rawParts.length; i++) {
+      const part = rawParts[i];
+      const combined = temp ? temp + part.text : part.text;
+      
+      if (i < rawParts.length - 1 && !hasTimeIndicator(combined)) {
+        temp = combined + part.separator;
+      } else {
+        parts.push(combined.trim());
+        temp = '';
+      }
+    }
+
+    const filteredParts = parts.map(p => p.trim()).filter(Boolean);
+
+    const slots: { day: string; time: string }[] = [];
+    filteredParts.forEach(part => {
+      if (!hasTimeIndicator(part)) return;
+
+      let firstTimeIdx = part.search(/\d|오전|오후/);
+      if (firstTimeIdx === -1) {
+        slots.push({ day: '', time: part });
+        return;
+      }
+      
+      let dayPart = part.substring(0, firstTimeIdx).trim();
+      let timePart = part.substring(firstTimeIdx).trim();
+
+      dayPart = dayPart.replace(/[:\-–—~]$/, '').trim();
+
+      const hasDayWord = /[월화수목금토일]/.test(dayPart) || /Live|현강/.test(dayPart);
+      if (!hasDayWord) {
+        slots.push({ day: '', time: part });
+      } else {
+        slots.push({ day: dayPart, time: timePart });
+      }
+    });
+
+    return slots;
+  };
+
   const renderCurriculumGuidelines = (guidelineList: any[]) => {
     if (guidelineList.length === 0) return null;
 
@@ -1117,9 +1187,49 @@ export default function Summer() {
 
                   let displayTitle = g.title;
 
+                  const scheduleSection = parsed.sections.find(sec => sec.category === "수업 일정");
+                  const scheduleText = scheduleSection?.items?.map(item => item.content).join(" ").trim() || "";
+                  const scheduleSlots = parseSchedule(scheduleText);
+
                   return (
                     <div key={g.id} className="mb-14">
                       <h3 className="text-[17px] font-bold text-gray-900 mb-3 whitespace-pre-line leading-snug">{displayTitle}</h3>
+
+                      {scheduleSlots.length > 0 && (
+                        <div className="flex flex-wrap gap-2.5 mb-4">
+                          {scheduleSlots.map((slot, sIdx) => {
+                            const isTimeLike = /\d{1,2}(?::\d{2}|시|~|-|–|—)/.test(slot.time) || slot.time.includes("오전") || slot.time.includes("오후") || slot.time.includes("영상") || slot.time.includes("업로드");
+                            return (
+                              <div 
+                                key={sIdx} 
+                                className="inline-flex items-center gap-1.5 bg-slate-50 border border-gray-200/60 rounded-xl px-3 py-1.5 shadow-sm text-xs sm:text-sm text-gray-700 font-medium"
+                              >
+                                {slot.day ? (
+                                  <>
+                                    <div className="flex items-center gap-1 bg-[#7B2332]/10 text-[#7B2332] px-2 py-0.5 rounded-lg text-xs font-extrabold">
+                                      <Calendar className="w-3 h-3" />
+                                      <span>{slot.day}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 font-bold text-gray-800">
+                                      <Clock className="w-3.5 h-3.5 text-[#7B2332]/60" />
+                                      <span>{slot.time}</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 font-bold text-gray-800">
+                                    {isTimeLike ? (
+                                      <Clock className="w-3.5 h-3.5 text-[#7B2332]/60" />
+                                    ) : (
+                                      <Calendar className="w-3.5 h-3.5 text-[#7B2332]/60" />
+                                    )}
+                                    <span>{slot.time}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       <div className="overflow-x-auto">
                         <table className="w-full text-[13px] sm:text-sm text-center border-collapse border border-gray-300">
