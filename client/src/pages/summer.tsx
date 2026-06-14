@@ -498,7 +498,7 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   if (!startDate) {
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
     for (const line of lines) {
-      let m = line.match(/(?:개강일|개강)\s*(?:\/\s*회차|\([^)]*\))?\s*[:\-]\s*([^\n]+)/);
+      let m = line.match(/(?:개강일|개강)\s*(?:\/\s*회차|\([^)]*\))?\s*[:\-–—]\s*([^\n]+)/);
       if (m) {
         let dm = m[1].match(/(\d{1,2}\/\d{1,2}(?:\([가-힣]\))?)/) || 
                  m[1].match(/(\d{1,2}\.\d{1,2}(?:\([가-힣]\))?)/) || 
@@ -991,7 +991,7 @@ export default function Summer() {
       let catMatch = line.trim().match(/^[\[【]([^\]】]+)[\]】]$/);
       let inlineContent = "";
       
-      const startMatch = line.match(/^(?:-|•)?\s*개강일\s*\/?\s*회차\s*[:\-]\s*(.*)$/);
+      const startMatch = line.match(/^(?:-|•)?\s*개강일\s*\/?\s*회차\s*[:\-–—]\s*(.*)$/);
       if (startMatch) {
         startDateInfo = startMatch[1].trim();
         continue;
