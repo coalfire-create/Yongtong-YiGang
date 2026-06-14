@@ -364,7 +364,7 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     "최주용", "정찬영", "황준우", "변현수", "박소현", "박지원",
     "권소영", "박병조", "임서원", "황해룡", "김현종", "김종인",
     "심규원", "유승진", "곽윤협", "장해든누리", "임희민", "김연우",
-    "김유정", "대니얼", "문브라더스", "양준민"
+    "김유정", "대니얼", "문브라더스", "양준민", "정규영", "김홍석"
   ];
   let teacher = "";
   for (const t of teachersList) {
@@ -792,21 +792,12 @@ export default function Summer() {
 
   const sortCurriculum = <T extends any>(items: T[]): T[] => {
     return [...items].sort((a, b) => {
-      // 정렬 키: 제목 + 강좌 특징 섹션만 사용 (연계강좌·회차별 내용 등 제외)
-      const extractSortKey = (item: any) => {
-        const title = item.title || item.teacher_name || "";
-        const content = item.content || "";
-        // [강좌 특징] 섹션만 추출
-        const featMatch = content.match(/\[강좌\s*특징\]([\s\S]*?)(?=\[|$)/);
-        const featText = featMatch ? featMatch[1] : "";
-        return title + " " + featText;
-      };
-      const titleA = extractSortKey(a);
-      const titleB = extractSortKey(b);
+      const rawTitleA = (a as any).title || (a as any).teacher_name || "";
+      const rawTitleB = (b as any).title || (b as any).teacher_name || "";
 
       // 과목 분류는 제목만 기준으로 (본문에 '수학특강' 등 다른 과목 단어가 섞여 오분류되는 것 방지)
-      const subjA = getSubject((a as any).title || (a as any).teacher_name || "");
-      const subjB = getSubject((b as any).title || (b as any).teacher_name || "");
+      const subjA = getSubject(rawTitleA);
+      const subjB = getSubject(rawTitleB);
 
       const order = ["수학", "국어", "영어", "탐구", "기타"];
       const orderA = order.indexOf(subjA);
@@ -825,13 +816,13 @@ export default function Summer() {
           if (s.includes("지학") || s.includes("지구과학")) return 5;
           return 6;
         };
-        const sciA = getScienceScore(titleA);
-        const sciB = getScienceScore(titleB);
+        const sciA = getScienceScore(rawTitleA);
+        const sciB = getScienceScore(rawTitleB);
         if (sciA !== sciB) return sciA - sciB;
       }
 
-      const groupA = getSchoolGroupScore(titleA);
-      const groupB = getSchoolGroupScore(titleB);
+      const groupA = getSchoolGroupScore(rawTitleA);
+      const groupB = getSchoolGroupScore(rawTitleB);
       if (groupA !== groupB) return groupA - groupB;
 
       // 동일 학교/특강 내에서 수학 과목이면 강사(최주용->황해룡->권소영->정찬영->임서원) 정렬 추가
@@ -851,8 +842,8 @@ export default function Summer() {
             if (t.includes("동탄국제")) return 9;
             return 10;
           };
-          const specA = getSpecialLectureSubGroupScore(titleA);
-          const specB = getSpecialLectureSubGroupScore(titleB);
+          const specA = getSpecialLectureSubGroupScore(rawTitleA);
+          const specB = getSpecialLectureSubGroupScore(rawTitleB);
           if (specA !== specB) return specA - specB;
         }
 
@@ -864,13 +855,13 @@ export default function Summer() {
           if (title.includes("임서원")) return 5;
           return 6;
         };
-        const teacherA = getMathTeacherScore(titleA);
-        const teacherB = getMathTeacherScore(titleB);
+        const teacherA = getMathTeacherScore(rawTitleA);
+        const teacherB = getMathTeacherScore(rawTitleB);
         if (teacherA !== teacherB) return teacherA - teacherB;
       }
 
-      const levelA = getLevelScore(titleA);
-      const levelB = getLevelScore(titleB);
+      const levelA = getLevelScore(rawTitleA);
+      const levelB = getLevelScore(rawTitleB);
       if (levelA !== levelB) return levelA - levelB;
 
       return ((a as any).display_order || 0) - ((b as any).display_order || 0);

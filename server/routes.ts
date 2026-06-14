@@ -900,7 +900,7 @@ export async function registerRoutes(
     try {
       const { rows } = await pool.query("SELECT * FROM summer_guidelines ORDER BY id ASC");
       
-      const seen = {};
+      const seen: Record<string, number> = {};
       let count = 0;
       let dupCount = 0;
 
