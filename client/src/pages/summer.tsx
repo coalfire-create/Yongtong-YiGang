@@ -1065,27 +1065,16 @@ export default function Summer() {
           currentSection.items.push({ subCategory: "", content: cleanLine });
         } else {
           const lastItem = currentSection.items[currentSection.items.length - 1];
-          const isNewBullet = cleanLine.match(/^(?:-|•|\d+\.)/);
-          const isNewSession = cleanLine.match(/^(?:-|•)?\s*\d+회차\s*[:\-]/);
           
           if (currentSection.category === "회차별 내용") {
+            const isNewSession = cleanLine.match(/^(?:-|•)?\s*\d+회차\s*[:\-]/);
             if (isNewSession) {
               lastItem.content += "\n" + cleanLine;
             } else {
               lastItem.content += " " + cleanLine;
             }
-          } else if (currentSection.category.includes("관리 SYSTEM") || currentSection.category.includes("과제")) {
-            if (isNewBullet && cleanLine.match(/^(?:-|•)/)) {
-              lastItem.content += "\n" + cleanLine;
-            } else {
-              lastItem.content += " " + cleanLine;
-            }
           } else {
-            if (isNewBullet) {
-              lastItem.content += "\n" + cleanLine;
-            } else {
-              lastItem.content += " " + cleanLine;
-            }
+            lastItem.content += "\n" + cleanLine;
           }
         }
       }
