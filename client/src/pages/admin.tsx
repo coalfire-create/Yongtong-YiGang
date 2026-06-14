@@ -3737,6 +3737,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   const [category, setCategory] = useState("guideline");
   const [editingGuideline, setEditingGuideline] = useState<any | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: guidelines = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/summer-guidelines"],
@@ -3757,7 +3758,10 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   }, [guidelines]);
 
   const filteredGuidelines = localGuidelines.filter(
-    (g) => g.division === activeTab && (filterCategory === "all" || (g.category || "guideline") === filterCategory)
+    (g) => 
+      g.division === activeTab && 
+      (filterCategory === "all" || (g.category || "guideline") === filterCategory) &&
+      (!searchQuery.trim() || g.title.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const sensors = useSensors(
@@ -3835,6 +3839,10 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+    if (searchQuery.trim() !== "") {
+      alert("검색 중에는 순서를 변경할 수 없습니다. 검색을 지우고 진행해주세요.");
+      return;
+    }
     if (filterCategory === "all") {
       alert("순서를 변경하려면 상단 필터에서 '전체'가 아닌 특정 카테고리를 선택해주세요.");
       return;
@@ -4015,7 +4023,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
       {/* Guidelines List */}
       <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-3 mb-4 gap-3">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <h4 className="text-sm font-bold text-gray-800">등록된 항목 ({filteredGuidelines.length})</h4>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400 font-semibold">카테고리 필터:</span>
@@ -4031,10 +4039,22 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                 <option value="curriculum">강사별 커리큘럼</option>
               </select>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 font-semibold">제목 검색:</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="수업 제목 또는 강사명..."
+                className="border border-gray-200 rounded px-2.5 py-1 text-xs bg-gray-50 text-gray-700 focus:outline-none focus:border-red-600 w-48"
+              />
+            </div>
           </div>
           <p className="text-[10px] text-gray-400 font-semibold">
-            {filterCategory === "all" 
-              ? "※ 순서 변경(드래그)을 하려면 카테고리 필터를 특정 분류로 지정해 주세요." 
+            {searchQuery.trim() !== ""
+              ? "※ 검색 중에는 순서를 변경(드래그)할 수 없습니다."
+              : filterCategory === "all"
+              ? "※ 순서 변경(드래그)을 하려면 카테고리 필터를 특정 분류로 지정해 주세요."
               : "≡ 드래그하여 순서 변경 가능"}
           </p>
         </div>
