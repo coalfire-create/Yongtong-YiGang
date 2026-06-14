@@ -1023,7 +1023,7 @@ export default function Summer() {
         if (categoryName.replace(/\s+/g, '') === "수업일정") categoryName = "수업 일정";
         if (categoryName.replace(/\s+/g, '') === "강좌특징") categoryName = "강좌 특징";
         if (categoryName.replace(/\s+/g, '').includes("교재")) categoryName = "교재/제공자료";
-        if (categoryName.replace(/\s+/g, '').includes("과제")) categoryName = "과제/TEST";
+        if (categoryName.replace(/\s+/g, '').includes("과제")) categoryName = "과제";
         if (categoryName.replace(/\s+/g, '').includes("관리")) categoryName = "관리 SYSTEM 및 CLINIC";
         if (categoryName.replace(/\s+/g, '') === "회차별내용") categoryName = "회차별 내용";
         if (categoryName.replace(/\s+/g, '').includes("연계강좌")) categoryName = "연계 강좌";
