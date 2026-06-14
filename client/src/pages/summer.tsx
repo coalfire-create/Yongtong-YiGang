@@ -569,7 +569,15 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   
   // Construct final title
   const courseStr = course ? ` ${course}` : "";
-  return `[${grade}]${courseStr} ${subject} - ${teacher}${infoString}`;
+  let displaySubject = subject;
+  if (subject === "수학" && course) {
+    const isMathKeywords = /수학|대수|미적|기하|공수|확통/.test(course);
+    if (isMathKeywords) {
+      displaySubject = "";
+    }
+  }
+  const subjectStr = displaySubject ? ` ${displaySubject}` : "";
+  return `[${grade}]${courseStr}${subjectStr} - ${teacher}${infoString}`;
 }
 
 export default function Summer() {
@@ -747,7 +755,7 @@ export default function Summer() {
   });
 
   const getSubject = (s: string) => {
-    if (s.includes("수학") || s.includes("공수") || s.includes("미적") || s.includes("확통") || s.includes("대수")) return "수학";
+    if (s.includes("수학") || s.includes("공수") || s.includes("미적") || s.includes("확통") || s.includes("대수") || s.includes("기하")) return "수학";
     if (s.includes("국어")) return "국어";
     if (s.includes("물리") || s.includes("화학") || s.includes("생명") || s.includes("지학") || s.includes("통과") || s.includes("과학") || s.includes("탐구")) return "탐구";
     if (s.includes("영어")) return "영어";
@@ -1005,10 +1013,19 @@ export default function Summer() {
       if (catMatch) {
         categoryName = catMatch[1].trim();
       } else {
+        const isSubcatForbidden = currentSection && (
+          currentSection.category === "관리 SYSTEM 및 CLINIC" || 
+          currentSection.category === "과제" ||
+          currentSection.category === "과제/TEST"
+        );
+        
         const sortedCats = [...standardCategories].sort((a, b) => b.length - a.length);
         for (const cat of sortedCats) {
+          if (isSubcatForbidden && (cat === "클리닉" || cat === "과제" || cat === "과제/TEST" || cat === "교재" || cat.includes("교재"))) {
+            continue;
+          }
           const catRegexStr = cat.split('').map(char => char === ' ' ? '\\s*' : char.replace(/[\/]/g, '\\/')).join('');
-          const regex = new RegExp(`^(${catRegexStr})(?:\\s*[:\\-]+\\s*|\\t+|\\s+|$)(.*)$`, 'i');
+          const regex = new RegExp(`^(${catRegexStr})(?:\\s*[:\\-–—：]+\\s*|\\t+|$)(.*)$`, 'i');
           const match = line.trim().match(regex);
           if (match) {
             categoryName = cat;
