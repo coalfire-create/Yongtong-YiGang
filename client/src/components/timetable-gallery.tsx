@@ -125,6 +125,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
   const activeTab = filterTabs?.[selectedFilter];
   const isSummaryView = activeTab?.isSummary === true;
+  // 특정 학교 필터(화성고 등)가 켜져 있으면, 학교별 올데이/특강을 특강반에 중복 노출하지 않음
+  const schoolFilterActive = !!activeTab && SCHOOL_ORDER.some((s) => s !== "연합반" && activeTab.label.includes(s));
 
   const filtered = filterTabs && filterTabs.length > 0 && !isSummaryView
     ? timetables.filter(filterTabs[selectedFilter].filterFn)
@@ -176,15 +178,18 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         const schoolMatch = SCHOOL_ORDER.find(s => s !== "연합반" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
         
         if (schoolMatch) {
-          // 학교별 올데이/특강 -> 해당 학교 섹션(예: 화성고) + 위 특강반 양쪽에 노출
+          // 학교별 올데이/특강 -> 해당 학교 섹션(예: 화성고)에 노출
           instances.push({
             isUnion: false,
             targetSchool: schoolMatch,
           });
-          instances.push({
-            isUnion: false,
-            targetSchool: "특강반",
-          });
+          // 전체시간표 등에서는 위 특강반에도 중복 노출 (단, 특정 학교 필터에서는 제외)
+          if (!schoolFilterActive) {
+            instances.push({
+              isUnion: false,
+              targetSchool: "특강반",
+            });
+          }
         } else {
           // 학교별 아닌 특강 (특강반) -> 특강반에만 노출 (연합반 중복 제거)
           instances.push({
