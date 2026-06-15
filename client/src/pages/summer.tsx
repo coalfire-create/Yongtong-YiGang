@@ -1260,7 +1260,7 @@ export default function Summer() {
                                     
                                     // Also insert newlines before session numbers if they are on the same line without a newline
                                     // Avoid splitting combined sessions like "1,2회차" or "1/2회차"
-                                    normalizedText = normalizedText.replace(/([^\n,/\d])\s*(\d+(?:[~,\-]\d+)?\s*회차)/g, '$1\n$2');
+                                    normalizedText = normalizedText.replace(/([^\n,/\d~\-])\s*(\d+(?:[~,\-]\d+)?\s*회차)/g, '$1\n$2');
                                     
                                     // Also insert newlines before headers
                                     normalizedText = normalizedText.replace(/([^\n])\s*(방학 기간 중|썸머 종강 후|연계 강좌)/g, '$1\n$2');
