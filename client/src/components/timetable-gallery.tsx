@@ -23,7 +23,10 @@ interface Timetable {
   created_at: string;
 }
 
-const SUBJECT_ORDER = ["수학", "국어", "영어", "통합과학", "통합사회/한국사", "생명과학", "사회문화", "생윤", "탐구", "논술"];
+const SUBJECT_ORDER = ["수학", "국어", "영어", "탐구", "통합사회/한국사", "사회문화", "생윤", "논술"];
+
+// 통합과학·물리·화학·생명과학 등 과학 과목을 하나의 "탐구" 섹션으로 묶음
+const SCIENCE_SUBJECTS = ["통합과학", "물리", "화학", "생명과학", "지구과학", "물리학", "생명", "지구", "과학탐구", "탐구"];
 
 // 학교/표시 순서: 연합반 -> 특강반 -> 화성/가온/병점 -> 영덕/수원/청명 -> 고색/동탄국제고 -> 학교별 특강
 const SCHOOL_ORDER = [
@@ -155,7 +158,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
   for (const tt of filtered) {
     const isUnion = tt.is_union;
-    let subj = tt.subject || "기타";
+    let subj = SCIENCE_SUBJECTS.includes(tt.subject) ? "탐구" : (tt.subject || "기타");
 
     const instances: { isUnion: boolean; targetSchool: string }[] = [];
 
@@ -173,9 +176,14 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         const schoolMatch = SCHOOL_ORDER.find(s => s !== "연합반" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
         
         if (schoolMatch) {
+          // 학교별 올데이/특강 -> 학교별 하단 + 위 특강반 양쪽에 노출
           instances.push({
             isUnion: false,
             targetSchool: `${schoolMatch} 특강`,
+          });
+          instances.push({
+            isUnion: false,
+            targetSchool: "특강반",
           });
         } else {
           // 학교별 아닌 특강 (특강반) -> 특강반에만 노출 (연합반 중복 제거)
