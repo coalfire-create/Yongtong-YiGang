@@ -178,13 +178,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
             targetSchool: `${schoolMatch} 특강`,
           });
         } else {
-          // 학교별 아닌 특강 (특강반) -> 연합반과 특강반 양쪽에 중복으로 노출
-          // 1. 연합반 (union) 인스턴스
-          instances.push({
-            isUnion: true,
-            targetSchool: tt.target_school || "연합반",
-          });
-          // 2. 특강반 (school) 인스턴스
+          // 학교별 아닌 특강 (특강반) -> 특강반에만 노출 (연합반 중복 제거)
           instances.push({
             isUnion: false,
             targetSchool: "특강반",
