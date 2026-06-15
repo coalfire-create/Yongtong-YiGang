@@ -83,7 +83,7 @@ export function JuniorSchoolSchedule() {
     <SectionPage title="초/중등관 강의시간표">
       <TimetableGallery category="초/중등관" />
       <div className="mt-10">
-        <SummaryTimetableSection division="junior" title="초/중등관 요약시간표" />
+        <SummaryTimetableSection division="junior" title="초/중등관 기말/내신 시간표" />
       </div>
     </SectionPage>
   );

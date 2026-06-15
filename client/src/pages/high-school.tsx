@@ -72,8 +72,7 @@ const isNonsul = (tt: any) =>
   (tt.target_school || "") === "논술";
 
 function buildFilterFn(label: string): (tt: any) => boolean {
-  if (label === "요약시간표") return () => false;
-  if (label === "전체시간표" || label === "전체") return () => true;
+  if (label === "전체시간표" || label === "전체" || label === "썸머시간표") return () => true;
   if (label === "논술") return (tt) => isNonsul(tt);
   if (label === "수학/탐구") return (tt) => (tt.subject === "수학" || tt.subject === "탐구") && !isNonsul(tt);
   
@@ -94,12 +93,11 @@ function buildFilterTabs(apiTabs: { id: number; label: string }[]): FilterTab[] 
   return apiTabs.map((tab) => ({
     label: tab.label,
     filterFn: buildFilterFn(tab.label),
-    isSummary: tab.label === "요약시간표",
   }));
 }
 
 const G1_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "요약시간표", filterFn: () => false, isSummary: true },
+  { label: "썸머시간표", filterFn: () => true },
   { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("화성고") },
   { label: "가온고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("가온고") },
@@ -113,7 +111,7 @@ const G1_FILTERS_DEFAULT: FilterTab[] = [
 ];
 
 const G2_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "요약시간표", filterFn: () => false, isSummary: true },
+  { label: "썸머시간표", filterFn: () => true },
   { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("화성고") },
   { label: "가온고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("가온고") },
@@ -126,7 +124,7 @@ const G2_FILTERS_DEFAULT: FilterTab[] = [
 ];
 
 const G3_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "요약시간표", filterFn: () => false, isSummary: true },
+  { label: "썸머시간표", filterFn: () => true },
   { label: "전체", filterFn: () => true },
   { label: "국어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "국어" || (tt.target_school || "") === "국어") },
   { label: "영어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "영어" || (tt.target_school || "") === "영어") },
@@ -198,7 +196,7 @@ function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defa
             category={category}
             filterTabs={filterTabs}
             summaryDivision={summaryDivision}
-            summaryTitle={summaryDivision ? `${grade} 요약시간표` : undefined}
+            summaryTitle={summaryDivision ? `${grade} 기말/내신 시간표` : undefined}
           />
         </div>
       </div>
@@ -250,30 +248,6 @@ export function HighSchoolScheduleG3() {
 }
 
 
-export function HighSchoolSummaryTimetable() {
-  return (
-    <PageLayout>
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 text-center">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight" data-testid="text-page-title">
-            요약 시간표
-          </h1>
-        </div>
-      </div>
-      <div className="bg-gray-50 min-h-[50vh]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <SummaryTimetableSection division="high-g1" title="고1 요약시간표" />
-          <div className="mt-10">
-            <SummaryTimetableSection division="high-g2" title="고2 요약시간표" />
-          </div>
-          <div className="mt-10">
-            <SummaryTimetableSection division="high-g3" title="고3 요약시간표" />
-          </div>
-        </div>
-      </div>
-    </PageLayout>
-  );
-}
 
 export function HighSchoolTeachers() {
   return <TeacherIntroPage division="고등관" subjects={HIGH_SCHOOL_SUBJECTS} />;

@@ -1005,7 +1005,7 @@ export default function Summer() {
         continue;
       }
       
-      if (line.match(/^(?:-|•)?\s*\d+회차\s*[:\-]/) && (!currentSection || currentSection.category !== "회차별 내용")) {
+      if (line.match(/^(?:-|•)?\s*\d+(?:[~,\-]\d+)?회차\s*[:\-]/) && (!currentSection || currentSection.category !== "회차별 내용")) {
          currentSection = { category: "회차별 내용", items: [] };
          sections.push(currentSection);
       }
@@ -1055,9 +1055,9 @@ export default function Summer() {
         let cleanLine = line.replace(/^\t+/, '').trim();
         
         if (currentSection.category === "회차별 내용") {
-          let m = cleanLine.match(/^(?:-|•)?\s*(\d+회차\s*[:\-]\s*)\d{1,2}\/\d{1,2}(?:\([가-힣]\))?\s*(.*)$/);
+          let m = cleanLine.match(/^(?:-|•)?\s*(\d+(?:[~,\-]\d+)?회차\s*[:\-]\s*)\d{1,2}\/\d{1,2}(?:\([가-힣]\))?\s*(.*)$/);
           if (m) cleanLine = m[1] + m[2];
-          let m2 = cleanLine.match(/^(?:-|•)?\s*(\d+회차\s*[:\-]\s*)\d{1,2}월\s*\d{1,2}일\s*(.*)$/);
+          let m2 = cleanLine.match(/^(?:-|•)?\s*(\d+(?:[~,\-]\d+)?회차\s*[:\-]\s*)\d{1,2}월\s*\d{1,2}일\s*(.*)$/);
           if (m2) cleanLine = m2[1] + m2[2];
         }
 
@@ -1067,7 +1067,7 @@ export default function Summer() {
           const lastItem = currentSection.items[currentSection.items.length - 1];
           
           if (currentSection.category === "회차별 내용") {
-            const isNewSession = cleanLine.match(/^(?:-|•)?\s*\d+회차\s*[:\-]/);
+            const isNewSession = cleanLine.match(/^(?:-|•)?\s*\d+(?:[~,\-]\d+)?회차\s*[:\-]/);
             if (isNewSession) {
               lastItem.content += "\n" + cleanLine;
             } else {
@@ -1262,8 +1262,7 @@ export default function Summer() {
                                     
                                     // Also insert newlines before session numbers if they are on the same line without a newline
                                     // Avoid splitting combined sessions like "1,2회차" or "1/2회차"
-                                    normalizedText = normalizedText.replace(/([^\n,/\d])\s*(\d+\s*회차)/g, '$1\n$2');
-                                    normalizedText = normalizedText.replace(/([^\n,/\d])\s*(\d+,\d+\s*회차)/g, '$1\n$2');
+                                    normalizedText = normalizedText.replace(/([^\n,/\d])\s*(\d+(?:[~,\-]\d+)?\s*회차)/g, '$1\n$2');
                                     
                                     // Also insert newlines before headers
                                     normalizedText = normalizedText.replace(/([^\n])\s*(방학 기간 중|썸머 종강 후|연계 강좌)/g, '$1\n$2');
@@ -1280,7 +1279,7 @@ export default function Summer() {
                                         cleaned = cleaned.replace(/^[.\-:]\s*/, '').trim();
                                         
                                         // Normalize to "1회차: 내용"
-                                        const sessionMatch = cleaned.match(/^(\d+,\d+\s*회차|\d+\s*회차)\s*[\-–—:：]?\s*(.*)$/);
+                                        const sessionMatch = cleaned.match(/^(\d+(?:[~,\-]\d+)?\s*회차)\s*[\-–—:：]?\s*(.*)$/);
                                         if (sessionMatch) {
                                           let desc = sessionMatch[2].trim();
                                           

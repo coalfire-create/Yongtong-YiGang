@@ -25,7 +25,7 @@ interface Timetable {
 
 const SUBJECT_ORDER = ["수학", "국어", "영어", "통합과학", "통합사회/한국사", "생명과학", "사회문화", "생윤", "탐구", "논술"];
 
-// 학교/그룹 표시 순서: 연합반 -> 화성/가온/병점 -> 영덕/수원/청명 -> 고색/동탄국제고 -> 특강
+// 학교/표시 순서: 연합반 -> 특강반 -> 화성/가온/병점 -> 영덕/수원/청명 -> 고색/동탄국제고 -> 학교별 특강
 const SCHOOL_ORDER = [
   "연합반",
   "화성고",
@@ -36,12 +36,19 @@ const SCHOOL_ORDER = [
   "청명고",
   "고색고",
   "동탄국제고",
-  "특강",
 ];
 
 const getSchoolRank = (name: string): number => {
+  if (name === "특강반") return 0.5;
+  
+  if (name.includes("특강")) {
+    const schoolIdx = SCHOOL_ORDER.findIndex(s => s !== "연합반" && name.includes(s));
+    if (schoolIdx !== -1) return 100 + schoolIdx;
+    return 0.5;
+  }
+
   const idx = SCHOOL_ORDER.findIndex((s) => name.includes(s));
-  return idx === -1 ? SCHOOL_ORDER.length : idx;
+  return idx === -1 ? 50 : idx;
 };
 
 const sortByGroupKey = <T,>(entries: [string, T][]): [string, T][] =>
@@ -135,6 +142,19 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       if (!isUnion) {
         targetSchool = "논술";
       }
+    } else {
+      // Special Lecture logic
+      const isSpecialLecture = (tt.class_name || "").includes("특강") || (tt.target_school || "").includes("특강") || (tt.class_name || "").includes("썸머") || (tt.target_school || "").includes("썸머");
+      
+      if (isSpecialLecture) {
+        const schoolMatch = SCHOOL_ORDER.find(s => s !== "연합반" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
+        
+        if (schoolMatch) {
+          targetSchool = `${schoolMatch} 특강`;
+        } else {
+          targetSchool = "특강반";
+        }
+      }
     }
 
     if (SUBJECT_ORDER.includes(subj)) {
@@ -142,12 +162,13 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         subjectGroups[subj] = { union: {}, school: {} };
       }
 
-      if (isUnion) {
-        // Union classes are still grouped by teacher for clarity, or just as one "Union" group
+      if (isUnion && targetSchool !== "특강반" && !targetSchool.includes("특강")) {
+        // Union classes are still grouped by teacher for clarity
         const groupKey = tt.teacher_name || "연합반";
         if (!subjectGroups[subj].union[groupKey]) subjectGroups[subj].union[groupKey] = [];
         subjectGroups[subj].union[groupKey].push(tt);
       } else {
+        // Special lectures go to the school section, even if they are marked as union in DB
         const groupKey = targetSchool;
         if (!subjectGroups[subj].school[groupKey]) subjectGroups[subj].school[groupKey] = [];
         subjectGroups[subj].school[groupKey].push(tt);
@@ -186,7 +207,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       )}
 
       {isSummaryView && summaryDivision ? (
-        <SummaryTimetableSection division={summaryDivision} title={summaryTitle || "요약시간표"} />
+        <SummaryTimetableSection division={summaryDivision} title={summaryTitle || "기말/내신 시간표"} />
       ) : (
         <div data-testid="timetable-list">
           {filtered.length === 0 ? (

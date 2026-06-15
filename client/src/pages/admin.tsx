@@ -3461,7 +3461,7 @@ function SortableSummaryCard({ item, onDelete }: { item: any; onDelete: (id: num
         <GripVertical className="w-5 h-5" />
       </div>
       <div className="flex-1 min-w-0">
-        <img src={item.image_url} alt="요약시간표" className="w-full max-w-sm border border-gray-200" />
+        <img src={item.image_url} alt="기말/내신 시간표" className="w-full max-w-sm border border-gray-200" />
       </div>
       <button
         onClick={() => onDelete(item.id)}
@@ -3585,7 +3585,7 @@ function SummaryTimetablesTab() {
       </div>
 
       <div className="bg-white border border-gray-200 p-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">요약시간표 이미지 등록 — {divisionLabel}</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-4">기말/내신 시간표 이미지 등록 — {divisionLabel}</h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">이미지 선택 (여러 장 가능)</label>
@@ -3629,12 +3629,12 @@ function SummaryTimetablesTab() {
 
       <div className="bg-white border border-gray-200 p-6">
         <h3 className="text-sm font-bold text-gray-900 mb-4">
-          등록된 요약시간표 ({items.length}개) — {divisionLabel}
+          등록된 기말/내신 시간표 ({items.length}개) — {divisionLabel}
         </h3>
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
         ) : localItems.length === 0 ? (
-          <p className="text-sm text-gray-400 py-4">등록된 요약시간표가 없습니다.</p>
+          <p className="text-sm text-gray-400 py-4">등록된 기말/내신 시간표가 없습니다.</p>
         ) : (
           <DndContext sensors={sumSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndSummary}>
             <SortableContext items={localItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
@@ -6266,7 +6266,7 @@ export default function AdminPage() {
             data-testid="tab-summary-timetables"
           >
             <Image className="w-4 h-4" />
-            요약시간표
+            기말/내신 시간표
           </button>
           <button
             onClick={() => setTab("banners")}
