@@ -290,7 +290,15 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       )}
 
       {isSummaryView && summaryDivision ? (
-        <SummaryTimetableSection division={summaryDivision} title={summaryTitle || "기말/내신 시간표"} />
+        (() => {
+          const isFinal = (activeTab?.label || "").includes("기말") || (activeTab?.label || "").includes("내신");
+          return (
+            <SummaryTimetableSection
+              division={isFinal ? `${summaryDivision}-final` : summaryDivision}
+              title={isFinal ? "기말/내신시간표" : (summaryTitle || "썸머시간표")}
+            />
+          );
+        })()
       ) : (
         <div data-testid="timetable-list">
           {filtered.length === 0 ? (
