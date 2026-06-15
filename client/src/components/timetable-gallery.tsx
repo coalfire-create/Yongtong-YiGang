@@ -176,10 +176,10 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         const schoolMatch = SCHOOL_ORDER.find(s => s !== "연합반" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
         
         if (schoolMatch) {
-          // 학교별 올데이/특강 -> 학교별 하단 + 위 특강반 양쪽에 노출
+          // 학교별 올데이/특강 -> 해당 학교 섹션(예: 화성고) + 위 특강반 양쪽에 노출
           instances.push({
             isUnion: false,
-            targetSchool: `${schoolMatch} 특강`,
+            targetSchool: schoolMatch,
           });
           instances.push({
             isUnion: false,
