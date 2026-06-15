@@ -513,8 +513,22 @@ function GroupCard({
 
   const isMath = firstTt?.subject === "수학";
 
+  // 그룹 맨 아래로 내릴 항목 판별:
+  //  - 특강반: 학교명이 들어간(=학교별 올데이/특강) 항목을 맨 밑으로
+  //  - 학교 섹션: 특강·올데이 항목을 맨 밑으로
+  const SCHOOLS_NO_UNION = SCHOOL_ORDER.filter((s) => s !== "연합반");
+  const isBottomItem = (name: string) => {
+    if (title === "특강반") {
+      return SCHOOLS_NO_UNION.some((s) => name.includes(s)) ? 1 : 0;
+    }
+    return /특강|올데이|All\s?Day/i.test(name) ? 1 : 0;
+  };
+
   const indexedTimetables = mergedTimetables.map((tt, idx) => ({ tt, idx }));
   indexedTimetables.sort((a, b) => {
+    const bottomA = isBottomItem(a.tt.class_name || "");
+    const bottomB = isBottomItem(b.tt.class_name || "");
+    if (bottomA !== bottomB) return bottomA - bottomB;
     if (isMath) {
       const scoreA = getMathTeacherScore(a.tt.teacher_name || "");
       const scoreB = getMathTeacherScore(b.tt.teacher_name || "");
