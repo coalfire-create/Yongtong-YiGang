@@ -51,8 +51,30 @@ const getSchoolRank = (name: string): number => {
   return idx === -1 ? 50 : idx;
 };
 
-const sortByGroupKey = <T,>(entries: [string, T][]): [string, T][] =>
+const getMathTeacherScore = (teacherName: string): number => {
+  const name = teacherName || "";
+  // 예외 처리: 정승준과 권소영이 같이 있는 경우
+  if (name.includes("정승준") && name.includes("권소영")) {
+    return 6;
+  }
+  let score = 6;
+  if (name.includes("최주용")) score = Math.min(score, 1);
+  if (name.includes("황해룡")) score = Math.min(score, 2);
+  if (name.includes("권소영")) score = Math.min(score, 3);
+  if (name.includes("정찬영")) score = Math.min(score, 4);
+  if (name.includes("임서원")) score = Math.min(score, 5);
+  return score;
+};
+
+const sortByGroupKey = <T,>(entries: [string, T][], subject?: string): [string, T][] =>
   [...entries].sort(([a], [b]) => {
+    if (subject === "수학") {
+      const scoreA = getMathTeacherScore(a);
+      const scoreB = getMathTeacherScore(b);
+      if (scoreA !== 6 || scoreB !== 6) {
+        return scoreA - scoreB;
+      }
+    }
     const ra = getSchoolRank(a);
     const rb = getSchoolRank(b);
     if (ra !== rb) return ra - rb;
@@ -269,7 +291,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                             <div className="h-px flex-1 bg-gray-100" />
                           </div>
                           <div className="space-y-6">
-                            {sortByGroupKey(Object.entries(union)).map(([key, tts]) => (
+                            {sortByGroupKey(Object.entries(union), subj).map(([key, tts]) => (
                               <GroupCard
                                 key={key}
                                 title={key}
@@ -295,7 +317,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                             </div>
                           )}
                           <div className="space-y-6">
-                            {sortByGroupKey(Object.entries(school)).map(([key, tts]) => (
+                            {sortByGroupKey(Object.entries(school), subj).map(([key, tts]) => (
                               <GroupCard
                                 key={key}
                                 title={key}
@@ -487,8 +509,17 @@ function GroupCard({
     return 7;
   };
 
+  const isMath = firstTt?.subject === "수학";
+
   const indexedTimetables = mergedTimetables.map((tt, idx) => ({ tt, idx }));
   indexedTimetables.sort((a, b) => {
+    if (isMath) {
+      const scoreA = getMathTeacherScore(a.tt.teacher_name || "");
+      const scoreB = getMathTeacherScore(b.tt.teacher_name || "");
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB;
+      }
+    }
     const prioA = getPriority(a.tt.class_name || "");
     const prioB = getPriority(b.tt.class_name || "");
     if (prioA !== prioB) {
