@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, Calendar, Clock, BookOpen, User, GraduationCap, ChevronDown, ChevronUp, Users, School } from "lucide-react";
 import { ReservationModal } from "./reservation-modal";
 import { SummaryTimetableSection } from "./summary-timetable";
+import { BrochureModal } from "./brochure-modal";
 
 interface Timetable {
   id: number;
@@ -85,6 +86,48 @@ const getMathSpecialLectureScore = (className: string): number => {
   return 6;
 };
 
+// ── 브로셔(강사커리큘럼) 매칭 ──────────────────────────────
+const _SCHOOL_ROOTS = ["화성", "가온", "병점", "영덕", "수원", "청명", "고색", "동탄"];
+function _gkeys(s: string): Set<string> {
+  s = (s || "").toUpperCase();
+  const k = new Set<string>();
+  for (const r of _SCHOOL_ROOTS) if (s.includes(r)) k.add(r);
+  if (/의치서|의치/.test(s)) k.add("의치");
+  if (/대수.*미적|미적.*대수|대수미적/.test(s)) k.add("대수미적");
+  else if (/대수\s*특강|대수특강/.test(s)) k.add("대수특강");
+  if (/올데이|ALL\s?-?DAY/.test(s)) k.add("올데이");
+  if (/기하/.test(s)) k.add("기하");
+  if (/확통/.test(s)) k.add("확통");
+  if (/역학/.test(s)) k.add("역학");
+  if (/전범위|전과정/.test(s)) k.add("전범위");
+  if (/집중/.test(s)) k.add("집중");
+  if (/M반|의치서M/.test(s)) k.add("M");
+  if (/S-?1/.test(s)) k.add("S1"); else if (/S-?2/.test(s)) k.add("S2");
+  else if (/S반|연합\s*S/.test(s)) k.add("S");
+  if (/A-?1|A1반/.test(s)) k.add("A1"); else if (/A-?2|A2반/.test(s)) k.add("A2");
+  else if (/A반|연합\s*A/.test(s)) k.add("A");
+  if (/연합/.test(s)) k.add("연합");
+  if (/국어/.test(s)) k.add("국어"); if (/영어/.test(s)) k.add("영어");
+  if (/물리/.test(s)) k.add("물리"); if (/화학/.test(s)) k.add("화학");
+  if (/생명|세포/.test(s)) k.add("생명"); if (/통과|통합과학/.test(s)) k.add("통과");
+  return k;
+}
+function matchGuideline(tt: Timetable, guidelines: any[]): any | null {
+  const tn = (tt.teacher_name || "").match(/([가-힣]{2,4})T?/)?.[1] || "";
+  if (!tn) return null;
+  const cand = guidelines.filter((g) => (g.title || "").includes(tn));
+  if (!cand.length) return null;
+  if (cand.length === 1) return cand[0];
+  const tk = _gkeys(tt.class_name || "");
+  let best: any = null, bs = -1;
+  for (const g of cand) {
+    const gk = _gkeys((g.title || "").replace(/^\[[^\]]*\]/, ""));
+    let sc = 0; for (const x of tk) if (gk.has(x)) sc++;
+    if (sc > bs) { bs = sc; best = g; }
+  }
+  return bs >= 1 ? best : null;
+}
+
 const sortByGroupKey = <T,>(entries: [string, T][], subject?: string): [string, T][] =>
   [...entries].sort(([a], [b]) => {
     if (subject === "수학") {
@@ -117,6 +160,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [reserveTarget, setReserveTarget] = useState<{ id: number; name: string; subject: string; teacherName: string; classTime: string; startDate: string } | null>(null);
+  const [brochure, setBrochure] = useState<any | null>(null);
 
   const { data: rawTimetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables", category],
@@ -138,6 +182,24 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       return res.json();
     }
   });
+
+  // 강사커리큘럼(브로셔) 데이터 + 강좌별 매칭
+  const { data: guidelines = [] } = useQuery<any[]>({
+    queryKey: ["/api/summer-guidelines"],
+    queryFn: async () => {
+      const res = await fetch("/api/summer-guidelines");
+      if (!res.ok) throw new Error("Failed to fetch guidelines");
+      return res.json();
+    },
+  });
+  const _divMap: Record<string, string> = { "고등관-고1": "고1", "고등관-고2": "고2", "고등관-고3": "고3" };
+  const _curDiv = _divMap[category];
+  const myGuidelines = (guidelines || []).filter((g: any) => g.category === "curriculum" && g.division === _curDiv);
+  const brochureMap = new Map<number, any>();
+  for (const tt of timetables) {
+    const g = matchGuideline(tt, myGuidelines);
+    if (g) brochureMap.set(tt.id, g);
+  }
 
   const activeTab = filterTabs?.[selectedFilter];
   const isSummaryView = activeTab?.isSummary === true;
@@ -339,6 +401,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                                 expandedId={expandedId}
                                 onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                                 onReserve={openReserve}
+                                brochureMap={brochureMap}
+                                onBrochure={setBrochure}
                                 type="teacher"
                               />
                             ))}
@@ -365,6 +429,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                                 expandedId={expandedId}
                                 onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                                 onReserve={openReserve}
+                                brochureMap={brochureMap}
+                                onBrochure={setBrochure}
                                 type="school"
                               />
                             ))}
@@ -394,6 +460,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                         expandedId={expandedId}
                         onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                         onReserve={openReserve}
+                        brochureMap={brochureMap}
+                        onBrochure={setBrochure}
                         type="school"
                       />
                     ))}
@@ -415,6 +483,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         classTime={reserveTarget?.classTime}
         startDate={reserveTarget?.startDate}
       />
+      {brochure && <BrochureModal guideline={brochure} onClose={() => setBrochure(null)} />}
     </>
   );
 }
@@ -426,6 +495,8 @@ function GroupCard({
   expandedId,
   onToggle,
   onReserve,
+  brochureMap,
+  onBrochure,
   type,
 }: {
   title: string;
@@ -434,6 +505,8 @@ function GroupCard({
   expandedId: number | null;
   onToggle: (id: number) => void;
   onReserve: (tt: Timetable) => void;
+  brochureMap: Map<number, any>;
+  onBrochure: (g: any) => void;
   type: "teacher" | "school";
 }) {
   const firstTt = timetables[0];
@@ -709,6 +782,14 @@ function GroupCard({
                   >
                     상세보기
                     {expandedId === tt.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+                {brochureMap.get(tt.id) && (
+                  <button
+                    onClick={() => onBrochure(brochureMap.get(tt.id))}
+                    className="px-4 py-2 border border-[#7B2332] text-[#7B2332] text-xs font-bold hover:bg-[#7B2332]/5 transition-colors"
+                  >
+                    브로셔
                   </button>
                 )}
                 <button
