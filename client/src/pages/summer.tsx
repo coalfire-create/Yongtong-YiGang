@@ -884,9 +884,8 @@ export default function Summer() {
     if ((g.category || 'guideline') !== 'curriculum') return false;
     if (curriculumSubjectFilter !== "전체") {
       const title = ((g as any).title || (g as any).teacher_name || "");
-      if (curriculumSubjectFilter === "수학특강") {
-        const isMath = getSubject(title) === "수학";
-        if (!(isMath && (title.includes("올데이") || title.includes("특강")))) return false;
+      if (curriculumSubjectFilter === "특강/올데이") {
+        if (!(title.includes("올데이") || title.includes("특강"))) return false;
       } else {
         const subj = getSubject(title);
         if (subj !== curriculumSubjectFilter) return false;
@@ -903,9 +902,8 @@ export default function Summer() {
     if ((img.category || 'curriculum') !== 'curriculum') return false;
     if (curriculumSubjectFilter !== "전체") {
       const title = ((img as any).title || img.teacher_name || "");
-      if (curriculumSubjectFilter === "수학특강") {
-        const isMath = getSubject(title) === "수학";
-        if (!(isMath && (title.includes("올데이") || title.includes("특강")))) return false;
+      if (curriculumSubjectFilter === "특강/올데이") {
+        if (!(title.includes("올데이") || title.includes("특강"))) return false;
       } else {
         const subj = getSubject(title);
         if (subj !== curriculumSubjectFilter) return false;
@@ -1712,7 +1710,7 @@ export default function Summer() {
                   <h2 className="text-2xl font-black text-gray-900">강사별 커리큘럼</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {["전체", "수학", "수학특강", "국어", "영어", "탐구"].map(subj => (
+                  {["전체", "수학", "특강/올데이", "국어", "영어", "탐구"].map(subj => (
                     <button
                       key={subj}
                       onClick={() => setCurriculumSubjectFilter(subj)}

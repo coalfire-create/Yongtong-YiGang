@@ -134,49 +134,79 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   for (const tt of filtered) {
     const isUnion = tt.is_union;
     let subj = tt.subject || "기타";
-    let targetSchool = tt.target_school || "연합반";
 
-    // If it is an essay class, force the subject and target school to be "논술"
-    if ((tt.class_name || "").includes("논술") || (tt.subject || "").includes("논술") || (tt.target_school || "") === "논술") {
-      subj = "논술";
-      if (!isUnion) {
-        targetSchool = "논술";
-      }
+    const instances: { isUnion: boolean; targetSchool: string }[] = [];
+
+    const isNonsulClass = (tt.class_name || "").includes("논술") || (tt.subject || "").includes("논술") || (tt.target_school || "") === "논술";
+
+    if (isNonsulClass) {
+      instances.push({
+        isUnion,
+        targetSchool: isUnion ? (tt.target_school || "연합반") : "논술",
+      });
     } else {
-      // Special Lecture logic
       const isSpecialLecture = (tt.class_name || "").includes("특강") || (tt.target_school || "").includes("특강") || (tt.class_name || "").includes("썸머") || (tt.target_school || "").includes("썸머");
       
       if (isSpecialLecture) {
         const schoolMatch = SCHOOL_ORDER.find(s => s !== "연합반" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
         
         if (schoolMatch) {
-          targetSchool = `${schoolMatch} 특강`;
+          instances.push({
+            isUnion: false,
+            targetSchool: `${schoolMatch} 특강`,
+          });
         } else {
-          targetSchool = "특강반";
+          // 학교별 아닌 특강 (특강반) -> 연합반과 특강반 양쪽에 중복으로 노출
+          // 1. 연합반 (union) 인스턴스
+          instances.push({
+            isUnion: true,
+            targetSchool: tt.target_school || "연합반",
+          });
+          // 2. 특강반 (school) 인스턴스
+          instances.push({
+            isUnion: false,
+            targetSchool: "특강반",
+          });
         }
+      } else {
+        instances.push({
+          isUnion,
+          targetSchool: tt.target_school || "연합반",
+        });
       }
     }
 
-    if (SUBJECT_ORDER.includes(subj)) {
-      if (!subjectGroups[subj]) {
-        subjectGroups[subj] = { union: {}, school: {} };
-      }
+    for (const inst of instances) {
+      const targetSchool = inst.targetSchool;
+      const isUnionInst = inst.isUnion;
 
-      if (isUnion && targetSchool !== "특강반" && !targetSchool.includes("특강")) {
-        // Union classes are still grouped by teacher for clarity
-        const groupKey = tt.teacher_name || "연합반";
-        if (!subjectGroups[subj].union[groupKey]) subjectGroups[subj].union[groupKey] = [];
-        subjectGroups[subj].union[groupKey].push(tt);
+      if (SUBJECT_ORDER.includes(subj)) {
+        if (!subjectGroups[subj]) {
+          subjectGroups[subj] = { union: {}, school: {} };
+        }
+
+        if (isUnionInst && targetSchool !== "특강반" && !targetSchool.includes("특강")) {
+          // Union classes are still grouped by teacher for clarity
+          const groupKey = tt.teacher_name || "연합반";
+          if (!subjectGroups[subj].union[groupKey]) subjectGroups[subj].union[groupKey] = [];
+          
+          const ttCopy = { ...tt, target_school: targetSchool };
+          subjectGroups[subj].union[groupKey].push(ttCopy);
+        } else {
+          // Special lectures go to the school section, even if they are marked as union in DB
+          const groupKey = targetSchool;
+          if (!subjectGroups[subj].school[groupKey]) subjectGroups[subj].school[groupKey] = [];
+          
+          const ttCopy = { ...tt, target_school: targetSchool };
+          subjectGroups[subj].school[groupKey].push(ttCopy);
+        }
       } else {
-        // Special lectures go to the school section, even if they are marked as union in DB
         const groupKey = targetSchool;
-        if (!subjectGroups[subj].school[groupKey]) subjectGroups[subj].school[groupKey] = [];
-        subjectGroups[subj].school[groupKey].push(tt);
+        if (!ungrouped[groupKey]) ungrouped[groupKey] = [];
+        
+        const ttCopy = { ...tt, target_school: targetSchool };
+        ungrouped[groupKey].push(ttCopy);
       }
-    } else {
-      const groupKey = targetSchool;
-      if (!ungrouped[groupKey]) ungrouped[groupKey] = [];
-      ungrouped[groupKey].push(tt);
     }
   }
 
