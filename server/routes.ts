@@ -714,6 +714,14 @@ export async function registerRoutes(
   await ensureTeacherImagesTable();
   await ensureTeachersTable();
   await ensureFilterTabsTable();
+  try {
+    const updateRes = await pool.query(
+      "UPDATE filter_tabs SET label = '썸머시간표' WHERE label = '요약시간표'"
+    );
+    console.log(`[Startup Migration] Renamed '요약시간표' to '썸머시간표'. Updated rows:`, updateRes.rowCount);
+  } catch (migrationErr) {
+    console.error("[Startup Migration] Failed to rename '요약시간표' to '썸머시간표':", migrationErr);
+  }
 
   await ensureNoticesTable();
   await ensureSchoolsTable();

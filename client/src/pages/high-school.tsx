@@ -72,7 +72,8 @@ const isNonsul = (tt: any) =>
   (tt.target_school || "") === "논술";
 
 function buildFilterFn(label: string): (tt: any) => boolean {
-  if (label === "전체시간표" || label === "전체" || label === "썸머시간표") return () => true;
+  if (label === "전체시간표" || label === "전체") return () => true;
+  if (label === "썸머시간표" || label === "요약시간표") return () => false;
   if (label === "논술") return (tt) => isNonsul(tt);
   if (label === "수학/탐구") return (tt) => (tt.subject === "수학" || tt.subject === "탐구") && !isNonsul(tt);
   
@@ -93,11 +94,12 @@ function buildFilterTabs(apiTabs: { id: number; label: string }[]): FilterTab[] 
   return apiTabs.map((tab) => ({
     label: tab.label,
     filterFn: buildFilterFn(tab.label),
+    isSummary: tab.label === "썸머시간표" || tab.label === "요약시간표",
   }));
 }
 
 const G1_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "썸머시간표", filterFn: () => true },
+  { label: "썸머시간표", filterFn: () => false, isSummary: true },
   { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("화성고") },
   { label: "가온고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("가온고") },
@@ -111,7 +113,7 @@ const G1_FILTERS_DEFAULT: FilterTab[] = [
 ];
 
 const G2_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "썸머시간표", filterFn: () => true },
+  { label: "썸머시간표", filterFn: () => false, isSummary: true },
   { label: "전체시간표", filterFn: () => true },
   { label: "화성고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("화성고") },
   { label: "가온고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("가온고") },
@@ -124,7 +126,7 @@ const G2_FILTERS_DEFAULT: FilterTab[] = [
 ];
 
 const G3_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "썸머시간표", filterFn: () => true },
+  { label: "썸머시간표", filterFn: () => false, isSummary: true },
   { label: "전체", filterFn: () => true },
   { label: "국어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "국어" || (tt.target_school || "") === "국어") },
   { label: "영어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "영어" || (tt.target_school || "") === "영어") },
@@ -196,7 +198,7 @@ function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defa
             category={category}
             filterTabs={filterTabs}
             summaryDivision={summaryDivision}
-            summaryTitle={summaryDivision ? `${grade} 기말/내신 시간표` : undefined}
+            summaryTitle={summaryDivision ? `${grade} 썸머시간표` : undefined}
           />
         </div>
       </div>
