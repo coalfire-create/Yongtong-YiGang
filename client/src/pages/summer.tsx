@@ -840,16 +840,32 @@ export default function Summer() {
         if (groupA === 10 && groupB === 10) {
           const getSpecialLectureSubGroupScore = (title: string) => {
             const t = title.toUpperCase();
-            if (t.includes("대수")) return 1;
-            if (t.includes("화성")) return 2;
-            if (t.includes("가온")) return 3;
-            if (t.includes("병점")) return 4;
-            if (t.includes("영덕")) return 5;
-            if (t.includes("수원")) return 6;
-            if (t.includes("청명")) return 7;
-            if (t.includes("고색")) return 8;
-            if (t.includes("동탄국제")) return 9;
-            return 10;
+            // 1. 대수특강: 대수 포함하되 미적/미적분 미포함
+            if (t.includes("대수") && !t.includes("미적")) return 1;
+            // 2. 대수미적분 특강: 대수와 미적이 같이 있거나, 또는 미적만 있는 경우
+            if (t.includes("대수") && t.includes("미적")) return 2;
+            if (t.includes("미적")) return 2;
+            // 3. 화성 올데이
+            if (t.includes("화성") && t.includes("올데이")) return 3;
+            // 4. 가온 올데이
+            if (t.includes("가온") && t.includes("올데이")) return 4;
+            // 5. 일반 화성 특강
+            if (t.includes("화성")) return 5;
+            // 6. 일반 가온 특강
+            if (t.includes("가온")) return 6;
+            // 7. 병점
+            if (t.includes("병점")) return 7;
+            // 8. 영덕
+            if (t.includes("영덕")) return 8;
+            // 9. 수원
+            if (t.includes("수원")) return 9;
+            // 10. 청명
+            if (t.includes("청명")) return 10;
+            // 11. 고색
+            if (t.includes("고색")) return 11;
+            // 12. 동탄국제
+            if (t.includes("동탄국제")) return 12;
+            return 13;
           };
           const specA = getSpecialLectureSubGroupScore(rawTitleA);
           const specB = getSpecialLectureSubGroupScore(rawTitleB);

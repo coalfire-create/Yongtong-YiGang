@@ -69,6 +69,22 @@ const getMathTeacherScore = (teacherName: string): number => {
   return score;
 };
 
+const getMathSpecialLectureScore = (className: string): number => {
+  const t = className.toUpperCase();
+  // 1. 대수특강: 대수 포함하되 미적/미적분 미포함
+  if (t.includes("대수") && !t.includes("미적")) return 1;
+  // 2. 대수미적분 특강: 대수와 미적이 같이 있거나, 또는 미적만 있는 경우
+  if (t.includes("대수") && t.includes("미적")) return 2;
+  if (t.includes("미적")) return 2;
+  // 3. 화성 올데이
+  if (t.includes("화성") && t.includes("올데이")) return 3;
+  // 4. 가온 올데이
+  if (t.includes("가온") && t.includes("올데이")) return 4;
+  // 5. 기타 올데이
+  if (t.includes("올데이")) return 5;
+  return 6;
+};
+
 const sortByGroupKey = <T,>(entries: [string, T][], subject?: string): [string, T][] =>
   [...entries].sort(([a], [b]) => {
     if (subject === "수학") {
@@ -172,7 +188,15 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         targetSchool: isUnion ? (tt.target_school || "연합반") : "논술",
       });
     } else {
-      const isSpecialLecture = (tt.class_name || "").includes("특강") || (tt.target_school || "").includes("특강") || (tt.class_name || "").includes("썸머") || (tt.target_school || "").includes("썸머");
+      const isSpecialLecture = 
+        (tt.class_name || "").includes("특강") || 
+        (tt.target_school || "").includes("특강") || 
+        (tt.class_name || "").includes("썸머") || 
+        (tt.target_school || "").includes("썸머") ||
+        (tt.class_name || "").includes("올데이") ||
+        (tt.class_name || "").toUpperCase().includes("ALLDAY") ||
+        (tt.class_name || "").toUpperCase().includes("ALL-DAY") ||
+        (tt.target_school || "").includes("올데이");
       
       if (isSpecialLecture) {
         const schoolMatch = SCHOOL_ORDER.find(s => s !== "연합반" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
@@ -535,6 +559,11 @@ function GroupCard({
     const bottomB = isBottomItem(b.tt.class_name || "");
     if (bottomA !== bottomB) return bottomA - bottomB;
     if (isMath) {
+      const specA = getMathSpecialLectureScore(a.tt.class_name || "");
+      const specB = getMathSpecialLectureScore(b.tt.class_name || "");
+      if (specA !== specB) {
+        return specA - specB;
+      }
       const scoreA = getMathTeacherScore(a.tt.teacher_name || "");
       const scoreB = getMathTeacherScore(b.tt.teacher_name || "");
       if (scoreA !== scoreB) {
