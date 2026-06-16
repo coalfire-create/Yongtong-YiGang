@@ -233,6 +233,8 @@ function _gkeys(s: string): Set<string> {
   if (/국어/.test(s)) k.add("국어"); if (/영어/.test(s)) k.add("영어");
   if (/물리|역학/.test(s)) k.add("물리"); if (/화학|물질과/.test(s)) k.add("화학");
   if (/생명|세포/.test(s)) k.add("생명"); if (/통과|통합과학/.test(s)) k.add("통과");
+  if (/비평준/.test(s)) k.add("비평준");
+  else if (/일반고|일반/.test(s)) k.add("일반고");
   return k;
 }
 function matchGuideline(tt: Timetable, guidelines: any[]): any | null {
