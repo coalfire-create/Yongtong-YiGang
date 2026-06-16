@@ -120,6 +120,52 @@ const getMathSpecialLectureScore = (className: string): number => {
   return 6;
 };
 
+const getG1ScienceClassScore = (className: string, teacherName: string): number => {
+  const cn = (className || "").toUpperCase();
+  const tn = teacherName || "";
+
+  // 1. 과목 분류 기준 (통과 -> 물리 -> 화학 -> 생명)
+  let base = 500;
+  if (cn.includes("통합과학") || cn.includes("통과")) base = 100;
+  else if (cn.includes("물리") || cn.includes("역학")) base = 200;
+  else if (cn.includes("화학") || cn.includes("물질과")) base = 300;
+  else if (cn.includes("생명") || cn.includes("세포")) base = 400;
+
+  // 2. 각 과목 내 세부 강사/강좌 순서 매칭
+  if (base === 100) { // 통과
+    if (tn.includes("장해든누리")) return base + 1;
+    if (tn.includes("변현수")) return base + 2;
+    if (tn.includes("임희민")) return base + 3;
+    if (tn.includes("황준우")) return base + 4;
+  }
+  if (base === 200) { // 물리
+    if (tn.includes("유승진")) {
+      if (cn.includes("역학 특강") || cn.includes("역학특강")) return base + 1;
+      return base + 2; // 역학과 에너지 [화성고 중심]
+    }
+    if (tn.includes("심규원")) return base + 3;
+    if (tn.includes("황준우")) return base + 4;
+  }
+  if (base === 300) { // 화학
+    if (tn.includes("장해든누리")) {
+      if (cn.includes("개정화학")) return base + 1;
+      return base + 2; // 물질과 에너지 [화성고 중심]
+    }
+    if (tn.includes("김종인")) return base + 3;
+    if (tn.includes("변현수")) {
+      if (cn.includes("전범위")) return base + 4;
+      return base + 5; // 물질과 에너지 [가온고 중심]
+    }
+  }
+  if (base === 400) { // 생명
+    if (tn.includes("곽윤협")) {
+      if (cn.includes("비평준")) return base + 1;
+      return base + 2; // 일반고
+    }
+  }
+  return base + 9;
+};
+
 // ── 브로셔(강사커리큘럼) 매칭 ──────────────────────────────
 const _SCHOOL_ROOTS = ["화성", "가온", "병점", "영덕", "수원", "청명", "고색", "동탄"];
 function _gkeys(s: string): Set<string> {
@@ -142,7 +188,7 @@ function _gkeys(s: string): Set<string> {
   else if (/A반|연합\s*A/.test(s)) k.add("A");
   if (/연합/.test(s)) k.add("연합");
   if (/국어/.test(s)) k.add("국어"); if (/영어/.test(s)) k.add("영어");
-  if (/물리/.test(s)) k.add("물리"); if (/화학/.test(s)) k.add("화학");
+  if (/물리|역학/.test(s)) k.add("물리"); if (/화학|물질과/.test(s)) k.add("화학");
   if (/생명|세포/.test(s)) k.add("생명"); if (/통과|통합과학/.test(s)) k.add("통과");
   return k;
 }
@@ -288,7 +334,12 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
     const isNonsulClass = (tt.class_name || "").includes("논술") || (tt.subject || "").includes("논술") || (tt.target_school || "") === "논술";
 
-    if (isNonsulClass) {
+    if (isG1Science && isAllOrMathSciFilter) {
+      instances.push({
+        isUnion: false,
+        targetSchool: "탐구",
+      });
+    } else if (isNonsulClass) {
       instances.push({
         isUnion,
         targetSchool: isUnion ? (tt.target_school || "연합반") : "논술",
@@ -693,6 +744,16 @@ function GroupCard({
 
   const indexedTimetables = mergedTimetables.map((tt, idx) => ({ tt, idx }));
   indexedTimetables.sort((a, b) => {
+    const isG1ScienceCard = firstTt?.category === "고등관-고1" && title === "탐구";
+    if (isG1ScienceCard) {
+      const scoreA = getG1ScienceClassScore(a.tt.class_name || "", a.tt.teacher_name || "");
+      const scoreB = getG1ScienceClassScore(b.tt.class_name || "", b.tt.teacher_name || "");
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB;
+      }
+      return a.idx - b.idx;
+    }
+
     const bottomA = isBottomItem(a.tt.class_name || "");
     const bottomB = isBottomItem(b.tt.class_name || "");
     if (bottomA !== bottomB) return bottomA - bottomB;
