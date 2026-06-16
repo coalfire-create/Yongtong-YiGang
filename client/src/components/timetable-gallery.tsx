@@ -29,6 +29,17 @@ const SUBJECT_ORDER = ["수학", "국어", "영어", "탐구", "통합사회/한
 // 통합과학·물리·화학·생명과학 등 과학 과목을 하나의 "탐구" 섹션으로 묶음
 const SCIENCE_SUBJECTS = ["통합과학", "물리", "화학", "생명과학", "지구과학", "물리학", "생명", "지구", "과학탐구", "탐구"];
 
+// 탐구 섹션 내 과목별 소그룹 순서: 통합과학 -> 물리 -> 화학 -> 생명
+const SCI_SUB_ORDER = ["통합과학", "물리", "화학", "생명"];
+// 강좌(+매칭된 강사커리큘럼)로부터 과탐 세부과목 판별
+function sciSubjectOf(className: string, guidelineTitle?: string): string {
+  const s = ((guidelineTitle || "") + " " + (className || "")).replace(/\s+/g, "");
+  if (/생명|세포/.test(s)) return "생명";
+  if (/화학|물질과에너지|물질과|개정화학/.test(s)) return "화학";
+  if (/물리|역학/.test(s)) return "물리";
+  return "통합과학";
+}
+
 // 학교/표시 순서: 연합반 -> 특강반 -> 화성/가온/병점 -> 영덕/수원/청명 -> 고색/동탄국제고 -> 학교별 특강
 const SCHOOL_ORDER = [
   "연합반",
@@ -43,6 +54,8 @@ const SCHOOL_ORDER = [
 ];
 
 const getSchoolRank = (name: string): number => {
+  const si = SCI_SUB_ORDER.indexOf(name);
+  if (si !== -1) return si; // 탐구 과목별 소그룹: 통합과학0 물리1 화학2 생명3
   if (name === "특강반") return 0.5;
   
   if (name.includes("특강")) {
@@ -249,8 +262,12 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         isUnion,
         targetSchool: isUnion ? (tt.target_school || "연합반") : "논술",
       });
+    } else if (subj === "탐구") {
+      // 과탐 강좌는 모두 특강 취급 -> 학교별이 아니라 강사커리큘럼 기준 과목별(통합과학/물리/화학/생명) 소그룹으로
+      const ss = sciSubjectOf(tt.class_name || "", brochureMap.get(tt.id)?.title);
+      instances.push({ isUnion: false, targetSchool: ss });
     } else {
-      const isSpecialLecture = 
+      const isSpecialLecture =
         (tt.class_name || "").includes("특강") || 
         (tt.target_school || "").includes("특강") || 
         (tt.class_name || "").includes("썸머") || 
@@ -703,7 +720,7 @@ function GroupCard({
         ) : (
           <>
             <div className="w-12 h-12 rounded bg-[#7B2332]/5 flex items-center justify-center border border-[#7B2332]/10 overflow-hidden">
-              {firstTt.school_logo_url ? (
+              {firstTt.school_logo_url && !SCI_SUB_ORDER.includes(title) ? (
                 <img src={firstTt.school_logo_url} alt={title} className="w-full h-full object-contain" />
               ) : title === "연합반" ? (
                 <Users className="w-6 h-6 text-blue-600" />
