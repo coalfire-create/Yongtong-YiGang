@@ -139,10 +139,14 @@ const getG1ScienceClassScore = (className: string, teacherName: string): number 
 
   // 2. 각 과목 내 세부 강사/강좌 순서 매칭
   if (base === 100) { // 통과
-    if (tn.includes("장해든누리")) return base + 1;
-    if (tn.includes("변현수")) return base + 2;
-    if (tn.includes("임희민")) return base + 3;
-    if (tn.includes("황준우")) return base + 4;
+    if (cn.includes("연합")) {
+      if (tn.includes("임희민")) return base + 1;
+      if (tn.includes("황준우")) return base + 2;
+    }
+    if (tn.includes("장해든누리")) return base + 3;
+    if (tn.includes("변현수")) return base + 4;
+    if (tn.includes("임희민")) return base + 5;
+    if (tn.includes("황준우")) return base + 6;
   }
   if (base === 200) { // 물리
     if (tn.includes("유승진")) {
@@ -881,7 +885,7 @@ function GroupCard({
         ) : (
           <>
             <div className="w-12 h-12 rounded bg-[#7B2332]/5 flex items-center justify-center border border-[#7B2332]/10 overflow-hidden">
-              {firstTt.school_logo_url && !SCI_SUB_ORDER.includes(title) ? (
+              {firstTt.school_logo_url && !SCIENCE_CARD_ORDER.includes(title) ? (
                 <img src={firstTt.school_logo_url} alt={title} className="w-full h-full object-contain" />
               ) : title === "연합반" ? (
                 <Users className="w-6 h-6 text-blue-600" />
