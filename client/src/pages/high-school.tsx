@@ -87,7 +87,29 @@ function buildFilterFn(label: string): (tt: any) => boolean {
         (tt.class_name || "").includes(label)
       );
   }
-  return (tt) => !isNonsul(tt) && ((tt.target_school || "").includes(label) || (tt.class_name || "").includes(label));
+
+  return (tt) => {
+    if (isNonsul(tt)) return false;
+
+    // G2 조기수능반 학교별 노출 예외 필터링 규칙
+    const isG2EarlyCsat = tt.category === "고등관-고2" && (tt.class_name || "").includes("조기수능");
+    if (isG2EarlyCsat) {
+      const teacher = tt.teacher_name || "";
+      if (label === "가온고") {
+        // 양준민(영어), 손자은(국어) -> 가온고 필터에만 노출
+        return teacher.includes("양준민") || teacher.includes("손자은");
+      } else {
+        // 문브라더스(영어), 김현종(국어) -> 가온고 제외 다른 학교 필터에 노출
+        const isSchoolFilter = ["화성고", "영덕고", "청명고", "수원고", "고색고", "동탄국제고", "병점고"].includes(label);
+        if (isSchoolFilter) {
+          return teacher.includes("문브라더스") || teacher.includes("김현종");
+        }
+      }
+      return false;
+    }
+
+    return (tt.target_school || "").includes(label) || (tt.class_name || "").includes(label);
+  };
 }
 
 function buildFilterTabs(apiTabs: { id: number; label: string }[]): FilterTab[] {
@@ -99,30 +121,30 @@ function buildFilterTabs(apiTabs: { id: number; label: string }[]): FilterTab[] 
 }
 
 const G1_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "썸머시간표", filterFn: () => false, isSummary: true },
-  { label: "전체시간표", filterFn: () => true },
-  { label: "화성고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("화성고") },
-  { label: "가온고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("가온고") },
-  { label: "병점고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("병점고") },
-  { label: "영덕고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("영덕고") },
-  { label: "수원고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("수원고") },
-  { label: "청명고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("청명고") },
-  { label: "통합과학", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "통합과학" || (tt.class_name || "").includes("통합과학")) },
-  { label: "통합사회/한국사", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "통합사회/한국사" || (tt.class_name || "").includes("통합사회") || (tt.class_name || "").includes("한국사")) },
-  { label: "수학/탐구", filterFn: (tt) => !isNonsul(tt) && ["수학", "탐구", "통합과학", "통합사회/한국사", "물리", "화학", "생명", "생명과학", "지구과학", "지구", "물리학", "과학탐구"].includes(tt.subject) },
+  { label: "썸머시간표", filterFn: buildFilterFn("썸머시간표"), isSummary: true },
+  { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
+  { label: "화성고", filterFn: buildFilterFn("화성고") },
+  { label: "가온고", filterFn: buildFilterFn("가온고") },
+  { label: "병점고", filterFn: buildFilterFn("병점고") },
+  { label: "영덕고", filterFn: buildFilterFn("영덕고") },
+  { label: "수원고", filterFn: buildFilterFn("수원고") },
+  { label: "청명고", filterFn: buildFilterFn("청명고") },
+  { label: "통합과학", filterFn: buildFilterFn("통합과학") },
+  { label: "통합사회/한국사", filterFn: buildFilterFn("통합사회/한국사") },
+  { label: "수학/탐구", filterFn: buildFilterFn("수학/탐구") },
 ];
 
 const G2_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "썸머시간표", filterFn: () => false, isSummary: true },
-  { label: "전체시간표", filterFn: () => true },
-  { label: "화성고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("화성고") },
-  { label: "가온고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("가온고") },
-  { label: "동탄국제고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("동탄국제고") },
-  { label: "청명고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("청명고") },
-  { label: "영덕고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("영덕고") },
-  { label: "수원고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("수원고") },
-  { label: "고색고", filterFn: (tt) => !isNonsul(tt) && (tt.target_school || "").includes("고색고") },
-  { label: "수학/탐구", filterFn: (tt) => !isNonsul(tt) && ["수학", "탐구", "통합과학", "통합사회/한국사", "물리", "화학", "생명", "생명과학", "지구과학", "지구", "물리학", "과학탐구"].includes(tt.subject) },
+  { label: "썸머시간표", filterFn: buildFilterFn("썸머시간표"), isSummary: true },
+  { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
+  { label: "화성고", filterFn: buildFilterFn("화성고") },
+  { label: "가온고", filterFn: buildFilterFn("가온고") },
+  { label: "동탄국제고", filterFn: buildFilterFn("동탄국제고") },
+  { label: "청명고", filterFn: buildFilterFn("청명고") },
+  { label: "영덕고", filterFn: buildFilterFn("영덕고") },
+  { label: "수원고", filterFn: buildFilterFn("수원고") },
+  { label: "고색고", filterFn: buildFilterFn("고색고") },
+  { label: "수학/탐구", filterFn: buildFilterFn("수학/탐구") },
 ];
 
 const G3_FILTERS_DEFAULT: FilterTab[] = [
