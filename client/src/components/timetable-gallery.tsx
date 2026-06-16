@@ -26,6 +26,24 @@ interface Timetable {
 
 const SUBJECT_ORDER = ["수학", "국어", "영어", "탐구", "통합사회/한국사", "사회문화", "생윤", "논술"];
 
+const getSubjectOrder = (cat: string) => {
+  if (cat === "고등관-고1") {
+    return ["수학", "국어", "영어", "통합과학", "물리", "화학", "생명", "지구", "탐구", "통합사회/한국사", "사회문화", "생윤", "논술"];
+  }
+  return SUBJECT_ORDER;
+};
+
+const getSpecificScienceSubject = (subjectStr: string, className: string): string => {
+  const s = (subjectStr || "").toUpperCase();
+  const c = (className || "").toUpperCase();
+  if (s.includes("통합과학") || s.includes("통과") || c.includes("통합과학") || c.includes("통과")) return "통합과학";
+  if (s.includes("물리") || c.includes("물리")) return "물리";
+  if (s.includes("화학") || c.includes("화학")) return "화학";
+  if (s.includes("생명") || c.includes("생명")) return "생명";
+  if (s.includes("지구") || s.includes("지학") || c.includes("지구") || c.includes("지학")) return "지구";
+  return "탐구";
+};
+
 // 통합과학·물리·화학·생명과학 등 과학 과목을 하나의 "탐구" 섹션으로 묶음
 const SCIENCE_SUBJECTS = ["통합과학", "물리", "화학", "생명과학", "지구과학", "물리학", "생명", "지구", "과학탐구", "탐구"];
 
@@ -252,9 +270,19 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
   const ungrouped: Record<string, Timetable[]> = {};
 
+  const tabLabel = activeTab?.label || "";
+  const isAllOrMathSciFilter = !filterTabs || filterTabs.length === 0 || tabLabel === "전체시간표" || tabLabel === "수학/탐구";
+  const currentSubjectOrder = getSubjectOrder(category);
+
   for (const tt of filtered) {
     const isUnion = tt.is_union;
-    let subj = SCIENCE_SUBJECTS.includes(tt.subject) ? "탐구" : (tt.subject || "기타");
+    let subj = tt.subject || "기타";
+    const isG1Science = category === "고등관-고1" && (subj === "탐구" || SCIENCE_SUBJECTS.includes(subj));
+    if (isG1Science) {
+      subj = sciSubjectOf(tt.class_name || "", brochureMap.get(tt.id)?.title);
+    } else if (SCIENCE_SUBJECTS.includes(subj)) {
+      subj = "탐구";
+    }
 
     const instances: { isUnion: boolean; targetSchool: string }[] = [];
 
@@ -312,8 +340,9 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           });
         }
       } else {
+        const forceUnion = isG1Science && isAllOrMathSciFilter;
         instances.push({
-          isUnion,
+          isUnion: forceUnion ? true : isUnion,
           targetSchool: tt.target_school || "연합반",
         });
       }
@@ -323,7 +352,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       const targetSchool = inst.targetSchool;
       const isUnionInst = inst.isUnion;
 
-      if (SUBJECT_ORDER.includes(subj)) {
+      if (currentSubjectOrder.includes(subj)) {
         if (!subjectGroups[subj]) {
           subjectGroups[subj] = { union: {}, school: {} };
         }
@@ -353,7 +382,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
     }
   }
 
-  const orderedSubjects = SUBJECT_ORDER.filter((s) => subjectGroups[s]);
+  const orderedSubjects = currentSubjectOrder.filter((s) => subjectGroups[s]);
 
   const openReserve = (tt: Timetable) =>
     setReserveTarget({ id: tt.id, name: tt.class_name, subject: tt.subject, teacherName: tt.teacher_name, classTime: tt.class_time, startDate: tt.start_date });
