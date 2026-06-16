@@ -235,11 +235,13 @@ function _gkeys(s: string): Set<string> {
   if (/생명|세포/.test(s)) k.add("생명"); if (/통과|통합과학/.test(s)) k.add("통과");
   if (/비평준/.test(s)) k.add("비평준");
   else if (/일반고|일반/.test(s)) k.add("일반고");
+  if (s.includes("동국")) k.add("동탄");
   return k;
 }
 function matchGuideline(tt: Timetable, guidelines: any[]): any | null {
-  const tn = (tt.teacher_name || "").match(/([가-힣]{2,4})T?/)?.[1] || "";
+  let tn = (tt.teacher_name || "").match(/([가-힣]{2,4})T?/)?.[1] || "";
   if (!tn) return null;
+  if (tn === "손자은") tn = "손지은";
   const cand = guidelines.filter((g) => (g.title || "").includes(tn));
   if (!cand.length) return null;
   if (cand.length === 1) return cand[0];
