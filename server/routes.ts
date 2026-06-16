@@ -276,7 +276,7 @@ async function ensureSchoolsTable() {
       { name: "수원고", logo: "https://i.namu.wiki/i/SHh7bV4c8xzGKj4ofz86-gngBABM8Ywstv368h5v2tdCIDWWQ-03iPuq_XGJJq65zHQwQ6bcJGDJV4B_HiS1zg.webp" },
       { name: "청명고", logo: "https://i.namu.wiki/i/jTHdZXBq637mSrkXdEDVSTXwpG3wiXVmL_vwIawPp6ivAOnZq9hBRcuw3SAw3h-LThmUayMOQ0dqWg-NjWtVZA.svg" },
       { name: "고색고", logo: "https://i.namu.wiki/i/TV50pF-IwPdJ_jr86HIzthu7T9Nc27D71a-EOad3FQ_faVBtc1rImx7yV4twnnCRKXVqyDdJwNFYh2_LtjklbQ.svg" },
-      { name: "동탄국제고", logo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/Dongtan_International_High_School_logo.svg" }
+      { name: "동탄국제고", logo: "/attached_assets/dongtan_logo.png" }
     ];
 
     for (const s of defaultSchools) {
