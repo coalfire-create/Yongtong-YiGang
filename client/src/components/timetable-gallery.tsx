@@ -236,13 +236,17 @@ function _gkeys(s: string): Set<string> {
   if (/비평준/.test(s)) k.add("비평준");
   else if (/일반고|일반/.test(s)) k.add("일반고");
   if (s.includes("동국")) k.add("동탄");
+  if (/수능|조기수능/.test(s)) k.add("수능");
   return k;
 }
 function matchGuideline(tt: Timetable, guidelines: any[]): any | null {
-  let tn = (tt.teacher_name || "").match(/([가-힣]{2,4})T?/)?.[1] || "";
+  const tn = (tt.teacher_name || "").match(/([가-힣]{2,4})T?/)?.[1] || "";
   if (!tn) return null;
-  if (tn === "손자은") tn = "손지은";
-  const cand = guidelines.filter((g) => (g.title || "").includes(tn));
+  const cand = guidelines.filter((g) => 
+    (g.title || "").includes(tn) || 
+    (tn === "손자은" && (g.title || "").includes("손지은")) || 
+    (tn === "손지은" && (g.title || "").includes("손자은"))
+  );
   if (!cand.length) return null;
   if (cand.length === 1) return cand[0];
   const tk = _gkeys(tt.class_name || "");
