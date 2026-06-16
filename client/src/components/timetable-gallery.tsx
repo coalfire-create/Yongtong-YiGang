@@ -411,14 +411,16 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       }
     } else {
       const isSpecialLecture =
-        (tt.class_name || "").includes("특강") || 
-        (tt.target_school || "").includes("특강") || 
-        (tt.class_name || "").includes("썸머") || 
-        (tt.target_school || "").includes("썸머") ||
-        (tt.class_name || "").includes("올데이") ||
-        (tt.class_name || "").toUpperCase().includes("ALLDAY") ||
-        (tt.class_name || "").toUpperCase().includes("ALL-DAY") ||
-        (tt.target_school || "").includes("올데이");
+        !isG1OrG2Science && (
+          (tt.class_name || "").includes("특강") || 
+          (tt.target_school || "").includes("특강") || 
+          (tt.class_name || "").includes("썸머") || 
+          (tt.target_school || "").includes("썸머") ||
+          (tt.class_name || "").includes("올데이") ||
+          (tt.class_name || "").toUpperCase().includes("ALLDAY") ||
+          (tt.class_name || "").toUpperCase().includes("ALL-DAY") ||
+          (tt.target_school || "").includes("올데이")
+        );
       
       if (isSpecialLecture) {
         const schoolMatch = SCHOOL_ORDER.find(s => s !== "연합반" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
