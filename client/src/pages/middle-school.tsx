@@ -2,10 +2,20 @@ import { SectionPage } from "@/components/layout";
 import { Link } from "wouter";
 import { Calendar, Users, Clock } from "lucide-react";
 import { TeacherIntroPage } from "@/components/teacher-intro";
+import { useQuery } from "@tanstack/react-query";
 
 const MIDDLE_SCHOOL_SUBJECTS = ["수학", "국어", "영어", "탐구"];
 
 export function MiddleSchool() {
+  const { data: images = [] } = useQuery<any[]>({
+    queryKey: ["/api/middle-school-images"],
+    queryFn: async () => {
+      const res = await fetch("/api/middle-school-images");
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    }
+  });
+
   return (
     <SectionPage title="중등관" subtitle="중등부 수학 전문 과정 안내">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -44,6 +54,22 @@ export function MiddleSchool() {
           </p>
         </div>
       </div>
+
+      {images.length > 0 && (
+        <div className="mt-10 pt-10 border-t border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">안내 포스터</h2>
+          <div className="flex flex-col gap-6 items-center">
+            {images.map((img) => (
+              <img
+                key={img.id}
+                src={img.image_url}
+                alt="중3 안내 포스터"
+                className="w-full max-w-3xl border border-gray-200 rounded-lg shadow-sm"
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </SectionPage>
   );
 }

@@ -5270,6 +5270,211 @@ function SummerTab() {
   );
 }
 
+function SortableMiddleSchoolImageCard({ item, onDelete }: { item: any; onDelete: (id: number) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-start gap-3 border border-gray-200 p-3 bg-white rounded-lg hover:border-gray-300 transition-all shadow-sm"
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 pt-2 cursor-grab active:cursor-grabbing text-gray-300 hover:text-[#7B2332] transition-colors"
+      >
+        <GripVertical className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0 space-y-2">
+        <img src={item.image_url} alt="중3 포스터" className="w-full max-w-sm border border-gray-100 rounded-md" />
+      </div>
+      <button
+        onClick={() => onDelete(item.id)}
+        className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+function MiddleSchoolTab() {
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: items = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/middle-school-images"],
+    queryFn: async () => {
+      const res = await fetch(`/api/middle-school-images`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+  });
+
+  const [localItems, setLocalItems] = useState<any[]>([]);
+  useEffect(() => {
+    setLocalItems(prev => {
+      const prevKey = JSON.stringify(prev);
+      const newKey = JSON.stringify(items);
+      return prevKey === newKey ? prev : items;
+    });
+  }, [items]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const addMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/middle-school-images", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/middle-school-images"] });
+      setImageFiles([]);
+      setImagePreviews([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/middle-school-images/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/middle-school-images"] });
+    },
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/middle-school-images/reorder", {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ ids }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("순서 변경 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/middle-school-images"] });
+    },
+    onError: () => {
+      setLocalItems(items);
+    },
+  });
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = localItems.findIndex(t => t.id === Number(active.id));
+    const newIdx = localItems.findIndex(t => t.id === Number(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    const newList = arrayMove(localItems, oldIdx, newIdx);
+    setLocalItems(newList);
+    reorderMutation.mutate(newList.map(t => t.id));
+  }
+
+  const handleUpload = () => {
+    if (imageFiles.length === 0) return;
+    imageFiles.forEach((file) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      addMutation.mutate(formData);
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 p-6">
+        <h3 className="text-sm font-bold text-gray-900 mb-4">중3 포스터 이미지 등록</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 선택 (여러 장 가능)</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length > 0) {
+                  setImageFiles(files);
+                  setImagePreviews(files.map((f) => URL.createObjectURL(f)));
+                }
+              }}
+              className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+            />
+          </div>
+
+          {imagePreviews.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {imagePreviews.map((preview, idx) => (
+                <div key={idx} className="relative aspect-square border border-gray-200 rounded-lg overflow-hidden">
+                  <img src={preview} alt={`미리보기 ${idx + 1}`} className="w-full h-full object-cover" />
+                  <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">{idx + 1}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={handleUpload}
+            disabled={imageFiles.length === 0 || addMutation.isPending}
+            className="w-full sm:w-auto px-8 py-2.5 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {imageFiles.length > 1 ? `${imageFiles.length}개 일괄 등록` : "이미지 등록"}
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center justify-between">
+          <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[#7B2332]" />
+            등록된 포스터 목록 ({localItems.length})
+          </h4>
+          <p className="text-[10px] text-gray-400 font-medium">드래그하여 순서 변경</p>
+        </div>
+        <div className="p-5">
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-200" />
+            </div>
+          ) : localItems.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">등록된 이미지가 없습니다.</p>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={localItems.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                <div className="grid grid-cols-1 gap-3">
+                  {localItems.map((item) => (
+                    <SortableMiddleSchoolImageCard
+                      key={item.id}
+                      item={item}
+                      onDelete={(id) => {
+                        if (confirm("이 이미지를 삭제하시겠습니까?")) deleteMutation.mutate(id);
+                      }}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface FilterTabItem {
   id: number;
   category: string;
@@ -6181,7 +6386,7 @@ function NavigationManager() {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices" | "summer" | "schools" | "briefing-events" | "navigation">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices" | "summer" | "schools" | "briefing-events" | "navigation" | "middle-school">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -6379,6 +6584,18 @@ export default function AdminPage() {
             썸머 관리
           </button>
           <button
+            onClick={() => setTab("middle-school")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "middle-school"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-middle-school"
+          >
+            <Image className="w-4 h-4" />
+            중3 관리
+          </button>
+          <button
             onClick={() => setTab("schools")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "schools"
@@ -6404,7 +6621,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : tab === "summer" ? <SummerTab /> : tab === "schools" ? <SchoolsTab /> : tab === "navigation" ? <NavigationManager /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : tab === "summer" ? <SummerTab /> : tab === "middle-school" ? <MiddleSchoolTab /> : tab === "schools" ? <SchoolsTab /> : tab === "navigation" ? <NavigationManager /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );
