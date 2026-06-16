@@ -71,6 +71,14 @@ const isNonsul = (tt: any) =>
   (tt.subject || "").includes("논술") ||
   (tt.target_school || "") === "논술";
 
+const SCIENCE_SUBJECTS = ["통합과학", "통과", "물리", "화학", "생명", "지구", "탐구", "생명과학", "지구과학", "물리학", "과학탐구"];
+
+const isScienceSubject = (tt: any) => {
+  const subj = (tt.subject || "").trim();
+  const cn = (tt.class_name || "").trim();
+  return SCIENCE_SUBJECTS.some(s => subj.includes(s) || cn.includes(s));
+};
+
 function buildFilterFn(label: string): (tt: any) => boolean {
   if (label === "전체시간표" || label === "전체") return () => true;
   if (label === "썸머시간표" || label === "요약시간표") return () => false;
@@ -90,6 +98,11 @@ function buildFilterFn(label: string): (tt: any) => boolean {
 
   return (tt) => {
     if (isNonsul(tt)) return false;
+
+    // 만약 고2 과탐 과목이라면 모든 학교 필터에 노출되도록 true 반환
+    if (tt.category === "고등관-고2" && isScienceSubject(tt)) {
+      return true;
+    }
 
     // G2 조기수능반 학교별 노출 예외 필터링 규칙
     const isG2EarlyCsat = tt.category === "고등관-고2" && (tt.class_name || "").includes("조기수능");
