@@ -29,8 +29,8 @@ const SUBJECT_ORDER = ["수학", "국어", "영어", "탐구", "통합사회/한
 // 통합과학·물리·화학·생명과학 등 과학 과목을 하나의 "탐구" 섹션으로 묶음
 const SCIENCE_SUBJECTS = ["통합과학", "물리", "화학", "생명과학", "지구과학", "물리학", "생명", "지구", "과학탐구", "탐구"];
 
-// 탐구 섹션 내 과목별 소그룹 순서: 통합과학 -> 물리 -> 화학 -> 생명
-const SCI_SUB_ORDER = ["통합과학", "물리", "화학", "생명"];
+// 탐구 특강반 내 과목별 소그룹 순서: 물리 -> 화학 -> 생명 (통과는 정규라 제외)
+const SCI_SUB_ORDER = ["물리", "화학", "생명"];
 // 강좌(+매칭된 강사커리큘럼)로부터 과탐 세부과목 판별
 function sciSubjectOf(className: string, guidelineTitle?: string): string {
   const s = ((guidelineTitle || "") + " " + (className || "")).replace(/\s+/g, "");
@@ -55,7 +55,7 @@ const SCHOOL_ORDER = [
 
 const getSchoolRank = (name: string): number => {
   const si = SCI_SUB_ORDER.indexOf(name);
-  if (si !== -1) return si; // 탐구 과목별 소그룹: 통합과학0 물리1 화학2 생명3
+  if (si !== -1) return 0.5 + si * 0.01; // 탐구 특강반 과목별 소그룹: 연합반 다음, 학교별 앞
   if (name === "특강반") return 0.5;
   
   if (name.includes("특강")) {
@@ -263,9 +263,17 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         targetSchool: isUnion ? (tt.target_school || "연합반") : "논술",
       });
     } else if (subj === "탐구") {
-      // 과탐 강좌는 모두 특강 취급 -> 학교별이 아니라 강사커리큘럼 기준 과목별(통합과학/물리/화학/생명) 소그룹으로
+      // 강사커리큘럼 기준 과목 판별: 통과(통합과학)=정규반, 물리/화학/생명=특강반
       const ss = sciSubjectOf(tt.class_name || "", brochureMap.get(tt.id)?.title);
-      instances.push({ isUnion: false, targetSchool: ss });
+      if (ss === "통합과학") {
+        // 통과는 고1 정규반 -> 연합반/학교별 일반 그룹
+        const schoolMatch = SCHOOL_ORDER.find(s => s !== "연합반" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
+        if (schoolMatch) instances.push({ isUnion: false, targetSchool: schoolMatch });
+        else instances.push({ isUnion: tt.is_union, targetSchool: tt.target_school || "연합반" });
+      } else {
+        // 물리/화학/생명 -> 특강반 (과목별 소그룹)
+        instances.push({ isUnion: false, targetSchool: ss });
+      }
     } else {
       const isSpecialLecture =
         (tt.class_name || "").includes("특강") || 
