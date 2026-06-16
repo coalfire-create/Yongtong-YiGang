@@ -360,10 +360,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   }
 
   // Grouping logic
-  const subjectGroups: Record<string, {
-    union: Record<string, Timetable[]>;
-    school: Record<string, Timetable[]>;
-  }> = {};
+  const subjectGroups: Record<string, Record<string, Timetable[]>> = {};
 
   const ungrouped: Record<string, Timetable[]> = {};
 
@@ -461,24 +458,17 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
       if (currentSubjectOrder.includes(subj)) {
         if (!subjectGroups[subj]) {
-          subjectGroups[subj] = { union: {}, school: {} };
+          subjectGroups[subj] = {};
         }
 
-        if (isUnionInst && targetSchool !== "특강반" && !targetSchool.includes("특강")) {
-          // Union classes are still grouped by teacher for clarity
-          const groupKey = tt.teacher_name || "연합반";
-          if (!subjectGroups[subj].union[groupKey]) subjectGroups[subj].union[groupKey] = [];
-          
-          const ttCopy = { ...tt, target_school: targetSchool };
-          subjectGroups[subj].union[groupKey].push(ttCopy);
-        } else {
-          // Special lectures go to the school section, even if they are marked as union in DB
-          const groupKey = targetSchool;
-          if (!subjectGroups[subj].school[groupKey]) subjectGroups[subj].school[groupKey] = [];
-          
-          const ttCopy = { ...tt, target_school: targetSchool };
-          subjectGroups[subj].school[groupKey].push(ttCopy);
-        }
+        const groupKey = (isUnionInst && targetSchool !== "특강반" && !targetSchool.includes("특강"))
+          ? "연합반"
+          : targetSchool;
+
+        if (!subjectGroups[subj][groupKey]) subjectGroups[subj][groupKey] = [];
+        
+        const ttCopy = { ...tt, target_school: targetSchool };
+        subjectGroups[subj][groupKey].push(ttCopy);
       } else {
         const groupKey = targetSchool;
         if (!ungrouped[groupKey]) ungrouped[groupKey] = [];
@@ -535,8 +525,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           ) : (
             <div className="space-y-12">
               {orderedSubjects.map((subj) => {
-                const { union, school } = subjectGroups[subj];
-                const totalClasses = Object.values(union).flat().length + Object.values(school).flat().length;
+                const groups = subjectGroups[subj];
+                const totalClasses = Object.values(groups).flat().length;
 
                 return (
                   <div key={subj} className="flex flex-col md:flex-row gap-4 md:gap-8 border-b border-gray-100 pb-10 last:border-0 last:pb-0">
@@ -547,60 +537,21 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                       </h3>
                       <span className="text-xs text-gray-400 font-medium">({totalClasses}개 반)</span>
                     </div>
-                    <div className="flex-1 space-y-10">
-                      {/* Union Section for this subject */}
-                      {Object.keys(union).length > 0 && (
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-2">
-                            <div className="px-2 py-0.5 bg-[#7B2332] text-[10px] font-bold text-white rounded-sm">연합반</div>
-                            <div className="h-px flex-1 bg-gray-100" />
-                          </div>
-                          <div className="space-y-6">
-                            {sortByGroupKey(Object.entries(union), subj).map(([key, tts]) => (
-                              <GroupCard
-                                key={key}
-                                title={key}
-                                timetables={tts}
-                                teachers={teachers}
-                                expandedId={expandedId}
-                                onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
-                                onReserve={openReserve}
-                                brochureMap={brochureMap}
-                                onBrochure={setBrochure}
-                                type="teacher"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* School Section for this subject */}
-                      {Object.keys(school).length > 0 && (
-                        <div className="space-y-4">
-                          {Object.keys(union).length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <div className="px-2 py-0.5 bg-gray-600 text-[10px] font-bold text-white rounded-sm">학교별</div>
-                              <div className="h-px flex-1 bg-gray-100" />
-                            </div>
-                          )}
-                          <div className="space-y-6">
-                            {sortByGroupKey(Object.entries(school), subj).map(([key, tts]) => (
-                              <GroupCard
-                                key={key}
-                                title={key}
-                                timetables={tts}
-                                teachers={teachers}
-                                expandedId={expandedId}
-                                onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
-                                onReserve={openReserve}
-                                brochureMap={brochureMap}
-                                onBrochure={setBrochure}
-                                type="school"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                    <div className="flex-1 space-y-6">
+                      {sortByGroupKey(Object.entries(groups), subj).map(([key, tts]) => (
+                        <GroupCard
+                          key={key}
+                          title={key}
+                          timetables={tts}
+                          teachers={teachers}
+                          expandedId={expandedId}
+                          onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
+                          onReserve={openReserve}
+                          brochureMap={brochureMap}
+                          onBrochure={setBrochure}
+                          type="school"
+                        />
+                      ))}
                     </div>
                   </div>
                 );
