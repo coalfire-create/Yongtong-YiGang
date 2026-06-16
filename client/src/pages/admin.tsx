@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
+import { Trash2, Upload, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown, GripVertical, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import {
   DndContext,
@@ -1177,49 +1177,55 @@ function TimetablesTab() {
     논술: "bg-pink-50 text-pink-700 border-pink-200",
   };
 
-  // Group by teacher name (preserving display_order within each group)
-  const teacherGroupMap = new Map<string, { teacherName: string; photoUrl: string; items: { tt: Timetable; idx: number }[] }>();
-  filteredTimetables.forEach((tt, idx) => {
-    // Collect all unique teacher IDs for this timetable
-    const tIds = new Set<number>();
-    if (tt.teacher_id) tIds.add(tt.teacher_id);
-    if (tt.teacher_ids && Array.isArray(tt.teacher_ids)) {
-      tt.teacher_ids.forEach(id => tIds.add(id));
-    }
-    
-    if (tIds.size === 0) {
-      const key = tt.teacher_name?.trim() || "담당 없음";
-      if (!teacherGroupMap.has(key)) {
-        teacherGroupMap.set(key, { teacherName: key, photoUrl: tt.teacher_image_url || "", items: [] });
-      }
-      teacherGroupMap.get(key)!.items.push({ tt, idx });
-    } else {
-      tIds.forEach(tId => {
-        const teacher = teachers.find(t => t.id === tId);
-        const name = teacher?.name || "알 수 없음";
-        const photo = teacher?.image_url || "";
-        if (!teacherGroupMap.has(name)) {
-          teacherGroupMap.set(name, { teacherName: name, photoUrl: photo, items: [] });
-        }
-        teacherGroupMap.get(name)!.items.push({ tt, idx });
-      });
-    }
-  });
-  const groupedByTeacher = [...teacherGroupMap.values()].sort((a, b) => {
-    if (a.teacherName === "담당 없음") return 1;
-    if (b.teacherName === "담당 없음") return -1;
-    return a.teacherName.localeCompare(b.teacherName);
+  const SCIENCE_SUBJECTS = ["통합과학", "물리", "화학", "생명과학", "지구과학", "물리학", "생명", "지구", "과학탐구", "탐구"];
+  const SUBJECT_ORDER = ["수학", "국어", "영어", "탐구", "통합사회/한국사", "사회문화", "생윤", "논술"];
+
+  // Sort filteredTimetables to make sure subjects are contiguous
+  const sortedFilteredTimetables = [...filteredTimetables].sort((a, b) => {
+    let subjA = a.subject || "기타";
+    if (SCIENCE_SUBJECTS.includes(subjA)) subjA = "탐구";
+    let subjB = b.subject || "기타";
+    if (SCIENCE_SUBJECTS.includes(subjB)) subjB = "탐구";
+
+    const orderA = SUBJECT_ORDER.indexOf(subjA);
+    const orderB = SUBJECT_ORDER.indexOf(subjB);
+    const idxA = orderA === -1 ? 999 : orderA;
+    const idxB = orderB === -1 ? 999 : orderB;
+    if (idxA !== idxB) return idxA - idxB;
+
+    return (a.display_order ?? 0) - (b.display_order ?? 0);
   });
 
-  const sortableItems = groupedByTeacher.flatMap(group => 
-    group.items.map(item => `${item.tt.id}-${group.teacherName}`)
+  // Group by subject (preserving display_order within each group)
+  const subjectGroupMap = new Map<string, { subjectName: string; items: { tt: Timetable; idx: number }[] }>();
+  sortedFilteredTimetables.forEach((tt, idx) => {
+    let subj = tt.subject || "기타";
+    if (SCIENCE_SUBJECTS.includes(subj)) {
+      subj = "탐구";
+    }
+    if (!subjectGroupMap.has(subj)) {
+      subjectGroupMap.set(subj, { subjectName: subj, items: [] });
+    }
+    subjectGroupMap.get(subj)!.items.push({ tt, idx });
+  });
+
+  const groupedBySubject = [...subjectGroupMap.values()].sort((a, b) => {
+    const orderA = SUBJECT_ORDER.indexOf(a.subjectName);
+    const orderB = SUBJECT_ORDER.indexOf(b.subjectName);
+    const idxA = orderA === -1 ? 999 : orderA;
+    const idxB = orderB === -1 ? 999 : orderB;
+    return idxA - idxB;
+  });
+
+  const sortableItems = groupedBySubject.flatMap(group => 
+    group.items.map(item => `${item.tt.id}-${group.subjectName}`)
   );
 
   const inputCls = "w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-[#7B2332] bg-white rounded";
   const labelCls = "block text-xs font-semibold text-gray-600 mb-1";
 
-  const TimetableCard = ({ tt, teacherName }: { tt: Timetable, teacherName: string }) => {
-    const sortableId = `${tt.id}-${teacherName}`;
+  const TimetableCard = ({ tt, groupKey }: { tt: Timetable, groupKey: string }) => {
+    const sortableId = `${tt.id}-${groupKey}`;
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: sortableId });
     const cardStyle: React.CSSProperties = {
       transform: CSS.Transform.toString(transform),
@@ -1857,24 +1863,20 @@ function TimetablesTab() {
       ) : (
         <DndContext sensors={ttSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndTimetables}>
           <div className="space-y-6">
-            {groupedByTeacher.map(({ teacherName, photoUrl, items }) => (
-              <div key={teacherName}>
+            {groupedBySubject.map(({ subjectName, items }) => (
+              <div key={subjectName}>
                 <div className="flex items-center gap-2 mb-2">
-                  {photoUrl ? (
-                    <img src={photoUrl} alt={teacherName} className="w-7 h-7 rounded-full object-cover border border-gray-200 flex-shrink-0" />
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <User className="w-3.5 h-3.5 text-gray-400" />
-                    </div>
-                  )}
-                  <span className="text-sm font-bold text-gray-800">{teacherName}</span>
+                  <div className="w-7 h-7 rounded bg-[#7B2332]/5 flex items-center justify-center border border-[#7B2332]/10 overflow-hidden">
+                    <BookOpen className="w-4 h-4 text-[#7B2332]" />
+                  </div>
+                  <span className="text-sm font-bold text-gray-800">{subjectName}</span>
                   <span className="text-xs text-gray-400">{items.length}개</span>
                   <div className="flex-1 h-px bg-gray-100" />
                 </div>
-                <SortableContext items={items.map(({ tt }) => `${tt.id}-${teacherName}`)} strategy={verticalListSortingStrategy}>
+                <SortableContext items={items.map(({ tt }) => `${tt.id}-${subjectName}`)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-2">
                     {items.map(({ tt }) => (
-                      <TimetableCard key={`${tt.id}-${teacherName}`} tt={tt} teacherName={teacherName} />
+                      <TimetableCard key={`${tt.id}-${subjectName}`} tt={tt} groupKey={subjectName} />
                     ))}
                   </div>
                 </SortableContext>
