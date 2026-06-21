@@ -152,11 +152,12 @@ const G2_FILTERS_DEFAULT: FilterTab[] = [
   { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
   { label: "화성고", filterFn: buildFilterFn("화성고") },
   { label: "가온고", filterFn: buildFilterFn("가온고") },
-  { label: "동탄국제고", filterFn: buildFilterFn("동탄국제고") },
-  { label: "청명고", filterFn: buildFilterFn("청명고") },
+  { label: "병점고", filterFn: buildFilterFn("병점고") },
   { label: "영덕고", filterFn: buildFilterFn("영덕고") },
   { label: "수원고", filterFn: buildFilterFn("수원고") },
-  { label: "고색고", filterFn: buildFilterFn("고색고") },
+  { label: "청명고", filterFn: buildFilterFn("청명고") },
+  { label: "통합과학", filterFn: buildFilterFn("통합과학") },
+  { label: "통합사회/한국사", filterFn: buildFilterFn("통합사회/한국사") },
   { label: "수학/탐구", filterFn: buildFilterFn("수학/탐구") },
 ];
 
