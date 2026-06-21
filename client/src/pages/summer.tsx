@@ -902,6 +902,7 @@ export default function Summer() {
       const title = ((g as any).title || (g as any).teacher_name || "");
       if (curriculumSubjectFilter === "특강/올데이") {
         if (!(title.includes("올데이") || title.includes("특강"))) return false;
+        if (activeTab === "고2" && getSubject(title) !== "수학") return false;
       } else {
         const subj = getSubject(title);
         if (subj !== curriculumSubjectFilter) return false;
@@ -920,6 +921,7 @@ export default function Summer() {
       const title = ((img as any).title || img.teacher_name || "");
       if (curriculumSubjectFilter === "특강/올데이") {
         if (!(title.includes("올데이") || title.includes("특강"))) return false;
+        if (activeTab === "고2" && getSubject(title) !== "수학") return false;
       } else {
         const subj = getSubject(title);
         if (subj !== curriculumSubjectFilter) return false;
