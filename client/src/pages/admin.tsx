@@ -2715,6 +2715,82 @@ function SmsSubscriptionsTab() {
   );
 }
 
+interface LevelTestRegistration {
+  id: number;
+  name: string;
+  phone: string;
+  school: string;
+  grade: string;
+  created_at: string;
+}
+
+function LevelTestTab() {
+  const { data: registrations = [], isLoading } = useQuery<LevelTestRegistration[]>({
+    queryKey: ["/api/level-test-registrations"],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/level-test-registrations/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/level-test-registrations"] });
+    },
+  });
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">수학레벨테스트 신청 목록 ({registrations.length}건)</h3>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : registrations.length === 0 ? (
+        <p className="text-sm text-gray-400 py-6 text-center" data-testid="text-level-test-empty">신청 내역이 없습니다.</p>
+      ) : (
+        <div className="bg-white border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm" data-testid="table-level-test-registrations">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">이름</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">학교</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">학년</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">전화번호</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">신청일</th>
+                <th className="w-12"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {registrations.map((reg) => (
+                <tr key={reg.id} data-testid={`row-level-test-${reg.id}`}>
+                  <td className="px-4 py-3 text-gray-900">{reg.name || "-"}</td>
+                  <td className="px-4 py-3 text-gray-900">{reg.school || "-"}</td>
+                  <td className="px-4 py-3 text-gray-900">{reg.grade || "-"}</td>
+                  <td className="px-4 py-3 text-gray-900 font-mono">{reg.phone}</td>
+                  <td className="px-4 py-3 text-gray-500">{new Date(reg.created_at).toLocaleDateString("ko-KR")}</td>
+                  <td className="px-2 py-3">
+                    <button
+                      onClick={() => {
+                        if (confirm("이 신청을 삭제하시겠습니까?")) {
+                          deleteMutation.mutate(reg.id);
+                        }
+                      }}
+                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      data-testid={`button-delete-level-test-${reg.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface BriefingItem {
   id: number;
   title: string;
@@ -6386,7 +6462,7 @@ function NavigationManager() {
 }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "reviews" | "reservations" | "filter-tabs" | "notices" | "summer" | "schools" | "briefing-events" | "navigation" | "middle-school">("teachers");
+  const [tab, setTab] = useState<"teachers" | "timetables" | "summary-timetables" | "banners" | "popups" | "briefings" | "sms" | "level-test" | "reviews" | "reservations" | "filter-tabs" | "notices" | "summer" | "schools" | "briefing-events" | "navigation" | "middle-school">("teachers");
 
   const { data: authStatus, isLoading: authLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -6560,6 +6636,18 @@ export default function AdminPage() {
             문자 수신
           </button>
           <button
+            onClick={() => setTab("level-test")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
+              tab === "level-test"
+                ? "bg-red-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+            data-testid="tab-level-test"
+          >
+            <BookOpen className="w-4 h-4" />
+            수학레벨테스트
+          </button>
+          <button
             onClick={() => setTab("notices")}
             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors ${
               tab === "notices"
@@ -6621,7 +6709,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : tab === "summer" ? <SummerTab /> : tab === "middle-school" ? <MiddleSchoolTab /> : tab === "schools" ? <SchoolsTab /> : tab === "navigation" ? <NavigationManager /> : <SmsSubscriptionsTab />}
+        {tab === "teachers" ? <TeachersTab /> : tab === "timetables" ? <TimetablesTab /> : tab === "filter-tabs" ? <FilterTabsTab /> : tab === "summary-timetables" ? <SummaryTimetablesTab /> : tab === "banners" ? <BannersTab /> : tab === "popups" ? <PopupsTab /> : tab === "briefings" ? <BriefingsTab /> : tab === "briefing-events" ? <BriefingEventsTab /> : tab === "reviews" ? <ReviewsTab /> : tab === "reservations" ? <ReservationsTab /> : tab === "notices" ? <NoticesTab /> : tab === "summer" ? <SummerTab /> : tab === "middle-school" ? <MiddleSchoolTab /> : tab === "schools" ? <SchoolsTab /> : tab === "navigation" ? <NavigationManager /> : tab === "level-test" ? <LevelTestTab /> : <SmsSubscriptionsTab />}
       </div>
     </div>
   );
