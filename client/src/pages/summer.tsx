@@ -422,7 +422,10 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   course = course.replace(/(?:\s|^)(?:고[1-3]|중3|중등|고등)(?:\s|$)/g, " ");
 
   // Strip standalone subject name right before the hyphen/teacher
-  course = course.replace(/\s*(수학|영어|국어|통과|물리|화학|생명|지학|과학|과탐|탐구)\s*-\s*/gi, " - ");
+  // Only strip subject keyword that is a standalone word immediately before the hyphen
+  // Use \b word boundary to avoid breaking compound words like "통합과학"
+  course = course.replace(/(?<=\s|^|\b)(수학|영어|국어|통과|물리|화학|생명|지학|과탐|탐구)(?=\s*-)/gi, "");
+  course = course.replace(/\s*-\s*(?=-|$|[가-힣A-Za-z])/g, " - ");
 
   // Strip teacher name
   if (teacher) {
@@ -435,8 +438,14 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   course = course.replace(/커리큘럼/g, "");
   course = course.replace(/강의계획서/g, "");
 
-  // Clean brackets and hyphens
-  course = course.replace(/[\[\]]/g, " ").replace(/-\s*/g, " ").replace(/\s+/g, " ").trim();
+  // Clean brackets: preserve non-grade bracket content (e.g. [비평준일반고]) by wrapping in parens
+  // Only remove the bracket chars themselves, keep the inner content
+  course = course.replace(/\[([^\]]+)\]/g, (_, inner) => {
+    // If the inner content is a grade marker already handled above, skip
+    const isGradeMarker = /^(?:고[1-3]|중3|중등|고등|초중등|초·중등)$/.test(inner.trim());
+    return isGradeMarker ? " " : ` (${inner.trim()})`;
+  });
+  course = course.replace(/-\s*/g, " ").replace(/\s+/g, " ").trim();
 
   // If the course starts or ends with "연합", clean it if it is redundant
   if (course.startsWith("연합") && course.endsWith("연합") && course !== "연합") {
@@ -577,7 +586,8 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
     }
   }
   const subjectStr = displaySubject ? ` ${displaySubject}` : "";
-  return `[${grade}]${courseStr}${subjectStr} - ${teacher}${infoString}`;
+  // Subject goes BEFORE course to preserve original order (e.g. "화학 반응의 세계" not "반응의 세계 화학")
+  return `[${grade}]${subjectStr}${courseStr} - ${teacher}${infoString}`;
 }
 
 export default function Summer() {
