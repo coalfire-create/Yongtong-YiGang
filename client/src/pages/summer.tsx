@@ -1630,47 +1630,49 @@ export default function Summer() {
             </section>
 
             {/* 2. 프로그램 개요 (overview) */}
-            <section className="space-y-8 pt-8 border-t border-gray-100">
-              <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-4">
-                <div className="w-1.5 h-6 bg-[#7B2332]" />
-                <h2 className="text-2xl font-black text-gray-900">프로그램 개요</h2>
-              </div>
-
-              {filteredHighlights.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                  {filteredHighlights.map((h, idx) => {
-                    const Icon = ICON_MAP[h.icon] || Target;
-                    const num = String(idx + 1).padStart(2, "0");
-                    return (
-                      <motion.div
-                        key={h.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-red-900/5 hover:-translate-y-1 transition-all duration-300"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
-                            <Icon className="w-5 h-5 text-[#7B2332]" />
-                          </div>
-                          <span className="text-xl font-black text-gray-100">{num}</span>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 mb-2 leading-snug">{h.title}</h3>
-                        <p className="text-xs text-gray-500 leading-relaxed whitespace-pre-wrap">{h.content}</p>
-                      </motion.div>
-                    );
-                  })}
+            {activeTab === "중등" && (
+              <section className="space-y-8 pt-8 border-t border-gray-100">
+                <div className="flex items-center gap-2 border-b-2 border-gray-900 pb-4">
+                  <div className="w-1.5 h-6 bg-[#7B2332]" />
+                  <h2 className="text-2xl font-black text-gray-900">프로그램 개요</h2>
                 </div>
-              )}
 
-              {renderGuidelines(overviewGuidelines)}
-              {renderImageGroup(overviewImages)}
+                {filteredHighlights.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    {filteredHighlights.map((h, idx) => {
+                      const Icon = ICON_MAP[h.icon] || Target;
+                      const num = String(idx + 1).padStart(2, "0");
+                      return (
+                        <motion.div
+                          key={h.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-red-900/5 hover:-translate-y-1 transition-all duration-300"
+                        >
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
+                              <Icon className="w-5 h-5 text-[#7B2332]" />
+                            </div>
+                            <span className="text-xl font-black text-gray-100">{num}</span>
+                          </div>
+                          <h3 className="text-base font-bold text-gray-900 mb-2 leading-snug">{h.title}</h3>
+                          <p className="text-xs text-gray-500 leading-relaxed whitespace-pre-wrap">{h.content}</p>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
 
-              {overviewGuidelines.length === 0 && overviewImages.length === 0 && filteredHighlights.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-6">등록된 개요 정보가 없습니다.</p>
-              )}
-            </section>
+                {renderGuidelines(overviewGuidelines)}
+                {renderImageGroup(overviewImages)}
+
+                {overviewGuidelines.length === 0 && overviewImages.length === 0 && filteredHighlights.length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-6">등록된 개요 정보가 없습니다.</p>
+                )}
+              </section>
+            )}
 
             {/* 3. 시간표 (timetable) */}
             <section className="space-y-8 pt-8 border-t border-gray-100">
