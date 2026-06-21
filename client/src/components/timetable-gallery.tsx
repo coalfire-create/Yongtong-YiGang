@@ -323,7 +323,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       return res.json();
     },
   });
-  const _divMap: Record<string, string> = { "고등관-고1": "고1", "고등관-고2": "고2", "고등관-고3": "고3" };
+  const _divMap: Record<string, string> = { "고등관-고1": "고1", "고등관-고2": "고2", "고등관-고3": "고3", "중등관-중3": "중등" };
   const _curDiv = _divMap[category];
   const myGuidelines = (guidelines || []).filter((g: any) => g.category === "curriculum" && g.division === _curDiv);
   const brochureMap = new Map<number, any>();
