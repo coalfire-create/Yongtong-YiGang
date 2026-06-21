@@ -880,7 +880,9 @@ export default function Summer() {
           if (title.includes("권소영")) return 3;
           if (title.includes("정찬영")) return 4;
           if (title.includes("임서원")) return 5;
-          return 6;
+          if (title.includes("박종윤")) return 6;
+          if (title.includes("이재원")) return 7;
+          return 8;
         };
         const teacherA = getMathTeacherScore(rawTitleA);
         const teacherB = getMathTeacherScore(rawTitleB);
