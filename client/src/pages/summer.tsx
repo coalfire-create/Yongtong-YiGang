@@ -763,7 +763,9 @@ export default function Summer() {
   };
 
   const getSchoolGroupScore = (title: string) => {
-    // 특강은 항상 맨 마지막 (학교명이 포함되어 있어도)
+    // 수능 관련 반은 항상 맨 마지막
+    if (title.includes("수능")) return 11;
+    // 특강은 항상 그 다음 마지막 (학교명이 포함되어 있어도)
     if (title.includes("특강") || title.includes("올데이")) return 10;
     // 연합 계열은 그룹1 (내부 레벨은 getLevelScore로 세분화)
     if (title.includes("의치서") || title.includes("연합")) return 1;
