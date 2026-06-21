@@ -579,6 +579,10 @@ function formatSummerCurriculumTitle(rawTitle: string, content: string, division
   // Construct final title
   const courseStr = course ? ` ${course}` : "";
   let displaySubject = subject;
+  // If subject word already appears inside the course string, don't show it as a prefix
+  if (course && displaySubject && course.includes(displaySubject)) {
+    displaySubject = "";
+  }
   if (subject === "수학" && course) {
     const isMathKeywords = /수학|대수|미적|기하|공수|확통/.test(course);
     if (isMathKeywords) {
