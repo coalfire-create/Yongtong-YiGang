@@ -807,8 +807,8 @@ export default function Summer() {
     if (s.match(/\bS2\b|S2반|[연합\s]S2/)) return 3;
     // 4: S반 / S등급 / 연합S (S로 끝나거나 S반)
     if (s.match(/S반|S등급|연합\s*S(?!\d)|\[연합\s*S(?!\d)|\sS(?!\d)\]|\sS(?!\d)\s|\sS(?!\d)$|연합S$/)) return 4;
-    // 5: A1 (또는 숫자 없는 연합A = A1 취급)
-    if (s.match(/\bA1\b|A1반|\[연합\s*A(?![\d])|연합\s*A(?!\d)(?:\]|\s|$)/)) return 5;
+    // 5: A1 (또는 숫자 없는 연합A = A1 취급, A반도 A1 취급)
+    if (s.match(/\bA1\b|A1반|\bA반\b|\[연합\s*A(?![\d])|연합\s*A(?!\d)(?:\]|\s|$)/)) return 5;
     // 6: A2
     if (s.match(/\bA2\b|A2반/)) return 6;
     // 7: 레벨 표시 없는 연합반
@@ -891,6 +891,7 @@ export default function Summer() {
         const getMathTeacherScore = (title: string) => {
           if (title.includes("최주용")) return 1;
           if (title.includes("황해룡")) return 2;
+          if (title.includes("강현")) return 2.5;
           if (title.includes("권소영")) return 3;
           if (title.includes("정찬영")) return 4;
           if (title.includes("임서원")) return 5;

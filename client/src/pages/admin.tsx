@@ -2922,12 +2922,22 @@ function BriefingsTab() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              설명 (아래 양식에 맞춰 작성해주세요)
+            </label>
             <textarea
               {...register("description")}
-              rows={2}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
-              placeholder="설명회에 대한 간단한 안내"
+              rows={12}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none font-mono"
+              placeholder={`▣ 설명회 도입부 (생략 가능)
+▣ 1부 (또는 세션 제목)
+▶일시 : 2월 28일 (목) 19:30
+▶대상 : 영통고 1학년
+▶장소 : 영통이강학원
+▶연사 : 수학 정승준 영통이강원장/수학 ○ 국어 홍길동
+▶내용 : 
+- 내용 1
+- 내용 2`}
               data-testid="input-briefing-description"
             />
           </div>
@@ -2991,9 +3001,17 @@ function BriefingsTab() {
                   <textarea
                     value={editForm.description || ""}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    rows={2}
-                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
-                    placeholder="설명"
+                    rows={12}
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none font-mono"
+                    placeholder={`▣ 설명회 도입부 (생략 가능)
+▣ 1부 (또는 세션 제목)
+▶일시 : 2월 28일 (목) 19:30
+▶대상 : 영통고 1학년
+▶장소 : 영통이강학원
+▶연사 : 수학 정승준 영통이강원장/수학 ○ 국어 홍길동
+▶내용 : 
+- 내용 1
+- 내용 2`}
                     data-testid="input-edit-briefing-description"
                   />
                   <input
