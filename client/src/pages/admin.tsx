@@ -2842,56 +2842,35 @@ function BriefingsTab() {
   };
 
   const parseDescription = (desc: string) => {
-    let intro = "";
-    let sessions: any[] = [];
-    if (!desc) return { intro, sessions: [{ title: "", date: "", target: "", location: "", speaker: "", content: "" }] };
+    if (!desc) return { intro: "", schedule: "", target: "", speaker: "", content: "", benefit: "", location: "" };
 
-    if (!desc.includes('▣') && !desc.includes('▶')) {
-      return { intro: desc, sessions: [{ title: "", date: "", target: "", location: "", speaker: "", content: "" }] };
-    }
-
-    const sections = desc.split('▣').map(s => s.trim()).filter(Boolean);
-    let startIndex = 0;
-    if (sections.length > 0 && !sections[0].includes('▶')) {
-      intro = sections[0];
-      startIndex = 1;
-    }
-
-    for (let i = startIndex; i < sections.length; i++) {
-      const section = sections[i];
-      const lines = section.split('\n').map(l => l.trim()).filter(Boolean);
-      const title = lines[0] || "";
-      
-      let date = "", target = "", location = "", speaker = "", contentLines: string[] = [];
-      let inContent = false;
-
-      for (let j = 1; j < lines.length; j++) {
-        const line = lines[j];
-        if (line.startsWith('▶')) {
-          inContent = false;
-          if (line.includes('일시')) date = line.split(':')[1]?.trim() || "";
-          else if (line.includes('대상')) target = line.split(':')[1]?.trim() || "";
-          else if (line.includes('장소')) location = line.split(':')[1]?.trim() || "";
-          else if (line.includes('연사')) speaker = line.split(':')[1]?.trim() || "";
-          else if (line.includes('내용')) inContent = true;
-        } else if (inContent || line.startsWith('-')) {
-          inContent = true;
-          contentLines.push(line.replace(/^-/, '').trim());
-        }
+    const getSection = (marker: string, nextMarkers: string[]) => {
+      if (!desc.includes(marker)) return "";
+      let startIdx = desc.indexOf(marker) + marker.length;
+      let endIdx = desc.length;
+      for (const next of nextMarkers) {
+        const idx = desc.indexOf(next, startIdx);
+        if (idx !== -1 && idx < endIdx) endIdx = idx;
       }
-      sessions.push({ title, date, target, location, speaker, content: contentLines.join('\n') });
-    }
+      return desc.substring(startIdx, endIdx).trim();
+    };
 
-    if (sessions.length === 0) {
-      sessions.push({ title: "", date: "", target: "", location: "", speaker: "", content: desc });
-    }
+    const markers = ['[도입부]', '[일시]', '[대상]', '[연사]', '[주제]', '[혜택]', '[장소]'];
 
-    return { intro, sessions };
+    return {
+      intro: getSection('[도입부]', markers),
+      schedule: getSection('[일시]', markers),
+      target: getSection('[대상]', markers),
+      speaker: getSection('[연사]', markers),
+      content: getSection('[주제]', markers),
+      benefit: getSection('[혜택]', markers),
+      location: getSection('[장소]', markers)
+    };
   };
 
   const addMutation = useMutation({
     mutationFn: async (data: any) => {
-      const description = stringifyDescription(data.intro, data.sessions);
+      const description = stringifyDescription(data);
       await apiRequest("POST", "/api/briefings", {
         title: data.title,
         date: data.date,
@@ -2958,7 +2937,7 @@ function BriefingsTab() {
     if (editingId === null) return;
     const original = briefings.find((b) => b.id === editingId);
     if (!original) return;
-    const description = stringifyDescription(editIntro, editSessions);
+    const description = stringifyDescription(editForm);
     updateMutation.mutate({ id: editingId, data: { ...original, ...editForm, description } });
   };
 
