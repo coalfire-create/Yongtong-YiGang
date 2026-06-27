@@ -4038,13 +4038,26 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   };
 
   const EXCEL_HEADERS = [
-    "카테고리", "제목", "수업일정", "강좌특징", "교재", "과제", "관리시스템", "회차별내용", "연계강좌",
+    "대상", "카테고리", "제목", "수업일정", "강좌특징", "교재", "과제", "관리시스템", "회차별내용", "연계강좌",
   ];
+
+  // "대상" 셀 문자열을 division 목록으로 변환. 비어있으면 중3+고1 모두에 등록.
+  const parseDivisions = (raw: string): string[] => {
+    const text = (raw || "").trim();
+    if (!text) return ["중등", "고1"];
+    if (/전체|공통|모두|all/i.test(text)) return ["중등", "고1", "고2"];
+    const result: string[] = [];
+    if (/중3|중등|초중등/.test(text)) result.push("중등");
+    if (/고1/.test(text)) result.push("고1");
+    if (/고2/.test(text)) result.push("고2");
+    return result.length > 0 ? Array.from(new Set(result)) : ["중등", "고1"];
+  };
 
   const handleExcelDownload = () => {
     const wsData = [
       EXCEL_HEADERS,
       [
+        "중3/고1",
         "강사별 커리큘럼",
         "예: [고1] 수학 연합반 - 강현T",
         "월/수 18:00~22:00",
@@ -4058,18 +4071,18 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     ];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws["!cols"] = [
-      { wch: 16 }, { wch: 28 }, { wch: 18 }, { wch: 22 }, { wch: 16 },
+      { wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 18 }, { wch: 22 }, { wch: 16 },
       { wch: 16 }, { wch: 24 }, { wch: 32 }, { wch: 18 },
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "썸머커리큘럼양식");
-    XLSX.writeFile(wb, `썸머커리큘럼_업로드양식_${activeTab}.xlsx`);
+    XLSX.writeFile(wb, "썸머커리큘럼_업로드양식.xlsx");
   };
 
   const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!confirm(`엑셀 파일 [${file.name}]의 데이터를 [${activeTab}]에 추가하시겠습니까?`)) {
+    if (!confirm(`엑셀 파일 [${file.name}]의 데이터를 추가하시겠습니까?\n(대상 칸이 비어 있으면 중3·고1 모두에 등록됩니다)`)) {
       e.target.value = "";
       return;
     }
@@ -4086,34 +4099,42 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
           return;
         }
 
+        // 헤더 이름으로 컬럼을 찾되, 없으면 fallback 인덱스 사용 (구버전 양식 호환)
         const headers = data[0];
         const getVal = (row: any[], name: string, fallbackIdx: number) => {
           const idx = headers.findIndex((h) => h && h.toString().replace(/\s/g, "").includes(name));
           const val = idx !== -1 ? row[idx] : row[fallbackIdx];
           return val !== undefined && val !== null ? val.toString().trim() : "";
         };
+        // 헤더에 "대상" 컬럼이 있으면 그 위치를, 없으면 제목/카테고리는 구버전 위치로 fallback
+        const hasTargetCol = headers.some((h) => h && h.toString().includes("대상"));
+        const idxOffset = hasTargetCol ? 1 : 0;
 
         let successCount = 0;
         for (const row of data.slice(1)) {
-          if (!row || row.length === 0 || !row[1]) continue; // 제목 없으면 skip
-          const categoryRaw = getVal(row, "카테고리", 0);
+          const title = getVal(row, "제목", 1 + idxOffset);
+          if (!row || row.length === 0 || !title) continue; // 제목 없으면 skip
+          const categoryRaw = getVal(row, "카테고리", 0 + idxOffset);
           const category = categoryRaw.includes("가이드") ? "guideline" : "curriculum";
           const content = stringifyContent({
-            schedule: getVal(row, "수업일정", 2),
-            features: getVal(row, "강좌특징", 3),
-            materials: getVal(row, "교재", 4),
-            tasks: getVal(row, "과제", 5),
-            management: getVal(row, "관리시스템", 6),
-            sessions: getVal(row, "회차별내용", 7),
-            linked: getVal(row, "연계강좌", 8),
+            schedule: getVal(row, "수업일정", 2 + idxOffset),
+            features: getVal(row, "강좌특징", 3 + idxOffset),
+            materials: getVal(row, "교재", 4 + idxOffset),
+            tasks: getVal(row, "과제", 5 + idxOffset),
+            management: getVal(row, "관리시스템", 6 + idxOffset),
+            sessions: getVal(row, "회차별내용", 7 + idxOffset),
+            linked: getVal(row, "연계강좌", 8 + idxOffset),
           });
-          const res = await apiRequest("POST", "/api/summer-guidelines", {
-            division: activeTab,
-            title: getVal(row, "제목", 1),
-            category,
-            content,
-          });
-          if (res.ok) successCount++;
+          const divisions = parseDivisions(hasTargetCol ? getVal(row, "대상", 0) : "");
+          for (const division of divisions) {
+            const res = await apiRequest("POST", "/api/summer-guidelines", {
+              division,
+              title,
+              category,
+              content,
+            });
+            if (res.ok) successCount++;
+          }
         }
 
         queryClient.invalidateQueries({ queryKey: ["/api/summer-guidelines"] });
