@@ -928,6 +928,12 @@ export default function Summer() {
         if (subj !== curriculumSubjectFilter) return false;
       }
     }
+    if (curriculumSearchTerm.trim()) {
+      const term = curriculumSearchTerm.trim().toLowerCase();
+      const title = ((g as any).title || "").toLowerCase();
+      const content = ((g as any).content || "").toLowerCase();
+      if (!title.includes(term) && !content.includes(term)) return false;
+    }
     return true;
   }));
   const guidelineGuidelines = filteredGuidelines.filter((g: any) => (g.category || 'guideline') === 'guideline');
@@ -946,6 +952,11 @@ export default function Summer() {
         const subj = getSubject(title);
         if (subj !== curriculumSubjectFilter) return false;
       }
+    }
+    if (curriculumSearchTerm.trim()) {
+      const term = curriculumSearchTerm.trim().toLowerCase();
+      const title = ((img as any).title || img.teacher_name || "").toLowerCase();
+      if (!title.includes(term)) return false;
     }
     return true;
   }));
