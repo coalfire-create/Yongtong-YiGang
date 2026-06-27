@@ -10,6 +10,34 @@ import bcrypt from "bcryptjs";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
+// ===== Supabase 영구 보관(아카이브) DB =====
+// 문자수신/수강예약/수학레벨테스트 접수를 운영 DB와 별개의 Supabase DB에 한 번 더 저장한다.
+// 운영 DB가 비워져도 접수 데이터가 남도록 하는 안전장치. 관리자 삭제 버튼은 이 아카이브를 건드리지 않는다.
+// ARCHIVE_DATABASE_URL(Supabase Postgres 연결문자열)이 설정돼 있을 때만 동작하며,
+// 실패해도 사용자 접수 처리에는 영향을 주지 않는다(fire-and-forget).
+const archivePool = process.env.ARCHIVE_DATABASE_URL
+  ? new pg.Pool({ connectionString: process.env.ARCHIVE_DATABASE_URL, ssl: { rejectUnauthorized: false } })
+  : null;
+let archiveReady = false;
+async function ensureArchiveTables() {
+  if (!archivePool || archiveReady) return;
+  await archivePool.query(`CREATE TABLE IF NOT EXISTS level_test_registrations (id BIGSERIAL PRIMARY KEY, name TEXT, phone TEXT, school TEXT DEFAULT '', grade TEXT DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await archivePool.query(`CREATE TABLE IF NOT EXISTS sms_subscriptions (id BIGSERIAL PRIMARY KEY, name TEXT DEFAULT '', phone TEXT, school TEXT DEFAULT '', grade TEXT DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await archivePool.query(`CREATE TABLE IF NOT EXISTS reservations (id BIGSERIAL PRIMARY KEY, student_name TEXT DEFAULT '', student_phone TEXT DEFAULT '', parent_phone TEXT DEFAULT '', school TEXT DEFAULT '', class_name TEXT DEFAULT '', subject TEXT DEFAULT '', teacher_name TEXT DEFAULT '', class_time TEXT DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  archiveReady = true;
+}
+function archiveInsert(table: string, cols: Record<string, any>) {
+  if (!archivePool) return;
+  ensureArchiveTables()
+    .then(() => {
+      const keys = Object.keys(cols);
+      const ph = keys.map((_, i) => `$${i + 1}`).join(",");
+      return archivePool!.query(`INSERT INTO ${table} (${keys.join(",")}) VALUES (${ph})`, keys.map((k) => cols[k]));
+    })
+    .then(() => console.log(`[Archive] saved to ${table}`))
+    .catch((err) => console.error(`[Archive] ${table} insert failed:`, err.message));
+}
+
 async function ensurePopupsTable() {
   try {
     await pool.query(`
@@ -2477,6 +2505,18 @@ export async function registerRoutes(
         console.error("[SheetsSync Error] 수강예약:", err);
       });
 
+      // 영구 보관용 Supabase 아카이브에도 저장
+      archiveInsert("reservations", {
+        student_name: student_name.trim(),
+        student_phone: (student_phone || "").trim(),
+        parent_phone: parent_phone.trim(),
+        school: school.trim(),
+        class_name: className,
+        subject: (fetchedSubject || "").trim(),
+        teacher_name: (fetchedTeacher || "").trim(),
+        class_time: classTime,
+      });
+
       res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -3002,6 +3042,8 @@ export async function registerRoutes(
         [name || "", cleaned, school || "", grade || ""]
       );
 
+      archiveInsert("sms_subscriptions", { name: name || "", phone: cleaned, school: school || "", grade: grade || "" });
+
       appendSmsRow({ name: name || "", phone: cleaned, school: school || "", grade: grade || "" }).catch((err) => {
         console.error("[SheetsSync Error] 문자수신:", err);
       });
@@ -3047,6 +3089,8 @@ export async function registerRoutes(
         "INSERT INTO level_test_registrations (name, phone, school, grade) VALUES ($1, $2, $3, $4) RETURNING *",
         [name, cleaned, school || "", grade || ""]
       );
+
+      archiveInsert("level_test_registrations", { name, phone: cleaned, school: school || "", grade: grade || "" });
 
       appendLevelTestRow({ name, phone: cleaned, school: school || "", grade: grade || "" }).catch((err) => {
         console.error("[SheetsSync Error] 수학레벨테스트:", err);
