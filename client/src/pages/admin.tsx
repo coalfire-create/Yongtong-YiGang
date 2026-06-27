@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm, useFieldArray } from "react-hook-form";
-import { Trash2, Upload, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown, GripVertical, BookOpen } from "lucide-react";
+import { Trash2, Upload, Download, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown, GripVertical, BookOpen } from "lucide-react";
 import { Link } from "wouter";
+import * as XLSX from "xlsx";
 import {
   DndContext,
   closestCenter,
@@ -2804,7 +2805,7 @@ interface BriefingItem {
 
 function BriefingsTab() {
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<Partial<BriefingItem>>({});
+  const [editForm, setEditForm] = useState<any>({});
   
   const { register, control, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: {
@@ -2821,9 +2822,6 @@ function BriefingsTab() {
       location: ""
     }
   });
-
-  const [editIntro, setEditIntro] = useState("");
-  const [editSessions, setEditSessions] = useState([{ title: "", date: "", target: "", location: "", speaker: "", content: "" }]);
 
   const { data: briefings = [], isLoading } = useQuery<BriefingItem[]>({
     queryKey: ["/api/briefings"],
@@ -2928,9 +2926,7 @@ function BriefingsTab() {
   const startEdit = (b: BriefingItem) => {
     setEditingId(b.id);
     const parsed = parseDescription(b.description || "");
-    setEditIntro(parsed.intro);
-    setEditSessions(parsed.sessions);
-    setEditForm({ title: b.title, date: b.date, time: b.time, form_url: b.form_url || "", display_order: b.display_order });
+    setEditForm({ title: b.title, date: b.date, time: b.time, form_url: b.form_url || "", display_order: b.display_order, ...parsed });
   };
 
   const saveEdit = () => {
@@ -3087,111 +3083,66 @@ function BriefingsTab() {
 
                   <div className="bg-white p-4 border border-gray-200 rounded-lg space-y-4 shadow-sm">
                     <h4 className="font-semibold text-gray-800">설명회 상세 내용 수정</h4>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">도입부</label>
-                      <textarea
-                        value={editIntro}
-                        onChange={(e) => setEditIntro(e.target.value)}
-                        rows={3}
-                        className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none rounded-md"
-                      />
-                    </div>
-
-                    <div className="space-y-4">
-                      {editSessions.map((session, index) => (
-                        <div key={index} className="relative bg-gray-50 p-4 border border-gray-200 rounded-lg space-y-3">
-                          <div className="flex items-center justify-between">
-                            <h5 className="font-bold text-gray-800 text-sm">세션 {index + 1}</h5>
-                            {editSessions.length > 1 && (
-                              <button type="button" onClick={() => setEditSessions(editSessions.filter((_, i) => i !== index))} className="text-red-500 hover:text-red-700 text-xs font-semibold">
-                                삭제
-                              </button>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">세션 제목</label>
-                              <input
-                                value={session.title}
-                                onChange={(e) => {
-                                  const newSessions = [...editSessions];
-                                  newSessions[index].title = e.target.value;
-                                  setEditSessions(newSessions);
-                                }}
-                                className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">일시</label>
-                              <input
-                                value={session.date}
-                                onChange={(e) => {
-                                  const newSessions = [...editSessions];
-                                  newSessions[index].date = e.target.value;
-                                  setEditSessions(newSessions);
-                                }}
-                                className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">대상</label>
-                              <input
-                                value={session.target}
-                                onChange={(e) => {
-                                  const newSessions = [...editSessions];
-                                  newSessions[index].target = e.target.value;
-                                  setEditSessions(newSessions);
-                                }}
-                                className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">장소</label>
-                              <input
-                                value={session.location}
-                                onChange={(e) => {
-                                  const newSessions = [...editSessions];
-                                  newSessions[index].location = e.target.value;
-                                  setEditSessions(newSessions);
-                                }}
-                                className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                              />
-                            </div>
-                            <div className="sm:col-span-2">
-                              <label className="block text-xs font-medium text-gray-600 mb-1">연사</label>
-                              <input
-                                value={session.speaker}
-                                onChange={(e) => {
-                                  const newSessions = [...editSessions];
-                                  newSessions[index].speaker = e.target.value;
-                                  setEditSessions(newSessions);
-                                }}
-                                className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                              />
-                            </div>
-                            <div className="sm:col-span-2">
-                              <label className="block text-xs font-medium text-gray-600 mb-1">상세 내용 (각 줄은 자동으로 글머리기호가 붙습니다)</label>
-                              <textarea
-                                value={session.content}
-                                onChange={(e) => {
-                                  const newSessions = [...editSessions];
-                                  newSessions[index].content = e.target.value;
-                                  setEditSessions(newSessions);
-                                }}
-                                rows={4}
-                                className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 resize-none rounded"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setEditSessions([...editSessions, { title: "", date: "", target: "", location: "", speaker: "", content: "" }])}
-                        className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-600 font-semibold text-sm rounded-lg hover:border-gray-400 hover:text-gray-800 transition-colors"
-                      >
-                        + 세션 추가
-                      </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">도입부</label>
+                        <textarea
+                          value={editForm.intro || ""}
+                          onChange={(e) => setEditForm({ ...editForm, intro: e.target.value })}
+                          rows={3}
+                          className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none rounded-md"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">일시</label>
+                        <input
+                          value={editForm.schedule || ""}
+                          onChange={(e) => setEditForm({ ...editForm, schedule: e.target.value })}
+                          className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">대상</label>
+                        <input
+                          value={editForm.target || ""}
+                          onChange={(e) => setEditForm({ ...editForm, target: e.target.value })}
+                          className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">연사</label>
+                        <input
+                          value={editForm.speaker || ""}
+                          onChange={(e) => setEditForm({ ...editForm, speaker: e.target.value })}
+                          className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">장소</label>
+                        <input
+                          value={editForm.location || ""}
+                          onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                          className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">주제 / 내용 (줄바꿈 시 글머리기호 자동추가)</label>
+                        <textarea
+                          value={editForm.content || ""}
+                          onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                          rows={4}
+                          className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none rounded-md"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">혜택 (선택)</label>
+                        <textarea
+                          value={editForm.benefit || ""}
+                          onChange={(e) => setEditForm({ ...editForm, benefit: e.target.value })}
+                          rows={2}
+                          className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none rounded-md"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -3268,6 +3219,15 @@ function BriefingsTab() {
     </div>
   );
 }
+interface BriefingEventItem {
+  id: number;
+  title: string;
+  event_date: string;
+  category: string;
+}
+
+const BRIEFING_CATEGORIES = ["초/중등", "고등"];
+
 function BriefingEventsTab() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<BriefingEventItem>>({});
@@ -4013,7 +3973,6 @@ function SortableGuidelineRow({
 }
 
 function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" | "고2" }) {
-  const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
 
@@ -4076,6 +4035,97 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     if (data.sessions?.trim()) res += `[회차별 내용]\n${data.sessions.trim()}\n\n`;
     if (data.linked?.trim()) res += `[연계 강좌]\n${data.linked.trim()}\n`;
     return res.trim();
+  };
+
+  const EXCEL_HEADERS = [
+    "카테고리", "제목", "수업일정", "강좌특징", "교재", "과제", "관리시스템", "회차별내용", "연계강좌",
+  ];
+
+  const handleExcelDownload = () => {
+    const wsData = [
+      EXCEL_HEADERS,
+      [
+        "강사별 커리큘럼",
+        "예: [고1] 수학 연합반 - 강현T",
+        "월/수 18:00~22:00",
+        "핵심 유형 마스터",
+        "자체교재 및 모의고사",
+        "매주 누적 모의고사",
+        "과제 체크\n1:1 클리닉",
+        "1회차 - 다항식연산\n2회차 - 항등식",
+        "고1 심화반",
+      ],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [
+      { wch: 16 }, { wch: 28 }, { wch: 18 }, { wch: 22 }, { wch: 16 },
+      { wch: 16 }, { wch: 24 }, { wch: 32 }, { wch: 18 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "썸머커리큘럼양식");
+    XLSX.writeFile(wb, `썸머커리큘럼_업로드양식_${activeTab}.xlsx`);
+  };
+
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm(`엑셀 파일 [${file.name}]의 데이터를 [${activeTab}]에 추가하시겠습니까?`)) {
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: "binary" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+        if (data.length <= 1) {
+          alert("데이터가 없습니다.");
+          e.target.value = "";
+          return;
+        }
+
+        const headers = data[0];
+        const getVal = (row: any[], name: string, fallbackIdx: number) => {
+          const idx = headers.findIndex((h) => h && h.toString().replace(/\s/g, "").includes(name));
+          const val = idx !== -1 ? row[idx] : row[fallbackIdx];
+          return val !== undefined && val !== null ? val.toString().trim() : "";
+        };
+
+        let successCount = 0;
+        for (const row of data.slice(1)) {
+          if (!row || row.length === 0 || !row[1]) continue; // 제목 없으면 skip
+          const categoryRaw = getVal(row, "카테고리", 0);
+          const category = categoryRaw.includes("가이드") ? "guideline" : "curriculum";
+          const content = stringifyContent({
+            schedule: getVal(row, "수업일정", 2),
+            features: getVal(row, "강좌특징", 3),
+            materials: getVal(row, "교재", 4),
+            tasks: getVal(row, "과제", 5),
+            management: getVal(row, "관리시스템", 6),
+            sessions: getVal(row, "회차별내용", 7),
+            linked: getVal(row, "연계강좌", 8),
+          });
+          const res = await apiRequest("POST", "/api/summer-guidelines", {
+            division: activeTab,
+            title: getVal(row, "제목", 1),
+            category,
+            content,
+          });
+          if (res.ok) successCount++;
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["/api/summer-guidelines"] });
+        alert(`총 ${successCount}개의 커리큘럼이 성공적으로 추가되었습니다!`);
+      } catch (err) {
+        console.error(err);
+        alert("엑셀 파일을 처리하는 도중 오류가 발생했습니다. 양식을 확인해주세요.");
+      } finally {
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
   };
 
   const addMutation = useMutation({
@@ -4326,6 +4376,16 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     </div>
   );
 }
+interface SummerNotice {
+  id: number;
+  division: string;
+  title: string;
+  content: string;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+}
+
 function SortableNoticeRow({
   item,
   onDelete,
