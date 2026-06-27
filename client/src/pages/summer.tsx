@@ -609,6 +609,7 @@ export default function Summer() {
   const [expandedFeatures, setExpandedFeatures] = useState<Record<string, boolean>>({});
   const [activeSubTab, setActiveSubTab] = useState<"info" | "notice">("info");
   const [curriculumSubjectFilter, setCurriculumSubjectFilter] = useState<string>("전체");
+  const [curriculumSearchTerm, setCurriculumSearchTerm] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1743,14 +1744,25 @@ export default function Summer() {
 
             {/* 4. 강사별 커리큘럼 (curriculum) */}
             <section className="space-y-8 pt-8 border-t border-gray-100">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-gray-900 pb-4">
+              <div className="flex flex-col sm:flex-row justify-between gap-4 border-b-2 border-gray-900 pb-4">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-6 bg-[#7B2332]" />
                   <h2 className="text-2xl font-black text-gray-900">강사별 커리큘럼</h2>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {["전체", "수학", "특강/올데이", "국어", "영어", "탐구"].map(subj => (
-                    <button
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="강사명, 과목, 강좌명 검색"
+                      value={curriculumSearchTerm}
+                      onChange={(e) => setCurriculumSearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#7B2332]/20 focus:border-[#7B2332] transition-all"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    {["전체", "수학", "특강/올데이", "국어", "영어", "탐구"].map(subj => (
+                      <button
                       key={subj}
                       onClick={() => setCurriculumSubjectFilter(subj)}
                       className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
@@ -1764,6 +1776,7 @@ export default function Summer() {
                   ))}
                 </div>
               </div>
+            </div>
 
               {renderCurriculumGuidelines(curriculumGuidelines)}
               {renderImageGroup(curriculumImages)}
