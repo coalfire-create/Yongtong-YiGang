@@ -3080,11 +3080,20 @@ export async function registerRoutes(
   // 구글시트(원본)에 남아있는 과거 접수내역을 DB로 복원하기 위한 일회성 가져오기.
   // 시트 웹훅을 다시 트리거하지 않도록 DB에 직접 INSERT한다. created_at으로 신청일시 보존.
   app.post("/api/admin/import-submissions", requireAdmin, async (req, res) => {
-    const { levelTest = [], sms = [], clearLevelTest = false, clearSms = false } = req.body || {};
+    const { levelTest = [], sms = [], reservations = [], clearLevelTest = false, clearSms = false, clearReservations = false } = req.body || {};
     try {
       if (clearLevelTest) await pool.query("DELETE FROM level_test_registrations");
       if (clearSms) await pool.query("DELETE FROM sms_subscriptions");
-      let lt = 0, s = 0;
+      if (clearReservations) await pool.query("DELETE FROM reservations");
+      let lt = 0, s = 0, rv = 0;
+      for (const r of reservations) {
+        if (!r) continue;
+        await pool.query(
+          "INSERT INTO reservations (student_name, student_phone, parent_phone, school, class_name, subject, teacher_name, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,COALESCE($8::timestamptz, now()))",
+          [r.student_name || "", r.student_phone || "", r.parent_phone || "", r.school || "", r.class_name || "", r.subject || "", r.teacher_name || "", r.created_at || null]
+        );
+        rv++;
+      }
       for (const r of levelTest) {
         if (!r || !r.name || !r.phone) continue;
         await pool.query(
@@ -3101,7 +3110,7 @@ export async function registerRoutes(
         );
         s++;
       }
-      res.json({ levelTest: lt, sms: s });
+      res.json({ levelTest: lt, sms: s, reservations: rv });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
