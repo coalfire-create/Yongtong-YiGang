@@ -2830,21 +2830,25 @@ function BriefingsTab() {
   });
 
   const stringifyDescription = (intro: string, sessions: any[]) => {
+    const hasValidSession = sessions.some(s => s.title?.trim() || s.date?.trim() || s.target?.trim() || s.location?.trim() || s.speaker?.trim() || s.content?.trim());
+    if (!hasValidSession) return intro.trim();
+
     let res = "";
-    if (intro?.trim()) res += `▣ ${intro.trim()}\n`;
-    sessions.forEach(s => {
-      if (s.title?.trim() || s.date?.trim() || s.content?.trim()) {
-        res += `▣ ${s.title?.trim() || "세션"}\n`;
-        if (s.date?.trim()) res += `▶일시 : ${s.date.trim()}\n`;
-        if (s.target?.trim()) res += `▶대상 : ${s.target.trim()}\n`;
-        if (s.location?.trim()) res += `▶장소 : ${s.location.trim()}\n`;
-        if (s.speaker?.trim()) res += `▶연사 : ${s.speaker.trim()}\n`;
+    if (intro?.trim()) res += `[도입부]\n${intro.trim()}\n\n`;
+    sessions.forEach((s, idx) => {
+      if (s.title?.trim() || s.date?.trim() || s.target?.trim() || s.location?.trim() || s.speaker?.trim() || s.content?.trim()) {
+        res += `[세션]\n${s.title?.trim() || "세션 " + (idx + 1)}\n`;
+        if (s.date?.trim()) res += `[일시]\n${s.date.trim()}\n`;
+        if (s.target?.trim()) res += `[대상]\n${s.target.trim()}\n`;
+        if (s.location?.trim()) res += `[장소]\n${s.location.trim()}\n`;
+        if (s.speaker?.trim()) res += `[연사]\n${s.speaker.trim()}\n`;
         if (s.content?.trim()) {
-          res += `▶내용 :\n`;
+          res += `[내용]\n`;
           s.content.split('\n').forEach((line: string) => {
-            if (line.trim()) res += `- ${line.trim().replace(/^-/, '').trim()}\n`;
+            if (line.trim()) res += `${line.trim()}\n`;
           });
         }
+        res += "\n";
       }
     });
     return res.trim();
@@ -2854,6 +2858,10 @@ function BriefingsTab() {
     let intro = "";
     let sessions: any[] = [];
     if (!desc) return { intro, sessions: [{ title: "", date: "", target: "", location: "", speaker: "", content: "" }] };
+
+    if (!desc.includes('▣') && !desc.includes('▶')) {
+      return { intro: desc, sessions: [{ title: "", date: "", target: "", location: "", speaker: "", content: "" }] };
+    }
 
     const sections = desc.split('▣').map(s => s.trim()).filter(Boolean);
     let startIndex = 0;
@@ -4080,7 +4088,8 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
       materials: "",
       tasks: "",
       management: "",
-      sessions: ""
+      sessions: "",
+      linked: ""
     }
   });
 
@@ -4093,7 +4102,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   }, [activeTab, reset]);
 
   const parseContent = (contentStr: string) => {
-    const res = { schedule: "", features: "", materials: "", tasks: "", management: "", sessions: "" };
+    const res = { schedule: "", features: "", materials: "", tasks: "", management: "", sessions: "", linked: "" };
     if (!contentStr) return res;
     
     let currentCategory = "";
@@ -4108,6 +4117,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
         else if (cat.includes("과제")) currentCategory = "tasks";
         else if (cat.includes("관리") || cat.includes("CLINIC")) currentCategory = "management";
         else if (cat.includes("회차")) currentCategory = "sessions";
+        else if (cat.includes("연계")) currentCategory = "linked";
         else currentCategory = "";
       } else if (currentCategory && currentCategory in res) {
         (res as any)[currentCategory] += (res as any)[currentCategory] ? "\n" + line : line;
@@ -4123,7 +4133,8 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     if (data.materials?.trim()) res += `[교재/제공자료]\n${data.materials.trim()}\n\n`;
     if (data.tasks?.trim()) res += `[과제/TEST]\n${data.tasks.trim()}\n\n`;
     if (data.management?.trim()) res += `[관리 SYSTEM 및 CLINIC]\n${data.management.trim()}\n\n`;
-    if (data.sessions?.trim()) res += `[회차별 내용]\n${data.sessions.trim()}\n`;
+    if (data.sessions?.trim()) res += `[회차별 내용]\n${data.sessions.trim()}\n\n`;
+    if (data.linked?.trim()) res += `[연계 강좌]\n${data.linked.trim()}\n`;
     return res.trim();
   };
 
@@ -4306,6 +4317,10 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                     <label className="block text-xs font-medium text-gray-700 mb-1">회차별 내용</label>
                     <textarea value={editForm.sessions} onChange={e => setEditForm({...editForm, sessions: e.target.value})} rows={5} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-600 rounded" />
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">연계 강좌</label>
+                    <textarea value={editForm.linked} onChange={e => setEditForm({...editForm, linked: e.target.value})} rows={2} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-600 rounded" />
+                  </div>
                 </div>
 
                 <div className="flex gap-2">
@@ -4331,6 +4346,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                           {parsed.schedule && <p className="text-gray-600"><span className="font-semibold text-gray-800">수업일정:</span> {parsed.schedule.replace(/\n/g, ' ')}</p>}
                           {parsed.features && <p className="text-gray-600"><span className="font-semibold text-gray-800">특징:</span> {parsed.features.substring(0, 50)}...</p>}
                           {parsed.sessions && <p className="text-gray-600"><span className="font-semibold text-gray-800">회차:</span> 포함됨</p>}
+                          {parsed.linked && <p className="text-gray-600"><span className="font-semibold text-gray-800">연계:</span> {parsed.linked}</p>}
                         </>
                       );
                     })()}

@@ -249,23 +249,19 @@ function parseDescription(descText: string): ParsedDescription {
   let introPart = "";
   let sessionParts: string[] = [];
 
-  // Support ▣, ■, or [세션]
-  const sessionRegex = /(?:▣|■|(?=\[세션(?:\s*\d+)?\]))/;
-  const splitByBox = descText.split(sessionRegex).filter(s => s.trim() !== "");
-
-  if (splitByBox.length > 0 && !/^\s*(?:▣|■|\[세션)/.test(descText)) {
+  if (descText.includes("▣") || descText.includes("■")) {
+    // support both ▣ and ■
+    const splitByBox = descText.split(/[▣■]/);
     introPart = splitByBox[0].trim();
     sessionParts = splitByBox.slice(1);
   } else {
-    sessionParts = splitByBox;
-  }
-
-  // If no sessions found but we see ▶ or [일시], it might be just one session without a title
-  if (sessionParts.length === 0 && descText.match(/(?:▶|\[(?:일시|장소|대상|연사|내용)\])/)) {
-    sessionParts = [descText];
-    introPart = "";
-  } else if (sessionParts.length === 0) {
-    introPart = descText.trim();
+    const firstArrow = descText.indexOf("▶");
+    if (firstArrow !== -1) {
+      introPart = descText.substring(0, firstArrow).trim();
+      sessionParts = [descText.substring(firstArrow)];
+    } else {
+      introPart = descText.trim();
+    }
   }
 
   result.intro = introPart;
@@ -274,105 +270,87 @@ function parseDescription(descText: string): ParsedDescription {
     let title = "";
     let content = sessionRaw;
 
-    // Remove [세션 x] from title if it exists at the very beginning
-    const sessionMatch = content.match(/^(\[세션(?:\s*\d+)?\])/);
-    if (sessionMatch) {
-      title = sessionMatch[1];
-      content = content.substring(sessionMatch[1].length).trim();
-    }
-
     // find first ▶ or [
-    const arrowMatch = content.match(/(?:▶|\[(?:일시|장소|대상|연사|내용)\])/);
+    const arrowMatch = sessionRaw.match(/[▶\[]/);
     if (arrowMatch) {
       const arrowIdx = arrowMatch.index;
-      if (!title) {
-        title = content.substring(0, arrowIdx).trim();
-        // Remove leading ■ or ▣
-        title = title.replace(/^[▣■]\s*/, "");
-      }
-      content = content.substring(arrowIdx);
+      title = sessionRaw.substring(0, arrowIdx).trim();
+      content = sessionRaw.substring(arrowIdx);
     } else {
-      if (!title) {
-        title = content.trim();
-        title = title.replace(/^[▣■]\s*/, "");
-      }
+      title = sessionRaw.trim();
       content = "";
     }
 
     const fields: ParsedField[] = [];
     // split by ▶ or [
-    const rawFields = content.split(/(?:▶|(?=\[(?:일시|장소|대상|연사|내용)\]))/).map(f => f.trim()).filter(Boolean);
+    const rawFields = content.split(/[▶\[]/).map(f => f.trim()).filter(Boolean);
 
     for (const rawField of rawFields) {
       let key = "";
       let val = "";
       let cleanField = rawField;
-      
-      const bracketMatch = cleanField.match(/^\[(.*?)\]/);
-      if (bracketMatch) {
-        key = bracketMatch[1].trim();
-        cleanField = cleanField.substring(bracketMatch[0].length).trim();
-        val = cleanField.replace(/^:/, '').trim();
+      if (cleanField.startsWith("]")) cleanField = cleanField.substring(1).trim();
+      const firstClose = cleanField.indexOf("]");
+      if (firstClose !== -1 && firstClose < 10) {
+        // e.g. "일시] 2026년..."
+        key = cleanField.substring(0, firstClose).trim();
+        val = cleanField.substring(firstClose + 1).replace(/^:/, '').trim();
       } else {
         const colonIdx = cleanField.indexOf(":");
-        const spaceIdx = cleanField.search(/\s/);
-        const circleIdx = cleanField.indexOf("○");
-        const dashIdx = cleanField.indexOf("-");
+      const spaceIdx = rawField.search(/\s/);
+      const circleIdx = rawField.indexOf("○");
+      const dashIdx = rawField.indexOf("-");
 
-        let splitIdx = -1;
-        if (colonIdx !== -1) {
-          splitIdx = colonIdx;
-        } else {
-          const indices = [spaceIdx, circleIdx, dashIdx].filter(idx => idx !== -1);
-          if (indices.length > 0) {
-            splitIdx = Math.min(...indices);
-          }
-        }
-
-        if (splitIdx !== -1) {
-          key = cleanField.substring(0, splitIdx).trim();
-          val = cleanField.substring(splitIdx + 1).trim();
-          if (cleanField[splitIdx] === "○" || cleanField[splitIdx] === "-") {
-            val = cleanField[splitIdx] + " " + val;
-          }
-        } else {
-          key = "내용";
-          val = cleanField;
-        }
-      }
-
-      if (key.includes("연사")) {
-        const speakerList: ParsedSpeaker[] = [];
-        const lines = val.split('\n');
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          let sName = line.trim();
-          let sSubject = "";
-          let sDesc = "";
-
-          const sDashIdx = sName.indexOf("-");
-          if (sDashIdx !== -1) {
-            sDesc = sName.substring(sDashIdx + 1).trim();
-            sName = sName.substring(0, sDashIdx).trim();
-          }
-
-          const parenMatch = sName.match(/\((.*?)\)/);
-          if (parenMatch) {
-            sSubject = parenMatch[1].trim();
-            sName = sName.replace(parenMatch[0], "").trim();
-          }
-          speakerList.push({ name: sName, subject: sSubject, desc: sDesc });
-        }
-        fields.push({ key, value: val, speakers: speakerList });
-      } else if (key.includes("내용")) {
-        const bulletLines = val.split('\n')
-          .map(l => l.trim())
-          .filter(l => l)
-          .map(l => l.replace(/^[○\-\•\*\d\.]+\s*/, ''));
-        fields.push({ key, value: val, bullets: bulletLines });
+      let splitIdx = -1;
+      if (colonIdx !== -1) {
+        splitIdx = colonIdx;
       } else {
-        fields.push({ key, value: val });
+        const indices = [spaceIdx, circleIdx, dashIdx].filter(idx => idx !== -1);
+        if (indices.length > 0) {
+          splitIdx = Math.min(...indices);
+        }
       }
+
+      if (splitIdx !== -1) {
+        key = rawField.substring(0, splitIdx).replace(/:/g, "").trim();
+        val = rawField.substring(splitIdx).trim();
+        if (val.startsWith(":")) {
+          val = val.substring(1).trim();
+        }
+      } else {
+        key = rawField;
+      }
+
+      const fieldObj: ParsedField = { key, value: val };
+
+      if (key === "연사" || val.includes("○")) {
+        const speakerSegments = val.split("○").map(s => s.trim()).filter(Boolean);
+        const parsedSpeakers: ParsedSpeaker[] = speakerSegments.map(seg => {
+          const words = seg.split(/\s+/);
+          let subject = "";
+          let name = "";
+          let desc = "";
+
+          if (words.length > 0) {
+            const firstWord = words[0];
+            if (["국어", "영어", "수학", "과학", "입시", "논술", "사회", "사탐", "과탐", "생명과학", "화학", "물리"].includes(firstWord)) {
+              subject = firstWord;
+              name = words[1] || "";
+              desc = words.slice(2).join(" ");
+            } else {
+              name = words[0] || "";
+              desc = words.slice(1).join(" ");
+            }
+          }
+          return { subject, name, desc };
+        });
+        fieldObj.speakers = parsedSpeakers;
+      } else if (key === "내용" || val.includes("-")) {
+        const bulletSegments = val.split("-").map(b => b.trim()).filter(Boolean);
+        fieldObj.bullets = bulletSegments;
+      }
+
+      fields.push(fieldObj);
     }
 
     result.sessions.push({ title, fields });
