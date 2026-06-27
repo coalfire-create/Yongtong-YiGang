@@ -76,18 +76,13 @@ export async function appendSmsRow(data: {
   }).replace(/\. /g, '-').replace('.', '');
 
   try {
-    // 수강예약과 동일한 컬럼 구조(A~I + 학년)로 맞춰 시트 정렬이 어긋나지 않게 한다.
     const payload = {
-      timestamp,                                            // A 신청일시
-      type: "문자수신",                                       // B 구분
-      subject: "-",                                          // C 과목명
-      teacher_name: "-",                                     // D 강사명
-      class_name: data.grade ? `학년: ${data.grade}` : "-",  // E 수업명(학년 보존)
-      student_name: data.name || "-",                        // F 이름
-      student_phone: data.phone || "-",                      // G 전화번호
-      parent_phone: "-",                                     // H 부모님 전화번호
-      school: data.school || "-",                            // I 학교
-      grade: data.grade || "-",                              // J 학년
+      timestamp,
+      type: "문자수신",
+      name: data.name || "-",
+      phone: data.phone || "-",
+      school: data.school || "-",
+      grade: data.grade || "-",
     };
 
     console.log("[SheetsSync] Sending SMS Sub:", JSON.stringify(payload, null, 2));
@@ -127,18 +122,13 @@ export async function appendLevelTestRow(data: {
   }).replace(/\. /g, '-').replace('.', '');
 
   try {
-    // 수강예약과 동일한 컬럼 구조(A~I + 학년)로 맞춰 시트 정렬이 어긋나지 않게 한다.
     const payload = {
-      timestamp,                                            // A 신청일시
-      type: "수학레벨테스트",                                  // B 구분
-      subject: "-",                                          // C 과목명
-      teacher_name: "-",                                     // D 강사명
-      class_name: data.grade ? `학년: ${data.grade}` : "-",  // E 수업명(학년 보존)
-      student_name: data.name || "-",                        // F 이름
-      student_phone: data.phone || "-",                      // G 전화번호
-      parent_phone: "-",                                     // H 부모님 전화번호
-      school: data.school || "-",                            // I 학교
-      grade: data.grade || "-",                              // J 학년
+      timestamp,
+      type: "수학레벨테스트",
+      name: data.name || "-",
+      phone: data.phone || "-",
+      school: data.school || "-",
+      grade: data.grade || "-",
     };
 
     console.log("[SheetsSync] Sending Level Test:", JSON.stringify(payload, null, 2));
