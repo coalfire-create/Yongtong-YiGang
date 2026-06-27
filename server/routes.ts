@@ -691,7 +691,15 @@ const upload = multer({
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
 // In-memory admin token - works across all request types including iframe context
-const ADMIN_SESSION_TOKEN = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + Date.now().toString(36);
+// 서버 재시작(배포)마다 토큰이 바뀌면 로그인된 관리자가 전부 로그아웃되어
+// 쓰기 요청이 401로 조용히 실패한다. 비밀번호+시크릿에서 결정적으로 파생해
+// 재시작에도 동일한 토큰이 유지되도록 한다. (env로 직접 지정도 가능)
+const ADMIN_SESSION_TOKEN =
+  process.env.ADMIN_SESSION_TOKEN ||
+  crypto
+    .createHash("sha256")
+    .update(`yigang-admin::${ADMIN_PASSWORD}::${process.env.SESSION_SECRET || "v1"}`)
+    .digest("hex");
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if ((req.session as any)?.isAdmin) return next();
@@ -833,7 +841,10 @@ export async function registerRoutes(
 
   app.get("/api/admin/status", (req, res) => {
     res.set("Cache-Control", "no-store");
-    res.json({ isAdmin: !!(req.session as any)?.isAdmin });
+    // 세션(메모리)은 서버 재시작 시 사라지므로 헤더 토큰도 함께 인정한다.
+    const headerToken = req.headers["x-admin-token"] as string | undefined;
+    const isAdmin = !!(req.session as any)?.isAdmin || (!!headerToken && headerToken === ADMIN_SESSION_TOKEN);
+    res.json({ isAdmin });
   });
 
   // ========== SUMMER IMAGES ==========

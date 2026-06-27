@@ -2,6 +2,11 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // 인증 만료(서버 재시작 등)로 저장된 토큰이 더 이상 유효하지 않으면 제거해
+    // 다음 페이지 진입 시 로그인 화면이 다시 뜨도록 한다.
+    if (res.status === 401) {
+      try { localStorage.removeItem("adminToken"); } catch {}
+    }
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }

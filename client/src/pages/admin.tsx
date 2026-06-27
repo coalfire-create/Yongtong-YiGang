@@ -4139,9 +4139,14 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
 
         queryClient.invalidateQueries({ queryKey: ["/api/summer-guidelines"] });
         alert(`총 ${successCount}개의 커리큘럼이 성공적으로 추가되었습니다!`);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        alert("엑셀 파일을 처리하는 도중 오류가 발생했습니다. 양식을 확인해주세요.");
+        if (String(err?.message || "").includes("401")) {
+          alert("관리자 인증이 만료되었습니다. 페이지를 새로고침한 뒤 다시 로그인하고 시도해주세요.");
+          window.location.reload();
+        } else {
+          alert(`엑셀 처리 중 오류가 발생했습니다.\n${err?.message || "양식을 확인해주세요."}`);
+        }
       } finally {
         e.target.value = "";
       }
