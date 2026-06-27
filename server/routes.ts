@@ -24,6 +24,10 @@ async function ensureArchiveTables() {
   await archivePool.query(`CREATE TABLE IF NOT EXISTS level_test_registrations (id BIGSERIAL PRIMARY KEY, name TEXT, phone TEXT, school TEXT DEFAULT '', grade TEXT DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await archivePool.query(`CREATE TABLE IF NOT EXISTS sms_subscriptions (id BIGSERIAL PRIMARY KEY, name TEXT DEFAULT '', phone TEXT, school TEXT DEFAULT '', grade TEXT DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await archivePool.query(`CREATE TABLE IF NOT EXISTS reservations (id BIGSERIAL PRIMARY KEY, student_name TEXT DEFAULT '', student_phone TEXT DEFAULT '', parent_phone TEXT DEFAULT '', school TEXT DEFAULT '', class_name TEXT DEFAULT '', subject TEXT DEFAULT '', teacher_name TEXT DEFAULT '', class_time TEXT DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  // 기존(구버전) reservations 테이블 호환: 누락 컬럼 보강
+  for (const c of ["subject", "teacher_name", "class_time"]) {
+    await archivePool.query(`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS ${c} TEXT DEFAULT ''`);
+  }
   archiveReady = true;
 }
 function archiveInsert(table: string, cols: Record<string, any>) {
