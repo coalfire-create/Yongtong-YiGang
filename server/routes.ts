@@ -77,6 +77,7 @@ async function ensureSmsSubscriptionsTable() {
     `);
     await pool.query(`ALTER TABLE sms_subscriptions ADD COLUMN IF NOT EXISTS school TEXT NOT NULL DEFAULT ''`);
     await pool.query(`ALTER TABLE sms_subscriptions ADD COLUMN IF NOT EXISTS grade TEXT NOT NULL DEFAULT ''`);
+    await pool.query(`ALTER TABLE sms_subscriptions ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`);
   } catch (err) {
     console.error("Failed to ensure sms_subscriptions table:", err);
   }
@@ -163,6 +164,8 @@ async function ensureLevelTestTable() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    // 소프트 삭제: 관리자 삭제 시 실제로 지우지 않고 숨김 처리
+    await pool.query(`ALTER TABLE level_test_registrations ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`);
   } catch (err) {
     console.error("Failed to ensure level_test_registrations table:", err);
   }
@@ -404,6 +407,8 @@ async function ensureReservationsTable() {
       { name: "subject", type: "TEXT" },
       { name: "teacher_name", type: "TEXT" },
       { name: "class_time", type: "TEXT" },
+      // 소프트 삭제용
+      { name: "deleted_at", type: "TIMESTAMPTZ" },
     ];
     for (const col of cols) {
       await pool.query(`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
@@ -2538,6 +2543,7 @@ export async function registerRoutes(
                t.target_school, t.start_date, t.category
         FROM reservations r
         LEFT JOIN timetables t ON r.timetable_id = t.id
+        WHERE r.deleted_at IS NULL
         ORDER BY r.created_at DESC
       `);
       res.json(rows);
@@ -2549,7 +2555,8 @@ export async function registerRoutes(
   app.delete("/api/admin/reservations/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
-      await pool.query("DELETE FROM reservations WHERE id = $1", [id]);
+      // 실제 삭제 대신 숨김 처리(데이터 보존). 아카이브 DB에는 그대로 남아있음.
+      await pool.query("UPDATE reservations SET deleted_at = now() WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -3060,7 +3067,7 @@ export async function registerRoutes(
 
   app.get("/api/sms-subscriptions", requireAdmin, async (_req, res) => {
     try {
-      const { rows } = await pool.query("SELECT * FROM sms_subscriptions ORDER BY created_at DESC");
+      const { rows } = await pool.query("SELECT * FROM sms_subscriptions WHERE deleted_at IS NULL ORDER BY created_at DESC");
       res.json(rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -3070,7 +3077,7 @@ export async function registerRoutes(
   app.delete("/api/sms-subscriptions/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
-      await pool.query("DELETE FROM sms_subscriptions WHERE id = $1", [id]);
+      await pool.query("UPDATE sms_subscriptions SET deleted_at = now() WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -3108,7 +3115,7 @@ export async function registerRoutes(
 
   app.get("/api/level-test-registrations", requireAdmin, async (_req, res) => {
     try {
-      const { rows } = await pool.query("SELECT * FROM level_test_registrations ORDER BY created_at DESC");
+      const { rows } = await pool.query("SELECT * FROM level_test_registrations WHERE deleted_at IS NULL ORDER BY created_at DESC");
       res.json(rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -3118,7 +3125,7 @@ export async function registerRoutes(
   app.delete("/api/level-test-registrations/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
-      await pool.query("DELETE FROM level_test_registrations WHERE id = $1", [id]);
+      await pool.query("UPDATE level_test_registrations SET deleted_at = now() WHERE id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
