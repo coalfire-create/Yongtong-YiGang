@@ -4197,8 +4197,27 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
 
   return (
     <div className="space-y-6">
+      <div className="flex gap-2 bg-gray-50 p-4 border border-gray-200 rounded-lg justify-between items-center">
+        <h4 className="font-bold text-gray-800">엑셀로 여러 커리큘럼 한 번에 등록하기</h4>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleExcelDownload}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            엑셀 양식 다운
+          </button>
+          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm hover:bg-emerald-700 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5" />
+            엑셀 일괄 등록
+            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleExcelUpload} />
+          </label>
+        </div>
+      </div>
+
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h4 className="text-sm font-bold text-gray-900 mb-4">새 데이터 추가</h4>
+        <h4 className="text-sm font-bold text-gray-900 mb-4">새 데이터 수동 추가</h4>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
