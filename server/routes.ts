@@ -3077,6 +3077,36 @@ export async function registerRoutes(
     }
   });
 
+  // 구글시트(원본)에 남아있는 과거 접수내역을 DB로 복원하기 위한 일회성 가져오기.
+  // 시트 웹훅을 다시 트리거하지 않도록 DB에 직접 INSERT한다. created_at으로 신청일시 보존.
+  app.post("/api/admin/import-submissions", requireAdmin, async (req, res) => {
+    const { levelTest = [], sms = [], clearLevelTest = false, clearSms = false } = req.body || {};
+    try {
+      if (clearLevelTest) await pool.query("DELETE FROM level_test_registrations");
+      if (clearSms) await pool.query("DELETE FROM sms_subscriptions");
+      let lt = 0, s = 0;
+      for (const r of levelTest) {
+        if (!r || !r.name || !r.phone) continue;
+        await pool.query(
+          "INSERT INTO level_test_registrations (name, phone, school, grade, created_at) VALUES ($1,$2,$3,$4,COALESCE($5::timestamptz, now()))",
+          [r.name, r.phone, r.school || "", r.grade || "", r.created_at || null]
+        );
+        lt++;
+      }
+      for (const r of sms) {
+        if (!r || !r.phone) continue;
+        await pool.query(
+          "INSERT INTO sms_subscriptions (name, phone, school, grade, created_at) VALUES ($1,$2,$3,$4,COALESCE($5::timestamptz, now()))",
+          [r.name || "", r.phone, r.school || "", r.grade || "", r.created_at || null]
+        );
+        s++;
+      }
+      res.json({ levelTest: lt, sms: s });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ========== USER AUTH (회원가입/로그인/전화번호 인증) ==========
 
   app.get("/api/auth/me", (req, res) => {
