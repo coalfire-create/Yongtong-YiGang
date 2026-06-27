@@ -3537,93 +3537,67 @@ function ReviewsTab() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg space-y-4">
-            <h4 className="font-semibold text-gray-800">기본 정보</h4>
+      <div className="bg-white border border-gray-200 p-6 mb-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">{divisionLabel} 합격후기 추가</h3>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">제목 *</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">이름 *</label>
               <input
-                {...register("title", { required: "제목을 입력하세요" })}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
-                placeholder="예: 2026학년도 고등부 신입생 설명회"
+                {...register("name", { required: "이름을 입력하세요" })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
+                placeholder="학생 이름"
+              />
+              {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">학교</label>
+              <input
+                {...register("school")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
+                placeholder="합격 학교"
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">날짜 *</label>
-                <input
-                  {...register("date", { required: "날짜를 입력하세요" })}
-                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
-                  placeholder="예: 2026년 3월 8일 (토)"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">시간</label>
-                <input
-                  {...register("time")}
-                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
-                  placeholder="예: 14:00~16:00"
-                />
-              </div>
-            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">구글폼 링크</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">표시 순서</label>
               <input
-                {...register("form_url")}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
+                type="number"
+                {...register("display_order")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50"
+                placeholder="0"
               />
             </div>
           </div>
-
-          <div className="bg-white p-4 border border-gray-200 rounded-lg space-y-4 shadow-sm">
-            <h4 className="font-semibold text-gray-800">설명회 상세 내용</h4>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">도입부</label>
-                <textarea
-                  {...register("intro")}
-                  rows={3}
-                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none rounded-md"
-                  placeholder="예: 많은 관심과 성원에 힘입어 2차 설명회를 진행합니다."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">일시</label>
-                <input {...register("schedule")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 7/2(목) 오후 7시" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">대상</label>
-                <input {...register("target")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 초등 4학년 ~ 중학교 2학년" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">연사</label>
-                <input {...register("speaker")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 김학수 소장님" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">장소</label>
-                <input {...register("location")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 모티브아카데미" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">주제 / 내용 (줄바꿈 시 글머리기호 자동추가)</label>
-                <textarea {...register("content")} rows={4} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="설명회 내용을 입력하세요" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">혜택 (선택)</label>
-                <textarea {...register("benefit")} rows={2} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" />
-              </div>
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">후기 내용 *</label>
+            <textarea
+              {...register("content", { required: "내용을 입력하세요" })}
+              rows={4}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 bg-gray-50 resize-none"
+              placeholder="합격 후기 내용을 입력하세요"
+            />
+            {errors.content && <p className="text-xs text-red-500 mt-1">{errors.content.message}</p>}
           </div>
-
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 (선택, 여러 장 가능)</label>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+            />
+          </div>
           <button
             type="submit"
-            disabled={addMutation.isPending}
+            disabled={uploading || addMutation.isPending}
             className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 rounded-md"
           >
-            {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {(uploading || addMutation.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             추가
           </button>
         </form>
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center py-10">
