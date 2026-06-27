@@ -892,7 +892,7 @@ export default function Summer() {
         const getMathTeacherScore = (title: string) => {
           if (title.includes("최주용")) return 1;
           if (title.includes("황해룡")) return 2;
-          if (title.includes("강현")) return 2.5;
+          if (title.includes("강현") || title.includes("강헌")) return 2.5;
           if (title.includes("권소영")) return 3;
           if (title.includes("정찬영")) return 4;
           if (title.includes("임서원")) return 5;
