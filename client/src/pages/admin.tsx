@@ -2813,13 +2813,13 @@ function BriefingsTab() {
       time: "",
       form_url: "",
       intro: "",
-      sessions: [{ title: "", date: "", target: "", location: "", speaker: "", content: "" }]
+      schedule: "",
+      target: "",
+      speaker: "",
+      content: "",
+      benefit: "",
+      location: ""
     }
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "sessions"
   });
 
   const [editIntro, setEditIntro] = useState("");
@@ -2829,28 +2829,15 @@ function BriefingsTab() {
     queryKey: ["/api/briefings"],
   });
 
-  const stringifyDescription = (intro: string, sessions: any[]) => {
-    const hasValidSession = sessions.some(s => s.title?.trim() || s.date?.trim() || s.target?.trim() || s.location?.trim() || s.speaker?.trim() || s.content?.trim());
-    if (!hasValidSession) return intro.trim();
-
+  const stringifyDescription = (data: any) => {
     let res = "";
-    if (intro?.trim()) res += `[도입부]\n${intro.trim()}\n\n`;
-    sessions.forEach((s, idx) => {
-      if (s.title?.trim() || s.date?.trim() || s.target?.trim() || s.location?.trim() || s.speaker?.trim() || s.content?.trim()) {
-        res += `[세션]\n${s.title?.trim() || "세션 " + (idx + 1)}\n`;
-        if (s.date?.trim()) res += `[일시]\n${s.date.trim()}\n`;
-        if (s.target?.trim()) res += `[대상]\n${s.target.trim()}\n`;
-        if (s.location?.trim()) res += `[장소]\n${s.location.trim()}\n`;
-        if (s.speaker?.trim()) res += `[연사]\n${s.speaker.trim()}\n`;
-        if (s.content?.trim()) {
-          res += `[내용]\n`;
-          s.content.split('\n').forEach((line: string) => {
-            if (line.trim()) res += `${line.trim()}\n`;
-          });
-        }
-        res += "\n";
-      }
-    });
+    if (data.intro?.trim()) res += `[도입부]\n${data.intro.trim()}\n\n`;
+    if (data.schedule?.trim()) res += `[일시]\n${data.schedule.trim()}\n\n`;
+    if (data.target?.trim()) res += `[대상]\n${data.target.trim()}\n\n`;
+    if (data.speaker?.trim()) res += `[연사]\n${data.speaker.trim()}\n\n`;
+    if (data.content?.trim()) res += `[주제]\n${data.content.trim()}\n\n`;
+    if (data.benefit?.trim()) res += `[혜택]\n${data.benefit.trim()}\n\n`;
+    if (data.location?.trim()) res += `[장소]\n${data.location.trim()}\n`;
     return res.trim();
   };
 
