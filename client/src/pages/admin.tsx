@@ -1891,6 +1891,20 @@ function TimetablesTab() {
   );
 }
 
+// 관리자 목록을 엑셀(.xlsx)로 즉시 내려받기 — 구글시트 웹훅과 무관하게 완전한 정보 제공
+function downloadExcel(filename: string, rows: Record<string, any>[]) {
+  if (!rows || rows.length === 0) {
+    alert("내보낼 데이터가 없습니다.");
+    return;
+  }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "목록");
+  XLSX.writeFile(wb, filename);
+}
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
 function ReservationsTab() {
   const { data: reservations = [], isLoading } = useQuery<Reservation[]>({
     queryKey: ["/api/admin/reservations"],
@@ -1905,9 +1919,27 @@ function ReservationsTab() {
     },
   });
 
+  const exportExcel = () =>
+    downloadExcel(`수강예약_${todayStr()}.xlsx`, reservations.map((r) => ({
+      "신청일": r.created_at ? new Date(r.created_at).toLocaleString("ko-KR") : "",
+      "학생명": r.student_name || "",
+      "학교": r.student_school || "",
+      "과목": r.subject || "",
+      "수업명": r.class_name || "",
+      "선생님": r.teacher_name || "",
+      "수업시간": r.class_time || "",
+      "학생 전화": r.student_phone || "",
+      "학부모 전화": r.parent_phone || "",
+    })));
+
   return (
     <div>
-      <h3 className="text-lg font-bold text-gray-900 mb-4">수강예약 목록 ({reservations.length}건)</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900">수강예약 목록 ({reservations.length}건)</h3>
+        <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
+          <Download className="w-3.5 h-3.5" /> 엑셀 다운로드
+        </button>
+      </div>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
@@ -2666,9 +2698,23 @@ function SmsSubscriptionsTab() {
     },
   });
 
+  const exportExcel = () =>
+    downloadExcel(`문자수신_${todayStr()}.xlsx`, subs.map((s) => ({
+      "신청일": s.created_at ? new Date(s.created_at).toLocaleString("ko-KR") : "",
+      "이름": s.name || "",
+      "학교": s.school || "",
+      "학년": s.grade || "",
+      "전화번호": s.phone || "",
+    })));
+
   return (
     <div>
-      <h3 className="text-lg font-bold text-gray-900 mb-4">문자 수신 신청 목록 ({subs.length}건)</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900">문자 수신 신청 목록 ({subs.length}건)</h3>
+        <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
+          <Download className="w-3.5 h-3.5" /> 엑셀 다운로드
+        </button>
+      </div>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
@@ -2742,9 +2788,23 @@ function LevelTestTab() {
     },
   });
 
+  const exportExcel = () =>
+    downloadExcel(`수학레벨테스트_${todayStr()}.xlsx`, registrations.map((r) => ({
+      "신청일": r.created_at ? new Date(r.created_at).toLocaleString("ko-KR") : "",
+      "이름": r.name || "",
+      "학교": r.school || "",
+      "학년": r.grade || "",
+      "전화번호": r.phone || "",
+    })));
+
   return (
     <div>
-      <h3 className="text-lg font-bold text-gray-900 mb-4">수학레벨테스트 신청 목록 ({registrations.length}건)</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900">수학레벨테스트 신청 목록 ({registrations.length}건)</h3>
+        <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
+          <Download className="w-3.5 h-3.5" /> 엑셀 다운로드
+        </button>
+      </div>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
