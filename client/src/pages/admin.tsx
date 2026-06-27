@@ -4129,13 +4129,10 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     });
     if (!content) return null; // 내용 없으면 건너뜀
 
-    const titleClean = titleRaw.replace(/\s+/g, " ").trim();
-    const hay = `${sheetName} ${titleClean}`;
-    const teacher = (titleClean.match(/([가-힣]{2,4})T/) || [])[0] || "";
-    const course = ((titleClean.match(/\[(.+?)\]/) || [])[1] || sheetName).trim();
-    const division = /중3|중등|초중등/.test(hay) ? "중등" : /고2/.test(hay) ? "고2" : /고1|공수|공통수학/.test(hay) ? "고1" : activeTab;
-    const gradeLabel = division === "중등" ? "중3" : division;
-    const title = `[${gradeLabel}] ${course}${teacher ? ` - ${teacher}` : ""}`;
+    // 제목은 엑셀 원본(시트 맨 위 제목 칸)을 그대로 사용한다. 가공하지 않음.
+    const title = titleRaw.replace(/\s+/g, " ").trim() || sheetName.trim();
+    // 학년(탭)은 현재 보고 있는 탭에 등록 (제목/시트명은 건드리지 않음)
+    const division = activeTab;
     return { division, title, category: "curriculum", content };
   };
 
