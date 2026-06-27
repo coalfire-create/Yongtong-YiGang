@@ -368,6 +368,10 @@ async function ensureReservationsTable() {
       { name: "parent_phone", type: "TEXT" },
       { name: "school", type: "TEXT" },
       { name: "class_name", type: "TEXT" },
+      // 예약 시점의 과목/강사/수업시간을 스냅샷으로 저장(시간표가 바뀌거나 삭제돼도 관리자에서 보이도록)
+      { name: "subject", type: "TEXT" },
+      { name: "teacher_name", type: "TEXT" },
+      { name: "class_time", type: "TEXT" },
     ];
     for (const col of cols) {
       await pool.query(`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
@@ -2413,12 +2417,13 @@ export async function registerRoutes(
 
     try {
       let className = "";
+      let classTime = "";
       let fetchedSubject = subject || "";
       let fetchedTeacher = teacher_name || "";
 
       if (timetable_id) {
         const { rows: ttRows } = await pool.query(
-          `SELECT t.class_name, t.target_school, t.subject, t.teacher_name, t.category, tr.name as teacher_real_name
+          `SELECT t.class_name, t.target_school, t.subject, t.teacher_name, t.category, t.class_time, tr.name as teacher_real_name
            FROM timetables t
            LEFT JOIN teachers tr ON t.teacher_id = tr.id
            WHERE t.id = $1`,
@@ -2426,6 +2431,7 @@ export async function registerRoutes(
         );
         if (ttRows[0]) {
           className = ttRows[0].class_name || ttRows[0].target_school || "";
+          classTime = ttRows[0].class_time || "";
 
           // Use 'subject' if available, otherwise fallback to 'category'
           if (!fetchedSubject || fetchedSubject.trim() === "") {
@@ -2452,9 +2458,10 @@ export async function registerRoutes(
       }
 
       const { rows } = await pool.query(
-        `INSERT INTO reservations (timetable_id, student_name, student_phone, parent_phone, school, class_name)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-        [timetable_id || null, student_name.trim(), (student_phone || "").trim(), parent_phone.trim(), school.trim(), className]
+        `INSERT INTO reservations (timetable_id, student_name, student_phone, parent_phone, school, class_name, subject, teacher_name, class_time)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+        [timetable_id || null, student_name.trim(), (student_phone || "").trim(), parent_phone.trim(), school.trim(), className,
+         (fetchedSubject || "").trim(), (fetchedTeacher || "").trim(), classTime]
       );
 
 
@@ -2481,7 +2488,10 @@ export async function registerRoutes(
       const { rows } = await pool.query(`
         SELECT r.id, r.created_at, r.timetable_id,
                r.student_name, r.student_phone, r.parent_phone, r.school as student_school, r.class_name,
-               t.teacher_name, t.target_school, t.class_time, t.start_date, t.category
+               COALESCE(NULLIF(r.subject, ''), t.subject, t.category) AS subject,
+               COALESCE(NULLIF(r.teacher_name, ''), t.teacher_name) AS teacher_name,
+               COALESCE(NULLIF(r.class_time, ''), t.class_time) AS class_time,
+               t.target_school, t.start_date, t.category
         FROM reservations r
         LEFT JOIN timetables t ON r.timetable_id = t.id
         ORDER BY r.created_at DESC

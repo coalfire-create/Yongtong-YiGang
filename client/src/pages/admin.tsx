@@ -82,6 +82,7 @@ interface Reservation {
   student_school: string;
   student_grade: string;
   class_name: string;
+  subject: string;
   teacher_name: string;
   target_school: string;
   class_time: string;
@@ -1921,6 +1922,7 @@ function ReservationsTab() {
                 <th className="px-3 py-3 font-bold text-gray-700">학생명</th>
                 <th className="px-3 py-3 font-bold text-gray-700">학교/학년</th>
                 <th className="px-3 py-3 font-bold text-gray-700">연락처</th>
+                <th className="px-3 py-3 font-bold text-gray-700">과목</th>
                 <th className="px-3 py-3 font-bold text-gray-700">수업명</th>
                 <th className="px-3 py-3 font-bold text-gray-700">선생님</th>
                 <th className="px-3 py-3 font-bold text-gray-700">수업시간</th>
@@ -1937,6 +1939,7 @@ function ReservationsTab() {
                     <div>{r.student_phone || "-"}</div>
                     {r.parent_phone && <div className="text-xs text-gray-400">학부모: {r.parent_phone}</div>}
                   </td>
+                  <td className="px-3 py-3 text-gray-600">{r.subject || "-"}</td>
                   <td className="px-3 py-3 font-medium text-gray-900">{r.class_name || "-"}</td>
                   <td className="px-3 py-3 text-gray-600">{r.teacher_name || "-"}</td>
                   <td className="px-3 py-3 text-gray-600">{r.class_time || "-"}</td>
