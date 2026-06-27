@@ -2955,7 +2955,6 @@ function BriefingsTab() {
                 className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
                 placeholder="예: 2026학년도 고등부 신입생 설명회"
               />
-              {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message as string}</p>}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -2965,7 +2964,6 @@ function BriefingsTab() {
                   className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
                   placeholder="예: 2026년 3월 8일 (토)"
                 />
-                {errors.date && <p className="text-xs text-red-500 mt-1">{errors.date.message as string}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">시간</label>
@@ -2981,94 +2979,47 @@ function BriefingsTab() {
               <input
                 {...register("form_url")}
                 className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
-                placeholder="https://forms.gle/..."
               />
             </div>
           </div>
 
           <div className="bg-white p-4 border border-gray-200 rounded-lg space-y-4 shadow-sm">
             <h4 className="font-semibold text-gray-800">설명회 상세 내용</h4>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">설명회 도입부 (선택)</label>
-              <textarea
-                {...register("intro")}
-                rows={3}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none rounded-md"
-                placeholder="도입부 내용을 입력하세요."
-              />
-            </div>
             
-            <div className="space-y-4 mt-4">
-              {fields.map((field, index) => (
-                <div key={field.id} className="relative bg-gray-50 p-4 border border-gray-200 rounded-lg space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h5 className="font-bold text-gray-800 text-sm">세션 {index + 1}</h5>
-                    {fields.length > 1 && (
-                      <button type="button" onClick={() => remove(index)} className="text-red-500 hover:text-red-700 text-xs font-semibold">
-                        삭제
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">세션 제목</label>
-                      <input
-                        {...register(`sessions.${index}.title`)}
-                        className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                        placeholder="예: 1부"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">일시</label>
-                      <input
-                        {...register(`sessions.${index}.date`)}
-                        className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                        placeholder="예: 2월 28일 (목) 19:30"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">대상</label>
-                      <input
-                        {...register(`sessions.${index}.target`)}
-                        className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                        placeholder="예: 영통고 1학년"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">장소</label>
-                      <input
-                        {...register(`sessions.${index}.location`)}
-                        className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                        placeholder="예: 영통이강학원"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">연사</label>
-                      <input
-                        {...register(`sessions.${index}.speaker`)}
-                        className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 rounded"
-                        placeholder="예: 수학 정승준 ○ 국어 홍길동"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">상세 내용 (각 줄은 자동으로 글머리기호가 붙습니다)</label>
-                      <textarea
-                        {...register(`sessions.${index}.content`)}
-                        rows={4}
-                        className="w-full border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:border-red-600 resize-none rounded"
-                        placeholder="내용 1&#13;&#10;내용 2"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => append({ title: "", date: "", target: "", location: "", speaker: "", content: "" })}
-                className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-600 font-semibold text-sm rounded-lg hover:border-gray-400 hover:text-gray-800 transition-colors"
-              >
-                + 세션 추가
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">도입부</label>
+                <textarea
+                  {...register("intro")}
+                  rows={3}
+                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none rounded-md"
+                  placeholder="예: 많은 관심과 성원에 힘입어 2차 설명회를 진행합니다."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">일시</label>
+                <input {...register("schedule")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 7/2(목) 오후 7시" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">대상</label>
+                <input {...register("target")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 초등 4학년 ~ 중학교 2학년" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">연사</label>
+                <input {...register("speaker")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 김학수 소장님" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">장소</label>
+                <input {...register("location")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 모티브아카데미" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">주제 / 내용 (줄바꿈 시 글머리기호 자동추가)</label>
+                <textarea {...register("content")} rows={4} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="설명회 내용을 입력하세요" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">혜택 (선택)</label>
+                <textarea {...register("benefit")} rows={2} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" />
+              </div>
             </div>
           </div>
 
@@ -3626,71 +3577,93 @@ function ReviewsTab() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white border border-gray-200 p-6 mb-8 space-y-4" data-testid="form-add-review">
-        <h3 className="font-bold text-gray-900">{divisionLabel} 합격후기 추가</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
-            <input
-              {...register("name", { required: true })}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
-              placeholder="예: 김O준"
-              data-testid="input-review-name"
-            />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg space-y-4">
+            <h4 className="font-semibold text-gray-800">기본 정보</h4>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">제목 *</label>
+              <input
+                {...register("title", { required: "제목을 입력하세요" })}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
+                placeholder="예: 2026학년도 고등부 신입생 설명회"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">날짜 *</label>
+                <input
+                  {...register("date", { required: "날짜를 입력하세요" })}
+                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
+                  placeholder="예: 2026년 3월 8일 (토)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">시간</label>
+                <input
+                  {...register("time")}
+                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
+                  placeholder="예: 14:00~16:00"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">구글폼 링크</label>
+              <input
+                {...register("form_url")}
+                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">학교/학과</label>
-            <input
-              {...register("school")}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
-              placeholder="예: 서울대학교 수학과"
-              data-testid="input-review-school"
-            />
+
+          <div className="bg-white p-4 border border-gray-200 rounded-lg space-y-4 shadow-sm">
+            <h4 className="font-semibold text-gray-800">설명회 상세 내용</h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">도입부</label>
+                <textarea
+                  {...register("intro")}
+                  rows={3}
+                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none rounded-md"
+                  placeholder="예: 많은 관심과 성원에 힘입어 2차 설명회를 진행합니다."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">일시</label>
+                <input {...register("schedule")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 7/2(목) 오후 7시" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">대상</label>
+                <input {...register("target")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 초등 4학년 ~ 중학교 2학년" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">연사</label>
+                <input {...register("speaker")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 김학수 소장님" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">장소</label>
+                <input {...register("location")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 모티브아카데미" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">주제 / 내용 (줄바꿈 시 글머리기호 자동추가)</label>
+                <textarea {...register("content")} rows={4} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="설명회 내용을 입력하세요" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">혜택 (선택)</label>
+                <textarea {...register("benefit")} rows={2} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" />
+              </div>
+            </div>
           </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">후기 내용 *</label>
-          <textarea
-            {...register("content", { required: true })}
-            rows={4}
-            className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none resize-none"
-            placeholder="합격 후기를 입력하세요"
-            data-testid="input-review-content"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">사진 (여러장 가능)</label>
-            <input
-              type="file"
-              ref={fileRef}
-              accept="image/*"
-              multiple
-              className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-              data-testid="input-review-images"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">순서</label>
-            <input
-              {...register("display_order")}
-              type="number"
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
-              defaultValue="0"
-              data-testid="input-review-order"
-            />
-          </div>
-        </div>
-        <button
-          type="submit"
-          disabled={uploading}
-          className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
-          data-testid="button-add-review"
-        >
-          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          등록
-        </button>
-      </form>
+
+          <button
+            type="submit"
+            disabled={addMutation.isPending}
+            className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 rounded-md"
+          >
+            {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            추가
+          </button>
+        </form>
 
       {isLoading ? (
         <div className="flex justify-center py-10">
@@ -4040,6 +4013,7 @@ function SortableGuidelineRow({
 }
 
 function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" | "고2" }) {
+  const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
 
