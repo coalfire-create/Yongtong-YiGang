@@ -4053,10 +4053,96 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     XLSX.writeFile(wb, "썸머커리큘럼_업로드양식.xlsx");
   };
 
+  // 한 줄 가로 양식(템플릿) 시트 → payload 목록
+  const parseHorizontalSheet = (data: any[][]) => {
+    const payloads: { division: string; title: string; category: string; content: string }[] = [];
+    if (data.length <= 1) return payloads;
+    const headers = data[0];
+    const getVal = (row: any[], name: string, fallbackIdx: number) => {
+      const idx = headers.findIndex((h) => h && h.toString().replace(/\s/g, "").includes(name));
+      const val = idx !== -1 ? row[idx] : row[fallbackIdx];
+      return val !== undefined && val !== null ? val.toString().trim() : "";
+    };
+    const hasTargetCol = headers.some((h) => h && h.toString().includes("대상"));
+    const idxOffset = hasTargetCol ? 1 : 0;
+    for (const row of data.slice(1)) {
+      const title = getVal(row, "제목", 1 + idxOffset);
+      if (!row || row.length === 0 || !title) continue;
+      const categoryRaw = getVal(row, "카테고리", 0 + idxOffset);
+      const category = categoryRaw.includes("가이드") ? "guideline" : "curriculum";
+      const content = stringifyContent({
+        schedule: getVal(row, "수업일정", 2 + idxOffset),
+        features: getVal(row, "강좌특징", 3 + idxOffset),
+        materials: getVal(row, "교재", 4 + idxOffset),
+        tasks: getVal(row, "과제", 5 + idxOffset),
+        management: getVal(row, "관리시스템", 6 + idxOffset),
+        sessions: getVal(row, "회차별내용", 7 + idxOffset),
+        linked: getVal(row, "연계강좌", 8 + idxOffset),
+      });
+      for (const division of parseDivisions(hasTargetCol ? getVal(row, "대상", 0) : "")) {
+        payloads.push({ division, title, category, content });
+      }
+    }
+    return payloads;
+  };
+
+  // 강사 원본 세로 양식(구분/세부항목/내용, 한 시트 = 한 강좌) → payload 1개
+  const parseVerticalSheet = (data: any[][], sheetName: string) => {
+    const cell = (r: any[] | undefined, i: number) => (r && r[i] != null ? r[i].toString().replace(/\r/g, "").trim() : "");
+    const titleRaw = cell(data[0], 0);
+    // 헤더("구분"이 있는 줄) 다음부터 데이터
+    let start = data.findIndex((r) => /구분/.test(cell(r, 0)));
+    start = start >= 0 ? start + 1 : 1;
+
+    const sectionKey = (label: string): string | null => {
+      if (/수업\s*일정/.test(label)) return "schedule";
+      if (/특징/.test(label)) return "features";
+      if (/교재|자료/.test(label)) return "materials";
+      if (/과제|TEST/i.test(label)) return "tasks";
+      if (/관리|CLINIC|클리닉|SYSTEM/i.test(label)) return "management";
+      if (/회차/.test(label)) return "sessions";
+      if (/연계/.test(label)) return "linked";
+      return null;
+    };
+
+    const f: Record<string, string[]> = { schedule: [], features: [], materials: [], tasks: [], management: [], sessions: [], linked: [] };
+    let cur: string | null = null;
+    for (const row of data.slice(start)) {
+      const a = cell(row, 0), b = cell(row, 1), c = cell(row, 2);
+      if (a) cur = sectionKey(a);
+      if (!cur) continue;
+      if (cur === "management") {
+        if (b || c) f.management.push(`• ${b}${c ? `: ${c}` : ""}`);
+      } else if (cur === "sessions") {
+        if (b || c) f.sessions.push(`${b}${c ? ` - ${c}` : ""}`.trim());
+      } else if (cur === "linked") {
+        if (c) f.linked.push(`${b}${c ? ` - ${c}` : ""}`.trim());
+      } else {
+        const v = c || b;
+        if (v) f[cur].push(v);
+      }
+    }
+
+    const content = stringifyContent({
+      schedule: f.schedule.join("\n"), features: f.features.join("\n"), materials: f.materials.join("\n"),
+      tasks: f.tasks.join("\n"), management: f.management.join("\n"), sessions: f.sessions.join("\n"), linked: f.linked.join("\n"),
+    });
+    if (!content) return null; // 내용 없으면 건너뜀
+
+    const titleClean = titleRaw.replace(/\s+/g, " ").trim();
+    const hay = `${sheetName} ${titleClean}`;
+    const teacher = (titleClean.match(/([가-힣]{2,4})T/) || [])[0] || "";
+    const course = ((titleClean.match(/\[(.+?)\]/) || [])[1] || sheetName).trim();
+    const division = /중3|중등|초중등/.test(hay) ? "중등" : /고2/.test(hay) ? "고2" : /고1|공수|공통수학/.test(hay) ? "고1" : activeTab;
+    const gradeLabel = division === "중등" ? "중3" : division;
+    const title = `[${gradeLabel}] ${course}${teacher ? ` - ${teacher}` : ""}`;
+    return { division, title, category: "curriculum", content };
+  };
+
   const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!confirm(`엑셀 파일 [${file.name}]의 데이터를 추가하시겠습니까?\n(대상 칸이 비어 있으면 중3·고1 모두에 등록됩니다)`)) {
+    if (!confirm(`엑셀 파일 [${file.name}]의 데이터를 추가하시겠습니까?\n(강사 원본 양식은 시트마다 한 강좌씩, 학년은 시트명/제목에서 자동 인식하며 못 찾으면 현재 [${activeTab}] 탭에 등록됩니다)`)) {
       e.target.value = "";
       return;
     }
@@ -4065,54 +4151,36 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     reader.onload = async (evt) => {
       try {
         const wb = XLSX.read(evt.target?.result, { type: "binary" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
-        if (data.length <= 1) {
-          alert("데이터가 없습니다.");
+        const payloads: { division: string; title: string; category: string; content: string }[] = [];
+
+        for (const sheetName of wb.SheetNames) {
+          const data = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 }) as any[][];
+          if (!data || data.length === 0) continue;
+          // 세로(강사 원본) 양식 감지: 어느 행이든 첫 칸에 "구분" 또는 섹션 라벨이 있으면
+          const isVertical = data.some((r) => /구분|수업\s*일정|강좌\s*특징/.test((r && r[0] != null ? r[0].toString() : "")));
+          if (isVertical) {
+            const p = parseVerticalSheet(data, sheetName);
+            if (p) payloads.push(p);
+          } else {
+            payloads.push(...parseHorizontalSheet(data));
+          }
+        }
+
+        if (payloads.length === 0) {
+          alert("엑셀에서 등록할 강좌를 찾지 못했습니다. 양식을 확인해주세요.");
           e.target.value = "";
           return;
         }
 
-        // 헤더 이름으로 컬럼을 찾되, 없으면 fallback 인덱스 사용 (구버전 양식 호환)
-        const headers = data[0];
-        const getVal = (row: any[], name: string, fallbackIdx: number) => {
-          const idx = headers.findIndex((h) => h && h.toString().replace(/\s/g, "").includes(name));
-          const val = idx !== -1 ? row[idx] : row[fallbackIdx];
-          return val !== undefined && val !== null ? val.toString().trim() : "";
-        };
-        // 헤더에 "대상" 컬럼이 있으면 그 위치를, 없으면 제목/카테고리는 구버전 위치로 fallback
-        const hasTargetCol = headers.some((h) => h && h.toString().includes("대상"));
-        const idxOffset = hasTargetCol ? 1 : 0;
-
         let successCount = 0;
-        for (const row of data.slice(1)) {
-          const title = getVal(row, "제목", 1 + idxOffset);
-          if (!row || row.length === 0 || !title) continue; // 제목 없으면 skip
-          const categoryRaw = getVal(row, "카테고리", 0 + idxOffset);
-          const category = categoryRaw.includes("가이드") ? "guideline" : "curriculum";
-          const content = stringifyContent({
-            schedule: getVal(row, "수업일정", 2 + idxOffset),
-            features: getVal(row, "강좌특징", 3 + idxOffset),
-            materials: getVal(row, "교재", 4 + idxOffset),
-            tasks: getVal(row, "과제", 5 + idxOffset),
-            management: getVal(row, "관리시스템", 6 + idxOffset),
-            sessions: getVal(row, "회차별내용", 7 + idxOffset),
-            linked: getVal(row, "연계강좌", 8 + idxOffset),
-          });
-          const divisions = parseDivisions(hasTargetCol ? getVal(row, "대상", 0) : "");
-          for (const division of divisions) {
-            const res = await apiRequest("POST", "/api/summer-guidelines", {
-              division,
-              title,
-              category,
-              content,
-            });
-            if (res.ok) successCount++;
-          }
+        for (const p of payloads) {
+          const res = await apiRequest("POST", "/api/summer-guidelines", p);
+          if (res.ok) successCount++;
         }
 
         queryClient.invalidateQueries({ queryKey: ["/api/summer-guidelines"] });
-        alert(`총 ${successCount}개의 커리큘럼이 성공적으로 추가되었습니다!`);
+        const summary = payloads.map((p) => `· ${p.title} → ${p.division}`).join("\n");
+        alert(`총 ${successCount}개의 커리큘럼이 등록되었습니다!\n\n${summary}`);
       } catch (err: any) {
         console.error(err);
         if (String(err?.message || "").includes("401")) {
