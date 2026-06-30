@@ -503,10 +503,11 @@ function FormattedDescription({ description }: { description: string }) {
           {/* Fields */}
           <div className="space-y-4">
             {/* Group metadata fields like "일정"/"일시", "대상", "장소" */}
-            {session.fields.some(f => !f.speakers && !f.bullets && !f.key.includes("혜택")) && (
+            {/* Group metadata fields like "일정"/"일시", "대상", "장소" */}
+            {session.fields.some(f => !f.speakers && !f.bullets && !f.structured && !f.key.includes("혜택")) && (
               <div className="bg-white border border-gray-150/70 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm">
                 {session.fields
-                  .filter(f => !f.speakers && !f.bullets && !f.key.includes("혜택"))
+                  .filter(f => !f.speakers && !f.bullets && !f.structured && !f.key.includes("혜택"))
                   .map((field, fIdx) => {
                     const isTime = field.key.includes("일시") || field.key.includes("일정") || field.key.includes("시간");
                     const isTarget = field.key.includes("대상");
@@ -537,7 +538,7 @@ function FormattedDescription({ description }: { description: string }) {
                     <User className="w-4 h-4 text-[#7B2332]" />
                     설명회 연사 라인업
                   </h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {field.speakers?.map((speaker, sIdx) => {
                       let roleBadge = null;
                       const cleanName = speaker.name.trim();
@@ -557,28 +558,26 @@ function FormattedDescription({ description }: { description: string }) {
                       return (
                         <div
                           key={sIdx}
-                          className="bg-gradient-to-br from-white to-gray-50/30 rounded-2xl p-5 border border-gray-200/80 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-gray-300 transition-all duration-300"
+                          className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-300"
                         >
-                          <div>
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              {speaker.subject && (
-                                <span className="px-2.5 py-0.5 text-[10px] font-black bg-[#7B2332]/10 text-[#7B2332] rounded-full uppercase tracking-wider">
-                                  {speaker.subject}
-                                </span>
-                              )}
-                              <span className="font-extrabold text-gray-900 text-base">{speaker.name}</span>
-                              {roleBadge && (
-                                <span className="px-2.5 py-0.5 text-[10px] font-black bg-[#7B2332]/10 text-[#7B2332] rounded-full uppercase tracking-wider">
-                                  {roleBadge}
-                                </span>
-                              )}
-                            </div>
-                            {speaker.desc && (
-                              <p className="text-xs text-gray-500 leading-relaxed font-semibold whitespace-pre-line">
-                                {speaker.desc}
-                              </p>
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            {speaker.subject && (
+                              <span className="px-2 py-0.5 text-[10px] font-black bg-[#7B2332]/10 text-[#7B2332] rounded-md uppercase tracking-wider">
+                                {speaker.subject}
+                              </span>
+                            )}
+                            <span className="font-extrabold text-gray-900 text-base">{speaker.name}</span>
+                            {roleBadge && (
+                              <span className="px-2 py-0.5 text-[10px] font-black bg-[#7B2332]/10 text-[#7B2332] rounded-md uppercase tracking-wider">
+                                {roleBadge}
+                              </span>
                             )}
                           </div>
+                          {speaker.desc && (
+                            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line mt-2 pl-0.5">
+                              {speaker.desc}
+                            </p>
+                          )}
                         </div>
                       );
                     })}
@@ -586,23 +585,57 @@ function FormattedDescription({ description }: { description: string }) {
                 </div>
               ))}
 
-            {/* Render Contents (주제 및 내용) */}
+            {/* Render Contents (주제 및 내용 - old bullets) */}
             {session.fields
-              .filter(f => f.bullets)
+              .filter(f => f.bullets && !f.structured)
               .map((field, fIdx) => (
                 <div key={fIdx} className="space-y-3 bg-white border border-gray-150/70 rounded-2xl p-5 sm:p-6 shadow-sm">
                   <h5 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5 pl-1">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    설명회 주제 및 주요 내용
+                    <CheckCircle2 className="w-4 h-4 text-[#7B2332]" />
+                    {field.key}
                   </h5>
                   <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 pl-1 pt-1">
                     {field.bullets?.map((bullet, bIdx) => (
-                      <li key={bIdx} className="flex items-start gap-3 text-xs sm:text-sm text-gray-700 leading-relaxed font-semibold whitespace-pre-line">
+                      <li key={bIdx} className="flex items-start gap-3 text-sm text-gray-700 leading-relaxed whitespace-pre-line">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#7B2332] mt-2 flex-shrink-0" />
                         <span>{bullet}</span>
                       </li>
                     ))}
                   </ul>
+                </div>
+              ))}
+
+            {/* Render Structured Contents (주제 및 내용 - new structure) */}
+            {session.fields
+              .filter(f => f.structured)
+              .map((field, fIdx) => (
+                <div key={`struct-${fIdx}`} className="space-y-4 bg-white border border-gray-150/70 rounded-2xl p-5 sm:p-6 shadow-sm">
+                  <h5 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5 pl-1 border-b border-gray-50 pb-3">
+                    <CheckCircle2 className="w-4 h-4 text-[#7B2332]" />
+                    {field.key}
+                  </h5>
+                  <div className="space-y-6 pt-1">
+                    {field.structured?.map((grp, gIdx) => (
+                      <div key={gIdx} className="space-y-2">
+                        {grp.title && (
+                          <h6 className="font-extrabold text-[15px] text-gray-900 flex items-start gap-2">
+                            <span className="text-[#7B2332] font-black shrink-0">{gIdx + 1}.</span>
+                            <span className="whitespace-pre-line leading-relaxed">{grp.title}</span>
+                          </h6>
+                        )}
+                        {grp.items && grp.items.length > 0 && (
+                          <ul className="pl-6 space-y-1.5">
+                            {grp.items.map((item, iIdx) => (
+                              <li key={iIdx} className="flex items-start gap-2 text-[13px] text-gray-600 leading-relaxed whitespace-pre-line">
+                                <span className="text-gray-400 font-bold shrink-0 mt-0.5">-</span>
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
 
