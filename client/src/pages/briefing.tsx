@@ -225,11 +225,17 @@ interface ParsedSpeaker {
   desc?: string;
 }
 
+interface StructuredContent {
+  title?: string;
+  items: string[];
+}
+
 interface ParsedField {
   key: string;
   value: string;
   speakers?: ParsedSpeaker[];
   bullets?: string[];
+  structured?: StructuredContent[];
 }
 
 interface ParsedSession {
@@ -382,9 +388,28 @@ function parseDescription(descText: string): ParsedDescription {
           speakerList.push({ name: sName, subject: sSubject, desc: sDesc });
         }
         fields.push({ key, value: val, speakers: speakerList });
-      } else if (key.includes("내용")) {
-        const bulletLines = val.split('\n').map(l => l.trim()).filter(Boolean).map(l => l.replace(/^[○\-\•\*\d\.]+\s*/, ''));
-        fields.push({ key, value: val, bullets: bulletLines });
+      } else if (key.includes("내용") || key.includes("주제")) {
+        const structured: StructuredContent[] = [];
+        let currentGroup: StructuredContent = { title: "", items: [] };
+        
+        const lines = val.split('\n').map(l => l.trim()).filter(Boolean);
+        for (const line of lines) {
+          // If line starts with a number like "1.", "2)", "1 ", it's a main point
+          const isMainPoint = /^\d+[\.\)\]]?\s/.test(line) || /^▶/.test(line) || /^▣/.test(line);
+          if (isMainPoint) {
+            if (currentGroup.title || currentGroup.items.length > 0) {
+              structured.push({ ...currentGroup });
+            }
+            currentGroup = { title: line.replace(/^\d+[\.\)\]]?\s*/, '').replace(/^[▶▣]\s*/, '').trim(), items: [] };
+          } else {
+            // It's a sub point
+            currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
+          }
+        }
+        if (currentGroup.title || currentGroup.items.length > 0) {
+          structured.push(currentGroup);
+        }
+        fields.push({ key, value: val, structured });
       } else {
         fields.push({ key, value: val });
       }

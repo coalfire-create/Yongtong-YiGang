@@ -3058,16 +3058,16 @@ function BriefingsTab() {
                 <input {...register("target")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 초등 4학년 ~ 중학교 2학년" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">연사</label>
-                <input {...register("speaker")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 김학수 소장님" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">연사 (줄바꿈으로 약력 추가, 빈 줄로 여러 연사 구분)</label>
+                <textarea {...register("speaker")} rows={3} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 김학수 소장님\n(전) 메가스터디\n\n박지훈 강사\n(현) 시대인재" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">장소</label>
                 <input {...register("location")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 모티브아카데미" />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">주제 / 내용 (줄바꿈 시 글머리기호 자동추가)</label>
-                <textarea {...register("content")} rows={4} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="설명회 내용을 입력하세요" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">주제 / 내용 (숫자 '1.'은 주요 내용, '-'는 세부 내용으로 구분)</label>
+                <textarea {...register("content")} rows={4} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="1. 주요 내용\n- 세부 사항\n- 세부 사항 2\n\n2. 두번째 내용\n- 세부 사항" />
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">혜택 (선택)</label>
@@ -3160,7 +3160,7 @@ function BriefingsTab() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">연사</label>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">연사 (빈 줄로 여러명 구분, 줄바꿈은 약력)</label>
                         <input
                           value={editForm.speaker || ""}
                           onChange={(e) => setEditForm({ ...editForm, speaker: e.target.value })}
@@ -3176,7 +3176,7 @@ function BriefingsTab() {
                         />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">주제 / 내용 (줄바꿈 시 글머리기호 자동추가)</label>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">주제 / 내용 ('1.'은 제목, '-'는 세부내용)</label>
                         <textarea
                           value={editForm.content || ""}
                           onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
