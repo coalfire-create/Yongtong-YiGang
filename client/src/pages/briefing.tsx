@@ -262,7 +262,7 @@ function parseDescription(descText: string): ParsedDescription {
     let contentText = "";
     
     for (const line of lines) {
-       if (/^\\d+[\\.\\)\\]]?\\s/.test(line.trim())) {
+       if (/^([!▶▣])\\s*/.test(line.trim())) {
            contentText += (contentText ? "\\n" : "") + line.trim();
        } else {
            if (contentText) {
@@ -279,12 +279,12 @@ function parseDescription(descText: string): ParsedDescription {
       let currentGroup: StructuredContent = { title: "", items: [] };
       const contentLines = contentText.split('\\n').map(l => l.trim()).filter(Boolean);
       for (const line of contentLines) {
-        const isMainPoint = /^(\\d+[\\.\\)\\]]?|[▶▣])\\s*/.test(line);
+        const isMainPoint = /^([!▶▣])\\s*/.test(line);
         if (isMainPoint) {
           if (currentGroup.title || currentGroup.items.length > 0) {
             structured.push({ ...currentGroup });
           }
-          currentGroup = { title: line.replace(/^(\\d+[\\.\\)\\]]?|[▶▣])\\s*/, '').trim(), items: [] };
+          currentGroup = { title: line.replace(/^([!▶▣])\\s*/, '').trim(), items: [] };
         } else {
           currentGroup.items.push(line.replace(/^[○\\-\\•\\*\\s]+/, '').trim());
         }
@@ -377,12 +377,12 @@ function parseDescription(descText: string): ParsedDescription {
       
       const lines = contentVal.split('\n').map(l => l.trim()).filter(Boolean);
       for (const line of lines) {
-        const isMainPoint = /^(\d+[\.\]]?|[▶▣])\s*/.test(line);
+        const isMainPoint = /^([!▶▣])\s*/.test(line);
         if (isMainPoint) {
           if (currentGroup.title || currentGroup.items.length > 0) {
             structured.push({ ...currentGroup });
           }
-          currentGroup = { title: line.replace(/^(\d+[\.\]]?|[▶▣])\s*/, '').trim(), items: [] };
+          currentGroup = { title: line.replace(/^([!▶▣])\s*/, '').trim(), items: [] };
         } else {
           currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
         }
@@ -485,12 +485,12 @@ function parseDescription(descText: string): ParsedDescription {
         
         const lines = val.split('\n').map(l => l.trim()).filter(Boolean);
         for (const line of lines) {
-          const isMainPoint = /^(\d+[\.\]]?|[▶▣])\s*/.test(line);
+          const isMainPoint = /^([!▶▣])\s*/.test(line);
           if (isMainPoint) {
             if (currentGroup.title || currentGroup.items.length > 0) {
               structured.push({ ...currentGroup });
             }
-            currentGroup = { title: line.replace(/^(\d+[\.\]]?|[▶▣])\s*/, '').trim(), items: [] };
+            currentGroup = { title: line.replace(/^([!▶▣])\s*/, '').trim(), items: [] };
           } else {
             currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
           }
