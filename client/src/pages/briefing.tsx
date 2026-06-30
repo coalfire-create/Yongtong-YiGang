@@ -295,33 +295,60 @@ function parseDescription(descText: string): ParsedDescription {
     
     if (parsedFields.speaker) {
       const speakerList: ParsedSpeaker[] = [];
-      const sLines = parsedFields.speaker.trim().split('\n');
-      let currentSpeaker: ParsedSpeaker | null = null;
-      for (const line of sLines) {
-        if (!line.trim()) continue;
-        if (!line.trim().startsWith('-') && !line.trim().startsWith('•') && !line.trim().startsWith('○')) {
-          if (currentSpeaker) speakerList.push(currentSpeaker);
-          let sName = line.replace(/^[\_\♧\♣\■\▣\▶\s]+/, '').trim();
-          let sSubject = "";
-          const parenMatch = sName.match(/\((.*?)\)/);
-          if (parenMatch) {
+      const speakerBlocks = parsedFields.speaker.trim().split(/\n\s*\n/);
+      
+      for (const block of speakerBlocks) {
+        const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length === 0) continue;
+        
+        let sNameLine = lines[0];
+        let sSubject = "";
+        let sName = sNameLine.replace(/^[\_\♧\♣\■\▣\▶\s]+/, '').trim();
+        
+        let inlineDesc = "";
+        const inlineMatch = sName.match(/^(.*?)\s+[-:]\s+(.*)$/);
+        if (inlineMatch) {
+            sName = inlineMatch[1].trim();
+            inlineDesc = inlineMatch[2].trim();
+        }
+
+        let parenMatch = sName.match(/\((.*?)\)/);
+        if (parenMatch && parenMatch[1].length <= 5 && !parenMatch[1].includes(" ") && !['전', '현'].includes(parenMatch[1].trim())) {
             sSubject = parenMatch[1].trim();
             sName = sName.replace(parenMatch[0], "").trim();
-          }
-          currentSpeaker = { name: sName, subject: sSubject, desc: "" };
-        } else if (currentSpeaker) {
-          currentSpeaker.desc += (currentSpeaker.desc ? "\n" : "") + line.trim();
         }
+        
+        const descLines = lines.slice(1).map(l => l.replace(/^[○\-\•\*\s]+/, '').trim());
+        if (inlineDesc) {
+            descLines.unshift(inlineDesc);
+        }
+        speakerList.push({ name: sName, subject: sSubject, desc: descLines.join('\n') });
       }
-      if (currentSpeaker) speakerList.push(currentSpeaker);
       sessionFields.push({ key: "연사", value: parsedFields.speaker.trim(), speakers: speakerList });
     }
 
     if (parsedFields.content) {
-      const bulletLines = parsedFields.content.trim().split('\n')
-        .map(l => l.trim())
-        .filter(Boolean);
-      sessionFields.push({ key: "주제 및 내용", value: parsedFields.content.trim(), bullets: bulletLines });
+      const structured: StructuredContent[] = [];
+      let currentGroup: StructuredContent = { title: "", items: [] };
+      
+      const lines = parsedFields.content.trim().split('\n').map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        // If line starts with a number like "1.", "2)", "1 ", it's a main point
+        const isMainPoint = /^\d+[\.\)\]]?\s/.test(line) || /^▶/.test(line) || /^▣/.test(line);
+        if (isMainPoint) {
+          if (currentGroup.title || currentGroup.items.length > 0) {
+            structured.push({ ...currentGroup });
+          }
+          currentGroup = { title: line.replace(/^\d+[\.\)\]]?\s*/, '').replace(/^[▶▣]\s*/, '').trim(), items: [] };
+        } else {
+          // It's a sub point
+          currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
+        }
+      }
+      if (currentGroup.title || currentGroup.items.length > 0) {
+        structured.push(currentGroup);
+      }
+      sessionFields.push({ key: "주제 및 내용", value: parsedFields.content.trim(), structured });
     }
 
     if (parsedFields.benefit) sessionFields.push({ key: "참석자 혜택", value: parsedFields.benefit.trim() });
@@ -380,8 +407,8 @@ function parseDescription(descText: string): ParsedDescription {
             sDesc = sName.substring(sDashIdx + 1).trim();
             sName = sName.substring(0, sDashIdx).trim();
           }
-          const parenMatch = sName.match(/\((.*?)\)/);
-          if (parenMatch) {
+          let parenMatch = sName.match(/\((.*?)\)/);
+          if (parenMatch && parenMatch[1].length <= 5 && !parenMatch[1].includes(" ") && !['전', '현'].includes(parenMatch[1].trim())) {
             sSubject = parenMatch[1].trim();
             sName = sName.replace(parenMatch[0], "").trim();
           }
