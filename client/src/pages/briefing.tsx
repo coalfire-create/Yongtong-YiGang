@@ -256,13 +256,13 @@ function parseDescription(descText: string): ParsedDescription {
   // And still falls back gracefully for old format (▣ / ▶)
   
   if (!descText.includes('[') && !descText.includes('▣') && !descText.includes('▶') && !descText.includes('■')) {
-    let formattedDesc = descText.replace(/(\\s)(\\d+[\\.\\]]\\s)/g, '\\n$2');
+    let formattedDesc = descText.replace(/(\\s)(\\d+[\\.\\)\\]]\\s)/g, '\\n$2');
     const lines = formattedDesc.split('\\n');
     let introText = "";
     let contentText = "";
     
     for (const line of lines) {
-       if (/^\\d+[\\.\\]]?\\s/.test(line.trim())) {
+       if (/^\\d+[\\.\\)\\]]?\\s/.test(line.trim())) {
            contentText += (contentText ? "\\n" : "") + line.trim();
        } else {
            if (contentText) {
@@ -279,12 +279,12 @@ function parseDescription(descText: string): ParsedDescription {
       let currentGroup: StructuredContent = { title: "", items: [] };
       const contentLines = contentText.split('\\n').map(l => l.trim()).filter(Boolean);
       for (const line of contentLines) {
-        const isMainPoint = /^\\d+[\\.\\]]?\\s/.test(line);
+        const isMainPoint = /^(\\d+[\\.\\)\\]]?|[▶▣])\\s*/.test(line);
         if (isMainPoint) {
           if (currentGroup.title || currentGroup.items.length > 0) {
             structured.push({ ...currentGroup });
           }
-          currentGroup = { title: line.replace(/^\\d+[\\.\\]]?\\s*/, '').trim(), items: [] };
+          currentGroup = { title: "제목 : " + line.replace(/^(\\d+[\\.\\)\\]]?|[▶▣])\\s*/, '').trim(), items: [] };
         } else {
           currentGroup.items.push(line.replace(/^[○\\-\\•\\*\\s]+/, '').trim());
         }
@@ -377,15 +377,13 @@ function parseDescription(descText: string): ParsedDescription {
       
       const lines = contentVal.split('\n').map(l => l.trim()).filter(Boolean);
       for (const line of lines) {
-        // If line starts with a number like "1.", "2)", "1 ", it's a main point
-        const isMainPoint = /^\d+[\.\)\]]?\s/.test(line) || /^▶/.test(line) || /^▣/.test(line);
+        const isMainPoint = /^(\d+[\.\]]?|[▶▣])\s*/.test(line);
         if (isMainPoint) {
           if (currentGroup.title || currentGroup.items.length > 0) {
             structured.push({ ...currentGroup });
           }
-          currentGroup = { title: line.replace(/^[▶▣]\s*/, '').trim(), items: [] };
+          currentGroup = { title: "제목 : " + line.replace(/^(\d+[\.\]]?|[▶▣])\s*/, '').trim(), items: [] };
         } else {
-          // It's a sub point
           currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
         }
       }
@@ -481,22 +479,19 @@ function parseDescription(descText: string): ParsedDescription {
         if (currentSpeaker) speakerList.push(currentSpeaker);
         fields.push({ key, value: val, speakers: speakerList });
       } else if (key.includes("내용") || key.includes("주제")) {
-        // Format inline numbered lists (e.g. "1. xxx 2. yyy") into newlines
-        val = val.replace(/(\s)(\d+[\.\)\]]\s)/g, '\n$2');
+        val = val.replace(/(\s)(\d+[\.\]]\s)/g, '\n$2');
         const structured: StructuredContent[] = [];
         let currentGroup: StructuredContent = { title: "", items: [] };
         
         const lines = val.split('\n').map(l => l.trim()).filter(Boolean);
         for (const line of lines) {
-          // If line starts with a number like "1.", "2)", "1 ", it's a main point
-          const isMainPoint = /^\d+[\.\)\]]?\s/.test(line) || /^▶/.test(line) || /^▣/.test(line);
+          const isMainPoint = /^(\d+[\.\]]?|[▶▣])\s*/.test(line);
           if (isMainPoint) {
             if (currentGroup.title || currentGroup.items.length > 0) {
               structured.push({ ...currentGroup });
             }
-            currentGroup = { title: line.replace(/^[▶▣]\s*/, '').trim(), items: [] };
+            currentGroup = { title: "제목 : " + line.replace(/^(\d+[\.\]]?|[▶▣])\s*/, '').trim(), items: [] };
           } else {
-            // It's a sub point
             currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
           }
         }
