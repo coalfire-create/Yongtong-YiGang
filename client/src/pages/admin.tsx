@@ -2877,7 +2877,6 @@ function BriefingsTab() {
       time: "",
       form_url: "",
       intro: "",
-      schedule: "",
       target: "",
       speaker: "",
       content: "",
@@ -2893,7 +2892,6 @@ function BriefingsTab() {
   const stringifyDescription = (data: any) => {
     let res = "";
     if (data.intro?.trim()) res += `[도입부]\n${data.intro.trim()}\n\n`;
-    if (data.schedule?.trim()) res += `[일시]\n${data.schedule.trim()}\n\n`;
     if (data.target?.trim()) res += `[대상]\n${data.target.trim()}\n\n`;
     if (data.speaker?.trim()) res += `[연사]\n${data.speaker.trim()}\n\n`;
     if (data.content?.trim()) res += `[주제]\n${data.content.trim()}\n\n`;
@@ -2903,7 +2901,7 @@ function BriefingsTab() {
   };
 
   const parseDescription = (desc: string) => {
-    if (!desc) return { intro: "", schedule: "", target: "", speaker: "", content: "", benefit: "", location: "" };
+    if (!desc) return { intro: "", target: "", speaker: "", content: "", benefit: "", location: "" };
 
     const getSection = (marker: string, nextMarkers: string[]) => {
       if (!desc.includes(marker)) return "";
@@ -2916,11 +2914,10 @@ function BriefingsTab() {
       return desc.substring(startIdx, endIdx).trim();
     };
 
-    const markers = ['[도입부]', '[일시]', '[대상]', '[연사]', '[주제]', '[혜택]', '[장소]'];
+    const markers = ['[도입부]', '[대상]', '[연사]', '[주제]', '[혜택]', '[장소]'];
 
     return {
       intro: getSection('[도입부]', markers),
-      schedule: getSection('[일시]', markers),
       target: getSection('[대상]', markers),
       speaker: getSection('[연사]', markers),
       content: getSection('[주제]', markers),
@@ -3055,10 +3052,7 @@ function BriefingsTab() {
                   placeholder="예: 많은 관심과 성원에 힘입어 2차 설명회를 진행합니다."
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">일시</label>
-                <input {...register("schedule")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 7/2(목) 오후 7시" />
-              </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">대상</label>
                 <input {...register("target")} className="w-full border border-gray-300 px-3 py-2 text-sm rounded-md" placeholder="예: 초등 4학년 ~ 중학교 2학년" />
@@ -3156,14 +3150,7 @@ function BriefingsTab() {
                           className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none rounded-md"
                         />
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">일시</label>
-                        <input
-                          value={editForm.schedule || ""}
-                          onChange={(e) => setEditForm({ ...editForm, schedule: e.target.value })}
-                          className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600 rounded-md"
-                        />
-                      </div>
+                      
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">대상</label>
                         <input

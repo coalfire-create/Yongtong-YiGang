@@ -255,7 +255,7 @@ function parseDescription(descText: string): ParsedDescription {
   }
 
   let currentCategory = "intro";
-  let parsedFields: Record<string, string> = { intro: "", schedule: "", target: "", speaker: "", content: "", benefit: "", location: "" };
+  let parsedFields: Record<string, string> = { intro: "", target: "", speaker: "", content: "", benefit: "", location: "" };
   let lines = descText.split('\n');
   
   // If it uses the new bracket format
@@ -266,7 +266,6 @@ function parseDescription(descText: string): ParsedDescription {
         const cat = match[1].trim();
         const inlineVal = match[2].trim();
         if (cat.includes("도입부")) currentCategory = "intro";
-        else if (cat.includes("일시") || cat.includes("일정")) currentCategory = "schedule";
         else if (cat.includes("대상")) currentCategory = "target";
         else if (cat.includes("연사")) currentCategory = "speaker";
         else if (cat.includes("주제") || cat.includes("내용")) currentCategory = "content";
@@ -285,7 +284,6 @@ function parseDescription(descText: string): ParsedDescription {
     result.intro = parsedFields.intro.trim();
     const sessionFields: ParsedField[] = [];
     
-    if (parsedFields.schedule) sessionFields.push({ key: "일시", value: parsedFields.schedule.trim() });
     if (parsedFields.target) sessionFields.push({ key: "대상", value: parsedFields.target.trim() });
     if (parsedFields.location) sessionFields.push({ key: "장소", value: parsedFields.location.trim() });
     
