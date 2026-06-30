@@ -255,7 +255,7 @@ function parseDescription(descText: string): ParsedDescription {
   // New parser logic that handles [도입부], [일시], [대상], [연사], [주제], [혜택], [장소]
   // And still falls back gracefully for old format (▣ / ▶)
   
-  if (!descText.includes('[') && !descText.includes('▣') && !descText.includes('▶')) {
+  if (!descText.includes('[') && !descText.includes('▣') && !descText.includes('▶') && !descText.includes('■')) {
     result.intro = descText;
     return result;
   }
@@ -380,14 +380,24 @@ function parseDescription(descText: string): ParsedDescription {
       title = content.substring(0, arrowIdx).trim();
       content = content.substring(arrowIdx);
     } else {
-      title = content.trim();
-      content = "";
+      const firstLine = content.split('\n')[0];
+      if (firstLine.includes(":") || firstLine.includes("_") || firstLine.includes("일시") || firstLine.includes("대상") || firstLine.includes("연사") || firstLine.includes("주제")) {
+        title = "";
+        content = "▶ " + sessionRaw;
+      } else {
+        title = content.trim();
+        content = "";
+      }
     }
 
     const fields: ParsedField[] = [];
     const rawFields = content.split("▶").map(f => f.trim()).filter(Boolean);
     for (const rawField of rawFields) {
-      const colonIdx = rawField.indexOf(":");
+      let colonIdx = rawField.indexOf(":");
+      if (colonIdx === -1 && rawField.indexOf("_") !== -1 && rawField.indexOf("_") < 20) {
+        colonIdx = rawField.indexOf("_");
+      }
+      
       let key = "내용";
       let val = rawField;
       if (colonIdx !== -1 && colonIdx < 20) {
