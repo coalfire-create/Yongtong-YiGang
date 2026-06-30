@@ -284,7 +284,7 @@ function parseDescription(descText: string): ParsedDescription {
           if (currentGroup.title || currentGroup.items.length > 0) {
             structured.push({ ...currentGroup });
           }
-          currentGroup = { title: "제목 : " + line.replace(/^(\\d+[\\.\\)\\]]?|[▶▣])\\s*/, '').trim(), items: [] };
+          currentGroup = { title: line.replace(/^(\\d+[\\.\\)\\]]?|[▶▣])\\s*/, '').trim(), items: [] };
         } else {
           currentGroup.items.push(line.replace(/^[○\\-\\•\\*\\s]+/, '').trim());
         }
@@ -382,7 +382,7 @@ function parseDescription(descText: string): ParsedDescription {
           if (currentGroup.title || currentGroup.items.length > 0) {
             structured.push({ ...currentGroup });
           }
-          currentGroup = { title: "제목 : " + line.replace(/^(\d+[\.\]]?|[▶▣])\s*/, '').trim(), items: [] };
+          currentGroup = { title: line.replace(/^(\d+[\.\]]?|[▶▣])\s*/, '').trim(), items: [] };
         } else {
           currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
         }
@@ -490,7 +490,7 @@ function parseDescription(descText: string): ParsedDescription {
             if (currentGroup.title || currentGroup.items.length > 0) {
               structured.push({ ...currentGroup });
             }
-            currentGroup = { title: "제목 : " + line.replace(/^(\d+[\.\]]?|[▶▣])\s*/, '').trim(), items: [] };
+            currentGroup = { title: line.replace(/^(\d+[\.\]]?|[▶▣])\s*/, '').trim(), items: [] };
           } else {
             currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
           }
