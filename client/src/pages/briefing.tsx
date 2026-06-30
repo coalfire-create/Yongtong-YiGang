@@ -256,7 +256,47 @@ function parseDescription(descText: string): ParsedDescription {
   // And still falls back gracefully for old format (▣ / ▶)
   
   if (!descText.includes('[') && !descText.includes('▣') && !descText.includes('▶') && !descText.includes('■')) {
-    result.intro = descText;
+    let formattedDesc = descText.replace(/(\\s)(\\d+[\\.\\]]\\s)/g, '\\n$2');
+    const lines = formattedDesc.split('\\n');
+    let introText = "";
+    let contentText = "";
+    
+    for (const line of lines) {
+       if (/^\\d+[\\.\\]]?\\s/.test(line.trim())) {
+           contentText += (contentText ? "\\n" : "") + line.trim();
+       } else {
+           if (contentText) {
+               contentText += "\\n" + line.trim();
+           } else {
+               introText += (introText ? "\\n" : "") + line.trim();
+           }
+       }
+    }
+    
+    result.intro = introText.trim();
+    if (contentText) {
+      const structured: StructuredContent[] = [];
+      let currentGroup: StructuredContent = { title: "", items: [] };
+      const contentLines = contentText.split('\\n').map(l => l.trim()).filter(Boolean);
+      for (const line of contentLines) {
+        const isMainPoint = /^\\d+[\\.\\]]?\\s/.test(line);
+        if (isMainPoint) {
+          if (currentGroup.title || currentGroup.items.length > 0) {
+            structured.push({ ...currentGroup });
+          }
+          currentGroup = { title: line.replace(/^\\d+[\\.\\]]?\\s*/, '').trim(), items: [] };
+        } else {
+          currentGroup.items.push(line.replace(/^[○\\-\\•\\*\\s]+/, '').trim());
+        }
+      }
+      if (currentGroup.title || currentGroup.items.length > 0) {
+        structured.push(currentGroup);
+      }
+      result.sessions.push({
+          title: "",
+          fields: [{ key: "주제 및 내용", value: contentText, structured }]
+      });
+    }
     return result;
   }
 
@@ -295,7 +335,9 @@ function parseDescription(descText: string): ParsedDescription {
     
     if (parsedFields.speaker) {
       const speakerList: ParsedSpeaker[] = [];
-      const speakerBlocks = parsedFields.speaker.trim().split(/\n\s*\n/);
+      let speakerText = parsedFields.speaker.trim().replace(/(\s)(○\s*)/g, '\n\n$2');
+      speakerText = speakerText.replace(/(\s)(-\s+)/g, '\n$2');
+      const speakerBlocks = speakerText.split(/\n\s*\n/);
       
       for (const block of speakerBlocks) {
         const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
@@ -409,10 +451,12 @@ function parseDescription(descText: string): ParsedDescription {
       if (key.includes("연사")) {
         const speakerList: ParsedSpeaker[] = [];
         let currentSpeaker: ParsedSpeaker | null = null;
-        const lines = val.split('\n');
+        let speakerText = val.replace(/(\s)(○\s*)/g, '\n$2');
+        speakerText = speakerText.replace(/(\s)(-\s+)/g, '\n$2');
+        const lines = speakerText.split('\n');
         for (const line of lines) {
           if (!line.trim()) continue;
-          if (!line.trim().startsWith('-') && !line.trim().startsWith('•') && !line.trim().startsWith('○')) {
+          if (!line.trim().startsWith('-') && !line.trim().startsWith('•')) {
             if (currentSpeaker) speakerList.push(currentSpeaker);
             let sName = line.replace(/^[\_\♧\♣\■\▣\▶\s]+/, '').trim();
             let sSubject = "";
