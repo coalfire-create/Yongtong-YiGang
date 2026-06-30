@@ -2903,27 +2903,55 @@ function BriefingsTab() {
   const parseDescription = (desc: string) => {
     if (!desc) return { intro: "", target: "", speaker: "", content: "", benefit: "", location: "" };
 
-    const getSection = (marker: string, nextMarkers: string[]) => {
-      if (!desc.includes(marker)) return "";
-      let startIdx = desc.indexOf(marker) + marker.length;
-      let endIdx = desc.length;
-      for (const next of nextMarkers) {
-        const idx = desc.indexOf(next, startIdx);
-        if (idx !== -1 && idx < endIdx) endIdx = idx;
+    const markers = ['[도입부]', '[대상]', '[연사]', '[주제]', '[혜택]', '[장소]', '[일시]'];
+    const hasBrackets = markers.some(m => desc.includes(m));
+
+    if (hasBrackets) {
+      const getSection = (marker: string, nextMarkers: string[]) => {
+        if (!desc.includes(marker)) return "";
+        let startIdx = desc.indexOf(marker) + marker.length;
+        let endIdx = desc.length;
+        for (const next of nextMarkers) {
+          const idx = desc.indexOf(next, startIdx);
+          if (idx !== -1 && idx < endIdx) endIdx = idx;
+        }
+        return desc.substring(startIdx, endIdx).trim();
+      };
+
+      return {
+        intro: getSection('[도입부]', markers),
+        target: getSection('[대상]', markers),
+        speaker: getSection('[연사]', markers),
+        content: getSection('[주제]', markers),
+        benefit: getSection('[혜택]', markers),
+        location: getSection('[장소]', markers)
+      };
+    } else {
+      let currentCategory = "intro";
+      const parsedFields: Record<string, string> = { intro: "", target: "", speaker: "", content: "", benefit: "", location: "" };
+      
+      const lines = desc.split('\\n');
+      for (const line of lines) {
+        if (/^[■▶♥▣]/.test(line.trim())) {
+          if (line.includes("대상")) currentCategory = "target";
+          else if (line.includes("연사")) currentCategory = "speaker";
+          else if (line.includes("주제") || line.includes("내용") || line.includes("프로그램")) currentCategory = "content";
+          else if (line.includes("혜택")) currentCategory = "benefit";
+          else if (line.includes("장소") || line.includes("위치")) currentCategory = "location";
+          else currentCategory = "intro";
+
+          const inlineMatch = line.match(/[:_]\\s*(.*)/);
+          if (inlineMatch && inlineMatch[1].trim()) {
+            parsedFields[currentCategory] += (parsedFields[currentCategory] ? "\\n" : "") + inlineMatch[1].trim();
+          }
+        } else {
+          if (line.trim() !== "") {
+            parsedFields[currentCategory] += (parsedFields[currentCategory] ? "\\n" : "") + line.trim();
+          }
+        }
       }
-      return desc.substring(startIdx, endIdx).trim();
-    };
-
-    const markers = ['[도입부]', '[대상]', '[연사]', '[주제]', '[혜택]', '[장소]'];
-
-    return {
-      intro: getSection('[도입부]', markers),
-      target: getSection('[대상]', markers),
-      speaker: getSection('[연사]', markers),
-      content: getSection('[주제]', markers),
-      benefit: getSection('[혜택]', markers),
-      location: getSection('[장소]', markers)
-    };
+      return parsedFields as any;
+    }
   };
 
   const addMutation = useMutation({
