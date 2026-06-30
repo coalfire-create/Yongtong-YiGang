@@ -335,37 +335,36 @@ function parseDescription(descText: string): ParsedDescription {
     
     if (parsedFields.speaker) {
       const speakerList: ParsedSpeaker[] = [];
-      let speakerText = parsedFields.speaker.trim().replace(/(\s)(○\s*)/g, '\n\n$2');
+      let currentSpeaker: ParsedSpeaker | null = null;
+      let speakerText = parsedFields.speaker.trim().replace(/(\s)(○\s*)/g, '\n$2');
       speakerText = speakerText.replace(/(\s)(-\s+)/g, '\n$2');
-      const speakerBlocks = speakerText.split(/\n\s*\n/);
-      
-      for (const block of speakerBlocks) {
-        const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-        if (lines.length === 0) continue;
-        
-        let sNameLine = lines[0];
-        let sSubject = "";
-        let sName = sNameLine.replace(/^[\_\♧\♣\■\▣\▶\s]+/, '').trim();
-        
-        let inlineDesc = "";
-        const inlineMatch = sName.match(/^(.*?)\s+[-:]\s+(.*)$/);
-        if (inlineMatch) {
+      speakerText = speakerText.replace(/\s+\/\s+/g, '\n');
+      const lines = speakerText.split('\n');
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        if (!line.trim().startsWith('-') && !line.trim().startsWith('•')) {
+          if (currentSpeaker) speakerList.push(currentSpeaker);
+          let sName = line.replace(/^[\_\♧\♣\■\▣\▶\s]+/, '').trim();
+          let sSubject = "";
+          let inlineDesc = "";
+          const inlineMatch = sName.match(/^(.*?)\s+[-:]\s+(.*)$/);
+          if (inlineMatch) {
             sName = inlineMatch[1].trim();
             inlineDesc = inlineMatch[2].trim();
-        }
-
-        let parenMatch = sName.match(/\((.*?)\)/);
-        if (parenMatch && parenMatch[1].length <= 5 && !parenMatch[1].includes(" ") && !['전', '현'].includes(parenMatch[1].trim())) {
+          }
+          let parenMatch = sName.match(/\((.*?)\)/);
+          if (parenMatch && parenMatch[1].length <= 5 && !parenMatch[1].includes(" ") && !['전', '현'].includes(parenMatch[1].trim())) {
             sSubject = parenMatch[1].trim();
             sName = sName.replace(parenMatch[0], "").trim();
+          }
+          currentSpeaker = { name: sName, subject: sSubject, desc: inlineDesc };
+        } else if (currentSpeaker) {
+          currentSpeaker.desc += (currentSpeaker.desc ? "\n" : "") + line.replace(/^[○\-\•\*\s]+/, '').trim();
+        } else {
+          speakerList.push({ name: line.replace(/^[○\-\•\*\s]+/, '').trim(), desc: "" });
         }
-        
-        const descLines = lines.slice(1).map(l => l.replace(/^[○\-\•\*\s]+/, '').trim());
-        if (inlineDesc) {
-            descLines.unshift(inlineDesc);
-        }
-        speakerList.push({ name: sName, subject: sSubject, desc: descLines.join('\n') });
       }
+      if (currentSpeaker) speakerList.push(currentSpeaker);
       sessionFields.push({ key: "연사", value: parsedFields.speaker.trim(), speakers: speakerList });
     }
 
@@ -451,6 +450,7 @@ function parseDescription(descText: string): ParsedDescription {
         let currentSpeaker: ParsedSpeaker | null = null;
         let speakerText = val.replace(/(\s)(○\s*)/g, '\n$2');
         speakerText = speakerText.replace(/(\s)(-\s+)/g, '\n$2');
+        speakerText = speakerText.replace(/\s+\/\s+/g, '\n');
         const lines = speakerText.split('\n');
         for (const line of lines) {
           if (!line.trim()) continue;
