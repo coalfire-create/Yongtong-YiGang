@@ -493,7 +493,7 @@ function FormattedDescription({ description, briefingTitle }: { description: str
       {/* Sessions */}
       {parsed.sessions.map((session, idx) => (
         <div key={idx} className="space-y-4">
-          {session.title && (!briefingTitle || session.title.replace(/\\s+/g, '') !== briefingTitle.replace(/\\s+/g, '')) && (
+          {session.title && (!briefingTitle || session.title.replace(/\s+/g, '') !== briefingTitle.replace(/\s+/g, '')) && (
             <h4 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2 mt-6 mb-2 pb-2 border-b border-gray-100">
               <span className="w-2.5 h-4 bg-[#7B2332] rounded-sm"></span>
               {session.title}
