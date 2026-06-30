@@ -341,7 +341,7 @@ function parseDescription(descText: string): ParsedDescription {
           if (currentGroup.title || currentGroup.items.length > 0) {
             structured.push({ ...currentGroup });
           }
-          currentGroup = { title: line.replace(/^\d+[\.\)\]]?\s*/, '').replace(/^[▶▣]\s*/, '').trim(), items: [] };
+          currentGroup = { title: line.replace(/^[▶▣]\s*/, '').trim(), items: [] };
         } else {
           // It's a sub point
           currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
@@ -450,7 +450,7 @@ function parseDescription(descText: string): ParsedDescription {
             if (currentGroup.title || currentGroup.items.length > 0) {
               structured.push({ ...currentGroup });
             }
-            currentGroup = { title: line.replace(/^\d+[\.\)\]]?\s*/, '').replace(/^[▶▣]\s*/, '').trim(), items: [] };
+            currentGroup = { title: line.replace(/^[▶▣]\s*/, '').trim(), items: [] };
           } else {
             // It's a sub point
             currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
@@ -619,12 +619,11 @@ function FormattedDescription({ description }: { description: string }) {
                       <div key={gIdx} className="space-y-2">
                         {grp.title && (
                           <h6 className="font-extrabold text-[15px] text-gray-900 flex items-start gap-2">
-                            <span className="text-[#7B2332] font-black shrink-0">{gIdx + 1}.</span>
                             <span className="whitespace-pre-line leading-relaxed">{grp.title}</span>
                           </h6>
                         )}
                         {grp.items && grp.items.length > 0 && (
-                          <ul className="pl-6 space-y-1.5">
+                          <ul className="pl-2 space-y-1.5">
                             {grp.items.map((item, iIdx) => (
                               <li key={iIdx} className="flex items-start gap-2 text-[13px] text-gray-600 leading-relaxed whitespace-pre-line">
                                 <span className="text-gray-400 font-bold shrink-0 mt-0.5">-</span>
