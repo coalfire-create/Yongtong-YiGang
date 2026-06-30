@@ -328,10 +328,12 @@ function parseDescription(descText: string): ParsedDescription {
     }
 
     if (parsedFields.content) {
+      // Format inline numbered lists (e.g. "1. xxx 2. yyy") into newlines
+      let contentVal = parsedFields.content.trim().replace(/(\s)(\d+[\.\)\]]\s)/g, '\n$2');
       const structured: StructuredContent[] = [];
       let currentGroup: StructuredContent = { title: "", items: [] };
       
-      const lines = parsedFields.content.trim().split('\n').map(l => l.trim()).filter(Boolean);
+      const lines = contentVal.split('\n').map(l => l.trim()).filter(Boolean);
       for (const line of lines) {
         // If line starts with a number like "1.", "2)", "1 ", it's a main point
         const isMainPoint = /^\d+[\.\)\]]?\s/.test(line) || /^▶/.test(line) || /^▣/.test(line);
@@ -381,7 +383,7 @@ function parseDescription(descText: string): ParsedDescription {
       content = content.substring(arrowIdx);
     } else {
       const firstLine = content.split('\n')[0];
-      if (firstLine.includes(":") || firstLine.includes("_") || firstLine.includes("일시") || firstLine.includes("대상") || firstLine.includes("연사") || firstLine.includes("주제")) {
+      if (firstLine.includes(":") || firstLine.includes("_") || firstLine.includes("일시") || firstLine.includes("대상") || firstLine.includes("연사") || firstLine.includes("주제") || firstLine.includes("내용")) {
         title = "";
         content = "▶ " + sessionRaw;
       } else {
@@ -406,26 +408,37 @@ function parseDescription(descText: string): ParsedDescription {
       }
       if (key.includes("연사")) {
         const speakerList: ParsedSpeaker[] = [];
+        let currentSpeaker: ParsedSpeaker | null = null;
         const lines = val.split('\n');
         for (const line of lines) {
           if (!line.trim()) continue;
-          let sName = line.trim();
-          let sSubject = "";
-          let sDesc = "";
-          const sDashIdx = sName.indexOf("-");
-          if (sDashIdx !== -1) {
-            sDesc = sName.substring(sDashIdx + 1).trim();
-            sName = sName.substring(0, sDashIdx).trim();
+          if (!line.trim().startsWith('-') && !line.trim().startsWith('•') && !line.trim().startsWith('○')) {
+            if (currentSpeaker) speakerList.push(currentSpeaker);
+            let sName = line.replace(/^[\_\♧\♣\■\▣\▶\s]+/, '').trim();
+            let sSubject = "";
+            let inlineDesc = "";
+            const inlineMatch = sName.match(/^(.*?)\s+[-:]\s+(.*)$/);
+            if (inlineMatch) {
+              sName = inlineMatch[1].trim();
+              inlineDesc = inlineMatch[2].trim();
+            }
+            let parenMatch = sName.match(/\((.*?)\)/);
+            if (parenMatch && parenMatch[1].length <= 5 && !parenMatch[1].includes(" ") && !['전', '현'].includes(parenMatch[1].trim())) {
+              sSubject = parenMatch[1].trim();
+              sName = sName.replace(parenMatch[0], "").trim();
+            }
+            currentSpeaker = { name: sName, subject: sSubject, desc: inlineDesc };
+          } else if (currentSpeaker) {
+            currentSpeaker.desc += (currentSpeaker.desc ? "\n" : "") + line.replace(/^[○\-\•\*\s]+/, '').trim();
+          } else {
+            speakerList.push({ name: line.replace(/^[○\-\•\*\s]+/, '').trim(), desc: "" });
           }
-          let parenMatch = sName.match(/\((.*?)\)/);
-          if (parenMatch && parenMatch[1].length <= 5 && !parenMatch[1].includes(" ") && !['전', '현'].includes(parenMatch[1].trim())) {
-            sSubject = parenMatch[1].trim();
-            sName = sName.replace(parenMatch[0], "").trim();
-          }
-          speakerList.push({ name: sName, subject: sSubject, desc: sDesc });
         }
+        if (currentSpeaker) speakerList.push(currentSpeaker);
         fields.push({ key, value: val, speakers: speakerList });
       } else if (key.includes("내용") || key.includes("주제")) {
+        // Format inline numbered lists (e.g. "1. xxx 2. yyy") into newlines
+        val = val.replace(/(\s)(\d+[\.\)\]]\s)/g, '\n$2');
         const structured: StructuredContent[] = [];
         let currentGroup: StructuredContent = { title: "", items: [] };
         
