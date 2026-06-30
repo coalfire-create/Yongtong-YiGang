@@ -524,7 +524,7 @@ function FormattedDescription({ description, briefingTitle }: { description: str
     <div className="mt-4 space-y-6">
       {/* Intro */}
       {parsed.intro && (
-        <div className="text-gray-700 text-sm leading-relaxed p-4 sm:p-5 rounded-2xl bg-gray-50/70 border-l-4 border-[#7B2332] font-medium shadow-sm">
+        <div className="text-gray-700 text-sm leading-relaxed p-4 sm:p-5 rounded-2xl bg-gray-50/70 border-l-4 border-[#7B2332] font-medium shadow-sm whitespace-pre-line">
           {parsed.intro}
         </div>
       )}
