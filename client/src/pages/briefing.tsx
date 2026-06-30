@@ -286,7 +286,7 @@ function parseDescription(descText: string): ParsedDescription {
           }
           currentGroup = { title: line.replace(/^([!▶▣])\\s*/, '').trim(), items: [] };
         } else {
-          currentGroup.items.push(line.replace(/^[○\\-\\•\\*\\s]+/, '').trim());
+          currentGroup.items.push(line.trim());
         }
       }
       if (currentGroup.title || currentGroup.items.length > 0) {
@@ -384,7 +384,7 @@ function parseDescription(descText: string): ParsedDescription {
           }
           currentGroup = { title: line.replace(/^([!▶▣])\s*/, '').trim(), items: [] };
         } else {
-          currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
+          currentGroup.items.push(line.trim());
         }
       }
       if (currentGroup.title || currentGroup.items.length > 0) {
@@ -492,7 +492,7 @@ function parseDescription(descText: string): ParsedDescription {
             }
             currentGroup = { title: line.replace(/^([!▶▣])\s*/, '').trim(), items: [] };
           } else {
-            currentGroup.items.push(line.replace(/^[○\-\•\*\s]+/, '').trim());
+            currentGroup.items.push(line.trim());
           }
         }
         if (currentGroup.title || currentGroup.items.length > 0) {
@@ -663,12 +663,16 @@ function FormattedDescription({ description, briefingTitle }: { description: str
                         )}
                         {grp.items && grp.items.length > 0 && (
                           <ul className="pl-2 space-y-1.5">
-                            {grp.items.map((item, iIdx) => (
-                              <li key={iIdx} className="flex items-start gap-2 text-[13px] text-gray-600 leading-relaxed whitespace-pre-line">
-                                <span className="text-gray-400 font-bold shrink-0 mt-0.5">-</span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
+                            {grp.items.map((item, iIdx) => {
+                              const isBullet = /^[○\\-\\•\\*]/.test(item.trim());
+                              const text = isBullet ? item.replace(/^[○\\-\\•\\*\\s]+/, '').trim() : item;
+                              return (
+                                <li key={iIdx} className={`flex items-start ${isBullet ? 'gap-2' : ''} text-[13px] text-gray-600 leading-relaxed whitespace-pre-line`}>
+                                  {isBullet && <span className="text-gray-400 font-bold shrink-0 mt-0.5">-</span>}
+                                  <span>{text}</span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
