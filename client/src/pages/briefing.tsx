@@ -470,7 +470,7 @@ function parseDescription(descText: string): ParsedDescription {
   return result;
 }
 
-function FormattedDescription({ description }: { description: string }) {
+function FormattedDescription({ description, briefingTitle }: { description: string; briefingTitle?: string }) {
   const parsed = parseDescription(description);
 
   if (parsed.sessions.length === 0) {
@@ -493,7 +493,7 @@ function FormattedDescription({ description }: { description: string }) {
       {/* Sessions */}
       {parsed.sessions.map((session, idx) => (
         <div key={idx} className="space-y-4">
-          {session.title && (
+          {session.title && (!briefingTitle || session.title.replace(/\\s+/g, '') !== briefingTitle.replace(/\\s+/g, '')) && (
             <h4 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2 mt-6 mb-2 pb-2 border-b border-gray-100">
               <span className="w-2.5 h-4 bg-[#7B2332] rounded-sm"></span>
               {session.title}
@@ -504,10 +504,10 @@ function FormattedDescription({ description }: { description: string }) {
           <div className="space-y-4">
             {/* Group metadata fields like "일정"/"일시", "대상", "장소" */}
             {/* Group metadata fields like "일정"/"일시", "대상", "장소" */}
-            {session.fields.some(f => !f.speakers && !f.bullets && !f.structured && !f.key.includes("혜택")) && (
+            {session.fields.some(f => !f.speakers && !f.bullets && !f.structured && !f.key.includes("혜택") && !f.key.includes("일시") && !f.key.includes("일정") && !f.key.includes("시간")) && (
               <div className="bg-white border border-gray-150/70 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm">
                 {session.fields
-                  .filter(f => !f.speakers && !f.bullets && !f.structured && !f.key.includes("혜택"))
+                  .filter(f => !f.speakers && !f.bullets && !f.structured && !f.key.includes("혜택") && !f.key.includes("일시") && !f.key.includes("일정") && !f.key.includes("시간"))
                   .map((field, fIdx) => {
                     const isTime = field.key.includes("일시") || field.key.includes("일정") || field.key.includes("시간");
                     const isTarget = field.key.includes("대상");
@@ -781,7 +781,7 @@ export function Briefing() {
 
               {/* Description Body */}
               <div className="pt-6">
-                <FormattedDescription description={b.description} />
+                <FormattedDescription description={b.description} briefingTitle={b.title} />
               </div>
             </div>
           ))}
