@@ -125,12 +125,18 @@ function buildFilterFn(label: string): (tt: any) => boolean {
   };
 }
 
-function buildFilterTabs(apiTabs: { id: number; label: string }[]): FilterTab[] {
-  return apiTabs.map((tab) => ({
-    label: tab.label,
-    filterFn: buildFilterFn(tab.label),
-    isSummary: tab.label === "썸머시간표" || tab.label === "요약시간표" || tab.label === "기말/내신시간표" || tab.label === "중간/내신시간표",
-  }));
+function buildFilterTabs(apiTabs: { id: number; label: string }[], category?: string): FilterTab[] {
+  return apiTabs.map((tab) => {
+    let displayLabel = tab.label;
+    if (tab.label === "기말/내신시간표" && (category === "고등관-고1" || category === "고등관-고2")) {
+      displayLabel = "중간/내신시간표";
+    }
+    return {
+      label: displayLabel,
+      filterFn: buildFilterFn(tab.label),
+      isSummary: displayLabel === "썸머시간표" || displayLabel === "요약시간표" || displayLabel === "기말/내신시간표" || displayLabel === "중간/내신시간표",
+    };
+  });
 }
 
 const G1_FILTERS_DEFAULT: FilterTab[] = [
@@ -192,7 +198,7 @@ function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defa
     ? apiTabs.filter((tab) => tab.label !== "동탄국제고")
     : apiTabs;
 
-  const filterTabs = filteredApiTabs && filteredApiTabs.length > 0 ? buildFilterTabs(filteredApiTabs) : defaultFilterTabs;
+  const filterTabs = filteredApiTabs && filteredApiTabs.length > 0 ? buildFilterTabs(filteredApiTabs, category) : defaultFilterTabs;
 
   return (
     <PageLayout>
