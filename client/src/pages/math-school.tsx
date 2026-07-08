@@ -30,7 +30,7 @@ const CLASS_INFO = [
     classes: [
       { name: "의치서 M반", teacher: "최주용T", image: "/images/teachers/choi-juyong.png", description: "1등급 중에서도 내신 1.0 최상위권만 모이는 의치서 M반!", highlight: true },
       { name: "S반", teacher: "최주용T", image: "/images/teachers/choi-juyong.png", description: "최상위권을 확실하게 만드는 최상위권 전문반", highlight: true },
-      { name: "A반", teacher: "강헌T", image: "/images/teachers/kang-heon.jpeg", description: "수학의 핵심 원리 파악과 완벽한 내신 대비", highlight: false },
+      { name: "A반", teacher: "강현T", image: "/images/teachers/kang-heon.jpeg", description: "수학의 핵심 원리 파악과 완벽한 내신 대비", highlight: false },
       { name: "A1반", teacher: "권소영T", image: "/images/teachers/kwon-soyoung.png", description: "출제 유형 분석과 반복 훈련을 통한 성적 상승", highlight: false },
     ]
   },
