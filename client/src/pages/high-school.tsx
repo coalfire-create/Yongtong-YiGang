@@ -129,7 +129,7 @@ function buildFilterTabs(apiTabs: { id: number; label: string }[]): FilterTab[] 
   return apiTabs.map((tab) => ({
     label: tab.label,
     filterFn: buildFilterFn(tab.label),
-    isSummary: tab.label === "썸머시간표" || tab.label === "요약시간표" || tab.label === "기말/내신시간표",
+    isSummary: tab.label === "썸머시간표" || tab.label === "요약시간표" || tab.label === "기말/내신시간표" || tab.label === "중간/내신시간표",
   }));
 }
 

@@ -509,11 +509,12 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
       {isSummaryView && summaryDivision ? (
         (() => {
-          const isFinal = (activeTab?.label || "").includes("기말") || (activeTab?.label || "").includes("내신");
+          const isFinal = (activeTab?.label || "").includes("기말") || (activeTab?.label || "").includes("내신") || (activeTab?.label || "").includes("중간");
+          const displayTitle = (category === "고등관-고1" || category === "고등관-고2") ? "중간/내신시간표" : "기말/내신시간표";
           return (
             <SummaryTimetableSection
               division={isFinal ? `${summaryDivision}-final` : summaryDivision}
-              title={isFinal ? "기말/내신시간표" : (summaryTitle || "썸머시간표")}
+              title={isFinal ? displayTitle : (summaryTitle || "썸머시간표")}
             />
           );
         })()
