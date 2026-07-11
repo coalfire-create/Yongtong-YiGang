@@ -2834,27 +2834,34 @@ export async function registerRoutes(
       );
       const startOrder = (countRows[0].max_order || 0) + 1;
 
-      // Parallelize image upload to prevent gateway timeouts for large batches
-      const uploadPromises = files.map(async (file, index) => {
-        const ext = path.extname(file.originalname) || ".jpg";
-        const fileName = `summary-timetables/${crypto.randomUUID()}${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from("images")
-          .upload(fileName, file.buffer, {
-            contentType: file.mimetype,
-            upsert: false,
-          });
-        if (uploadError) {
-          throw new Error("이미지 업로드 실패: " + uploadError.message);
-        }
-        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-        return {
-          image_url: urlData.publicUrl,
-          order: startOrder + index
-        };
-      });
-
-      const uploadedFiles = await Promise.all(uploadPromises);
+      // Upload in small batches to prevent gateway timeouts (100s) AND socket exhaustion hangs
+      const uploadedFiles = [];
+      const BATCH_SIZE = 3;
+      
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        const batch = files.slice(i, i + BATCH_SIZE);
+        const batchPromises = batch.map(async (file, batchIndex) => {
+          const index = i + batchIndex;
+          const ext = path.extname(file.originalname) || ".jpg";
+          const fileName = `summary-timetables/${crypto.randomUUID()}${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from("images")
+            .upload(fileName, file.buffer, {
+              contentType: file.mimetype,
+              upsert: false,
+            });
+          if (uploadError) {
+            throw new Error("이미지 업로드 실패: " + uploadError.message);
+          }
+          const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+          return {
+            image_url: urlData.publicUrl,
+            order: startOrder + index
+          };
+        });
+        const batchResults = await Promise.all(batchPromises);
+        uploadedFiles.push(...batchResults);
+      }
 
       // Perform DB insertions sequentially to ensure deterministic order assignment
       const results = [];
