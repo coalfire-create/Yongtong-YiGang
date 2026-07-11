@@ -3800,7 +3800,10 @@ function SummaryTimetablesTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/summary-timetables", { method: "POST", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/summary-timetables", { method: "POST", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
