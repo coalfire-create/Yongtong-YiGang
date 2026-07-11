@@ -2832,10 +2832,10 @@ export async function registerRoutes(
         "SELECT COALESCE(MAX(display_order), 0) as max_order FROM summary_timetables WHERE division = $1",
         [division]
       );
-      let nextOrder = (countRows[0].max_order || 0) + 1;
+      const startOrder = (countRows[0].max_order || 0) + 1;
 
-      const results = [];
-      for (const file of files) {
+      // Parallelize image upload to prevent gateway timeouts for large batches
+      const uploadPromises = files.map(async (file, index) => {
         const ext = path.extname(file.originalname) || ".jpg";
         const fileName = `summary-timetables/${crypto.randomUUID()}${ext}`;
         const { error: uploadError } = await supabase.storage
@@ -2845,17 +2845,25 @@ export async function registerRoutes(
             upsert: false,
           });
         if (uploadError) {
-          return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
+          throw new Error("이미지 업로드 실패: " + uploadError.message);
         }
         const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-        const image_url = urlData.publicUrl;
+        return {
+          image_url: urlData.publicUrl,
+          order: startOrder + index
+        };
+      });
 
+      const uploadedFiles = await Promise.all(uploadPromises);
+
+      // Perform DB insertions sequentially to ensure deterministic order assignment
+      const results = [];
+      for (const item of uploadedFiles) {
         const { rows } = await pool.query(
           "INSERT INTO summary_timetables (division, image_url, display_order) VALUES ($1, $2, $3) RETURNING *",
-          [division, image_url, nextOrder]
+          [division, item.image_url, item.order]
         );
         results.push(rows[0]);
-        nextOrder++;
       }
       res.json(results);
     } catch (err: any) {
@@ -2990,20 +2998,25 @@ export async function registerRoutes(
       return res.status(400).json({ error: "이름과 내용은 필수입니다." });
     }
 
-    const image_urls: string[] = [];
-    if (req.files && Array.isArray(req.files)) {
-      for (const file of req.files) {
-        const ext = path.extname(file.originalname).toLowerCase();
-        const fileName = `reviews/${crypto.randomUUID()}${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from("images")
-          .upload(fileName, file.buffer, {
-            contentType: file.mimetype,
-            upsert: false,
-          });
-        if (uploadError) return res.status(500).json({ error: "이미지 업로드 실패: " + uploadError.message });
-        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-        image_urls.push(urlData.publicUrl);
+    let image_urls: string[] = [];
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      try {
+        const uploadPromises = req.files.map(async (file) => {
+          const ext = path.extname(file.originalname).toLowerCase();
+          const fileName = `reviews/${crypto.randomUUID()}${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from("images")
+            .upload(fileName, file.buffer, {
+              contentType: file.mimetype,
+              upsert: false,
+            });
+          if (uploadError) throw new Error("이미지 업로드 실패: " + uploadError.message);
+          const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+          return urlData.publicUrl;
+        });
+        image_urls = await Promise.all(uploadPromises);
+      } catch (uploadErr: any) {
+        return res.status(500).json({ error: uploadErr.message });
       }
     }
 
@@ -3491,19 +3504,29 @@ export async function registerRoutes(
 
       // 이미지 업로드
       const files = (req.files as Express.Multer.File[]) || [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const ext = path.extname(file.originalname).toLowerCase();
-        const fileName = `notices/${crypto.randomUUID()}${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from("images")
-          .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
-        if (uploadError) continue;
-        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-        await pool.query(
-          "INSERT INTO notice_images (notice_id, image_url, display_order) VALUES ($1, $2, $3)",
-          [noticeId, urlData.publicUrl, i]
-        );
+      if (files.length > 0) {
+        const uploadPromises = files.map(async (file, i) => {
+          const ext = path.extname(file.originalname).toLowerCase();
+          const fileName = `notices/${crypto.randomUUID()}${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from("images")
+            .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
+          if (uploadError) {
+            console.error("Notice image upload error:", uploadError);
+            return null;
+          }
+          const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+          return { url: urlData.publicUrl, order: i };
+        });
+        const uploadedImages = await Promise.all(uploadPromises);
+        for (const img of uploadedImages) {
+          if (img) {
+            await pool.query(
+              "INSERT INTO notice_images (notice_id, image_url, display_order) VALUES ($1, $2, $3)",
+              [noticeId, img.url, img.order]
+            );
+          }
+        }
       }
 
       // 최종 데이터 반환
@@ -3545,22 +3568,33 @@ export async function registerRoutes(
 
       // 새 이미지 추가
       const files = (req.files as Express.Multer.File[]) || [];
-      const { rows: orderRows } = await pool.query(
-        "SELECT COALESCE(MAX(display_order), -1) AS mo FROM notice_images WHERE notice_id=$1", [id]
-      );
-      let nextOrder = parseInt(orderRows[0].mo) + 1;
-      for (const file of files) {
-        const ext = path.extname(file.originalname).toLowerCase();
-        const fileName = `notices/${crypto.randomUUID()}${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from("images")
-          .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
-        if (uploadError) continue;
-        const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-        await pool.query(
-          "INSERT INTO notice_images (notice_id, image_url, display_order) VALUES ($1, $2, $3)",
-          [id, urlData.publicUrl, nextOrder++]
+      if (files.length > 0) {
+        const { rows: orderRows } = await pool.query(
+          "SELECT COALESCE(MAX(display_order), -1) AS mo FROM notice_images WHERE notice_id=$1", [id]
         );
+        const nextOrder = parseInt(orderRows[0].mo) + 1;
+        const uploadPromises = files.map(async (file, idx) => {
+          const ext = path.extname(file.originalname).toLowerCase();
+          const fileName = `notices/${crypto.randomUUID()}${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from("images")
+            .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
+          if (uploadError) {
+            console.error("Notice image update upload error:", uploadError);
+            return null;
+          }
+          const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+          return { url: urlData.publicUrl, order: nextOrder + idx };
+        });
+        const uploadedImages = await Promise.all(uploadPromises);
+        for (const img of uploadedImages) {
+          if (img) {
+            await pool.query(
+              "INSERT INTO notice_images (notice_id, image_url, display_order) VALUES ($1, $2, $3)",
+              [id, img.url, img.order]
+            );
+          }
+        }
       }
 
       await pool.query(

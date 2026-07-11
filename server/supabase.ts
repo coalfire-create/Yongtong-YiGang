@@ -143,9 +143,26 @@ class SupabaseQueryBuilder {
   }
 }
 
-export const supabase = (supabaseUrl && supabaseServiceKey && supabaseUrl !== "placeholder" && supabaseServiceKey !== "placeholder" && !supabaseServiceKey.startsWith("mock"))
+const rawSupabase = (supabaseUrl && supabaseServiceKey && supabaseUrl !== "placeholder" && supabaseServiceKey !== "placeholder" && !supabaseServiceKey.startsWith("mock"))
   ? createClient(supabaseUrl, supabaseServiceKey)
-  : {
+  : null;
+
+if (rawSupabase) {
+  const originalFrom = rawSupabase.storage.from.bind(rawSupabase.storage);
+  rawSupabase.storage.from = (bucket: string) => {
+    const client = originalFrom(bucket);
+    const originalUpload = client.upload.bind(client);
+    client.upload = (path: string, body: any, options?: any) => {
+      if (Buffer.isBuffer(body)) {
+        body = new Uint8Array(body);
+      }
+      return originalUpload(path, body, options);
+    };
+    return client;
+  };
+}
+
+export const supabase = rawSupabase || {
       from: (table: string) => {
         return {
           select: (fields: string = "*") => {
