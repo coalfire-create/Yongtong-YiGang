@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import pg from "pg";
 import fs from "fs";
 import path from "path";
+import axios from "axios";
 
 // Proactively load .env variables in local sandbox environment if not populated
 if (!process.env.DATABASE_URL) {
@@ -151,12 +152,22 @@ if (rawSupabase) {
   const originalFrom = rawSupabase.storage.from.bind(rawSupabase.storage);
   rawSupabase.storage.from = (bucket: string) => {
     const client = originalFrom(bucket);
-    const originalUpload = client.upload.bind(client);
-    client.upload = (path: string, body: any, options?: any) => {
-      if (Buffer.isBuffer(body) || body instanceof Uint8Array) {
-        body = new Blob([body], { type: options?.contentType || 'application/octet-stream' });
+    client.upload = async (pathName: string, body: any, options?: any) => {
+      try {
+        const url = `${supabaseUrl}/storage/v1/object/${bucket}/${pathName}`;
+        const res = await axios.post(url, body, {
+          headers: {
+            "Authorization": `Bearer ${supabaseServiceKey}`,
+            "Content-Type": options?.contentType || "application/octet-stream",
+            "x-upsert": options?.upsert ? "true" : "false"
+          },
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity
+        });
+        return { data: { path: pathName }, error: null };
+      } catch (err: any) {
+        return { data: null, error: err.response?.data || err };
       }
-      return originalUpload(path, body, options);
     };
     return client;
   };
