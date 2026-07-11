@@ -153,8 +153,8 @@ if (rawSupabase) {
     const client = originalFrom(bucket);
     const originalUpload = client.upload.bind(client);
     client.upload = (path: string, body: any, options?: any) => {
-      if (Buffer.isBuffer(body)) {
-        body = new Uint8Array(body);
+      if (Buffer.isBuffer(body) || body instanceof Uint8Array) {
+        body = new Blob([body], { type: options?.contentType || 'application/octet-stream' });
       }
       return originalUpload(path, body, options);
     };
