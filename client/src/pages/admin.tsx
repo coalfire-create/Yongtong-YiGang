@@ -300,7 +300,10 @@ function TeachersTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/teachers", { method: "POST", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/teachers", { method: "POST", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
@@ -388,7 +391,10 @@ function TeachersTab() {
     mutationFn: async ({ id, file }: { id: number; file: File }) => {
       const formData = new FormData();
       formData.append("image", file);
-      const res = await fetch(`/api/teachers/${id}/photo`, { method: "PATCH", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch(`/api/teachers/${id}/photo`, { method: "PATCH", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "업로드 실패");
       return res.json();
     },
@@ -884,7 +890,10 @@ function TimetablesTab() {
 
   const deleteTimetablePhotoMutation = useMutation({
     mutationFn: async (teacherId: number) => {
-      const res = await fetch(`/api/teacher-timetable-photos/${teacherId}`, { method: "DELETE", credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch(`/api/teacher-timetable-photos/${teacherId}`, { method: "DELETE", headers, credentials: "include" });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "삭제 실패"); }
       return res.json();
     },
@@ -898,9 +907,13 @@ function TimetablesTab() {
     mutationFn: async ({ timetableId, file }: { timetableId: number; file: File }) => {
       const formData = new FormData();
       formData.append("image", file);
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
       const res = await fetch(`/api/timetables/${timetableId}/photo`, {
         method: "PATCH",
         body: formData,
+        headers,
         credentials: "include",
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "업로드 실패"); }
@@ -913,7 +926,10 @@ function TimetablesTab() {
 
   const deleteIndividualPhotoMutation = useMutation({
     mutationFn: async (timetableId: number) => {
-      const res = await fetch(`/api/timetables/${timetableId}/photo`, { method: "DELETE", credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch(`/api/timetables/${timetableId}/photo`, { method: "DELETE", headers, credentials: "include" });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "삭제 실패"); }
       return res.json();
     },
@@ -2048,7 +2064,10 @@ function BannersTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/banners", { method: "POST", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/banners", { method: "POST", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
@@ -2061,7 +2080,10 @@ function BannersTab() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, formData }: { id: number; formData: FormData }) => {
-      const res = await fetch(`/api/banners/${id}`, { method: "PUT", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch(`/api/banners/${id}`, { method: "PUT", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "수정 실패");
       return res.json();
     },
@@ -2373,7 +2395,10 @@ function PopupsTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/popups", { method: "POST", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/popups", { method: "POST", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
@@ -2386,7 +2411,10 @@ function PopupsTab() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, formData }: { id: number; formData: FormData }) => {
-      const res = await fetch(`/api/popups/${id}`, { method: "PUT", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch(`/api/popups/${id}`, { method: "PUT", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "수정 실패");
       return res.json();
     },
@@ -3550,7 +3578,10 @@ function ReviewsTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/reviews", { method: "POST", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/reviews", { method: "POST", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
@@ -5401,7 +5432,10 @@ function SummerTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/summer-images", { method: "POST", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/summer-images", { method: "POST", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
@@ -5759,7 +5793,10 @@ function MiddleSchoolTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/middle-school-images", { method: "POST", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/middle-school-images", { method: "POST", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "등록 실패");
       return res.json();
     },
@@ -6221,7 +6258,10 @@ function NoticesTab() {
       fd.append("title", newTitle);
       fd.append("content", newContent);
       newFiles.forEach(({ file }) => fd.append("images", file));
-      const res = await fetch("/api/notices", { method: "POST", body: fd, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const hdrs: Record<string, string> = {};
+      if (adminToken) hdrs["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/notices", { method: "POST", body: fd, headers: hdrs, credentials: "include" });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
@@ -6239,7 +6279,10 @@ function NoticesTab() {
       fd.append("content", editContent);
       fd.append("delete_image_ids", JSON.stringify(Array.from(editDeletedIds)));
       editNewFiles.forEach(({ file }) => fd.append("images", file));
-      const res = await fetch(`/api/notices/${id}`, { method: "PUT", body: fd, credentials: "include" });
+      const adminToken2 = localStorage.getItem("adminToken");
+      const hdrs2: Record<string, string> = {};
+      if (adminToken2) hdrs2["X-Admin-Token"] = adminToken2;
+      const res = await fetch(`/api/notices/${id}`, { method: "PUT", body: fd, headers: hdrs2, credentials: "include" });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
@@ -6567,7 +6610,10 @@ function SchoolsTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/schools", { method: "POST", body: formData, credentials: "include" });
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+      const res = await fetch("/api/schools", { method: "POST", body: formData, headers, credentials: "include" });
       if (!res.ok) throw new Error("등록 실패");
       return res.json();
     },
