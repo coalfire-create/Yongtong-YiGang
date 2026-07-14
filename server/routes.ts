@@ -2835,21 +2835,34 @@ export async function registerRoutes(
       );
       const startOrder = (countRows[0].max_order || 0) + 1;
 
-      // Save files directly to local filesystem - no Supabase Storage dependency
-      const uploadDir = path.resolve(process.cwd(), "attached_assets", "uploads", "summary-timetables");
-      await fs.promises.mkdir(uploadDir, { recursive: true });
+      // Upload to Supabase Storage in small batches (3 at a time)
+      const uploadedFiles: { image_url: string; order: number }[] = [];
+      const BATCH_SIZE = 3;
 
-      const uploadedFiles = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const ext = path.extname(file.originalname) || ".jpg";
-        const fileName = `${crypto.randomUUID()}${ext}`;
-        const filePath = path.join(uploadDir, fileName);
-        await fs.promises.writeFile(filePath, file.buffer);
-        uploadedFiles.push({
-          image_url: `/attached_assets/uploads/summary-timetables/${fileName}`,
-          order: startOrder + i
-        });
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        const batch = files.slice(i, i + BATCH_SIZE);
+        const batchResults = await Promise.all(
+          batch.map(async (file, batchIndex) => {
+            const index = i + batchIndex;
+            const ext = path.extname(file.originalname) || ".jpg";
+            const fileName = `summary-timetables/${crypto.randomUUID()}${ext}`;
+            const { error: uploadError } = await supabase.storage
+              .from("images")
+              .upload(fileName, file.buffer, {
+                contentType: file.mimetype,
+                upsert: false,
+              });
+            if (uploadError) {
+              throw new Error("이미지 업로드 실패: " + (uploadError as any).message);
+            }
+            const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+            return {
+              image_url: urlData.publicUrl,
+              order: startOrder + index
+            };
+          })
+        );
+        uploadedFiles.push(...batchResults);
       }
 
       // Perform DB insertions sequentially to ensure deterministic order assignment
@@ -2873,17 +2886,9 @@ export async function registerRoutes(
     try {
       const { rows } = await pool.query("SELECT image_url FROM summary_timetables WHERE id = $1", [id]);
       if (rows[0]?.image_url) {
-        const imageUrl = rows[0].image_url;
-        if (imageUrl.startsWith("/attached_assets/")) {
-          // Local file - delete from filesystem
-          const filePath = path.resolve(process.cwd(), imageUrl.slice(1));
-          try { await fs.promises.unlink(filePath); } catch (e) { /* file may not exist */ }
-        } else {
-          // Legacy Supabase storage URL
-          const urlParts = imageUrl.split("/images/");
-          if (urlParts[1]) {
-            await supabase.storage.from("images").remove([urlParts[1]]);
-          }
+        const urlParts = rows[0].image_url.split("/images/");
+        if (urlParts[1]) {
+          await supabase.storage.from("images").remove([urlParts[1]]);
         }
       }
       await pool.query("DELETE FROM summary_timetables WHERE id = $1", [id]);
