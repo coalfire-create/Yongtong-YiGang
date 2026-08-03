@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+server/public
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Editor / OS
+.DS_Store
+.vscode
+.idea
+
+# Logs
+*.log
+npm-debug.log*
+
+# Misc
+*.tar.gz
+vite.config.ts.*
