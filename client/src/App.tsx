@@ -1,0 +1,75 @@
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+import Home from "@/pages/home";
+import { HighSchool, HighSchoolSchedule, HighSchoolScheduleG1, HighSchoolScheduleG2, HighSchoolScheduleG3 } from "@/pages/high-school";
+import { JuniorSchool, JuniorSchoolSchedule } from "@/pages/junior-school";
+import { JuniorPremiumSystem } from "@/pages/junior-premium";
+import { Owl, OwlInfo, OwlUsage } from "@/pages/owl";
+import { MiddleSchool } from "@/pages/middle-school";
+import { Elementary, ElementarySchedule } from "@/pages/elementary";
+import { Briefing, BriefingReservation, BriefingSchedule } from "@/pages/briefing";
+import { Admissions, AdmissionsResults, AdmissionsReviews } from "@/pages/admissions";
+import { About } from "@/pages/about";
+import { Directions } from "@/pages/directions";
+import { Notices } from "@/pages/notices";
+import TeachersPage, { TeacherDetail } from "@/pages/teachers";
+import Summer from "@/pages/summer";
+import MathSchool from "@/pages/math-school";
+import AdminPage from "@/pages/admin";
+import NotFound from "@/pages/not-found";
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/high-school" component={HighSchool} />
+      <Route path="/high-school/schedule" component={HighSchoolSchedule} />
+      <Route path="/high-school/schedule/g1" component={HighSchoolScheduleG1} />
+      <Route path="/high-school/schedule/g2" component={HighSchoolScheduleG2} />
+      <Route path="/high-school/schedule/g3" component={HighSchoolScheduleG3} />
+      <Route path="/high-school/teachers" component={TeachersPage} />
+      <Route path="/junior-school" component={JuniorSchool} />
+      <Route path="/junior-school/schedule" component={JuniorSchoolSchedule} />
+      <Route path="/junior-school/premium-system" component={JuniorPremiumSystem} />
+      <Route path="/teachers" component={TeachersPage} />
+      <Route path="/teachers/:id" component={TeacherDetail} />
+      <Route path="/middle-school" component={MiddleSchool} />
+
+      <Route path="/elementary" component={Elementary} />
+      <Route path="/elementary/schedule" component={ElementarySchedule} />
+      <Route path="/summer" component={Summer} />
+      <Route path="/math-school" component={MathSchool} />
+      <Route path="/owl" component={Owl} />
+      <Route path="/owl/info" component={OwlInfo} />
+      <Route path="/owl/usage" component={OwlUsage} />
+      <Route path="/briefing" component={Briefing} />
+      <Route path="/briefing/reservation" component={BriefingReservation} />
+      <Route path="/briefing/schedule" component={BriefingSchedule} />
+      <Route path="/admissions" component={Admissions} />
+      <Route path="/admissions/results" component={AdmissionsResults} />
+      <Route path="/admissions/reviews" component={AdmissionsReviews} />
+      <Route path="/about" component={About} />
+      <Route path="/directions" component={Directions} />
+      <Route path="/notices" component={Notices} />
+      <Route path="/admin" component={AdminPage} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

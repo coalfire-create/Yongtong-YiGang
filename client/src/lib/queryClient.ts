@@ -1,0 +1,74 @@
+import { QueryClient, QueryFunction } from "@tanstack/react-query";
+
+async function throwIfResNotOk(res: Response) {
+  if (!res.ok) {
+    // 인증 만료(서버 재시작 등)로 저장된 토큰이 더 이상 유효하지 않으면 제거해
+    // 다음 페이지 진입 시 로그인 화면이 다시 뜨도록 한다.
+    if (res.status === 401) {
+      try { localStorage.removeItem("adminToken"); } catch {}
+    }
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
+  }
+}
+
+function getAdminHeaders(extra?: Record<string, string>): Record<string, string> {
+  const token = localStorage.getItem("adminToken");
+  const headers: Record<string, string> = { ...extra };
+  if (token) headers["X-Admin-Token"] = token;
+  return headers;
+}
+
+export async function apiRequest(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+): Promise<Response> {
+  const baseHeaders: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
+  const res = await fetch(url, {
+    method,
+    headers: getAdminHeaders(baseHeaders),
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
+  });
+
+  await throwIfResNotOk(res);
+  return res;
+}
+
+type UnauthorizedBehavior = "returnNull" | "throw";
+export const getQueryFn: <T>(options: {
+  on401: UnauthorizedBehavior;
+}) => QueryFunction<T> =
+  ({ on401: unauthorizedBehavior }) =>
+  async ({ queryKey }) => {
+    const token = localStorage.getItem("adminToken");
+    const headers: Record<string, string> = {};
+    if (token) headers["X-Admin-Token"] = token;
+    const res = await fetch(queryKey.join("/") as string, {
+      credentials: "include",
+      headers,
+    });
+
+    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      return null;
+    }
+
+    await throwIfResNotOk(res);
+    return await res.json();
+  };
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      queryFn: getQueryFn({ on401: "throw" }),
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
+      retry: false,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
