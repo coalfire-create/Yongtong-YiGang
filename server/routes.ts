@@ -1037,7 +1037,7 @@ export async function registerRoutes(
   });
 
   // ========== SUMMER GUIDELINES ==========
-  app.get("/api/dev/delete-curriculum-images", async (req, res) => {
+  app.get("/api/dev/delete-curriculum-images", requireAdmin, async (req, res) => {
     try {
       await pool.query("DELETE FROM summer_images WHERE category = 'curriculum'");
       res.send("Deleted curriculum images using db");
@@ -1047,7 +1047,7 @@ export async function registerRoutes(
   });
 
 
-  app.get("/api/dev/fix-db-format", async (req, res) => {
+  app.get("/api/dev/fix-db-format", requireAdmin, async (req, res) => {
     try {
       const { rows } = await pool.query("SELECT * FROM summer_guidelines ORDER BY id ASC");
       
@@ -1188,7 +1188,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/dev/update-curriculums", express.json({ limit: "50mb" }), async (req, res) => {
+  app.post("/api/dev/update-curriculums", requireAdmin, express.json({ limit: "50mb" }), async (req, res) => {
     try {
       const updates = req.body; // array of { title, content }
       let count = 0;
@@ -1202,7 +1202,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/dev/split-hwang", async (req, res) => {
+  app.get("/api/dev/split-hwang", requireAdmin, async (req, res) => {
     try {
       const { rows } = await pool.query("SELECT id, title, content, division FROM summer_guidelines WHERE title = '[중등] 통과 - 황준우T [중3]'");
       if (rows.length === 0) return res.send("Row not found.");
@@ -1235,7 +1235,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/dev/check-hwang", async (req, res) => {
+  app.get("/api/dev/check-hwang", requireAdmin, async (req, res) => {
     try {
       const { rows } = await pool.query("SELECT id, title, content, division FROM summer_guidelines WHERE title LIKE '%황준우%'");
       res.json(rows.map(r => ({ ...r, content: r.content.substring(0, 100) + '... (length: ' + r.content.length + ')' })));
@@ -1246,7 +1246,7 @@ export async function registerRoutes(
 
 
 
-  app.get("/api/dev/upload-curriculums", async (req, res) => {
+  app.get("/api/dev/upload-curriculums", requireAdmin, async (req, res) => {
     try {
       const fs = await import('fs');
       const data = JSON.parse(fs.readFileSync('scratch/curriculums.json', 'utf8'));

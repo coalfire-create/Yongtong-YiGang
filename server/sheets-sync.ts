@@ -1,6 +1,4 @@
-const WEBHOOK_URL =
-  process.env.GOOGLE_WEBHOOK_URL ||
-  "https://script.google.com/macros/s/AKfycbyEjqeijDOVs1VgmWvXedh4u1WWepfbnECBfOg_rmnFFbD3ISIY1vFy8cw9UkpvWHQJ/exec";
+const WEBHOOK_URL = process.env.GOOGLE_WEBHOOK_URL || "";
 
 export async function appendReservationRow(data: {
   subject: string;
@@ -40,6 +38,10 @@ export async function appendReservationRow(data: {
     console.log("[SheetsSync] Final Payload for Google Sheets:", JSON.stringify(payload, null, 2));
 
 
+    if (!WEBHOOK_URL) {
+      console.warn("[SheetsSync] GOOGLE_WEBHOOK_URL is not set; skipping sheet append.");
+      return;
+    }
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -87,6 +89,10 @@ export async function appendSmsRow(data: {
 
     console.log("[SheetsSync] Sending SMS Sub:", JSON.stringify(payload, null, 2));
 
+    if (!WEBHOOK_URL) {
+      console.warn("[SheetsSync] GOOGLE_WEBHOOK_URL is not set; skipping sheet append.");
+      return;
+    }
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -133,6 +139,10 @@ export async function appendLevelTestRow(data: {
 
     console.log("[SheetsSync] Sending Level Test:", JSON.stringify(payload, null, 2));
 
+    if (!WEBHOOK_URL) {
+      console.warn("[SheetsSync] GOOGLE_WEBHOOK_URL is not set; skipping sheet append.");
+      return;
+    }
     const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

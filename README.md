@@ -61,3 +61,4 @@ npm run start   # 프로덕션 서버 실행
 | `SUPABASE_URL` | Supabase 프로젝트 URL |
 | `SUPABASE_ANON_KEY` | Supabase anon 키 |
 | `ADMIN_TOKEN` | 관리자 API 인증 토큰 |
+| `GOOGLE_WEBHOOK_URL` | 예약/문자/레벨테스트 데이터를 전송할 Google Apps Script 웹훅 URL |
