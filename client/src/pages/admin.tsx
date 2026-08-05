@@ -6814,6 +6814,16 @@ function NavigationManager() {
     },
   });
 
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async ({ id, is_visible }: { id: number; is_visible: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/navigation/${id}`, { is_visible });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/navigation"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/navigation"] });
+    },
+  });
+
   const parentMenus = menus.filter(m => !m.parent_id);
 
   if (isLoading) return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>;
@@ -6883,6 +6893,9 @@ function NavigationManager() {
                       setValue("parent_id", parent.parent_id);
                       setValue("display_order", parent.display_order);
                     }} className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => toggleVisibilityMutation.mutate({ id: parent.id, is_visible: !parent.is_visible })} className="p-2 text-gray-400 hover:text-gray-700 transition-colors" title={parent.is_visible ? "숨기기" : "보이기"}>
+                      {parent.is_visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
                     <button onClick={() => {
                       if (confirm("이 메뉴를 삭제하시겠습니까? 하위 메뉴도 함께 삭제됩니다.")) {
                         deleteMutation.mutate(parent.id);
@@ -6900,6 +6913,7 @@ function NavigationManager() {
                             <h5 className="text-sm font-medium text-gray-700">{child.label}</h5>
                             <p className="text-[10px] text-gray-400">{child.path}</p>
                           </div>
+                          {!child.is_visible && <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-bold rounded">숨김</span>}
                         </div>
                         <div className="flex items-center gap-2">
                           <button onClick={() => {
@@ -6909,6 +6923,9 @@ function NavigationManager() {
                             setValue("parent_id", child.parent_id);
                             setValue("display_order", child.display_order);
                           }} className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => toggleVisibilityMutation.mutate({ id: child.id, is_visible: !child.is_visible })} className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors" title={child.is_visible ? "숨기기" : "보이기"}>
+                            {child.is_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                          </button>
                           <button onClick={() => {
                             if (confirm("이 하위 메뉴를 삭제하시겠습니까?")) {
                               deleteMutation.mutate(child.id);

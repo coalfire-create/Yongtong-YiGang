@@ -323,9 +323,14 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       return res.json();
     },
   });
-  const _divMap: Record<string, string> = { "고등관-고1": "고1", "고등관-고2": "고2", "고등관-고3": "고3", "중등관-중3": "중등" };
+  const _divMap: Record<string, string> = { "고등관-고1": "고1", "고등관-고2": "고2", "고등관-고3": "고3", "중등관-중3": "중등", "초/중등관": "중3" };
   const _curDiv = _divMap[category];
-  const myGuidelines = (guidelines || []).filter((g: any) => g.category === "curriculum" && g.division === _curDiv);
+  // division이 "고1", "병점 고1", "가온고1", "일반고2 연합" 등 다양한 형태이므로 includes 매칭 사용
+  const myGuidelines = (guidelines || []).filter((g: any) => {
+    if (g.category !== "curriculum") return false;
+    const div = g.division || "";
+    return div === _curDiv || div.includes(_curDiv);
+  });
   const brochureMap = new Map<number, any>();
   for (const tt of timetables) {
     const g = matchGuideline(tt, myGuidelines);
