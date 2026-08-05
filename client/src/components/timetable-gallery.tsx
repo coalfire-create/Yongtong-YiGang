@@ -395,11 +395,12 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
     const isNonsulClass = (tt.class_name || "").includes("논술") || (tt.subject || "").includes("논술") || (tt.target_school || "") === "논술";
 
     if (isG1OrG2Science && isAllOrMathSciFilter) {
-      const sciSub = sciSubjectOf(tt.class_name || "", brochureMap.get(tt.id)?.title);
-      instances.push({
-        isUnion: false,
-        targetSchool: sciSub,
-      });
+      const schoolMatch = SCHOOL_ORDER.find(s => s !== "연합반" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
+      if (schoolMatch) {
+        instances.push({ isUnion: false, targetSchool: schoolMatch });
+      } else {
+        instances.push({ isUnion: tt.is_union, targetSchool: tt.target_school || "연합반" });
+      }
     } else if (isNonsulClass) {
       instances.push({
         isUnion,
