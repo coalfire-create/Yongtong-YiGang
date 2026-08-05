@@ -4129,7 +4129,6 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     "대상", "카테고리", "제목", "수업일정", "강좌특징", "교재", "과제", "관리시스템", "회차별내용", "연계강좌",
   ];
 
-  // "대상" 셀 문자열을 division 목록으로 변환. 비어있으면 중3+고1 모두에 등록.
   const parseDivisions = (raw: string): string[] => {
     const text = (raw || "").trim();
     if (!text) return ["중등", "고1"];
@@ -4167,7 +4166,6 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     XLSX.writeFile(wb, "썸머커리큘럼_업로드양식.xlsx");
   };
 
-  // 한 줄 가로 양식(템플릿) 시트 → payload 목록
   const parseHorizontalSheet = (data: any[][]) => {
     const payloads: { division: string; title: string; category: string; content: string }[] = [];
     if (data.length <= 1) return payloads;
