@@ -503,6 +503,9 @@ async function ensureBannersTable() {
       EXCEPTION WHEN others THEN NULL;
       END $$;
     `);
+    await pool.query(`UPDATE banners SET title = '' WHERE title = 'undefined' OR title IS NULL`);
+    await pool.query(`UPDATE banners SET subtitle = '' WHERE subtitle = 'undefined' OR subtitle IS NULL`);
+    await pool.query(`UPDATE banners SET description = '' WHERE description = 'undefined' OR description IS NULL`);
   } catch (err) {
     console.error("Failed to ensure banners table:", err);
   }

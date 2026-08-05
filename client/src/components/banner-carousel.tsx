@@ -30,17 +30,21 @@ function SlideText({ slide, division, index }: {
   division: string;
   index: number;
 }) {
-  const hasText = (slide.title?.trim() || slide.subtitle || slide.description);
+  const cleanTitle = (slide.title && slide.title !== "undefined" && slide.title !== "null") ? slide.title.trim() : "";
+  const cleanSubtitle = (slide.subtitle && slide.subtitle !== "undefined" && slide.subtitle !== "null") ? slide.subtitle.trim() : "";
+  const cleanDescription = (slide.description && slide.description !== "undefined" && slide.description !== "null") ? slide.description.trim() : "";
+
+  const hasText = (cleanTitle || cleanSubtitle || cleanDescription);
   if (!hasText) return null;
   const content = (
     <>
-      {slide.title?.trim() && (
+      {cleanTitle && (
         <h2 className="text-lg sm:text-2xl lg:text-4xl font-extrabold leading-tight drop-shadow" data-testid={`text-banner-title-${division}-${index}`}>
-          {slide.title}
+          {cleanTitle}
         </h2>
       )}
-      {slide.subtitle && <p className="text-base sm:text-xl lg:text-3xl font-extrabold mt-0.5 sm:mt-1 drop-shadow">{slide.subtitle}</p>}
-      {slide.description && <p className="text-xs sm:text-sm lg:text-base mt-2 sm:mt-3 text-white/80 max-w-md">{slide.description}</p>}
+      {cleanSubtitle && <p className="text-base sm:text-xl lg:text-3xl font-extrabold mt-0.5 sm:mt-1 drop-shadow">{cleanSubtitle}</p>}
+      {cleanDescription && <p className="text-xs sm:text-sm lg:text-base mt-2 sm:mt-3 text-white/80 max-w-md">{cleanDescription}</p>}
     </>
   );
   return (
