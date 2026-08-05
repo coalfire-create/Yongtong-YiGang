@@ -253,10 +253,13 @@ function matchGuideline(tt: Timetable, guidelines: any[]): any | null {
   let best: any = null, bs = -1;
   for (const g of cand) {
     const gk = _gkeys((g.title || "").replace(/^\[[^\]]*\]/, ""));
-    let sc = 0; for (const x of tk) if (gk.has(x)) sc++;
+    let sc = 0; 
+    for (const x of tk) if (gk.has(x)) sc++;
+    if (tt.class_time && g.content && g.content.includes(tt.class_time)) sc += 2;
     if (sc > bs) { bs = sc; best = g; }
   }
-  return bs >= 1 ? best : null;
+  if (bs >= 1 && best) return best;
+  return cand[0];
 }
 
 const sortByGroupKey = <T,>(entries: [string, T][], subject?: string): [string, T][] =>
