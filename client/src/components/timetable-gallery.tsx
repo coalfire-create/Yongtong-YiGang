@@ -513,8 +513,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           const displayTitle = (category === "고등관-고1" || category === "고등관-고2") ? "중간/내신시간표" : "기말/내신시간표";
           return (
             <SummaryTimetableSection
-              division={isFinal ? `${summaryDivision}-final` : summaryDivision}
-              title={isFinal ? displayTitle : (summaryTitle || "썸머시간표")}
+              division={summaryDivision}
+              title={isFinal ? displayTitle : (summaryTitle || "2학기 시간표")}
             />
           );
         })()
