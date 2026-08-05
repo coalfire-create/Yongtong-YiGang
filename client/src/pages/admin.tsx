@@ -3769,16 +3769,30 @@ const SUMMARY_DIVISIONS = [
   { value: "admissions-junior", label: "입시실적 (초/중등관)" },
 ] as const;
 
-function SortableSummaryCard({ item, onDelete }: { item: any; onDelete: (id: number) => void }) {
+// 고1/고2/고3 구분은 "필터 탭(목차) 관리"의 첫 번째 탭(요약시간표 트리거)과 연동됩니다.
+const SUMMARY_DIVISION_FILTER_CATEGORY: Record<string, string> = {
+  "high-g1": "고등관-고1",
+  "high-g2": "고등관-고2",
+  "high-g3": "고등관-고3",
+};
+
+function SortableSummaryCard({ item, onDelete, selected, onToggleSelect }: { item: any; onDelete: (id: number) => void; selected: boolean; onToggleSelect: (id: number) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-start gap-3 border border-gray-200 p-3 bg-white"
+      className={`flex items-start gap-3 border p-3 bg-white ${selected ? "border-red-400 bg-red-50/40" : "border-gray-200"}`}
       data-testid={`card-summary-${item.id}`}
     >
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={() => onToggleSelect(item.id)}
+        className="flex-shrink-0 mt-3 w-4 h-4 accent-red-600"
+        data-testid={`checkbox-summary-${item.id}`}
+      />
       <div
         {...attributes}
         {...listeners}
@@ -3808,6 +3822,22 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
 
   const divisionLabel = SUMMARY_DIVISIONS.find((d) => d.value === selectedDivision)?.label || selectedDivision;
 
+  const filterCategory = SUMMARY_DIVISION_FILTER_CATEGORY[selectedDivision];
+  const { data: linkedFilterTabs = [] } = useQuery<{ id: number; label: string; is_visible: boolean; display_order: number }[]>({
+    queryKey: ["/api/filter-tabs", filterCategory],
+    queryFn: async () => {
+      const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(filterCategory)}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+    enabled: !!filterCategory,
+  });
+  // 필터 탭 목록의 첫 번째 항목이 공개 사이트에서 이 요약시간표 섹션을 여는 탭입니다.
+  const linkedSummaryTab = linkedFilterTabs[0];
+  const fallbackTitle = (selectedDivision === "high-g1" || selectedDivision === "high-g2") ? "중간/내신 시간표" : "기말/내신 시간표";
+  const summaryTitle = linkedSummaryTab?.label || fallbackTitle;
+  const summaryHidden = !!linkedSummaryTab && linkedSummaryTab.is_visible === false;
+
   const { data: items = EMPTY_SUMMARY_TT as SummaryTimetable[], isLoading } = useQuery<SummaryTimetable[]>({
     queryKey: ["/api/summary-timetables", selectedDivision],
     queryFn: async () => {
@@ -3825,6 +3855,25 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
       return prevKey === newKey ? prev : items;
     });
   }, [items]);
+
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [selectedDivision]);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds(prev =>
+      prev.size === localItems.length ? new Set() : new Set(localItems.map(i => i.id))
+    );
+  };
 
   const sumSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -3854,6 +3903,16 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/summary-timetables", selectedDivision] });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      await apiRequest("POST", "/api/summary-timetables/bulk-delete", { ids });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/summary-timetables", selectedDivision] });
+      setSelectedIds(new Set());
     },
   });
 
@@ -3914,7 +3973,19 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
       </div>
 
       <div className="bg-white border border-gray-200 p-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">{(selectedDivision === "high-g1" || selectedDivision === "high-g2") ? "중간/내신 시간표" : "기말/내신 시간표"} 이미지 등록 — {divisionLabel}</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-1 flex items-center gap-2">
+          {summaryTitle} 이미지 등록 — {divisionLabel}
+          {summaryHidden && (
+            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gray-100 text-gray-500 rounded" data-testid="badge-summary-tab-hidden">
+              목차에서 숨김
+            </span>
+          )}
+        </h3>
+        {filterCategory && (
+          <p className="text-xs text-gray-400 mb-4">
+            이 제목과 숨김 여부는 "필터 탭(목차) 관리 &gt; {filterCategory}"의 첫 번째 탭과 연동됩니다.
+          </p>
+        )}
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">이미지 선택 (여러 장 가능)</label>
@@ -3957,13 +4028,43 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
       </div>
 
       <div className="bg-white border border-gray-200 p-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">
-          등록된 {(selectedDivision === "high-g1" || selectedDivision === "high-g2") ? "중간/내신 시간표" : "기말/내신 시간표"} ({items.length}개) — {divisionLabel}
-        </h3>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h3 className="text-sm font-bold text-gray-900">
+            등록된 {summaryTitle} ({items.length}개) — {divisionLabel}
+          </h3>
+          {localItems.length > 0 && (
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size > 0 && selectedIds.size === localItems.length}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 accent-red-600"
+                  data-testid="checkbox-summary-select-all"
+                />
+                전체 선택 ({selectedIds.size}/{localItems.length})
+              </label>
+              <button
+                onClick={() => {
+                  if (selectedIds.size === 0) return;
+                  if (confirm(`선택한 ${selectedIds.size}개의 이미지를 삭제하시겠습니까?`)) {
+                    bulkDeleteMutation.mutate(Array.from(selectedIds));
+                  }
+                }}
+                disabled={selectedIds.size === 0 || bulkDeleteMutation.isPending}
+                className="px-3 py-1.5 bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                data-testid="button-bulk-delete-summary"
+              >
+                {bulkDeleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                선택 삭제
+              </button>
+            </div>
+          )}
+        </div>
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
         ) : localItems.length === 0 ? (
-          <p className="text-sm text-gray-400 py-4">등록된 {(selectedDivision === "high-g1" || selectedDivision === "high-g2") ? "중간/내신 시간표" : "기말/내신 시간표"}가 없습니다.</p>
+          <p className="text-sm text-gray-400 py-4">등록된 {summaryTitle}가 없습니다.</p>
         ) : (
           <DndContext sensors={sumSensors} collisionDetection={closestCenter} onDragEnd={handleDragEndSummary}>
             <SortableContext items={localItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
@@ -3972,6 +4073,8 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
                   <SortableSummaryCard
                     key={item.id}
                     item={item}
+                    selected={selectedIds.has(item.id)}
+                    onToggleSelect={toggleSelect}
                     onDelete={(id) => { if (confirm("삭제하시겠습니까?")) deleteMutation.mutate(id); }}
                   />
                 ))}

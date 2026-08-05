@@ -2902,6 +2902,24 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/summary-timetables/bulk-delete", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      const { rows } = await pool.query("SELECT image_url FROM summary_timetables WHERE id = ANY($1::int[])", [ids]);
+      const storagePaths = rows
+        .map((r) => r.image_url?.split("/images/")[1])
+        .filter((p): p is string => !!p);
+      if (storagePaths.length > 0) {
+        await supabase.storage.from("images").remove(storagePaths);
+      }
+      await pool.query("DELETE FROM summary_timetables WHERE id = ANY($1::int[])", [ids]);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.patch("/api/summary-timetables/reorder", requireAdmin, async (req, res) => {
     const { ids } = req.body;
     if (!Array.isArray(ids)) return res.status(400).json({ error: "ids 배열이 필요합니다." });
