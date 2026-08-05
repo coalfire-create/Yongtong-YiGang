@@ -77,6 +77,7 @@ const SCHOOL_ORDER = [
   "고색고",
   "동국고",
   "동탄국제고",
+  "영신여고",
 ];
 
 const getSchoolRank = (name: string): number => {
