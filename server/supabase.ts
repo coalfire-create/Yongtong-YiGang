@@ -152,7 +152,7 @@ if (rawSupabase) {
   const originalFrom = rawSupabase.storage.from.bind(rawSupabase.storage);
   rawSupabase.storage.from = (bucket: string) => {
     const client = originalFrom(bucket);
-    client.upload = async (pathName: string, body: any, options?: any) => {
+    client.upload = (async (pathName: string, body: any, options?: any) => {
       try {
         const url = `${supabaseUrl}/storage/v1/object/${bucket}/${pathName}`;
         const res = await axios.post(url, body, {
@@ -168,7 +168,7 @@ if (rawSupabase) {
       } catch (err: any) {
         return { data: null, error: err.response?.data || err };
       }
-    };
+    }) as typeof client.upload;
     return client;
   };
 }
