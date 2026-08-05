@@ -27,3 +27,4 @@ npm-debug.log*
 # Misc
 *.tar.gz
 vite.config.ts.*
+scratch/
