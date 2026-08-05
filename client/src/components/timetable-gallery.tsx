@@ -66,6 +66,7 @@ function sciSubjectOf(className: string, guidelineTitle?: string): string {
 
 // 학교/표시 순서: 연합반 -> 특강반 -> 화성/가온/병점 -> 영덕/수원/청명 -> 고색/동탄국제고 -> 학교별 특강
 const SCHOOL_ORDER = [
+  "연합",
   "공통",
   "화성고",
   "가온고",
@@ -74,6 +75,7 @@ const SCHOOL_ORDER = [
   "수원고",
   "청명고",
   "고색고",
+  "동국고",
   "동탄국제고",
 ];
 
@@ -86,7 +88,7 @@ const getSchoolRank = (name: string): number => {
   if (name === "특강반") return 0.5;
   
   if (name.includes("특강")) {
-    const schoolIdx = SCHOOL_ORDER.findIndex(s => s !== "공통" && name.includes(s));
+    const schoolIdx = SCHOOL_ORDER.findIndex(s => s !== "공통" && s !== "연합" && name.includes(s));
     if (schoolIdx !== -1) return 100 + schoolIdx;
     return 0.5;
   }
@@ -343,7 +345,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   const activeTab = filterTabs?.[selectedFilter];
   const isSummaryView = activeTab?.isSummary === true;
   // 특정 학교 필터(화성고 등)가 켜져 있으면, 학교별 올데이/특강을 특강반에 중복 노출하지 않음
-  const schoolFilterActive = !!activeTab && SCHOOL_ORDER.some((s) => s !== "공통" && activeTab.label.includes(s));
+  const schoolFilterActive = !!activeTab && SCHOOL_ORDER.some((s) => s !== "공통" && s !== "연합" && activeTab.label.includes(s));
 
   const filtered = filterTabs && filterTabs.length > 0 && !isSummaryView
     ? timetables.filter(filterTabs[selectedFilter].filterFn)
@@ -395,11 +397,11 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
     const isNonsulClass = (tt.class_name || "").includes("논술") || (tt.subject || "").includes("논술") || (tt.target_school || "") === "논술";
 
     if (isG1OrG2Science && isAllOrMathSciFilter) {
-      const schoolMatch = SCHOOL_ORDER.find(s => s !== "공통" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
+      const schoolMatch = SCHOOL_ORDER.find(s => s !== "공통" && s !== "연합" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
       if (schoolMatch) {
         instances.push({ isUnion: false, targetSchool: schoolMatch });
       } else {
-        instances.push({ isUnion: tt.is_union, targetSchool: tt.target_school || "공통" });
+        instances.push({ isUnion: tt.is_union, targetSchool: tt.target_school || "연합" });
       }
     } else if (isNonsulClass) {
       instances.push({
@@ -411,9 +413,9 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       const ss = sciSubjectOf(tt.class_name || "", brochureMap.get(tt.id)?.title);
       if (ss === "통합과학") {
         // 통과는 고1 정규반 -> 연합반/학교별 일반 그룹
-        const schoolMatch = SCHOOL_ORDER.find(s => s !== "공통" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
+        const schoolMatch = SCHOOL_ORDER.find(s => s !== "공통" && s !== "연합" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
         if (schoolMatch) instances.push({ isUnion: false, targetSchool: schoolMatch });
-        else instances.push({ isUnion: tt.is_union, targetSchool: tt.target_school || "공통" });
+        else instances.push({ isUnion: tt.is_union, targetSchool: tt.target_school || "연합" });
       } else {
         // 물리/화학/생명 -> 특강반 (과목별 소그룹)
         instances.push({ isUnion: false, targetSchool: ss });
@@ -432,7 +434,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         );
       
       if (isSpecialLecture) {
-        const schoolMatch = SCHOOL_ORDER.find(s => s !== "공통" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
+        const schoolMatch = SCHOOL_ORDER.find(s => s !== "공통" && s !== "연합" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
         
         if (schoolMatch) {
           // 학교별 올데이/특강 -> 해당 학교 섹션(예: 화성고)에 노출
@@ -458,7 +460,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         const forceUnion = isG1OrG2Science && isAllOrMathSciFilter;
         instances.push({
           isUnion: forceUnion ? true : isUnion,
-          targetSchool: tt.target_school || "공통",
+          targetSchool: tt.target_school || "연합",
         });
       }
     }
@@ -473,8 +475,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         }
 
         const groupKey = (isUnionInst && targetSchool !== "특강반" && !targetSchool.includes("특강"))
-          ? "공통"
-          : targetSchool;
+          ? "연합"
+          : (targetSchool === "공통" || targetSchool === "연합반" ? "연합" : targetSchool);
 
         if (!subjectGroups[subj][groupKey]) subjectGroups[subj][groupKey] = [];
         
@@ -753,7 +755,7 @@ function GroupCard({
   // 그룹 맨 아래로 내릴 항목 판별:
   //  - 특강반: 학교명이 들어간(=학교별 올데이/특강) 항목을 맨 밑으로
   //  - 학교 섹션: 특강·올데이 항목을 맨 밑으로
-  const SCHOOLS_NO_UNION = SCHOOL_ORDER.filter((s) => s !== "공통");
+  const SCHOOLS_NO_UNION = SCHOOL_ORDER.filter((s) => s !== "공통" && s !== "연합");
   const isBottomItem = (name: string) => {
     if (title === "특강반") {
       return SCHOOLS_NO_UNION.some((s) => name.includes(s)) ? 1 : 0;
@@ -858,14 +860,14 @@ function GroupCard({
             <div className="w-12 h-12 rounded bg-[#7B2332]/5 flex items-center justify-center border border-[#7B2332]/10 overflow-hidden">
               {firstTt.school_logo_url && !SCIENCE_CARD_ORDER.includes(title) ? (
                 <img src={firstTt.school_logo_url} alt={title} className="w-full h-full object-contain" />
-              ) : title === "공통" ? (
+              ) : title === "공통" || title === "연합" ? (
                 <Users className="w-6 h-6 text-blue-600" />
               ) : (
                 <GraduationCap className="w-6 h-6 text-[#7B2332]" />
               )}
             </div>
             <div>
-              <h4 className="text-base font-bold text-gray-900">{title}</h4>
+              <h4 className="text-base font-bold text-gray-900">{title === "공통" ? "연합" : title}</h4>
             </div>
           </>
         )}

@@ -747,7 +747,7 @@ function TeacherImagesManager({ teacherId, teacherName }: { teacherId: number; t
 
 const CATEGORY_FILTER_OPTIONS: Record<string, string[]> = {
   "고등관-고1": ["화성고", "가온고", "병점고", "영덕고", "수원고", "청명고"],
-  "고등관-고2": ["화성고", "가온고", "영덕고", "수원고", "청명고", "고색고", "동탄국제고"],
+  "고등관-고2": ["화성고", "가온고", "동국고", "영덕고", "수원고", "청명고", "고색고", "동탄국제고"],
   "고등관-고3": ["국어", "영어", "수학", "생명과학", "사회문화", "생윤", "논술"],
 };
 
@@ -1438,7 +1438,7 @@ function TimetablesTab() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>수업명 *</label>
-                <input {...editRegister("class_name", { required: true })} className={inputCls} placeholder="예: 수학 정규반" />
+                <input {...editRegister("class_name", { required: true })} className={inputCls} placeholder="예: 수학 내신반" />
               </div>
               <div>
                 <label className={labelCls}>수업 시간</label>
@@ -1772,7 +1772,7 @@ function TimetablesTab() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>수업명 *</label>
-                <input {...register("class_name", { required: "수업명을 입력하세요" })} className={inputCls} placeholder="예: 수학 정규반" data-testid="input-timetable-classname" />
+                <input {...register("class_name", { required: "수업명을 입력하세요" })} className={inputCls} placeholder="예: 수학 내신반" data-testid="input-timetable-classname" />
                 {errors.class_name && <p className="text-xs text-red-500 mt-1">{errors.class_name.message}</p>}
               </div>
               <div>
