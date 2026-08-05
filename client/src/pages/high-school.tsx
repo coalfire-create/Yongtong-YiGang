@@ -81,10 +81,10 @@ const isScienceSubject = (tt: any) => {
 
 function buildFilterFn(label: string): (tt: any) => boolean {
   if (label === "전체시간표" || label === "전체") return () => true;
-  if (label === "썸머시간표" || label === "요약시간표") return () => false;
+  if (label === "썸머시간표" || label === "요약시간표" || label.includes("내신시간표") || label.includes("중간")) return () => false;
   if (label === "논술") return (tt) => isNonsul(tt);
   if (label === "수학/탐구") return (tt) => ["수학", "탐구", "통합과학", "통합사회/한국사", "물리", "화학", "생명", "생명과학", "지구과학", "지구", "물리학", "과학탐구"].includes(tt.subject) && !isNonsul(tt);
-  
+
   const SUBJECTS = ["국어", "영어", "수학", "탐구", "통합과학", "통합사회/한국사", "생명과학", "사회문화", "생윤"];
   if (SUBJECTS.includes(label)) {
     return (tt) =>
@@ -99,48 +99,28 @@ function buildFilterFn(label: string): (tt: any) => boolean {
   return (tt) => {
     if (isNonsul(tt)) return false;
 
-    // 만약 고2 과탐 과목이라면 모든 학교 필터에 노출되도록 true 반환
-    if (tt.category === "고등관-고2" && isScienceSubject(tt)) {
-      return true;
-    }
-
-    // G2 조기수능반 학교별 노출 예외 필터링 규칙
-    const isG2EarlyCsat = tt.category === "고등관-고2" && (tt.class_name || "").includes("조기수능");
-    if (isG2EarlyCsat) {
-      const teacher = tt.teacher_name || "";
-      if (label === "가온고") {
-        // 양준민(영어), 손자은(국어) -> 가온고 필터에만 노출
-        return teacher.includes("양준민") || teacher.includes("손자은");
-      } else {
-        // 문브라더스(영어), 김현종(국어) -> 가온고 제외 다른 학교 필터에 노출
-        const isSchoolFilter = ["화성고", "영덕고", "청명고", "수원고", "고색고", "동탄국제고", "병점고"].includes(label);
-        if (isSchoolFilter) {
-          return teacher.includes("문브라더스") || teacher.includes("김현종");
-        }
-      }
-      return false;
-    }
-
+    // 타겟 학교나 클래스 이름에 해당 필터 탭 라벨이 포함되어 있으면 true 반환
     return (tt.target_school || "").includes(label) || (tt.class_name || "").includes(label);
   };
 }
 
 function buildFilterTabs(apiTabs: { id: number; label: string }[], category?: string): FilterTab[] {
-  return apiTabs.map((tab) => {
+  return apiTabs.map((tab, idx) => {
     let displayLabel = tab.label;
     if (tab.label === "기말/내신시간표" && (category === "고등관-고1" || category === "고등관-고2")) {
-      displayLabel = "중간/내신시간표";
+      displayLabel = "2학기 중간 내신시간표";
     }
+    const isFirstSummary = idx === 0 || displayLabel.includes("시간표") && !displayLabel.includes("전체");
     return {
       label: displayLabel,
       filterFn: buildFilterFn(tab.label),
-      isSummary: displayLabel === "썸머시간표" || displayLabel === "요약시간표" || displayLabel === "기말/내신시간표" || displayLabel === "중간/내신시간표",
+      isSummary: isFirstSummary || displayLabel === "썸머시간표" || displayLabel === "요약시간표" || displayLabel.includes("내신시간표"),
     };
   });
 }
 
 const G1_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "썸머시간표", filterFn: buildFilterFn("썸머시간표"), isSummary: true },
+  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: true },
   { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
   { label: "화성고", filterFn: buildFilterFn("화성고") },
   { label: "가온고", filterFn: buildFilterFn("가온고") },
@@ -154,7 +134,7 @@ const G1_FILTERS_DEFAULT: FilterTab[] = [
 ];
 
 const G2_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "썸머시간표", filterFn: buildFilterFn("썸머시간표"), isSummary: true },
+  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: true },
   { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
   { label: "화성고", filterFn: buildFilterFn("화성고") },
   { label: "가온고", filterFn: buildFilterFn("가온고") },
