@@ -474,9 +474,10 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           subjectGroups[subj] = {};
         }
 
-        const groupKey = (isUnionInst && targetSchool !== "특강반" && !targetSchool.includes("특강"))
+        const isUnionSchool = targetSchool === "공통" || targetSchool === "연합" || targetSchool === "연합반";
+        const groupKey = (isUnionInst && isUnionSchool)
           ? "연합"
-          : (targetSchool === "공통" || targetSchool === "연합반" ? "연합" : targetSchool);
+          : (isUnionSchool ? "연합" : targetSchool);
 
         if (!subjectGroups[subj][groupKey]) subjectGroups[subj][groupKey] = [];
         
@@ -547,7 +548,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                     <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
                       <div className="w-1 h-6 bg-[#7B2332] hidden md:block" />
                       <h3 className="text-xl font-extrabold text-gray-900 leading-tight" data-testid={`text-subject-group-${subj}`}>
-                        {subj}
+                        {subj === "탐구" ? "통합과학" : (subj === "기타" || subj === "통합사회한국사" ? "통사/한국사" : subj)}
                       </h3>
                       <span className="text-xs text-gray-400 font-medium">({totalClasses}개 반)</span>
                     </div>
@@ -558,6 +559,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                           title={key}
                           timetables={tts}
                           teachers={teachers}
+                          subject={subj}
                           expandedId={expandedId}
                           onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                           onReserve={openReserve}
@@ -621,6 +623,7 @@ function GroupCard({
   title,
   timetables,
   teachers,
+  subject,
   expandedId,
   onToggle,
   onReserve,
@@ -631,6 +634,7 @@ function GroupCard({
   title: string;
   timetables: Timetable[];
   teachers: { id: number; name: string; image_url: string }[];
+  subject?: string;
   expandedId: number | null;
   onToggle: (id: number) => void;
   onReserve: (tt: Timetable) => void;
@@ -867,7 +871,15 @@ function GroupCard({
               )}
             </div>
             <div>
-              <h4 className="text-base font-bold text-gray-900">{title === "공통" ? "연합" : title}</h4>
+              <h4 className="text-base font-bold text-gray-900">
+                {(title === "공통" || title === "연합" || title === "연합반")
+                  ? ((subject === "국어" || firstTt?.subject === "국어")
+                      ? (firstTt?.teacher_name?.includes("손자은") ? "수능국어 - 손자은T" : "수능국어")
+                      : ((subject === "통사/한국사" || subject === "통합사회한국사" || subject === "기타" || firstTt?.subject === "기타" || firstTt?.subject === "통사/한국사")
+                          ? "연합반"
+                          : "연합"))
+                  : title}
+              </h4>
             </div>
           </>
         )}
