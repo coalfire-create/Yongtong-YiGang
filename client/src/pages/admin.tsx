@@ -972,9 +972,13 @@ function TimetablesTab() {
 
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
       const res = await fetch("/api/timetables", {
         method: "POST",
         body: formData,
+        headers,
         credentials: "include",
       });
       if (!res.ok) {
@@ -1047,9 +1051,13 @@ function TimetablesTab() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, formData }: { id: number; formData: FormData }) => {
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
       const res = await fetch(`/api/timetables/${id}`, {
         method: "PUT",
         body: formData,
+        headers,
         credentials: "include",
       });
       if (!res.ok) {
@@ -3972,6 +3980,19 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
         ))}
       </div>
 
+      {filterCategory && (
+        <div className="bg-white border border-gray-200 p-6 mb-6">
+          <h3 className="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <ListOrdered className="w-5 h-5 text-[#7B2332]" />
+            필터 탭(목차) 관리 — {divisionLabel}
+          </h3>
+          <p className="text-xs text-gray-500 mb-4">
+            해당 학년 페이지의 시간표 필터 탭(목차)을 추가, 삭제, 수정, 순서 변경 및 숨김 설정할 수 있습니다.
+          </p>
+          <FilterTabsManager category={filterCategory} />
+        </div>
+      )}
+
       <div className="bg-white border border-gray-200 p-6">
         <h3 className="text-sm font-bold text-gray-900 mb-1 flex items-center gap-2">
           {summaryTitle} 이미지 등록 — {divisionLabel}
@@ -3983,7 +4004,7 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
         </h3>
         {filterCategory && (
           <p className="text-xs text-gray-400 mb-4">
-            이 제목과 숨김 여부는 "필터 탭(목차) 관리 &gt; {filterCategory}"의 첫 번째 탭과 연동됩니다.
+            이 제목과 숨김 여부는 상단 "필터 탭(목차) 관리"의 첫 번째 탭과 연동됩니다.
           </p>
         )}
         <div className="space-y-4">
@@ -6202,16 +6223,15 @@ function SortableFilterTabRow({
   );
 }
 
-function FilterTabsTab() {
-  const [selectedCategory, setSelectedCategory] = useState("고등관-고1");
+function FilterTabsManager({ category }: { category: string }) {
   const [newLabel, setNewLabel] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingLabel, setEditingLabel] = useState("");
 
   const { data: tabs = [], isLoading } = useQuery<FilterTabItem[]>({
-    queryKey: ["/api/filter-tabs", selectedCategory],
+    queryKey: ["/api/filter-tabs", category],
     queryFn: async () => {
-      const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(selectedCategory)}`);
+      const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(category)}`);
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json();
     },
@@ -6233,10 +6253,10 @@ function FilterTabsTab() {
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/filter-tabs", { category: selectedCategory, label: newLabel.trim() });
+      await apiRequest("POST", "/api/filter-tabs", { category, label: newLabel.trim() });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", category] });
       setNewLabel("");
     },
   });
@@ -6246,7 +6266,7 @@ function FilterTabsTab() {
       await apiRequest("DELETE", `/api/filter-tabs/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", category] });
     },
   });
 
@@ -6255,7 +6275,7 @@ function FilterTabsTab() {
       await apiRequest("PUT", `/api/filter-tabs/${id}`, { label });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", category] });
       setEditingId(null);
     },
   });
@@ -6265,7 +6285,7 @@ function FilterTabsTab() {
       await apiRequest("PATCH", `/api/filter-tabs/${id}/visibility`, { is_visible });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", category] });
     },
   });
 
@@ -6284,7 +6304,7 @@ function FilterTabsTab() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", selectedCategory] });
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", category] });
     },
     onError: () => {
       setLocalTabs(tabs);
@@ -6303,24 +6323,7 @@ function FilterTabsTab() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 flex-wrap">
-        {FILTER_TAB_CATEGORIES.map((cat) => (
-          <button
-            key={cat.value}
-            onClick={() => setSelectedCategory(cat.value)}
-            className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
-              selectedCategory === cat.value
-                ? "bg-[#7B2332] text-white"
-                : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
-            }`}
-            data-testid={`filter-category-${cat.value}`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-
+    <div className="space-y-4">
       <div className="flex items-center gap-2">
         <input
           type="text"
@@ -6374,6 +6377,33 @@ function FilterTabsTab() {
           </SortableContext>
         </DndContext>
       )}
+    </div>
+  );
+}
+
+function FilterTabsTab() {
+  const [selectedCategory, setSelectedCategory] = useState("고등관-고1");
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 flex-wrap">
+        {FILTER_TAB_CATEGORIES.map((cat) => (
+          <button
+            key={cat.value}
+            onClick={() => setSelectedCategory(cat.value)}
+            className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
+              selectedCategory === cat.value
+                ? "bg-[#7B2332] text-white"
+                : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
+            }`}
+            data-testid={`filter-category-${cat.value}`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      <FilterTabsManager category={selectedCategory} />
     </div>
   );
 }
