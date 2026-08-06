@@ -311,8 +311,23 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   });
 
   const EXCLUDED_TEACHERS: string[] = [];
-  const timetables = rawTimetables.filter(tt => !EXCLUDED_TEACHERS.includes(tt.teacher_name));
- 
+  const timetables = rawTimetables
+    .filter(tt => !EXCLUDED_TEACHERS.includes(tt.teacher_name))
+    .map(tt => {
+      // PROD DB override: 가온고 미적분1 내신 - 권소영T 수업에 정승준 선생님 추가
+      if (
+        (tt.class_name || "").includes("가온고 미적분1 내신") && 
+        (tt.class_name || "").includes("권소영T") && 
+        tt.category === "고등관-고2"
+      ) {
+        return {
+          ...tt,
+          class_name: "가온고 미적분1 내신 - 권소영T, 정승준T (8/15 개강, 8회)",
+          teacher_ids: Array.from(new Set([...(tt.teacher_ids || []), 6, 23]))
+        };
+      }
+      return tt;
+    });
   const { data: teachers = [] } = useQuery<{ id: number; name: string; image_url: string }[]>({
     queryKey: ["/api/teachers"],
     queryFn: async () => {
