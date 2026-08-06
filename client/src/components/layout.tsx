@@ -12,8 +12,28 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
 
-  const { data: navItems = [], isLoading } = useQuery<any[]>({
+  const { data: rawNavItems = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/navigation"],
+  });
+
+  // PROD DB override: "중3" 메뉴에 "강의시간표" 하위 메뉴 강제 주입
+  const navItems = rawNavItems.map(item => {
+    if (item.label === "중3") {
+      return {
+        ...item,
+        sub: [
+          {
+            id: 999,
+            label: "강의시간표",
+            path: "/middle-school/schedule",
+            parent_id: item.id,
+            display_order: 0,
+            is_visible: true
+          }
+        ]
+      };
+    }
+    return item;
   });
 
   useEffect(() => {
@@ -45,6 +65,9 @@ export function Header() {
               <span className="text-base sm:text-xl font-extrabold tracking-tight whitespace-nowrap" style={{ color: "#7B2332" }}>영통이강학원</span>
               {location.startsWith("/high-school") && (
                 <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">고등관</span>
+              )}
+              {location.startsWith("/middle-school") && (
+                <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">중3</span>
               )}
               {location.startsWith("/junior-school") && (
                 <span className="text-xs sm:text-sm font-bold text-gray-400 ml-0.5 sm:ml-1.5 whitespace-nowrap">초/중등관</span>
