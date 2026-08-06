@@ -66,6 +66,8 @@ function sciSubjectOf(className: string, guidelineTitle?: string): string {
 
 // 학교/표시 순서: 연합반 -> 특강반 -> 화성/가온/병점 -> 영덕/수원/청명 -> 고색/동탄국제고 -> 학교별 특강
 const SCHOOL_ORDER = [
+  "연합 (미적분1)",
+  "연합 (기하)",
   "연합",
   "공통",
   "화성고",
@@ -478,10 +480,10 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           subjectGroups[subj] = {};
         }
 
-        const isUnionSchool = targetSchool === "공통" || targetSchool === "연합" || targetSchool === "연합반";
+        const isUnionSchool = targetSchool === "공통" || targetSchool === "연합" || targetSchool === "연합반" || targetSchool.startsWith("연합 (");
         const groupKey = (isUnionInst && isUnionSchool)
-          ? "연합"
-          : (isUnionSchool ? "연합" : targetSchool);
+          ? (targetSchool.startsWith("연합 (") ? targetSchool : "연합")
+          : (isUnionSchool ? (targetSchool.startsWith("연합 (") ? targetSchool : "연합") : targetSchool);
 
         if (!subjectGroups[subj][groupKey]) subjectGroups[subj][groupKey] = [];
         
