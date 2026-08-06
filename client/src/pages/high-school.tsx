@@ -121,7 +121,7 @@ function buildFilterTabs(apiTabs: { id: number; label: string }[], category?: st
 
 const G1_FILTERS_DEFAULT: FilterTab[] = [
   { label: "전체시간표", filterFn: buildFilterFn("전체시간표"), isSummary: false },
-  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: false },
+  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: true },
   { label: "화성고", filterFn: buildFilterFn("화성고") },
   { label: "가온고", filterFn: buildFilterFn("가온고") },
   { label: "병점고", filterFn: buildFilterFn("병점고") },
@@ -135,7 +135,7 @@ const G1_FILTERS_DEFAULT: FilterTab[] = [
 
 const G2_FILTERS_DEFAULT: FilterTab[] = [
   { label: "전체시간표", filterFn: buildFilterFn("전체시간표"), isSummary: false },
-  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: false },
+  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: true },
   { label: "화성고", filterFn: buildFilterFn("화성고") },
   { label: "가온고", filterFn: buildFilterFn("가온고") },
   { label: "병점고", filterFn: buildFilterFn("병점고") },
