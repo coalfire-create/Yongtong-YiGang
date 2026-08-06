@@ -481,9 +481,19 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         }
 
         const isUnionSchool = targetSchool === "공통" || targetSchool === "연합" || targetSchool === "연합반" || targetSchool.startsWith("연합 (");
-        const groupKey = (isUnionInst && isUnionSchool)
-          ? (targetSchool.startsWith("연합 (") ? targetSchool : "연합")
-          : (isUnionSchool ? (targetSchool.startsWith("연합 (") ? targetSchool : "연합") : targetSchool);
+        
+        let groupKey = targetSchool;
+        if (isUnionSchool) {
+          if (targetSchool.startsWith("연합 (")) {
+            groupKey = targetSchool;
+          } else if ((tt.class_name || "").includes("미적분1") && category === "고등관-고2") {
+            groupKey = "연합 (미적분1)";
+          } else if ((tt.class_name || "").includes("기하") && category === "고등관-고2") {
+            groupKey = "연합 (기하)";
+          } else {
+            groupKey = "연합";
+          }
+        }
 
         if (!subjectGroups[subj][groupKey]) subjectGroups[subj][groupKey] = [];
         
