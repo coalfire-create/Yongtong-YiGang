@@ -323,6 +323,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         return {
           ...tt,
           class_name: "가온고 미적분1 내신 - 권소영T, 정승준T (8/15 개강, 8회)",
+          teacher_name: "권소영, 정승준",
           teacher_ids: Array.from(new Set([...(tt.teacher_ids || []), 6, 23]))
         };
       }
