@@ -60,7 +60,7 @@ function QuickMenuCard({
   );
 }
 
-interface FilterTab {
+export interface FilterTab {
   label: string;
   filterFn: (tt: any) => boolean;
   isSummary?: boolean;
@@ -79,7 +79,7 @@ const isScienceSubject = (tt: any) => {
   return SCIENCE_SUBJECTS.some(s => subj.includes(s) || cn.includes(s));
 };
 
-function buildFilterFn(label: string): (tt: any) => boolean {
+export function buildFilterFn(label: string): (tt: any) => boolean {
   if (label === "전체시간표" || label === "전체") return () => true;
   if (label === "썸머시간표" || label === "요약시간표" || label.includes("내신시간표") || label.includes("중간")) return () => false;
   if (label === "논술") return (tt) => isNonsul(tt);
@@ -110,7 +110,7 @@ function buildFilterFn(label: string): (tt: any) => boolean {
   };
 }
 
-function buildFilterTabs(apiTabs: { id: number; label: string }[], category?: string): FilterTab[] {
+export function buildFilterTabs(apiTabs: { id: number; label: string }[], category?: string): FilterTab[] {
   return apiTabs.map((tab) => {
     let displayLabel = tab.label;
     if (tab.label === "기말/내신시간표" && (category === "고등관-고1" || category === "고등관-고2")) {

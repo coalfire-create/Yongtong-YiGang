@@ -1,12 +1,24 @@
 import { SectionPage, PageLayout } from "@/components/layout";
 import { Link } from "wouter";
 import { Calendar, Sparkles, type LucideIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { TimetableGallery } from "@/components/timetable-gallery";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 import { BannerCarousel } from "@/components/banner-carousel";
-import { SummaryTimetableSection } from "@/components/summary-timetable";
+import { buildFilterFn, buildFilterTabs, type FilterTab } from "@/pages/high-school";
 
 const JUNIOR_SUBJECTS = ["수학", "국어", "영어", "탐구"];
+
+const JUNIOR_CATEGORY = "초/중등관";
+
+const JUNIOR_FILTERS_DEFAULT: FilterTab[] = [
+  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: true },
+  { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
+  { label: "수학", filterFn: buildFilterFn("수학") },
+  { label: "국어", filterFn: buildFilterFn("국어") },
+  { label: "영어", filterFn: buildFilterFn("영어") },
+  { label: "탐구", filterFn: buildFilterFn("탐구") },
+];
 
 const QUICK_MENU_ITEMS: { label: string; sub: string; icon: LucideIcon; path: string }[] = [
   { label: "초/중등부 시간표", sub: "자세히 보기 +", icon: Calendar, path: "/junior-school/schedule" },
@@ -79,12 +91,26 @@ export function JuniorSchool() {
 }
 
 export function JuniorSchoolSchedule() {
+  const { data: apiTabs } = useQuery<{ id: number; label: string; category: string; display_order: number; is_visible: boolean }[]>({
+    queryKey: ["/api/filter-tabs", JUNIOR_CATEGORY],
+    queryFn: async () => {
+      const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(JUNIOR_CATEGORY)}`);
+      if (!res.ok) throw new Error("Failed to fetch filter tabs");
+      return res.json();
+    },
+  });
+
+  const filteredApiTabs = apiTabs?.filter((tab) => tab.is_visible !== false);
+  const filterTabs = filteredApiTabs && filteredApiTabs.length > 0 ? buildFilterTabs(filteredApiTabs, JUNIOR_CATEGORY) : JUNIOR_FILTERS_DEFAULT;
+
   return (
     <SectionPage title="초/중등관 강의시간표">
-      <TimetableGallery category="초/중등관" />
-      <div className="mt-10">
-        <SummaryTimetableSection division="junior" title="초/중등관 기말/내신 시간표" />
-      </div>
+      <TimetableGallery
+        category={JUNIOR_CATEGORY}
+        filterTabs={filterTabs}
+        summaryDivision="junior"
+        summaryTitle="초/중등관 기말/내신 시간표"
+      />
     </SectionPage>
   );
 }
