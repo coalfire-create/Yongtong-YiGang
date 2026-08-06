@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Calendar, Users, Clock } from "lucide-react";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 import { useQuery } from "@tanstack/react-query";
+import { TimetableGallery } from "@/components/timetable-gallery";
 
 const MIDDLE_SCHOOL_SUBJECTS = ["수학", "국어", "영어", "탐구"];
 
@@ -19,11 +20,11 @@ export function MiddleSchool() {
   return (
     <SectionPage title="중등관" subtitle="중등부 수학 전문 과정 안내">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="block border border-gray-200 bg-white p-8 transition-colors duration-200" data-testid="card-mid-schedule">
+        <Link href="/middle-school/schedule" className="block border border-gray-200 bg-white p-8 hover:border-red-400 transition-colors duration-200 cursor-pointer" data-testid="card-mid-schedule">
           <Calendar className="w-10 h-10 text-red-600 mb-4" />
           <h3 className="text-xl font-bold text-gray-900 mb-2">강의시간표</h3>
-          <p className="text-gray-500 text-sm">중1.중2 초/중등관 과정별 시간표를 확인하세요.</p>
-        </div>
+          <p className="text-gray-500 text-sm">중3 과정별 시간표를 확인하세요.</p>
+        </Link>
         <Link href="/middle-school/teachers" className="block border border-gray-200 bg-white p-8 hover:border-red-400 transition-colors duration-200 cursor-pointer" data-testid="card-mid-teachers">
           <Users className="w-10 h-10 text-red-600 mb-4" />
           <h3 className="text-xl font-bold text-gray-900 mb-2">선생님 소개</h3>
@@ -77,4 +78,14 @@ export function MiddleSchool() {
 
 export function MiddleSchoolTeachers() {
   return <TeacherIntroPage division="중등관" subjects={MIDDLE_SCHOOL_SUBJECTS} />;
+}
+
+export function MiddleSchoolSchedule() {
+  return (
+    <SectionPage title="중등관(중3) 강의시간표">
+      <div className="mt-4">
+        <TimetableGallery category="중등관-중3" />
+      </div>
+    </SectionPage>
+  );
 }

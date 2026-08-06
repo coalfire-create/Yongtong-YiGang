@@ -9,7 +9,7 @@ import { HighSchool, HighSchoolSchedule, HighSchoolScheduleG1, HighSchoolSchedul
 import { JuniorSchool, JuniorSchoolSchedule } from "@/pages/junior-school";
 import { JuniorPremiumSystem } from "@/pages/junior-premium";
 import { Owl, OwlInfo, OwlUsage } from "@/pages/owl";
-import { MiddleSchool } from "@/pages/middle-school";
+import { MiddleSchool, MiddleSchoolSchedule } from "@/pages/middle-school";
 import { Elementary, ElementarySchedule } from "@/pages/elementary";
 import { Briefing, BriefingReservation, BriefingSchedule } from "@/pages/briefing";
 import { Admissions, AdmissionsResults, AdmissionsReviews } from "@/pages/admissions";
@@ -38,6 +38,7 @@ function Router() {
       <Route path="/teachers" component={TeachersPage} />
       <Route path="/teachers/:id" component={TeacherDetail} />
       <Route path="/middle-school" component={MiddleSchool} />
+      <Route path="/middle-school/schedule" component={MiddleSchoolSchedule} />
 
       <Route path="/elementary" component={Elementary} />
       <Route path="/elementary/schedule" component={ElementarySchedule} />
