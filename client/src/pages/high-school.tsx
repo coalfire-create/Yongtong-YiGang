@@ -110,7 +110,7 @@ function buildFilterTabs(apiTabs: { id: number; label: string }[], category?: st
     if (tab.label === "기말/내신시간표" && (category === "고등관-고1" || category === "고등관-고2")) {
       displayLabel = "2학기 중간 내신시간표";
     }
-    const isSummaryOnly = displayLabel === "썸머시간표" || displayLabel === "요약시간표";
+    const isSummaryOnly = displayLabel === "썸머시간표" || displayLabel === "요약시간표" || displayLabel === "2학기 중간 내신시간표" || displayLabel === "기말/내신시간표";
     return {
       label: displayLabel,
       filterFn: buildFilterFn(tab.label),
