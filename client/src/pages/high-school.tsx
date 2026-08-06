@@ -105,23 +105,23 @@ function buildFilterFn(label: string): (tt: any) => boolean {
 }
 
 function buildFilterTabs(apiTabs: { id: number; label: string }[], category?: string): FilterTab[] {
-  return apiTabs.map((tab, idx) => {
+  return apiTabs.map((tab) => {
     let displayLabel = tab.label;
     if (tab.label === "기말/내신시간표" && (category === "고등관-고1" || category === "고등관-고2")) {
       displayLabel = "2학기 중간 내신시간표";
     }
-    const isFirstSummary = idx === 0 || displayLabel.includes("시간표") && !displayLabel.includes("전체");
+    const isSummaryOnly = displayLabel === "썸머시간표" || displayLabel === "요약시간표";
     return {
       label: displayLabel,
       filterFn: buildFilterFn(tab.label),
-      isSummary: isFirstSummary || displayLabel === "썸머시간표" || displayLabel === "요약시간표" || displayLabel.includes("내신시간표"),
+      isSummary: isSummaryOnly,
     };
   });
 }
 
 const G1_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: true },
-  { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
+  { label: "전체시간표", filterFn: buildFilterFn("전체시간표"), isSummary: false },
+  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: false },
   { label: "화성고", filterFn: buildFilterFn("화성고") },
   { label: "가온고", filterFn: buildFilterFn("가온고") },
   { label: "병점고", filterFn: buildFilterFn("병점고") },
@@ -134,8 +134,8 @@ const G1_FILTERS_DEFAULT: FilterTab[] = [
 ];
 
 const G2_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: true },
-  { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
+  { label: "전체시간표", filterFn: buildFilterFn("전체시간표"), isSummary: false },
+  { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: false },
   { label: "화성고", filterFn: buildFilterFn("화성고") },
   { label: "가온고", filterFn: buildFilterFn("가온고") },
   { label: "병점고", filterFn: buildFilterFn("병점고") },
