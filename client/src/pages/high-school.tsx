@@ -99,6 +99,12 @@ function buildFilterFn(label: string): (tt: any) => boolean {
   return (tt) => {
     if (isNonsul(tt)) return false;
 
+    if (label === "청명고") {
+      const ts = tt.target_school || "";
+      const isUnionSchool = ts === "공통" || ts === "연합" || ts === "연합반" || ts.startsWith("연합 (");
+      if (isUnionSchool) return true;
+    }
+
     // 타겟 학교나 클래스 이름에 해당 필터 탭 라벨이 포함되어 있으면 true 반환
     return (tt.target_school || "").includes(label) || (tt.class_name || "").includes(label);
   };
