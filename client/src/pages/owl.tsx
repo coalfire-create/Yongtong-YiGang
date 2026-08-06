@@ -1170,8 +1170,8 @@ export function Owl() {
                   <span className="text-[10px] text-gray-400 font-medium mt-1 block">문자 상담 전용: 010-7737-2843</span>
                 </div>
                 <div className="border-t border-white/10 pt-4 text-[10px] text-gray-300 space-y-1">
-                  <p className="font-semibold text-white">영통이강학원 4관 올빼미 학습관</p>
-                  <p className="text-gray-400">경기도 수원시 영통구 봉영로 1605 모던타운 505호</p>
+                  <p className="font-semibold text-white">올빼미아카데미 (학습관)</p>
+                  <p className="text-gray-400">경기도 수원시 영통구 봉영로 1605, 모던타운 505호</p>
                 </div>
               </div>
             </div>
