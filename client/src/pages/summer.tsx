@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { SectionPage } from "@/components/layout";
 import { Loader2, User, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, CheckCircle2, Calendar, Bell, ClipboardList, Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { CONTACTS, toTelHref } from "@shared/contact-info";
 
 interface SummerImage {
   id: number;
@@ -1817,7 +1818,7 @@ export default function Summer() {
                 <Phone className="w-6 h-6" />
               </div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">전화 문의</p>
-              <a href="tel:0312041353" className="text-xl sm:text-2xl font-black text-white hover:text-[#7B2332] transition-colors">031-204-1353</a>
+              <a href={toTelHref(CONTACTS.highSchool.tel)} className="text-xl sm:text-2xl font-black text-white hover:text-[#7B2332] transition-colors">{CONTACTS.highSchool.tel}</a>
             </div>
             <div className="w-px h-16 bg-white/10 hidden sm:block"></div>
             <div className="flex flex-col items-center gap-2">

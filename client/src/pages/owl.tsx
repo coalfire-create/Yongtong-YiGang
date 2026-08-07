@@ -7,6 +7,7 @@ import {
   Users, MapPin, Send, HelpCircle, Utensils, AlertTriangle, ArrowRight, ChevronDown
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { CONTACTS, toTelHref } from "@shared/contact-info";
 
 interface Banner {
   id: number;
@@ -1164,8 +1165,8 @@ export function Owl() {
               <div className="md:col-span-4 bg-white/5 border border-white/10 rounded-xl p-6 text-center space-y-4">
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">상담전용 콜센터</span>
                 <div>
-                  <a href="tel:031-548-0982" className="text-2xl font-black text-white hover:text-[#E6C687] block transition-colors">
-                    031-548-0982
+                  <a href={toTelHref(CONTACTS.owl.tel)} className="text-2xl font-black text-white hover:text-[#E6C687] block transition-colors">
+                    {CONTACTS.owl.tel}
                   </a>
                   <span className="text-[10px] text-gray-400 font-medium mt-1 block">문자 상담 전용: 010-7737-2843</span>
                 </div>
