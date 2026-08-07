@@ -16,16 +16,6 @@ interface Banner {
   display_order: number;
 }
 
-const DEFAULT_SLIDES = [
-  {
-    title: "영통이강학원",
-    subtitle: "수학 전문",
-    description: "수능·내신 완벽 대비, 실력 있는 강사진과 함께",
-    image_url: null as string | null,
-    link_url: null as string | null,
-  },
-];
-
 const QUICK_MENU_ITEMS = [
   { label: "수학스쿨", sub: "성적을 만드는 시스템 +", icon: TrendingUp, path: "/math-school" },
   { label: "고등관", sub: "자세히 보기 +", icon: Landmark, path: "/high-school" },
@@ -48,15 +38,13 @@ function HeroCarousel() {
     },
   });
 
-  const slides = banners.length > 0
-    ? banners.map((b) => ({
-        title: b.title,
-        subtitle: b.subtitle,
-        description: b.description,
-        image_url: b.image_url,
-        link_url: b.link_url,
-      }))
-    : DEFAULT_SLIDES;
+  const slides = banners.map((b) => ({
+    title: b.title,
+    subtitle: b.subtitle,
+    description: b.description,
+    image_url: b.image_url,
+    link_url: b.link_url,
+  }));
 
   const goTo = useCallback(
     (index: number) => {
@@ -138,6 +126,14 @@ function HeroCarousel() {
 
   if (isLoading) {
     return <div className="w-full min-h-[200px] bg-gray-900 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-white/50" /></div>;
+  }
+
+  if (slides.length === 0) {
+    return (
+      <div className="w-full min-h-[200px] bg-gradient-to-br from-[#7B2332] via-[#8B3040] to-[#6B1D2A] flex items-center justify-center">
+        <span className="text-white/40 text-sm">배너가 등록되지 않았습니다</span>
+      </div>
+    );
   }
 
   return (

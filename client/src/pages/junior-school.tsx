@@ -70,9 +70,6 @@ export function JuniorSchool() {
           <div className="w-full lg:h-full">
             <BannerCarousel
               division="junior"
-              defaultTitle="초/중등관"
-              defaultSubtitle="수학 전문 과정"
-              defaultDescription="기초부터 심화까지, 체계적인 수학 학습을 시작하세요"
               className="h-full"
             />
           </div>

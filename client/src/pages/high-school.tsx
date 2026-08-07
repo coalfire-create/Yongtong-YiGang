@@ -268,9 +268,6 @@ export function HighSchool() {
           <div className="w-full lg:h-full">
             <BannerCarousel
               division="high"
-              defaultTitle="고등관"
-              defaultSubtitle="수능·내신 완벽 대비"
-              defaultDescription="체계적인 커리큘럼과 실력 있는 강사진이 함께합니다"
               className="h-full"
             />
           </div>
