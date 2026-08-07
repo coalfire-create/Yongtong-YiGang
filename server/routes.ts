@@ -2189,6 +2189,15 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/schools", async (req, res) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM schools ORDER BY name ASC");
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post("/api/schools", requireAdmin, upload.single("logo"), async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: "학교 이름은 필수입니다." });
