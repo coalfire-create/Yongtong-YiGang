@@ -6120,6 +6120,7 @@ const FILTER_TAB_CATEGORIES = [
   { value: "고등관-고1", label: "고1" },
   { value: "고등관-고2", label: "고2" },
   { value: "고등관-고3", label: "고3" },
+  { value: "초/중등관", label: "초/중등관" },
 ];
 
 function SortableFilterTabRow({
