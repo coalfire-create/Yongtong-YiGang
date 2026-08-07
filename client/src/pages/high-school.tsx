@@ -73,6 +73,12 @@ const isNonsul = (tt: any) =>
 
 const SCIENCE_SUBJECTS = ["통합과학", "통과", "물리", "화학", "생명", "지구", "탐구", "생명과학", "지구과학", "물리학", "과학탐구"];
 
+// 초/중등관 수학: 초등/중등 기초 과정과 고등 선행(공통수학·대수·미적분 등) 과정을 구분
+const isElementaryMiddleMath = (tt: any) => {
+  const cn = (tt.class_name || "");
+  return /초등|사고력|연산|기초개념/.test(cn) && !/공통수학|대수|미적분|기하|확통|블랙스타/.test(cn);
+};
+
 const isScienceSubject = (tt: any) => {
   const subj = (tt.subject || "").trim();
   const cn = (tt.class_name || "").trim();
@@ -84,6 +90,8 @@ export function buildFilterFn(label: string): (tt: any) => boolean {
   if (label === "썸머시간표" || label === "요약시간표" || label.includes("내신시간표") || label.includes("중간") || label.includes("파이널") || label.includes("수능")) return () => false;
   if (label === "논술") return (tt) => isNonsul(tt);
   if (label === "수학/탐구") return (tt) => ["수학", "탐구", "통합과학", "통합사회/한국사", "물리", "화학", "생명", "생명과학", "지구과학", "지구", "물리학", "과학탐구"].includes(tt.subject) && !isNonsul(tt);
+  if (label === "초&중등 수학") return (tt) => !isNonsul(tt) && tt.subject === "수학" && isElementaryMiddleMath(tt);
+  if (label === "고등과정 수학") return (tt) => !isNonsul(tt) && tt.subject === "수학" && !isElementaryMiddleMath(tt);
 
   const SUBJECTS = ["국어", "영어", "수학", "탐구", "통합과학", "통합사회/한국사", "생명과학", "사회문화", "생윤"];
   if (SUBJECTS.includes(label)) {

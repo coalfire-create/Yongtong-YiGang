@@ -14,9 +14,8 @@ const JUNIOR_CATEGORY = "초/중등관";
 const JUNIOR_FILTERS_DEFAULT: FilterTab[] = [
   { label: "2학기 중간 내신시간표", filterFn: buildFilterFn("2학기 중간 내신시간표"), isSummary: true },
   { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
-  { label: "수학", filterFn: buildFilterFn("수학") },
-  { label: "국어", filterFn: buildFilterFn("국어") },
-  { label: "영어", filterFn: buildFilterFn("영어") },
+  { label: "초&중등 수학", filterFn: buildFilterFn("초&중등 수학") },
+  { label: "고등과정 수학", filterFn: buildFilterFn("고등과정 수학") },
   { label: "탐구", filterFn: buildFilterFn("탐구") },
 ];
 
