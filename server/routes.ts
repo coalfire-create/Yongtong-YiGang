@@ -19,6 +19,9 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const archivePool = process.env.ARCHIVE_DATABASE_URL
   ? new pg.Pool({ connectionString: process.env.ARCHIVE_DATABASE_URL, ssl: { rejectUnauthorized: false } })
   : null;
+if (!archivePool) {
+  console.warn("[Archive] ARCHIVE_DATABASE_URL is not set; reservation/SMS/level-test archive backup is disabled.");
+}
 let archiveReady = false;
 async function ensureArchiveTables() {
   if (!archivePool || archiveReady) return;
@@ -1043,7 +1046,7 @@ export async function registerRoutes(
   });
 
   // ========== SUMMER GUIDELINES ==========
-  app.get("/api/dev/delete-curriculum-images", requireAdmin, async (req, res) => {
+  app.post("/api/dev/delete-curriculum-images", requireAdmin, async (req, res) => {
     try {
       await pool.query("DELETE FROM summer_images WHERE category = 'curriculum'");
       res.send("Deleted curriculum images using db");
@@ -1053,7 +1056,7 @@ export async function registerRoutes(
   });
 
 
-  app.get("/api/dev/fix-db-format", requireAdmin, async (req, res) => {
+  app.post("/api/dev/fix-db-format", requireAdmin, async (req, res) => {
     try {
       const { rows } = await pool.query("SELECT * FROM summer_guidelines ORDER BY id ASC");
       
@@ -1208,7 +1211,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/dev/split-hwang", requireAdmin, async (req, res) => {
+  app.post("/api/dev/split-hwang", requireAdmin, async (req, res) => {
     try {
       const { rows } = await pool.query("SELECT id, title, content, division FROM summer_guidelines WHERE title = '[중등] 통과 - 황준우T [중3]'");
       if (rows.length === 0) return res.send("Row not found.");
@@ -1252,7 +1255,7 @@ export async function registerRoutes(
 
 
 
-  app.get("/api/dev/upload-curriculums", requireAdmin, async (req, res) => {
+  app.post("/api/dev/upload-curriculums", requireAdmin, async (req, res) => {
     try {
       const fs = await import('fs');
       const data = JSON.parse(fs.readFileSync('scratch/curriculums.json', 'utf8'));
@@ -3293,7 +3296,10 @@ export async function registerRoutes(
         "INSERT INTO phone_verifications (phone, code, expires_at) VALUES ($1, $2, $3)",
         [cleanPhone, code, expiresAt]
       );
-      console.log(`[PHONE AUTH] 인증번호 발송 (mock): ${cleanPhone} -> ${code}`);
+      // mock 발송: 실제 SMS 연동 전까지 개발 환경에서만 콘솔로 확인 (운영 로그에 인증번호 평문 노출 방지)
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[PHONE AUTH] 인증번호 발송 (mock): ${cleanPhone} -> ${code}`);
+      }
       res.json({ success: true, message: "인증번호가 발송되었습니다." });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
