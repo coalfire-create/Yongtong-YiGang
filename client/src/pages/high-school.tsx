@@ -87,13 +87,25 @@ export function buildFilterFn(label: string): (tt: any) => boolean {
 
   const SUBJECTS = ["국어", "영어", "수학", "탐구", "통합과학", "통합사회/한국사", "생명과학", "사회문화", "생윤"];
   if (SUBJECTS.includes(label)) {
-    return (tt) =>
-      !isNonsul(tt) && (
+    return (tt) => {
+      if (isNonsul(tt)) return false;
+      if (label === "통합사회/한국사") {
+        return (
+          tt.subject === "통합사회/한국사" ||
+          tt.subject === "통사/한국사" ||
+          (tt.subject || "").includes("통사") ||
+          (tt.subject || "").includes("한국사") ||
+          (tt.class_name || "").includes("통합사회") ||
+          (tt.class_name || "").includes("한국사")
+        );
+      }
+      return (
         tt.subject === label ||
         (tt.target_school || "") === label ||
         (tt.subject || "").includes(label) ||
         (tt.class_name || "").includes(label)
       );
+    };
   }
 
   return (tt) => {

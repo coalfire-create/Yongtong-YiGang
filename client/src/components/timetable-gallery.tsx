@@ -409,9 +409,9 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
   for (const tt of filtered) {
     const isUnion = tt.is_union;
-    let subj = tt.subject || "통사/한국사";
-    if (subj === "기타" || subj === "통합사회" || subj === "한국사" || subj === "통합사회한국사") {
-      subj = "통사/한국사";
+    let subj = tt.subject || "통합사회/한국사";
+    if (subj === "기타" || subj === "통합사회" || subj === "한국사" || subj === "통합사회한국사" || subj === "통사/한국사") {
+      subj = "통합사회/한국사";
     }
     const isG1OrG2Science = (category === "고등관-고1" || category === "고등관-고2") && (subj === "탐구" || SCIENCE_SUBJECTS.includes(subj));
     if (isG1OrG2Science) {
@@ -597,7 +597,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                     <div className="w-full md:w-32 flex-shrink-0 flex md:flex-col items-center md:items-start gap-2 pt-1">
                       <div className="w-1 h-6 bg-[#7B2332] hidden md:block" />
                       <h3 className="text-xl font-extrabold text-gray-900 leading-tight" data-testid={`text-subject-group-${subj}`}>
-                        {subj === "탐구" ? "통합과학" : (subj === "기타" || subj === "통합사회한국사" ? "통사/한국사" : subj)}
+                        {subj === "탐구" ? "통합과학" : (subj === "통합사회/한국사" || subj === "기타" || subj === "통합사회한국사" ? "통사/한국사" : subj)}
                       </h3>
                       <span className="text-xs text-gray-400 font-medium">({totalClasses}개 반)</span>
                     </div>
