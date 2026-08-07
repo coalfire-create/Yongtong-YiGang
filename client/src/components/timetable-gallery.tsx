@@ -304,21 +304,9 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
   const { data: rawTimetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables", category],
     queryFn: async () => {
-      // PROD DB override: "중등관-중3" 탭일 때 DB의 "초/중등관" 데이터를 가져옴
-      const fetchCat = category === "중등관-중3" ? "초/중등관" : category;
-      const res = await fetch(`/api/timetables?category=${encodeURIComponent(fetchCat)}`);
+      const res = await fetch(`/api/timetables?category=${encodeURIComponent(category)}`);
       if (!res.ok) throw new Error("Failed to fetch");
-      let data = await res.json();
-      
-      // PROD DB override: "초/중등관" 탭에서는 중3 수업들 숨김 (이동 효과)
-      if (category === "초/중등관") {
-        data = data.filter((tt: any) => 
-          !tt.class_name.includes("중3") && 
-          !tt.class_name.includes("대수") && 
-          !tt.class_name.includes("공통수학2")
-        );
-      }
-      return data;
+      return res.json();
     },
   });
 
