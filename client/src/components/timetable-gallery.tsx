@@ -405,8 +405,6 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
   const ungrouped: Record<string, Timetable[]> = {};
 
-  const tabLabel = activeTab?.label || "";
-  const isAllOrMathSciFilter = !filterTabs || filterTabs.length === 0 || tabLabel === "전체시간표" || tabLabel === "수학/탐구";
   const currentSubjectOrder = getSubjectOrder(category);
 
   for (const tt of filtered) {
@@ -417,11 +415,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
     }
     const isG1OrG2Science = (category === "고등관-고1" || category === "고등관-고2") && (subj === "탐구" || SCIENCE_SUBJECTS.includes(subj));
     if (isG1OrG2Science) {
-      if (isAllOrMathSciFilter) {
-        subj = "탐구";
-      } else {
-        subj = sciSubjectOf(tt.class_name || "", brochureMap.get(tt.id)?.title);
-      }
+      subj = sciSubjectOf(tt.class_name || "", brochureMap.get(tt.id)?.title);
     } else if (SCIENCE_SUBJECTS.includes(subj)) {
       subj = "탐구";
     }
@@ -430,12 +424,18 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
     const isNonsulClass = (tt.class_name || "").includes("논술") || (tt.subject || "").includes("논술") || (tt.target_school || "") === "논술";
 
-    if (isG1OrG2Science && isAllOrMathSciFilter) {
-      const schoolMatch = SCHOOL_ORDER.find(s => s !== "공통" && s !== "연합" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
-      if (schoolMatch) {
-        instances.push({ isUnion: false, targetSchool: schoolMatch });
+    if (isG1OrG2Science) {
+      if (subj === "통합과학") {
+        // 통과는 고1 정규반 -> 연합반/학교별 일반 그룹
+        const schoolMatch = SCHOOL_ORDER.find(s => s !== "공통" && s !== "연합" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
+        if (schoolMatch) {
+          instances.push({ isUnion: false, targetSchool: schoolMatch });
+        } else {
+          instances.push({ isUnion: tt.is_union, targetSchool: tt.target_school || "연합" });
+        }
       } else {
-        instances.push({ isUnion: tt.is_union, targetSchool: tt.target_school || "연합" });
+        // 물리/화학/생명/지구 -> 특강반 (과목별 소그룹)
+        instances.push({ isUnion: false, targetSchool: subj });
       }
     } else if (isNonsulClass) {
       instances.push({
@@ -491,9 +491,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           });
         }
       } else {
-        const forceUnion = isG1OrG2Science && isAllOrMathSciFilter;
         instances.push({
-          isUnion: forceUnion ? true : isUnion,
+          isUnion,
           targetSchool: tt.target_school || "연합",
         });
       }
