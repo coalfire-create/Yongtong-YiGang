@@ -615,6 +615,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                           brochureMap={brochureMap}
                           onBrochure={setBrochure}
                           type="school"
+                          hideDetailToggle={category === "초/중등관"}
                         />
                       ))}
                     </div>
@@ -643,6 +644,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                         brochureMap={brochureMap}
                         onBrochure={setBrochure}
                         type="school"
+                        hideDetailToggle={category === "초/중등관"}
                       />
                     ))}
                   </div>
@@ -679,6 +681,7 @@ function GroupCard({
   brochureMap,
   onBrochure,
   type,
+  hideDetailToggle,
 }: {
   title: string;
   timetables: Timetable[];
@@ -690,6 +693,7 @@ function GroupCard({
   brochureMap: Map<number, any>;
   onBrochure: (g: any) => void;
   type: "teacher" | "school";
+  hideDetailToggle?: boolean;
 }) {
   const firstTt = timetables[0];
 
@@ -991,7 +995,7 @@ function GroupCard({
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {(tt.description || tt.detail_image_url) && (
+                {!hideDetailToggle && (tt.description || tt.detail_image_url) && (
                   <button
                     onClick={() => onToggle(tt.id)}
                     className="flex items-center gap-1 px-3 py-2 border border-gray-300 text-gray-600 text-xs font-medium hover:bg-gray-50 transition-colors"
