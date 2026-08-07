@@ -21,6 +21,29 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
+// Production 안전장치: 필수 env var가 비어있으면(미설정 또는 빈 문자열)
+// 관리자 비밀번호/세션 시크릿이 하드코딩된 기본값으로 조용히 폴백되는 것을 막기 위해
+// 서버 시작 자체를 차단한다.
+if (process.env.NODE_ENV === "production") {
+  const required = ["ADMIN_PASSWORD", "SESSION_SECRET", "DATABASE_URL"];
+  const missing = required.filter((key) => !process.env[key]?.trim());
+  if (missing.length > 0) {
+    console.error(`[Startup] Missing required env vars: ${missing.join(", ")}`);
+    process.exit(1);
+  }
+
+  const insecureDefaults: Record<string, string> = {
+    ADMIN_PASSWORD: "admin",
+    SESSION_SECRET: "fallback-secret",
+  };
+  for (const [key, insecureValue] of Object.entries(insecureDefaults)) {
+    if (process.env[key] === insecureValue) {
+      console.error(`[Startup] ${key} is set to an insecure default value.`);
+      process.exit(1);
+    }
+  }
+}
+
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
