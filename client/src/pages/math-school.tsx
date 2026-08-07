@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Trophy, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, Star, TrendingUp, ShieldCheck, ArrowRight } from "lucide-react";
 import { MathLevelTestModal } from "@/components/math-level-test-modal";
+import { CONTACTS, toTelHref } from "@shared/contact-info";
 
 const HIGHLIGHTS = [
   {
@@ -407,7 +408,7 @@ export default function MathSchool() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Enrollment Inquiry</p>
-                <a href="tel:0312041353" className="text-3xl font-black text-white hover:text-yellow-400 transition-colors">031-204-1353</a>
+                <a href={toTelHref(CONTACTS.highSchool.tel)} className="text-3xl font-black text-white hover:text-yellow-400 transition-colors">{CONTACTS.highSchool.tel}</a>
               </div>
             </div>
             <div className="hidden sm:block w-px h-24 bg-white/10"></div>

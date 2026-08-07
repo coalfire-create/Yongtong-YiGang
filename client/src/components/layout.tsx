@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import { FloatingSidebar } from "./floating-sidebar";
 import logoImg from "@assets/ikang_small.webp";
 import motiveLogoImg from "@assets/motive_logo.png";
+import { CONTACTS } from "@shared/contact-info";
 
 
 
@@ -185,9 +186,9 @@ function Footer() {
             <div className="flex-1 space-y-4 text-sm text-white/70 leading-relaxed">
               <p className="text-white font-extrabold text-2xl tracking-tight">수강문의</p>
               <div className="space-y-1.5">
-                <p><span className="text-white/90 font-medium text-sm">영통이강 고등 (내신/수능 전문)</span>&ensp;<span className="text-white/70 text-sm">031-204-1353</span></p>
-                <p><span className="text-white/90 font-medium text-sm">영통이강 초/중등관</span>&ensp;<span className="text-white/70 text-sm">031-548-0985</span></p>
-                <p><span className="text-white/90 font-medium text-sm">올빼미 관리형 스터디 카페</span>&ensp;<span className="text-white/70 text-sm">031-548-0982</span></p>
+                <p><span className="text-white/90 font-medium text-sm">{CONTACTS.highSchool.label}</span>&ensp;<span className="text-white/70 text-sm">{CONTACTS.highSchool.tel}</span></p>
+                <p><span className="text-white/90 font-medium text-sm">{CONTACTS.juniorSchool.label}</span>&ensp;<span className="text-white/70 text-sm">{CONTACTS.juniorSchool.tel}</span></p>
+                <p><span className="text-white/90 font-medium text-sm">{CONTACTS.owl.label}</span>&ensp;<span className="text-white/70 text-sm">{CONTACTS.owl.tel}</span></p>
               </div>
               <div className="text-white/50 text-xs pt-1">
                 <p>제5795-3호 &middot; 이강학원입시센터학원</p>

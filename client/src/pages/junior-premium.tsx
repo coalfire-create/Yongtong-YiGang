@@ -1,6 +1,7 @@
 import { PageLayout } from "@/components/layout";
 import { Link } from "wouter";
 import { BookOpen, Trophy, CheckCircle2, ArrowLeft, Phone, Smartphone, MessageSquare } from "lucide-react";
+import { CONTACTS, toTelHref } from "@shared/contact-info";
 
 export function JuniorPremiumSystem() {
   return (
@@ -210,12 +211,12 @@ export function JuniorPremiumSystem() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
             <a
-              href="tel:031-548-0985"
+              href={toTelHref(CONTACTS.juniorSchool.tel)}
               className="inline-flex items-center gap-2 bg-[#7B2332] text-white font-bold px-6 py-3 rounded-sm hover:bg-[#6B1D2A] transition-colors text-sm"
               data-testid="link-premium-phone"
             >
               <Phone className="w-4 h-4" />
-              031-548-0985
+              {CONTACTS.juniorSchool.tel}
             </a>
             <a
               href="sms:010-7737-2843"
