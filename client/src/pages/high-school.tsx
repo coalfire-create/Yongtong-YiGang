@@ -81,7 +81,7 @@ const isScienceSubject = (tt: any) => {
 
 export function buildFilterFn(label: string): (tt: any) => boolean {
   if (label === "전체시간표" || label === "전체") return () => true;
-  if (label === "썸머시간표" || label === "요약시간표" || label.includes("내신시간표") || label.includes("중간")) return () => false;
+  if (label === "썸머시간표" || label === "요약시간표" || label.includes("내신시간표") || label.includes("중간") || label.includes("파이널") || label.includes("수능")) return () => false;
   if (label === "논술") return (tt) => isNonsul(tt);
   if (label === "수학/탐구") return (tt) => ["수학", "탐구", "통합과학", "통합사회/한국사", "물리", "화학", "생명", "생명과학", "지구과학", "지구", "물리학", "과학탐구"].includes(tt.subject) && !isNonsul(tt);
 
@@ -116,7 +116,13 @@ export function buildFilterTabs(apiTabs: { id: number; label: string }[], catego
     if (tab.label === "기말/내신시간표" && (category === "고등관-고1" || category === "고등관-고2")) {
       displayLabel = "2학기 중간 내신시간표";
     }
-    const isSummaryOnly = displayLabel === "썸머시간표" || displayLabel === "요약시간표" || displayLabel === "2학기 중간 내신시간표" || displayLabel === "기말/내신시간표";
+    const isSummaryOnly =
+      displayLabel === "썸머시간표" ||
+      displayLabel === "요약시간표" ||
+      displayLabel === "2학기 중간 내신시간표" ||
+      displayLabel === "기말/내신시간표" ||
+      displayLabel.includes("파이널") ||
+      displayLabel.includes("수능");
     return {
       label: displayLabel,
       filterFn: buildFilterFn(tab.label),
@@ -154,7 +160,7 @@ const G2_FILTERS_DEFAULT: FilterTab[] = [
 ];
 
 const G3_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "썸머시간표", filterFn: () => false, isSummary: true },
+  { label: "수능파이널 시간표", filterFn: () => false, isSummary: true },
   { label: "전체", filterFn: () => true },
   { label: "국어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "국어" || (tt.target_school || "") === "국어") },
   { label: "영어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "영어" || (tt.target_school || "") === "영어") },
@@ -207,7 +213,7 @@ function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defa
                   href={tab.path}
                   className={`px-8 py-3.5 text-sm font-bold transition-all duration-200 border-b-2 ${
                     isActive
-                      ? "text-gray-900 border-gray-900"
+                      ? "text-[#7B2332] border-[#7B2332]"
                       : "text-gray-400 border-transparent hover:text-gray-600"
                   }`}
                   data-testid={`tab-${tab.label}`}
@@ -226,7 +232,7 @@ function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defa
             category={category}
             filterTabs={filterTabs}
             summaryDivision={summaryDivision}
-            summaryTitle={summaryDivision ? `${grade} 썸머시간표` : undefined}
+            summaryTitle={summaryDivision ? (category === "고등관-고3" ? `${grade} 수능파이널 시간표` : `${grade} 시간표`) : undefined}
           />
         </div>
       </div>

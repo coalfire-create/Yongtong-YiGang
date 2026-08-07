@@ -566,11 +566,17 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       {isSummaryView && summaryDivision ? (
         (() => {
           const isFinal = (activeTab?.label || "").includes("기말") || (activeTab?.label || "").includes("내신") || (activeTab?.label || "").includes("중간");
-          const displayTitle = (category === "고등관-고1" || category === "고등관-고2") ? "중간/내신시간표" : "기말/내신시간표";
+          const isCsatFinal = (activeTab?.label || "").includes("파이널") || (activeTab?.label || "").includes("수능");
+          let displayTitle = summaryTitle || "2학기 시간표";
+          if (isFinal) {
+            displayTitle = (category === "고등관-고1" || category === "고등관-고2") ? "중간/내신시간표" : "기말/내신시간표";
+          } else if (isCsatFinal) {
+            displayTitle = "수능파이널 시간표";
+          }
           return (
             <SummaryTimetableSection
               division={summaryDivision}
-              title={isFinal ? displayTitle : (summaryTitle || "2학기 시간표")}
+              title={displayTitle}
             />
           );
         })()
