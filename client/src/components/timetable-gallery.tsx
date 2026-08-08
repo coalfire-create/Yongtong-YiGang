@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Calendar, Clock, BookOpen, User, GraduationCap, ChevronDown, ChevronUp, Users, School } from "lucide-react";
+import { Loader2, Calendar, Clock, BookOpen, User, GraduationCap, Users, School } from "lucide-react";
 import { ReservationModal } from "./reservation-modal";
 import { SummaryTimetableSection } from "./summary-timetable";
 import { BrochureModal } from "./brochure-modal";
@@ -296,7 +296,6 @@ interface TimetableGalleryProps {
 }
 
 export function TimetableGallery({ category, filterTabs, summaryDivision, summaryTitle }: TimetableGalleryProps) {
-  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [reserveTarget, setReserveTarget] = useState<{ id: number; name: string; subject: string; teacherName: string; classTime: string; startDate: string } | null>(null);
   const [brochure, setBrochure] = useState<any | null>(null);
@@ -536,7 +535,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           {filterTabs.map((tab, idx) => (
             <button
               key={tab.label}
-              onClick={() => { setSelectedFilter(idx); setExpandedId(null); }}
+              onClick={() => setSelectedFilter(idx)}
               className={`px-4 py-2 text-sm font-medium rounded-full border transition-colors ${
                 selectedFilter === idx
                   ? "bg-[#7B2332] text-white border-[#7B2332]"
@@ -597,13 +596,10 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                           timetables={tts}
                           teachers={teachers}
                           subject={subj}
-                          expandedId={expandedId}
-                          onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                           onReserve={openReserve}
                           brochureMap={brochureMap}
                           onBrochure={setBrochure}
                           type="school"
-                          hideDetailToggle={category === "초/중등관"}
                         />
                       ))}
                     </div>
@@ -626,13 +622,10 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                         title={key}
                         timetables={tts}
                         teachers={teachers}
-                        expandedId={expandedId}
-                        onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
                         onReserve={openReserve}
                         brochureMap={brochureMap}
                         onBrochure={setBrochure}
                         type="school"
-                        hideDetailToggle={category === "초/중등관"}
                       />
                     ))}
                   </div>
@@ -663,25 +656,19 @@ function GroupCard({
   timetables,
   teachers,
   subject,
-  expandedId,
-  onToggle,
   onReserve,
   brochureMap,
   onBrochure,
   type,
-  hideDetailToggle,
 }: {
   title: string;
   timetables: Timetable[];
   teachers: { id: number; name: string; image_url: string }[];
   subject?: string;
-  expandedId: number | null;
-  onToggle: (id: number) => void;
   onReserve: (tt: Timetable) => void;
   brochureMap: Map<number, any>;
   onBrochure: (g: any) => void;
   type: "teacher" | "school";
-  hideDetailToggle?: boolean;
 }) {
   const firstTt = timetables[0];
 
@@ -983,15 +970,6 @@ function GroupCard({
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {!hideDetailToggle && (tt.description || tt.detail_image_url) && (
-                  <button
-                    onClick={() => onToggle(tt.id)}
-                    className="flex items-center gap-1 px-3 py-2 border border-gray-300 text-gray-600 text-xs font-medium hover:bg-gray-50 transition-colors"
-                  >
-                    상세보기
-                    {expandedId === tt.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  </button>
-                )}
                 {brochureMap.get(tt.id) && (
                   <button
                     onClick={() => onBrochure(brochureMap.get(tt.id))}
@@ -1008,24 +986,6 @@ function GroupCard({
                 </button>
               </div>
             </div>
-
-            {/* Expanded Content */}
-            {expandedId === tt.id && (tt.description || tt.detail_image_url) && (
-              <div className="mt-4 pt-4 border-t border-gray-100 bg-gray-50/50 rounded p-4 animate-in fade-in slide-in-from-top-1">
-                {tt.detail_image_url && (
-                  <img
-                    src={tt.detail_image_url}
-                    alt={`${tt.class_name} 상세`}
-                    className="w-full max-w-2xl mx-auto rounded mb-4 object-contain"
-                  />
-                )}
-                {tt.description && (
-                  <div className="text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                    {tt.description}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         ))}
       </div>
