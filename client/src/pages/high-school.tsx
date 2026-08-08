@@ -119,10 +119,11 @@ export function buildFilterFn(label: string): (tt: any) => boolean {
   return (tt) => {
     if (isNonsul(tt)) return false;
 
-    // 연합(공통) 강좌는 모든 학교 학생에게 열려있으므로 어느 학교 탭에서도 노출
-    const ts = tt.target_school || "";
-    const isUnionSchool = ts === "공통" || ts === "연합" || ts === "연합반" || ts.startsWith("연합 (");
-    if (isUnionSchool) return true;
+    if (label === "청명고") {
+      const ts = tt.target_school || "";
+      const isUnionSchool = ts === "공통" || ts === "연합" || ts === "연합반" || ts.startsWith("연합 (");
+      if (isUnionSchool) return true;
+    }
 
     // 타겟 학교나 클래스 이름에 해당 필터 탭 라벨이 포함되어 있으면 true 반환
     return (tt.target_school || "").includes(label) || (tt.class_name || "").includes(label);
