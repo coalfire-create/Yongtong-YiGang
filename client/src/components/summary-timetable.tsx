@@ -33,7 +33,13 @@ export function SummaryTimetableSection({ division, title }: { division: string;
     );
   }
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return (
+      <div className="text-center py-16" data-testid={`summary-empty-${division}`}>
+        <p className="text-sm text-gray-400">등록된 요약 시간표가 없습니다.</p>
+      </div>
+    );
+  }
 
   return (
     <>
