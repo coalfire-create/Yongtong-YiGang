@@ -4,8 +4,19 @@ import { Calendar, Users, Clock } from "lucide-react";
 import { TeacherIntroPage } from "@/components/teacher-intro";
 import { useQuery } from "@tanstack/react-query";
 import { TimetableGallery } from "@/components/timetable-gallery";
+import { buildFilterFn, buildFilterTabs, type FilterTab } from "@/pages/high-school";
 
 const MIDDLE_SCHOOL_SUBJECTS = ["수학", "국어", "영어", "탐구"];
+
+const MIDDLE3_CATEGORY = "중등관-중3";
+
+const MIDDLE3_FILTERS_DEFAULT: FilterTab[] = [
+  { label: "전체시간표", filterFn: buildFilterFn("전체시간표") },
+  { label: "수학", filterFn: buildFilterFn("수학") },
+  { label: "국어", filterFn: buildFilterFn("국어") },
+  { label: "영어", filterFn: buildFilterFn("영어") },
+  { label: "탐구", filterFn: buildFilterFn("탐구") },
+];
 
 export function MiddleSchool() {
   const { data: images = [] } = useQuery<any[]>({
@@ -81,10 +92,22 @@ export function MiddleSchoolTeachers() {
 }
 
 export function MiddleSchoolSchedule() {
+  const { data: apiTabs } = useQuery<{ id: number; label: string; category: string; display_order: number; is_visible: boolean }[]>({
+    queryKey: ["/api/filter-tabs", MIDDLE3_CATEGORY],
+    queryFn: async () => {
+      const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(MIDDLE3_CATEGORY)}`);
+      if (!res.ok) throw new Error("Failed to fetch filter tabs");
+      return res.json();
+    },
+  });
+
+  const filteredApiTabs = apiTabs?.filter((tab) => tab.is_visible !== false);
+  const filterTabs = filteredApiTabs && filteredApiTabs.length > 0 ? buildFilterTabs(filteredApiTabs, MIDDLE3_CATEGORY) : MIDDLE3_FILTERS_DEFAULT;
+
   return (
     <SectionPage title="중등관(중3) 강의시간표">
       <div className="mt-4">
-        <TimetableGallery category="중등관-중3" />
+        <TimetableGallery category={MIDDLE3_CATEGORY} filterTabs={filterTabs} />
       </div>
     </SectionPage>
   );

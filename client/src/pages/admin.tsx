@@ -749,6 +749,7 @@ const CATEGORY_FILTER_OPTIONS: Record<string, string[]> = {
   "고등관-고1": ["화성고", "가온고", "병점고", "영덕고", "수원고", "청명고"],
   "고등관-고2": ["화성고", "가온고", "동국고", "영덕고", "수원고", "청명고", "고색고", "동탄국제고", "영신여고"],
   "고등관-고3": ["국어", "영어", "수학", "생명과학", "사회문화", "생윤", "논술"],
+  "중등관-중3": ["전체시간표", "수학", "국어", "영어", "탐구"],
 };
 
 function TimetablesTab() {
@@ -1191,6 +1192,7 @@ function TimetablesTab() {
     { value: "고등관-고1", label: "고1" },
     { value: "고등관-고2", label: "고2" },
     { value: "고등관-고3", label: "고3" },
+    { value: "중등관-중3", label: "중3" },
     { value: "초/중등관", label: "초/중등관" },
     { value: "고등관", label: "고등관(전체)" },
   ];
@@ -1380,6 +1382,7 @@ function TimetablesTab() {
                   <option value="고등관-고1">고등관 - 고1</option>
                   <option value="고등관-고2">고등관 - 고2</option>
                   <option value="고등관-고3">고등관 - 고3</option>
+                  <option value="중등관-중3">중등관 - 중3</option>
                   <option value="초/중등관">초/중등관</option>
                 </select>
               </div>
@@ -1710,6 +1713,7 @@ function TimetablesTab() {
                   <option value="고등관-고1">고등관 - 고1</option>
                   <option value="고등관-고2">고등관 - 고2</option>
                   <option value="고등관-고3">고등관 - 고3</option>
+                  <option value="중등관-중3">중등관 - 중3</option>
                   <option value="초/중등관">초/중등관</option>
                 </select>
                 {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category.message}</p>}
@@ -6120,6 +6124,7 @@ const FILTER_TAB_CATEGORIES = [
   { value: "고등관-고1", label: "고1" },
   { value: "고등관-고2", label: "고2" },
   { value: "고등관-고3", label: "고3" },
+  { value: "중등관-중3", label: "중3" },
   { value: "초/중등관", label: "초/중등관" },
 ];
 

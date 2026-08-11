@@ -255,14 +255,17 @@ function matchGuideline(tt: Timetable, guidelines: any[]): any | null {
   if (!cand.length) return null;
   if (cand.length === 1) return cand[0];
   const tk = _gkeys(tt.class_name || "");
-  const baseClassName = (tt.class_name || "").split("-")[0].trim();
+  const cleanName = (tt.class_name || "").replace(/\s*-\s*(초중등\s*모티브샘|[가-힣]{2,4}T?).*/, "").trim();
   let best: any = null, bs = -1;
   for (const g of cand) {
     const gk = _gkeys((g.title || "").replace(/^\[[^\]]*\]/, ""));
     let sc = 0; 
     for (const x of tk) if (gk.has(x)) sc++;
     if (tt.class_time && g.content && g.content.includes(tt.class_time)) sc += 2;
-    if (baseClassName && g.title && g.title.includes(baseClassName)) sc += 5;
+    if (cleanName && g.title && g.title.includes(cleanName)) {
+      sc += 10;
+      if (g.title.includes(`] ${cleanName} -`) || g.title.includes(` ${cleanName} -`)) sc += 10;
+    }
     if (sc > bs) { bs = sc; best = g; }
   }
   if (bs >= 1 && best) return best;
