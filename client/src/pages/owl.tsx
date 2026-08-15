@@ -424,8 +424,7 @@ function OwlDayTimeline() {
       subtitle: "최강의 질답 조교 상시 대기와 입시 컨설팅",
       details: [
         "명문대 출신 TA 질문 피드백: 명문대 출신 조교가 상시 대기하여 현장에서 1:1 대면 질문을 직접 받아 해결합니다.",
-        "입학사정관 출신 소장의 Full-Care: 1:1 생기부 관리, 탐구 주제 추천, 모의고사 오답 및 학종 컨설팅까지 학원 내 상시 무료/유료 컨설팅이 진행됩니다.",
-        "온라인 올빼미Q (owlq.co.kr) 지원: 24시간 언제 어디서나 질문을 등록하고 정확한 피드백을 받을 수 있는 독자적 질문 플랫폼을 활용합니다."
+        "입학사정관 출신 소장의 Full-Care: 1:1 생기부 관리, 탐구 주제 추천, 모의고사 오답 및 학종 컨설팅까지 학원 내 상시 무료/유료 컨설팅이 진행됩니다."
       ],
       highlight: "어려운 기출이나 개념에 막히는 즉시 1:1 조교 피드백 및 입시 전문가의 세심한 생활 및 성적 멘탈 케어가 들어갑니다."
     },
@@ -643,7 +642,7 @@ function CareSystemSection() {
             num: "03",
             title: "학습 관리",
             eng: "Q&A FEEDBACK",
-            desc: "명문대 TA 1:1 대면 질문 & 올빼미Q 온라인 24H 지원 (썸머/윈터 상시 운영)",
+            desc: "명문대 TA 1:1 대면 질문 & 밀착 학습 피드백 (썸머/윈터 상시 운영)",
             icon: GraduationCap,
             bg: "bg-blue-50/50",
             border: "border-blue-200 text-blue-700"
@@ -883,11 +882,6 @@ function CareSystemSection() {
               수원 최고의 질답 및 피드백 시스템입니다. 명문대 출신 대면 TA 조교가 상시 대기하여 학생들의 질문에 즉각 대응합니다. (썸머/윈터 상시 운영)
             </p>
           </div>
-          <div className="mt-8 border border-dashed border-[#7B2332]/40 rounded-xl p-4 bg-white text-center">
-            <span className="text-[10px] font-black text-[#7B2332] uppercase tracking-wider block">온라인 질문 플랫폼</span>
-            <span className="text-base font-black text-gray-800 block mt-1">올빼미Q (owlq.co.kr)</span>
-            <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">회원가입 후 온라인 질문 등록 시 24시간 피드백을 제공합니다.</p>
-          </div>
         </div>
 
         <div className="md:col-span-8 p-8 space-y-6">
@@ -990,7 +984,7 @@ function CareSystemSection() {
                   <tr className="bg-gray-50 text-gray-500 font-bold border-b border-gray-150">
                     <th className="p-3 pl-4">시행월</th>
                     <th className="p-3">현장 실전 응시 일정</th>
-                    <th className="p-3 pr-4 text-right">신청 오픈 시각 (올빼미Q)</th>
+                    <th className="p-3 pr-4 text-right">신청 오픈 시각</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
