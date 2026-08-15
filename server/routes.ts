@@ -715,6 +715,9 @@ async function ensureFilterTabsTable() {
       )
     `);
     await pool.query(`ALTER TABLE filter_tabs ADD COLUMN IF NOT EXISTS is_visible BOOLEAN NOT NULL DEFAULT true`);
+    // Ensure 고등관-고3 filter_tabs do not contain 사회문화, 생윤
+    await pool.query(`DELETE FROM filter_tabs WHERE category = '고등관-고3' AND (label = '사회문화' OR label = '생윤' OR label = '2학기 중간 내신시간표' OR label = '기말/내신시간표')`);
+    await pool.query(`UPDATE filter_tabs SET display_order = 0 WHERE category = '고등관-고3' AND label = '전체'`);
   } catch (err) {
     console.error("Failed to ensure filter_tabs table:", err);
   }
