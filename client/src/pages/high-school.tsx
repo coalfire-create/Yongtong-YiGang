@@ -208,8 +208,6 @@ const G3_FILTERS_DEFAULT: FilterTab[] = [
   { label: "영어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "영어" || (tt.target_school || "") === "영어") },
   { label: "수학", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "수학" || (tt.target_school || "") === "수학") },
   { label: "생명과학", filterFn: (tt) => !isNonsul(tt) && ((tt.target_school || "") === "생명과학" || (tt.subject || "").includes("생명") || (tt.class_name || "").includes("생명")) },
-  { label: "사회문화", filterFn: (tt) => !isNonsul(tt) && ((tt.target_school || "") === "사회문화" || (tt.subject || "").includes("사회") || (tt.class_name || "").includes("사회문화")) },
-  { label: "생윤", filterFn: (tt) => !isNonsul(tt) && ((tt.target_school || "") === "생윤" || (tt.subject || "").includes("생윤") || (tt.class_name || "").includes("생윤") || (tt.class_name || "").includes("생활과윤리")) },
   { label: "논술", filterFn: (tt) => isNonsul(tt) },
 ];
 
