@@ -607,17 +607,17 @@ function CareSystemSection() {
     <div id="care-dashboard" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 space-y-24">
       {/* Care Dashboard Header */}
       <div className="text-center space-y-4">
-        <span className="text-xs font-black tracking-widest text-[#7B2332] uppercase">4-CORE CLOSE CARE SYSTEM</span>
+        <span className="text-xs font-black tracking-widest text-[#7B2332] uppercase">3-CORE CLOSE CARE SYSTEM</span>
         <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-          올빼미 4대 초밀착 관리 시스템
+          올빼미 3대 초밀착 관리 시스템
         </h2>
         <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed">
-          수준 높은 자습 공간의 제공을 넘어 출결, 생활 수칙, 과목별 TA 대면 피드백, 그리고 대학 진학 입시 상담까지 원스톱으로 관리합니다.
+          수준 높은 자습 공간의 제공을 넘어 출결, 생활 수칙, 그리고 대학 진학 입시 상담까지 원스톱으로 관리합니다.
         </p>
       </div>
 
-      {/* 4대 핵심 테마 요약 대시보드 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+      {/* 3대 핵심 테마 요약 대시보드 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         {[
           {
             num: "01",
@@ -639,15 +639,6 @@ function CareSystemSection() {
           },
           {
             num: "03",
-            title: "학습 관리",
-            eng: "Q&A FEEDBACK",
-            desc: "명문대 TA 1:1 대면 질문 & 밀착 학습 피드백 (썸머/윈터 상시 운영)",
-            icon: GraduationCap,
-            bg: "bg-blue-50/50",
-            border: "border-blue-200 text-blue-700"
-          },
-          {
-            num: "04",
             title: "입시 관리",
             eng: "CONSULTING",
             desc: "전문 입학사정관 출신 입시 소장님 1:1 대입 컨설팅 & 시대인재 모의고사",
@@ -871,59 +862,11 @@ function CareSystemSection() {
         </div>
       </div>
 
-      {/* 03. 학습 관리 CARE Section (TA & Q&A) */}
+      {/* 03. 입시 관리 CARE Section */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 hover:shadow-md transition-shadow">
         <div className="md:col-span-4 bg-[#7B2332]/5 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-150">
           <div>
             <span className="text-[#7B2332] font-black text-xs block mb-1">CARE SYSTEM 03</span>
-            <h3 className="text-2xl font-black text-gray-900 mb-4">학습 (질문/피드백) 관리</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              수원 최고의 질답 및 피드백 시스템입니다. 명문대 출신 대면 TA 조교가 상시 대기하여 학생들의 질문에 즉각 대응합니다. (썸머/윈터 상시 운영)
-            </p>
-          </div>
-        </div>
-
-        <div className="md:col-span-8 p-8 space-y-6">
-          <h4 className="text-gray-900 font-extrabold text-lg flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-[#7B2332]" />
-            명문대 출신 조교진의 1:1 밀착 학습 피드백
-          </h4>
-
-          <div className="bg-[#FAF9F5] p-6 rounded-xl border border-gray-150 space-y-3">
-            <p className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-              <CheckCircle className="w-4 h-4 text-[#7B2332]" /> 1:1 대면 질문 및 학습 멘토링
-            </p>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              올빼미 학습관에서는 명문대 출신 조교진이 현장에 상주하여 학생들과 1:1 대면 질의응답을 진행합니다.
-              학습 중 막히는 개념이나 어려운 문항에 대해 피드백을 제공하며, 개인 맞춤형 학습법 및 공부 방향성 멘토링까지 함께 지원합니다.
-            </p>
-          </div>
-
-          {/* Academic features */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="border border-gray-150 p-4 rounded-xl bg-white shadow-sm space-y-1">
-              <span className="text-[10px] font-black text-[#7B2332] uppercase">ACADEMIC CONNECTION</span>
-              <h5 className="font-extrabold text-sm text-gray-900">영통이강학원 단과 및 연계 수업</h5>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                이강학원 연계 수준별 / 학교별 고품격 내신 및 모의고사 대비 단과 수업이 유기적으로 연계되어 바로 이동 학습할 수 있습니다.
-              </p>
-            </div>
-            <div className="border border-gray-150 p-4 rounded-xl bg-white shadow-sm space-y-1">
-              <span className="text-[10px] font-black text-[#7B2332] uppercase">VACATION SPECIAL</span>
-              <h5 className="font-extrabold text-sm text-gray-900">자체 수학연구소 보유 & 수학 몰입</h5>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                자체 수학연구소를 전폭 지원하는 이강학원 노하우를 바탕으로, 방학 특화 '수학 몰입 학습 프로그램'을 연중 가동합니다.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 04. 입시 관리 CARE Section */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 hover:shadow-md transition-shadow">
-        <div className="md:col-span-4 bg-[#7B2332]/5 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-150">
-          <div>
-            <span className="text-[#7B2332] font-black text-xs block mb-1">CARE SYSTEM 04</span>
             <h3 className="text-2xl font-black text-gray-900 mb-4">입시 (컨설팅) 관리</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
               입학사정관 출신 전문 대입 소장이 상주하며 수시부터 수능 성적표 배부 후 정시 유료/무료 컨설팅까지 Full-Care 매니지먼트를 펼칩니다.
