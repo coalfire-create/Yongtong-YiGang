@@ -202,8 +202,8 @@ const G2_FILTERS_DEFAULT: FilterTab[] = [
 ];
 
 const G3_FILTERS_DEFAULT: FilterTab[] = [
-  { label: "수능파이널 시간표", filterFn: () => false, isSummary: true },
   { label: "전체", filterFn: () => true },
+  { label: "수능파이널 시간표", filterFn: () => false, isSummary: true },
   { label: "국어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "국어" || (tt.target_school || "") === "국어") },
   { label: "영어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "영어" || (tt.target_school || "") === "영어") },
   { label: "수학", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "수학" || (tt.target_school || "") === "수학") },
