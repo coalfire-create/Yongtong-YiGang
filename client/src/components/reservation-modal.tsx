@@ -19,6 +19,7 @@ export function ReservationModal({ open, onClose, timetableId, className, subjec
   const [studentPhone, setStudentPhone] = useState("");
   const [parentPhone, setParentPhone] = useState("");
   const [school, setSchool] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState(subject || "전체/상담");
   const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [visible, setVisible] = useState(false);
@@ -26,13 +27,14 @@ export function ReservationModal({ open, onClose, timetableId, className, subjec
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
+      if (subject) setSelectedSubject(subject);
       requestAnimationFrame(() => setVisible(true));
     } else {
       setVisible(false);
       document.body.style.overflow = "";
     }
     return () => { document.body.style.overflow = ""; };
-  }, [open]);
+  }, [open, subject]);
 
   const handleClose = () => {
     setVisible(false);
@@ -92,7 +94,7 @@ export function ReservationModal({ open, onClose, timetableId, className, subjec
     if (!validate()) return;
 
     // Aggressive extraction for missing subject/teacher in frontend
-    let finalSubject = subject || "";
+    let finalSubject = selectedSubject || subject || "";
     let finalTeacher = teacherName || "";
 
     if (!finalSubject && className) {
@@ -212,6 +214,28 @@ export function ReservationModal({ open, onClose, timetableId, className, subjec
               />
               {errors.studentPhone && <p className="text-xs text-red-500 mt-1">{errors.studentPhone}</p>}
             </div>
+
+            {!timetableId && (
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">신청 과목 / 관심 과정</label>
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 text-sm bg-white focus:outline-none focus:border-[#7B2332]"
+                  data-testid="select-reservation-subject"
+                >
+                  <option value="전체/상담">전체 / 종합 상담</option>
+                  <option value="국어">국어</option>
+                  <option value="수학">수학</option>
+                  <option value="영어">영어</option>
+                  <option value="생명과학">생명과학 / 과학탐구</option>
+                  <option value="사회문화">사회문화 / 사탐</option>
+                  <option value="생윤">생활과 윤리</option>
+                  <option value="논술">논술</option>
+                  <option value="기타">기타</option>
+                </select>
+              </div>
+            )}
 
             <div className="pt-2">
               <label className="flex items-start gap-2.5 cursor-pointer" data-testid="label-privacy-consent">
