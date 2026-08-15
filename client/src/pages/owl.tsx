@@ -194,7 +194,7 @@ function OwlHeroSection() {
               href="#care-dashboard"
               className="px-6 py-3 bg-[#7B2332] hover:bg-[#922A3B] text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all rounded duration-300 flex items-center gap-2"
             >
-              4대 밀착 CARE 시스템 확인 <ArrowRight className="w-4 h-4" />
+              3대 밀착 CARE 시스템 확인 <ArrowRight className="w-4 h-4" />
             </a>
             <a
               href="#timeline-storyboard"
@@ -536,7 +536,7 @@ function OwlDayTimeline() {
   );
 }
 
-// 3. 4대 밀착 CARE 시스템 Dashboard Section
+// 3. 3대 밀착 CARE 시스템 Dashboard Section
 function CareSystemSection() {
   const [activePenaltyCategory, setActivePenaltyCategory] = useState("all");
   const [penaltyExpanded, setPenaltyExpanded] = useState(false);
