@@ -204,9 +204,9 @@ const G2_FILTERS_DEFAULT: FilterTab[] = [
 const G3_FILTERS_DEFAULT: FilterTab[] = [
   { label: "전체", filterFn: () => true },
   { label: "수능파이널 시간표", filterFn: () => false, isSummary: true },
+  { label: "수학", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "수학" || (tt.target_school || "") === "수학") },
   { label: "국어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "국어" || (tt.target_school || "") === "국어") },
   { label: "영어", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "영어" || (tt.target_school || "") === "영어") },
-  { label: "수학", filterFn: (tt) => !isNonsul(tt) && (tt.subject === "수학" || (tt.target_school || "") === "수학") },
   { label: "생명과학", filterFn: (tt) => !isNonsul(tt) && ((tt.target_school || "") === "생명과학" || (tt.subject || "").includes("생명") || (tt.class_name || "").includes("생명")) },
   { label: "논술", filterFn: (tt) => isNonsul(tt) },
 ];

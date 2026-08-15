@@ -295,18 +295,18 @@ async function ensureTimetablesTable() {
     const { rows: g3Rows } = await pool.query(`SELECT count(*) FROM timetables WHERE category = '고등관-고3'`);
     if (parseInt(g3Rows[0]?.count || '0', 10) === 0) {
       const g3Classes = [
-        { category: "고등관-고3", subject: "국어", class_name: "[고3 FINAL] 국어 <시대인재 서바이벌> - 홍준석T", teacher_name: "홍준석", class_time: "금 18:30~22:00", target_school: "수능파이널", description: "대치 시대인재와 동일한 콘텐츠로 진행 | 서울대 국문학과, 현) 시대인재 재종반", start_date: "FINAL", is_union: false, is_visible: true, display_order: 1 },
-        { category: "고등관-고3", subject: "국어", class_name: "[고3 FINAL] 국어 - 김현종T", teacher_name: "김현종", class_time: "토 14:00~17:30", target_school: "수능파이널", description: "연세대 국어국문학과 | 현) 대치 미래탐구, 현) 목동 미래탐구", start_date: "FINAL", is_union: false, is_visible: true, display_order: 2 },
-        { category: "고등관-고3", subject: "영어", class_name: "[고3 FINAL] 영어 - 문브라더스T", teacher_name: "문브라더스", class_time: "토 09:00~12:00", target_school: "수능파이널", description: "현) 미래탐구(대치/목동), 현) 목동/영통/중계 | 출강학원 마감&최다수강생", start_date: "FINAL", is_union: false, is_visible: true, display_order: 3 },
-        { category: "고등관-고3", subject: "생명과학", class_name: "[고3 FINAL] 시대인재 서바이벌 생명 - 최은석T", teacher_name: "최은석", class_time: "토 18:30~22:00", target_school: "수능파이널", description: "대치 시대인재와 동일한 콘텐츠로 진행 | 현) 시대인재 재종, 현) 영통이강학원 과학과 원장", start_date: "FINAL", is_union: false, is_visible: true, display_order: 4 },
-        { category: "고등관-고3", subject: "논술", class_name: "[고3 FINAL] 약술논술 (수학+국어) - 김승원T, 선화희T", teacher_name: "김승원, 선화희", class_time: "일 09:00~13:00", target_school: "수능파이널", description: "김승원 (연세대 이학학부, 현 영통이강 전임), 선화희 (현 대치세정/이강학원, 전 대치/목동 미래탐구)", start_date: "FINAL", is_union: false, is_visible: true, display_order: 5 },
-        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 1등급 프리미엄반 수학 - 김병우T", teacher_name: "김병우", class_time: "금 18:30~22:00 / 일 09:30~13:00", target_school: "수능파이널", description: "대치 시대인재 단과/재종 동일 콘텐츠 | 고려대 수학교육과, 현) 대치 시대인재 재종, 전) 강남대성 S2반", start_date: "FINAL", is_union: false, is_visible: true, display_order: 6 },
-        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 시대인재 서바이벌 공통 정규 수학 - 김병우T", teacher_name: "김병우", class_time: "토 18:30~22:00", target_school: "수능파이널", description: "대치 시대인재 단과/재종 동일 콘텐츠 | 실전 수능과 동일 5-게 100분 서바이벌 모의고사 진행", start_date: "FINAL", is_union: false, is_visible: true, display_order: 7 },
-        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 시대인재 서바이벌 미적분 정규 - 김병우T", teacher_name: "김병우", class_time: "일 14:00~17:30", target_school: "수능파이널", description: "대치 시대인재 단과/재종 동일 콘텐츠 | 미적분 과목 고득점을 위한 정규 과정", start_date: "FINAL", is_union: false, is_visible: true, display_order: 8 },
-        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 공통 수I, 수II 수학 - 김동환T", teacher_name: "김동환", class_time: "일 09:00~12:30", target_school: "수능파이널", description: "확실한 성적상승! | 서울대 수학교육과, 현) ETOOS 온라인 수학강사, 현) 강남하이퍼 목동관", start_date: "FINAL", is_union: false, is_visible: true, display_order: 9 },
-        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 시대인재 서바이벌 확통 정규 - 정승준T", teacher_name: "정승준", class_time: "일 18:00~21:30", target_school: "수능파이널", description: "대치 시대인재 단과/재종 동일 콘텐츠 | 서울대 (영통이강 원장), 현) 대치 시대인재, 수능 전과목 만점자 배출", start_date: "FINAL", is_union: false, is_visible: true, display_order: 10 },
-        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] All-Care 집중관리반 (공통+확통) - 김승원T", teacher_name: "김승원", class_time: "일 14:00~17:30", target_school: "수능파이널", description: "2등급 목표 All-Care 집중관리반 | 연세대 이학학부, 현) 영통이강 전임강사", start_date: "FINAL", is_union: false, is_visible: true, display_order: 11 },
-        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 1:1 개별 PT 약점 맞춤형 수업 - 김승원T", teacher_name: "김승원", class_time: "일 18:00~22:00", target_school: "수능파이널", description: "1:1 개별 클리닉 & 약점 완성 | 연세대 이학학부, 현) 영통이강 전임강사", start_date: "FINAL", is_union: false, is_visible: true, display_order: 12 }
+        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 1등급 프리미엄반 수학 - 김병우T", teacher_name: "김병우", class_time: "금 18:30~22:00 / 일 09:30~13:00", target_school: "수능파이널", description: "대치 시대인재 단과/재종 동일 콘텐츠 | 고려대 수학교육과, 현) 대치 시대인재 재종, 전) 강남대성 S2반", start_date: "FINAL", is_union: false, is_visible: true, display_order: 1 },
+        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 시대인재 서바이벌 공통 정규 수학 - 김병우T", teacher_name: "김병우", class_time: "토 18:30~22:00", target_school: "수능파이널", description: "대치 시대인재 단과/재종 동일 콘텐츠 | 실전 수능과 동일 5-게 100분 서바이벌 모의고사 진행", start_date: "FINAL", is_union: false, is_visible: true, display_order: 2 },
+        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 시대인재 서바이벌 미적분 정규 - 김병우T", teacher_name: "김병우", class_time: "일 14:00~17:30", target_school: "수능파이널", description: "대치 시대인재 단과/재종 동일 콘텐츠 | 미적분 과목 고득점을 위한 정규 과정", start_date: "FINAL", is_union: false, is_visible: true, display_order: 3 },
+        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 공통 수I, 수II 수학 - 김동환T", teacher_name: "김동환", class_time: "일 09:00~12:30", target_school: "수능파이널", description: "확실한 성적상승! | 서울대 수학교육과, 현) ETOOS 온라인 수학강사, 현) 강남하이퍼 목동관", start_date: "FINAL", is_union: false, is_visible: true, display_order: 4 },
+        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 시대인재 서바이벌 확통 정규 - 정승준T", teacher_name: "정승준", class_time: "일 18:00~21:30", target_school: "수능파이널", description: "대치 시대인재 단과/재종 동일 콘텐츠 | 서울대 (영통이강 원장), 현) 대치 시대인재, 수능 전과목 만점자 배출", start_date: "FINAL", is_union: false, is_visible: true, display_order: 5 },
+        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] All-Care 집중관리반 (공통+확통) - 김승원T", teacher_name: "김승원", class_time: "일 14:00~17:30", target_school: "수능파이널", description: "2등급 목표 All-Care 집중관리반 | 연세대 이학학부, 현) 영통이강 전임강사", start_date: "FINAL", is_union: false, is_visible: true, display_order: 6 },
+        { category: "고등관-고3", subject: "수학", class_name: "[고3 FINAL] 1:1 개별 PT 약점 맞춤형 수업 - 김승원T", teacher_name: "김승원", class_time: "일 18:00~22:00", target_school: "수능파이널", description: "1:1 개별 클리닉 & 약점 완성 | 연세대 이학학부, 현) 영통이강 전임강사", start_date: "FINAL", is_union: false, is_visible: true, display_order: 7 },
+        { category: "고등관-고3", subject: "국어", class_name: "[고3 FINAL] 국어 <시대인재 서바이벌> - 홍준석T", teacher_name: "홍준석", class_time: "금 18:30~22:00", target_school: "수능파이널", description: "대치 시대인재와 동일한 콘텐츠로 진행 | 서울대 국문학과, 현) 시대인재 재종반", start_date: "FINAL", is_union: false, is_visible: true, display_order: 8 },
+        { category: "고등관-고3", subject: "국어", class_name: "[고3 FINAL] 국어 - 김현종T", teacher_name: "김현종", class_time: "토 14:00~17:30", target_school: "수능파이널", description: "연세대 국어국문학과 | 현) 대치 미래탐구, 현) 목동 미래탐구", start_date: "FINAL", is_union: false, is_visible: true, display_order: 9 },
+        { category: "고등관-고3", subject: "영어", class_name: "[고3 FINAL] 영어 - 문브라더스T", teacher_name: "문브라더스", class_time: "토 09:00~12:00", target_school: "수능파이널", description: "현) 미래탐구(대치/목동), 현) 목동/영통/중계 | 출강학원 마감&최다수강생", start_date: "FINAL", is_union: false, is_visible: true, display_order: 10 },
+        { category: "고등관-고3", subject: "생명과학", class_name: "[고3 FINAL] 시대인재 서바이벌 생명 - 최은석T", teacher_name: "최은석", class_time: "토 18:30~22:00", target_school: "수능파이널", description: "대치 시대인재와 동일한 콘텐츠로 진행 | 현) 시대인재 재종, 현) 영통이강학원 과학과 원장", start_date: "FINAL", is_union: false, is_visible: true, display_order: 11 },
+        { category: "고등관-고3", subject: "논술", class_name: "[고3 FINAL] 약술논술 (수학+국어) - 김승원T, 선화희T", teacher_name: "김승원, 선화희", class_time: "일 09:00~13:00", target_school: "수능파이널", description: "김승원 (연세대 이학학부, 현 영통이강 전임), 선화희 (현 대치세정/이강학원, 전 대치/목동 미래탐구)", start_date: "FINAL", is_union: false, is_visible: true, display_order: 12 }
       ];
       for (const c of g3Classes) {
         await pool.query(
@@ -718,6 +718,12 @@ async function ensureFilterTabsTable() {
     // Ensure 고등관-고3 filter_tabs do not contain 사회문화, 생윤
     await pool.query(`DELETE FROM filter_tabs WHERE category = '고등관-고3' AND (label = '사회문화' OR label = '생윤' OR label = '2학기 중간 내신시간표' OR label = '기말/내신시간표')`);
     await pool.query(`UPDATE filter_tabs SET display_order = 0 WHERE category = '고등관-고3' AND label = '전체'`);
+    await pool.query(`UPDATE filter_tabs SET display_order = 1 WHERE category = '고등관-고3' AND (label = '수능파이널 시간표' OR label = '수능 파이널')`);
+    await pool.query(`UPDATE filter_tabs SET display_order = 2 WHERE category = '고등관-고3' AND label = '수학'`);
+    await pool.query(`UPDATE filter_tabs SET display_order = 3 WHERE category = '고등관-고3' AND label = '국어'`);
+    await pool.query(`UPDATE filter_tabs SET display_order = 4 WHERE category = '고등관-고3' AND label = '영어'`);
+    await pool.query(`UPDATE filter_tabs SET display_order = 5 WHERE category = '고등관-고3' AND label = '생명과학'`);
+    await pool.query(`UPDATE filter_tabs SET display_order = 6 WHERE category = '고등관-고3' AND label = '논술'`);
   } catch (err) {
     console.error("Failed to ensure filter_tabs table:", err);
   }
@@ -726,7 +732,7 @@ async function ensureFilterTabsTable() {
 const DEFAULT_FILTER_TABS: Record<string, string[]> = {
   "고등관-고1": ["2학기 중간 내신시간표", "전체시간표", "화성고", "가온고", "병점고", "영덕고", "수원고", "청명고", "수학/탐구"],
   "고등관-고2": ["2학기 중간 내신시간표", "전체시간표", "화성고", "가온고", "동국고", "동탄국제고", "청명고", "영덕고", "수원고", "고색고", "영신여고", "수학/탐구"],
-  "고등관-고3": ["전체", "수능파이널 시간표", "국어", "영어", "수학", "생명과학", "논술"],
+  "고등관-고3": ["전체", "수능파이널 시간표", "수학", "국어", "영어", "생명과학", "논술"],
   "초/중등관": ["2학기 중간 내신시간표", "전체시간표", "초&중등 수학", "고등과정 수학", "탐구"],
   "중등관-중3": ["전체시간표", "수학", "국어", "영어", "탐구"],
 };
