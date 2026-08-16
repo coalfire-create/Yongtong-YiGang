@@ -76,7 +76,7 @@ function MiddleSchoolReservationForm() {
       parent_phone: parentPhone.trim(),
       student_phone: studentPhone.trim(),
       subject: `중3/예비고1 - ${subject}`,
-      teacher_name: "중3/예비고1 전담강사",
+      teacher_name: "",
     });
   };
 

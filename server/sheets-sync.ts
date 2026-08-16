@@ -27,7 +27,7 @@ export async function appendReservationRow(data: {
       timestamp: timestamp, // A: 신청일시
       type: "수강예약",       // B: 구분
       subject: (data.subject && data.subject.trim()) ? data.subject.trim() : "-",       // C: 과목명
-      teacher_name: (data.teacherName && data.teacherName.trim()) ? data.teacherName.trim() : "-", // D: 강사명
+      teacher_name: (data.teacherName && data.teacherName.trim() && !data.teacherName.includes("전담강사")) ? data.teacherName.trim() : "-", // D: 강사명
       class_name: (data.className && data.className.trim()) ? data.className.trim() : "-",     // E: 수업명
       student_name: (data.studentName && data.studentName.trim()) ? data.studentName.trim() : "-", // F: 학생 이름
       student_phone: (data.studentPhone && data.studentPhone.trim()) ? data.studentPhone.trim() : "-", // G: 학생 전화번호

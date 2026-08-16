@@ -445,6 +445,7 @@ async function ensureReservationsTable() {
     for (const col of cols) {
       await pool.query(`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
     }
+    await pool.query("UPDATE reservations SET teacher_name = '' WHERE teacher_name IN ('고등관 전담강사', '중3/예비고1 전담강사')");
   } catch (err) {
     console.error("Failed to ensure reservations table:", err);
   }
@@ -2594,7 +2595,7 @@ export async function registerRoutes(
         SELECT r.id, r.created_at, r.timetable_id,
                r.student_name, r.student_phone, r.parent_phone, r.school as student_school, r.class_name,
                COALESCE(NULLIF(r.subject, ''), t.subject, t.category) AS subject,
-               COALESCE(NULLIF(r.teacher_name, ''), t.teacher_name) AS teacher_name,
+               COALESCE(NULLIF(NULLIF(NULLIF(r.teacher_name, '고등관 전담강사'), '중3/예비고1 전담강사'), ''), t.teacher_name) AS teacher_name,
                COALESCE(NULLIF(r.class_time, ''), t.class_time) AS class_time,
                t.target_school, t.start_date, t.category
         FROM reservations r

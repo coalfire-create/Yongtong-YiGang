@@ -574,18 +574,9 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       ) : (
         <div data-testid="timetable-list">
           {filtered.length === 0 ? (
-            <div className="text-center py-16 bg-white border border-gray-200 rounded-xl p-8 max-w-md mx-auto my-6 shadow-sm">
+            <div className="text-center py-16" data-testid="timetable-empty">
               <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-gray-700 mb-1">등록된 상세 시간표 카드가 없습니다.</p>
-              <p className="text-xs text-gray-400 mb-5">상담 및 수강예약을 남겨주시면 개별 안내를 드립니다.</p>
-              <button
-                onClick={() => setReserveTarget({ id: undefined, name: category === "고등관-고3" ? "고3 수강예약" : "수강예약", subject: activeTab?.label !== "전체" ? activeTab?.label : undefined })}
-                className="px-6 py-2.5 bg-[#7B2332] text-white text-xs font-bold rounded hover:bg-[#6B1D2A] transition-colors shadow-sm inline-flex items-center gap-1.5"
-                data-testid="button-empty-reservation"
-              >
-                <Calendar className="w-4 h-4" />
-                수강예약 신청하기
-              </button>
+              <p className="text-sm text-gray-400">등록된 상세 시간표 카드가 없습니다.</p>
             </div>
           ) : (
             <div className="space-y-12">
