@@ -141,7 +141,7 @@ export function buildFilterFn(label: string): (tt: any) => boolean {
   return (tt) => {
     if (isNonsul(tt)) return false;
 
-    if (label === "청명고") {
+    if (label === "청명고" || label === "영덕고" || label === "영신여고") {
       const ts = tt.target_school || "";
       const isUnionSchool = ts === "공통" || ts === "연합" || ts === "연합반" || ts.startsWith("연합 (");
       if (isUnionSchool) return true;
