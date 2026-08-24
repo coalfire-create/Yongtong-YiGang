@@ -1683,9 +1683,17 @@ function TimetablesTab() {
         let count = 0;
         for (const row of rows) {
           const category = String(row["구분"] || row["카테고리"] || "고등관").trim();
-          const subject = String(row["과목"] || "").trim();
+          let subject = String(row["과목"] || "").trim();
           const target_school = String(row["대상학교"] || row["학교"] || "").trim();
           const class_name = String(row["수업명"] || row["강좌명"] || row["제목"] || "").trim();
+
+          if (!subject && class_name) {
+            if (/수학|공통수학|미적분|확률|확통/.test(class_name)) subject = "수학";
+            else if (/국어|국비/.test(class_name)) subject = "국어";
+            else if (/영어/.test(class_name)) subject = "영어";
+            else if (/화학|물리|생물|지구|통과|과학/.test(class_name)) subject = "과학";
+            else subject = "수학";
+          }
           const teacher_name = String(row["강사명"] || row["선생님"] || "").trim();
           const class_time = String(row["수업시간"] || row["시간"] || "").trim();
           const start_date = String(row["개강일"] || row["개강"] || "").trim();
