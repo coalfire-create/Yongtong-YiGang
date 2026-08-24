@@ -9,6 +9,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { Trash2, Upload, Download, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown, GripVertical, BookOpen, Trophy } from "lucide-react";
 import { Link } from "wouter";
 import * as XLSX from "xlsx";
+import { parseVerticalSheet as libParseVerticalSheet } from "@/lib/brochure-excel";
 import {
   DndContext,
   closestCenter,
@@ -2992,95 +2993,12 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     return payloads;
   };
 
-  // 강사 원본 세로 양식(구분/세부항목/내용, 한 시트 = 한 강좌) → payload 1개
+  // 강사 원본 세로 양식(구분/세부항목/내용, 한 시트 = 한 강좌) → payload 1개.
+  // 파싱은 공용 lib에 위임(대상/강좌명/강사명 배열 미초기화 크래시 버그 수정). division만 현재 탭 기준.
   const parseVerticalSheet = (data: any[][], sheetName: string) => {
-    const cell = (r: any[] | undefined, i: number) => (r && r[i] != null ? r[i].toString().replace(/\r/g, "").trim() : "");
-    const titleRaw = cell(data[0], 0);
-    // 헤더("구분"이 있는 줄) 다음부터 데이터
-    let start = data.findIndex((r) => /구분/.test(cell(r, 0)));
-    start = start >= 0 ? start + 1 : 1;
-
-    const sectionKey = (label: string): string | null => {
-      if (/^대상/.test(label)) return "target";
-      if (/강좌명/.test(label)) return "class_name";
-      if (/강사명/.test(label)) return "teacher_name";
-      if (/수업\s*일정/.test(label)) return "schedule";
-      if (/^요일/.test(label)) return "schedule_days";
-      if (/^시간/.test(label)) return "schedule_time";
-      if (/시작\s*시간/.test(label)) return "schedule_time_start";
-      if (/종료\s*시간/.test(label)) return "schedule_time_end";
-      if (/개강일/.test(label)) return "schedule_date";
-      if (/^회차$/.test(label) || /^수업\s*횟수$/.test(label)) return "schedule_count";
-      if (/특징/.test(label)) return "features";
-      if (/교재|자료/.test(label)) return "materials";
-      if (/과제|TEST/i.test(label)) return "tasks";
-      if (/관리|CLINIC|클리닉|SYSTEM/i.test(label)) return "management";
-      if (/회차/.test(label)) return "sessions";
-      if (/연계/.test(label)) return "linked";
-      return null;
-    };
-
-    const f: Record<string, string[]> = { schedule: [], schedule_days: [], schedule_time: [], schedule_time_start: [], schedule_time_end: [], schedule_date: [], schedule_count: [], features: [], materials: [], tasks: [], management: [], sessions: [], linked: [] };
-    let cur: string | null = null;
-    for (const row of data.slice(start)) {
-      const a = cell(row, 0), b = cell(row, 1), c = cell(row, 2);
-      if (a) cur = sectionKey(a);
-      if (!cur) continue;
-      if (cur === "management") {
-        if (b || c) f.management.push(c ? `• ${b}: ${c}` : b);
-      } else if (cur === "sessions") {
-        if (b || c) f.sessions.push(`${b}${c ? ` - ${c}` : ""}`.trim());
-      } else if (cur === "linked") {
-        if (b || c) f.linked.push(`${b}${c ? ` - ${c}` : ""}`.trim());
-      } else {
-        const v = c || b;
-        if (v) f[cur].push(v);
-      }
-    }
-
-    let finalSchedule = f.schedule.join("\\n");
-    if (!finalSchedule && (f.schedule_days.length || f.schedule_time.length || f.schedule_time_start.length || f.schedule_time_end.length || f.schedule_date.length || f.schedule_count.length)) {
-      let parts = [];
-      if (f.schedule_days[0]) parts.push(f.schedule_days[0]);
-      if (f.schedule_time[0]) {
-        parts.push(f.schedule_time[0]);
-      } else if (f.schedule_time_start[0] || f.schedule_time_end[0]) {
-        const startT = f.schedule_time_start[0] || "";
-        const endT = f.schedule_time_end[0] || "";
-        parts.push(`${startT}~${endT}`);
-      }
-      let scheduleStr = parts.join(" ");
-      finalSchedule = scheduleStr.trim();
-    }
-
-    const content = stringifyContent({
-      schedule: finalSchedule, features: f.features.join("\\n"), materials: f.materials.join("\\n"),
-      tasks: f.tasks.join("\\n"), management: f.management.join("\\n"), sessions: f.sessions.join("\\n"), linked: f.linked.join("\\n"),
-    });
-    if (!content) return null; // 내용 없으면 건너뜀
-
-    // [대상] 강좌명 - 강사명 (개강일 개강, 회차)
-    let dynamicTitle = "";
-    if (f.target?.[0] || f.class_name?.[0] || f.teacher_name?.[0]) {
-      const tgt = f.target[0] ? `[${f.target[0].replace(/[\\[\\]]/g, '')}]` : "";
-      const cname = f.class_name[0] || "";
-      const tname = f.teacher_name[0] || "";
-      dynamicTitle = `${tgt} ${cname}`.trim();
-      if (tname) dynamicTitle += ` - ${tname}`;
-      
-      const sDate = f.schedule_date?.[0] || "";
-      const sCount = f.schedule_count?.[0] || "";
-      if (sDate || sCount) {
-        const sub = [];
-        if (sDate) sub.push(`${sDate} 개강`);
-        if (sCount) sub.push(sCount);
-        dynamicTitle += ` (${sub.join(", ")})`;
-      }
-    }
-
-    const title = dynamicTitle || titleRaw.replace(/\\s+/g, " ").trim() || sheetName.trim();
-    const division = activeTab;
-    return { division, title, category: "curriculum", content };
+    const p = libParseVerticalSheet(data, sheetName);
+    if (!p) return null;
+    return { division: activeTab, title: p.title, category: "curriculum", content: p.content };
   };
 
   const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

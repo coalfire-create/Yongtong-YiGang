@@ -82,6 +82,15 @@ const SCHOOL_ORDER = [
   "영신여고",
 ];
 
+// 실제 학교 목록(연합/공통 제외). 학교명 뒤 학년/반 표기를 정규 학교명으로 통일하는 데 사용.
+const REAL_SCHOOLS = SCHOOL_ORDER.filter((s) => !s.startsWith("연합") && s !== "공통");
+// "화성고1", "고2-청명고반", "영신여고반" 등을 "화성고", "청명고", "영신여고"로 정규화.
+// 학교명을 포함하지 않으면(예: "연합", "공통", "특강반") 원본을 그대로 반환.
+const normalizeSchoolName = (raw: string): string => {
+  const s = raw || "";
+  return REAL_SCHOOLS.find((school) => s.includes(school)) || s;
+};
+
 const getSchoolRank = (name: string): number => {
   const sciIdx = SCIENCE_CARD_ORDER.indexOf(name);
   if (sciIdx !== -1) return 0.01 + sciIdx * 0.01; // Render science cards in order: 통합과학 -> 물리 -> 화학 -> 생명 -> 지구
@@ -483,9 +492,10 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           });
         }
       } else {
+        // 학교명 뒤 학년/반 표기를 정규 학교명으로 통일 → "화성고1"이 "화성고" 그룹으로 합쳐짐
         instances.push({
           isUnion,
-          targetSchool: tt.target_school || "연합",
+          targetSchool: normalizeSchoolName(tt.target_school || "") || "연합",
         });
       }
     }
