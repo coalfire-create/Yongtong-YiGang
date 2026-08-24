@@ -432,10 +432,109 @@ function TeachersTab() {
     }
   };
 
+  const handleTeacherExcelDownload = () => {
+    const wsData = [
+      ["이름", "소속", "과목", "한줄소개"],
+      ["김이강", "고등관", "수학", "명쾌하고 완벽한 수학 개념 정리\n대성마이맥 출강"],
+      ["박국어", "고등관", "국어", "수능 및 내신 국어 만점 전략"],
+      ["이초등", "초/중등관", "영어", "기초부터 튼튼한 영문법 마스터"],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 40 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "선생님목록");
+    XLSX.writeFile(wb, `선생님_일괄등록양식_${todayStr()}.xlsx`);
+  };
+
+  const handleTeacherExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm(`[${file.name}] 엑셀 파일로 선생님 목록을 일괄 등록하시겠습니까?`)) {
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: "binary" });
+        const sheetName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName]);
+
+        if (!rows || rows.length === 0) {
+          alert("엑셀 파일에 등록할 데이터가 없습니다.");
+          return;
+        }
+
+        let count = 0;
+        for (const row of rows) {
+          const name = String(row["이름"] || row["성명"] || "").trim();
+          const division = String(row["소속"] || row["소속구분"] || "고등관").trim();
+          const subject = String(row["과목"] || "").trim();
+          const description = String(row["한줄소개"] || row["약력"] || row["소개"] || "").trim();
+
+          if (!name || !subject || !description) continue;
+
+          const formData = new FormData();
+          formData.append("name", name);
+          formData.append("division", division);
+          formData.append("subject", subject);
+          formData.append("description", description);
+
+          const adminToken = localStorage.getItem("adminToken");
+          const headers: Record<string, string> = {};
+          if (adminToken) headers["X-Admin-Token"] = adminToken;
+
+          const res = await fetch("/api/teachers", {
+            method: "POST",
+            body: formData,
+            headers,
+            credentials: "include",
+          });
+          if (res.ok) count++;
+        }
+
+        invalidateTeachers();
+        alert(`총 ${count}명의 선생님 정보가 성공적으로 등록되었습니다.`);
+      } catch (err: any) {
+        console.error(err);
+        alert(`엑셀 처리 중 오류가 발생했습니다: ${err?.message || "양식을 확인해주세요."}`);
+      } finally {
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const divisionLabel: Record<string, string> = { "고등관": "고등관", "초/중등관": "초/중등관" };
 
   return (
     <div>
+      <div className="flex gap-2 bg-gray-50 p-4 border border-gray-200 rounded-lg justify-between items-center mb-6">
+        <div>
+          <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+            <Upload className="w-4 h-4 text-emerald-600" />
+            엑셀로 선생님 목록 일괄 등록
+          </h4>
+          <p className="text-xs text-gray-500 mt-0.5">양식을 다운로드하여 작성 후 업로드하면 여러 명의 선생님을 한 번에 등록할 수 있습니다.</p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={handleTeacherExcelDownload}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            엑셀 양식 다운
+          </button>
+          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm hover:bg-emerald-700 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5" />
+            엑셀 일괄 등록
+            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleTeacherExcelUpload} />
+          </label>
+        </div>
+      </div>
+
       <div className="bg-white border border-gray-200 p-6 mb-8" data-testid="form-add-teacher">
         <h3 className="text-lg font-bold text-gray-900 mb-4">선생님 추가</h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -1546,8 +1645,117 @@ function TimetablesTab() {
   );
   };
 
+  const handleTimetableExcelDownload = () => {
+    const wsData = [
+      ["구분", "과목", "대상학교", "수업명", "강사명", "수업시간", "개강일", "수업설명", "연합반여부(Y/N)", "노출여부(Y/N)"],
+      ["고등관-고1", "수학", "영통고", "고1 수학 상 심화반", "김이강", "토/일 14:00~17:00", "3/2 개강", "내신 1등급 대비 핵심 유형 풀이", "N", "Y"],
+      ["초/중등관", "영어", "공통", "중3 영어 독해반", "박선생", "월/수/금 17:00~19:00", "3/4 개강", "중학 성취도 A 달성 수능 기초", "N", "Y"],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [
+      { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 22 }, { wch: 12 }, { wch: 35 }, { wch: 15 }, { wch: 15 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "시간표목록");
+    XLSX.writeFile(wb, `정규시간표_일괄등록양식_${todayStr()}.xlsx`);
+  };
+
+  const handleTimetableExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm(`[${file.name}] 엑셀 파일로 정규 시간표를 일괄 등록하시겠습니까?`)) {
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: "binary" });
+        const sheetName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName]);
+
+        if (!rows || rows.length === 0) {
+          alert("엑셀 파일에 데이터가 없습니다.");
+          return;
+        }
+
+        let count = 0;
+        for (const row of rows) {
+          const category = String(row["구분"] || row["카테고리"] || "고등관").trim();
+          const subject = String(row["과목"] || "").trim();
+          const target_school = String(row["대상학교"] || row["학교"] || "").trim();
+          const class_name = String(row["수업명"] || row["강좌명"] || row["제목"] || "").trim();
+          const teacher_name = String(row["강사명"] || row["선생님"] || "").trim();
+          const class_time = String(row["수업시간"] || row["시간"] || "").trim();
+          const start_date = String(row["개강일"] || row["개강"] || "").trim();
+          const description = String(row["수업설명"] || row["설명"] || "").trim();
+          const is_union_raw = String(row["연합반여부(Y/N)"] || row["연합반"] || "").trim().toUpperCase();
+          const is_union = is_union_raw === "Y" || is_union_raw === "TRUE" || is_union_raw === "예";
+          const is_visible_raw = String(row["노출여부(Y/N)"] || row["노출"] || "").trim().toUpperCase();
+          const is_visible = is_visible_raw === "" || is_visible_raw === "Y" || is_visible_raw === "TRUE" || is_visible_raw === "예";
+
+          if (!class_name) continue;
+
+          const matchedTeacher = teachers.find((t) => t.name.trim() === teacher_name);
+
+          const body = {
+            category,
+            subject,
+            target_school,
+            class_name,
+            teacher_name,
+            teacher_id: matchedTeacher ? matchedTeacher.id : undefined,
+            class_time,
+            start_date,
+            description,
+            is_union,
+            is_visible,
+          };
+
+          const res = await apiRequest("POST", "/api/timetables", body);
+          if (res.ok) count++;
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+        alert(`총 ${count}개의 시간표가 성공적으로 등록되었습니다.`);
+      } catch (err: any) {
+        console.error(err);
+        alert(`엑셀 등록 중 오류가 발생했습니다: ${err?.message || "양식을 확인해 주세요."}`);
+      } finally {
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   return (
     <div>
+      <div className="flex gap-2 bg-gray-50 p-4 border border-gray-200 rounded-lg justify-between items-center mb-6">
+        <div>
+          <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+            <Upload className="w-4 h-4 text-emerald-600" />
+            엑셀로 정규 시간표 일괄 등록
+          </h4>
+          <p className="text-xs text-gray-500 mt-0.5">양식을 다운로드하여 개강 과목 정보를 일괄 업로드할 수 있습니다.</p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={handleTimetableExcelDownload}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            엑셀 양식 다운
+          </button>
+          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm hover:bg-emerald-700 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5" />
+            엑셀 일괄 등록
+            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleTimetableExcelUpload} />
+          </label>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-lg font-bold text-gray-900">시간표 관리 <span className="text-sm font-normal text-gray-400">({filteredTimetables.length}개)</span></h3>
@@ -1947,6 +2155,63 @@ function ReservationsTab() {
     },
   });
 
+  const handleReservationsExcelDownloadSample = () => {
+    const wsData = [
+      ["학생명", "학생전화", "학부모전화", "학교", "수업명", "과목", "선생님"],
+      ["홍길동", "010-1234-5678", "010-9876-5432", "영통고", "고1 수학 상 심화반", "수학", "김이강"],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "수강예약양식");
+    XLSX.writeFile(wb, `수강예약_일괄등록양식_${todayStr()}.xlsx`);
+  };
+
+  const handleReservationsExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm(`[${file.name}] 엑셀 파일로 수강예약 내역을 가져오시겠습니까?`)) {
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: "binary" });
+        const sheetName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName]);
+
+        if (!rows || rows.length === 0) {
+          alert("엑셀 파일에 데이터가 없습니다.");
+          return;
+        }
+
+        const reservations = rows.map((r) => ({
+          student_name: r["학생명"] || r["학생 이름"] || r["이름"] || "",
+          student_phone: r["학생전화"] || r["학생 전화"] || r["전화번호"] || "",
+          parent_phone: r["학부모전화"] || r["학부모 전화"] || "",
+          school: r["학교"] || r["학생 학교"] || "",
+          class_name: r["수업명"] || r["강좌명"] || "",
+          subject: r["과목"] || "",
+          teacher_name: r["선생님"] || r["강사명"] || "",
+          created_at: r["신청일"] || r["일시"] || null,
+        })).filter((r: any) => r.student_name || r.student_phone);
+
+        const res = await apiRequest("POST", "/api/admin/import-submissions", { reservations });
+        const data = await res.json();
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/reservations"] });
+        alert(`총 ${data.reservations || reservations.length}건의 수강예약 내역이 업로드되었습니다.`);
+      } catch (err: any) {
+        console.error(err);
+        alert(`엑셀 처리 중 오류가 발생했습니다: ${err?.message || "양식을 확인해주세요."}`);
+      } finally {
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const exportExcel = () =>
     downloadExcel(`수강예약_${todayStr()}.xlsx`, reservations.map((r) => ({
       "신청일": r.created_at ? new Date(r.created_at).toLocaleString("ko-KR") : "",
@@ -1962,11 +2227,20 @@ function ReservationsTab() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="text-lg font-bold text-gray-900">수강예약 목록 ({reservations.length}건)</h3>
-        <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
-          <Download className="w-3.5 h-3.5" /> 엑셀 다운로드
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleReservationsExcelDownloadSample} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-bold rounded border border-gray-300 hover:bg-gray-200 transition-colors">
+            <Download className="w-3.5 h-3.5 text-gray-600" /> 양식 다운
+          </button>
+          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm hover:bg-emerald-700 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5" /> 엑셀 가져오기
+            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleReservationsExcelUpload} />
+          </label>
+          <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
+            <Download className="w-3.5 h-3.5" /> 목록 내보내기
+          </button>
+        </div>
       </div>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
@@ -2738,6 +3012,60 @@ function SmsSubscriptionsTab() {
     },
   });
 
+  const handleSmsExcelDownloadSample = () => {
+    const wsData = [
+      ["이름", "전화번호", "학교", "학년"],
+      ["홍길동", "010-1234-5678", "영통고", "고1"],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "문자수신양식");
+    XLSX.writeFile(wb, `문자수신_일괄등록양식_${todayStr()}.xlsx`);
+  };
+
+  const handleSmsExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm(`[${file.name}] 엑셀 파일로 문자 수신 신청 목록을 가져오시겠습니까?`)) {
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: "binary" });
+        const sheetName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName]);
+
+        if (!rows || rows.length === 0) {
+          alert("엑셀 파일에 데이터가 없습니다.");
+          return;
+        }
+
+        const sms = rows.map((r) => ({
+          name: r["이름"] || r["성명"] || "",
+          phone: r["전화번호"] || r["연락처"] || r["전화"] || "",
+          school: r["학교"] || "",
+          grade: r["학년"] || "",
+          created_at: r["신청일"] || r["일시"] || null,
+        })).filter((r: any) => r.phone);
+
+        const res = await apiRequest("POST", "/api/admin/import-submissions", { sms });
+        const data = await res.json();
+        queryClient.invalidateQueries({ queryKey: ["/api/sms-subscriptions"] });
+        alert(`총 ${data.sms || sms.length}건의 문자 수신 신청이 업로드되었습니다.`);
+      } catch (err: any) {
+        console.error(err);
+        alert(`엑셀 처리 중 오류가 발생했습니다: ${err?.message || "양식을 확인해주세요."}`);
+      } finally {
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const exportExcel = () =>
     downloadExcel(`문자수신_${todayStr()}.xlsx`, subs.map((s) => ({
       "신청일": s.created_at ? new Date(s.created_at).toLocaleString("ko-KR") : "",
@@ -2749,11 +3077,20 @@ function SmsSubscriptionsTab() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="text-lg font-bold text-gray-900">문자 수신 신청 목록 ({subs.length}건)</h3>
-        <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
-          <Download className="w-3.5 h-3.5" /> 엑셀 다운로드
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleSmsExcelDownloadSample} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-bold rounded border border-gray-300 hover:bg-gray-200 transition-colors">
+            <Download className="w-3.5 h-3.5 text-gray-600" /> 양식 다운
+          </button>
+          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm hover:bg-emerald-700 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5" /> 엑셀 가져오기
+            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleSmsExcelUpload} />
+          </label>
+          <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
+            <Download className="w-3.5 h-3.5" /> 목록 내보내기
+          </button>
+        </div>
       </div>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
@@ -2828,6 +3165,60 @@ function LevelTestTab() {
     },
   });
 
+  const handleLevelTestExcelDownloadSample = () => {
+    const wsData = [
+      ["이름", "전화번호", "학교", "학년"],
+      ["김철수", "010-5678-1234", "태장고", "고2"],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "레벨테스트양식");
+    XLSX.writeFile(wb, `수학레벨테스트_일괄등록양식_${todayStr()}.xlsx`);
+  };
+
+  const handleLevelTestExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm(`[${file.name}] 엑셀 파일로 레벨테스트 신청 목록을 가져오시겠습니까?`)) {
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: "binary" });
+        const sheetName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName]);
+
+        if (!rows || rows.length === 0) {
+          alert("엑셀 파일에 데이터가 없습니다.");
+          return;
+        }
+
+        const levelTest = rows.map((r) => ({
+          name: r["이름"] || r["학생명"] || r["성명"] || "",
+          phone: r["전화번호"] || r["연락처"] || r["전화"] || "",
+          school: r["학교"] || "",
+          grade: r["학년"] || "",
+          created_at: r["신청일"] || r["일시"] || null,
+        })).filter((r: any) => r.name || r.phone);
+
+        const res = await apiRequest("POST", "/api/admin/import-submissions", { levelTest });
+        const data = await res.json();
+        queryClient.invalidateQueries({ queryKey: ["/api/level-test-registrations"] });
+        alert(`총 ${data.levelTest || levelTest.length}건의 레벨테스트 신청이 업로드되었습니다.`);
+      } catch (err: any) {
+        console.error(err);
+        alert(`엑셀 처리 중 오류가 발생했습니다: ${err?.message || "양식을 확인해주세요."}`);
+      } finally {
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const exportExcel = () =>
     downloadExcel(`수학레벨테스트_${todayStr()}.xlsx`, registrations.map((r) => ({
       "신청일": r.created_at ? new Date(r.created_at).toLocaleString("ko-KR") : "",
@@ -2839,11 +3230,20 @@ function LevelTestTab() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="text-lg font-bold text-gray-900">수학레벨테스트 신청 목록 ({registrations.length}건)</h3>
-        <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
-          <Download className="w-3.5 h-3.5" /> 엑셀 다운로드
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleLevelTestExcelDownloadSample} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-bold rounded border border-gray-300 hover:bg-gray-200 transition-colors">
+            <Download className="w-3.5 h-3.5 text-gray-600" /> 양식 다운
+          </button>
+          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm hover:bg-emerald-700 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5" /> 엑셀 가져오기
+            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleLevelTestExcelUpload} />
+          </label>
+          <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
+            <Download className="w-3.5 h-3.5" /> 목록 내보내기
+          </button>
+        </div>
       </div>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
@@ -5217,22 +5617,127 @@ function SummerTimetableManager({ activeTab }: { activeTab: "중등" | "고1" | 
     editMutation.mutate(editingSlot);
   };
 
+  const handleSummerTimetableExcelDownload = () => {
+    const wsData = [
+      ["시간표제목", "구분", "시간", "통합여부(Y/N)", "통합내용", "월", "화", "수", "목", "금", "토", "일"],
+      ["썸머스쿨 시간표", "오전", "09:00~12:00", "N", "", "수학 상 개념", "영어 독해", "수학 상 개념", "영어 독해", "수학 클리닉", "자율학습", "휴강"],
+      ["썸머스쿨 시간표", "점심", "12:00~13:00", "Y", "점심식사 및 쉬는시간", "", "", "", "", "", "", ""],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [
+      { wch: 18 }, { wch: 10 }, { wch: 15 }, { wch: 12 }, { wch: 20 },
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "썸머시간표양식");
+    XLSX.writeFile(wb, `썸머시간표_일괄등록양식_${activeTab}_${todayStr()}.xlsx`);
+  };
+
+  const handleSummerTimetableExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm(`[${file.name}] 엑셀 파일로 [${activeTab}] 썸머시간표 행을 일괄 추가하시겠습니까?`)) {
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: "binary" });
+        const sheetName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[sheetName]);
+
+        if (!rows || rows.length === 0) {
+          alert("엑셀 파일에 데이터가 없습니다.");
+          return;
+        }
+
+        let count = 0;
+        for (const r of rows) {
+          const timetable_title = String(r["시간표제목"] || r["제목"] || "썸머스쿨 시간표").trim();
+          const slot_label = String(r["구분"] || r["시간구분"] || "오전").trim();
+          const slot_time = String(r["시간"] || r["수업시간"] || "").trim();
+          const is_merged_raw = String(r["통합여부(Y/N)"] || r["통합여부"] || "").trim().toUpperCase();
+          const is_merged = is_merged_raw === "Y" || is_merged_raw === "TRUE" || is_merged_raw === "예";
+          const merged_content = String(r["통합내용"] || "").trim();
+          const mon = String(r["월"] || "").trim();
+          const tue = String(r["화"] || "").trim();
+          const wed = String(r["수"] || "").trim();
+          const thu = String(r["목"] || "").trim();
+          const fri = String(r["금"] || "").trim();
+          const sat = String(r["토"] || "").trim();
+          const sun = String(r["일"] || "").trim();
+
+          const payload = {
+            division: activeTab,
+            timetable_title,
+            slot_label,
+            slot_time,
+            is_merged,
+            merged_content,
+            mon, tue, wed, thu, fri, sat, sun
+          };
+
+          const res = await fetch("/api/summer-timetable-slots", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            credentials: "include"
+          });
+          if (res.ok) count++;
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["/api/summer-timetable-slots", activeTab] });
+        alert(`총 ${count}개의 썸머시간표 행이 등록되었습니다.`);
+      } catch (err: any) {
+        console.error(err);
+        alert(`엑셀 처리 중 오류가 발생했습니다: ${err?.message || "양식을 확인해주세요."}`);
+      } finally {
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Reseed/Reset Database Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => {
-            if (confirm("경고: 수정하신 모든 시간표 데이터가 지워지고 초기 상태로 복구됩니다. 정말 초기화하시겠습니까?")) {
-              resetMutation.mutate();
-            }
-          }}
-          type="button"
-          disabled={resetMutation.isPending}
-          className="px-4 py-2 border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors cursor-pointer"
-        >
-          {resetMutation.isPending ? "초기화 중..." : "시간표 초기 데이터 복구 (리셋)"}
-        </button>
+      {/* Excel Upload Banner & Reseed/Reset Database Button */}
+      <div className="flex gap-2 bg-gray-50 p-4 border border-gray-200 rounded-lg justify-between items-center flex-wrap">
+        <div>
+          <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+            <Upload className="w-4 h-4 text-emerald-600" />
+            [{activeTab}] 썸머스쿨 시간표 엑셀 일괄 등록
+          </h4>
+          <p className="text-xs text-gray-500 mt-0.5">요일별 수업 시간표 행을 엑셀로 한 번에 업로드할 수 있습니다.</p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0 items-center">
+          <button
+            type="button"
+            onClick={handleSummerTimetableExcelDownload}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            엑셀 양식 다운
+          </button>
+          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm hover:bg-emerald-700 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5" />
+            엑셀 일괄 등록
+            <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleSummerTimetableExcelUpload} />
+          </label>
+          <button
+            onClick={() => {
+              if (confirm("경고: 수정하신 모든 시간표 데이터가 지워지고 초기 상태로 복구됩니다. 정말 초기화하시겠습니까?")) {
+                resetMutation.mutate();
+              }
+            }}
+            type="button"
+            disabled={resetMutation.isPending}
+            className="px-3 py-1.5 border border-red-200 text-red-600 text-xs font-bold rounded hover:bg-red-50 disabled:opacity-50 transition-colors cursor-pointer"
+          >
+            {resetMutation.isPending ? "초기화 중..." : "데이터 초기화 (리셋)"}
+          </button>
+        </div>
       </div>
 
       {/* Editor Box */}
