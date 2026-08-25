@@ -250,3 +250,86 @@ export function formatClassTitle(params: {
   const paren = datePart ? ` (${datePart})` : "";
   return `${prefix} ${subj} ${naishin}${dash}${paren}`.replace(/\s+/g, " ").trim();
 }
+
+// ── 브로셔(강사커리큘럼) 매칭 공용 로직 ──────────────────────
+const _SCHOOL_ROOTS = ["화성", "가온", "병점", "영덕", "수원", "청명", "고색", "동탄"];
+
+export function _gkeys(s: string): Set<string> {
+  s = (s || "").toUpperCase();
+  const k = new Set<string>();
+  for (const r of _SCHOOL_ROOTS) if (s.includes(r)) k.add(r);
+  if (/의치서|의치/.test(s)) k.add("의치");
+  if (/대수.*미적|미적.*대수|대수미적/.test(s)) k.add("대수미적");
+  else if (/대수\s*특강|대수특강/.test(s)) k.add("대수특강");
+  if (/올데이|ALL\s?-?DAY/.test(s)) k.add("올데이");
+  if (/기하/.test(s)) k.add("기하");
+  if (/확통/.test(s)) k.add("확통");
+  if (/역학/.test(s)) k.add("역학");
+  if (/전범위|전과정/.test(s)) k.add("전범위");
+  if (/집중/.test(s)) k.add("집중");
+  if (/M반|의치서M/.test(s)) k.add("M");
+  if (/S-?1/.test(s)) k.add("S1"); else if (/S-?2/.test(s)) k.add("S2");
+  else if (/S반|연합\s*S/.test(s)) k.add("S");
+  if (/A-?1|A1반/.test(s)) k.add("A1"); else if (/A-?2|A2반/.test(s)) k.add("A2");
+  else if (/A반|연합\s*A/.test(s)) k.add("A");
+  if (/연합/.test(s)) k.add("연합");
+  if (/국어/.test(s)) k.add("국어"); if (/영어/.test(s)) k.add("영어");
+  if (/물리|역학/.test(s)) k.add("물리"); if (/화학|물질과/.test(s)) k.add("화학");
+  if (/생명|세포/.test(s)) k.add("생명"); if (/통과|통합과학/.test(s)) k.add("통과");
+  if (/비평준/.test(s)) k.add("비평준");
+  else if (/일반고|일반/.test(s)) k.add("일반고");
+  if (s.includes("동국")) k.add("동탄");
+  if (/수능|조기수능/.test(s)) k.add("수능");
+  return k;
+}
+
+export function getDivisionFromCategory(category: string): string {
+  const _divMap: Record<string, string> = {
+    "고등관-고1": "고1",
+    "고등관-고2": "고2",
+    "고등관-고3": "고3",
+    "중등관-중3": "중3",
+    "초/중등관": "중3",
+    "고등관": "고1",
+  };
+  return _divMap[category] || (category.match(/고1|고2|고3|중3/) || [])[0] || "고1";
+}
+
+export function matchGuideline(
+  tt: { teacher_name?: string; class_name?: string; class_time?: string; category?: string },
+  guidelines: any[]
+): any | null {
+  const tn = (tt.teacher_name || "").match(/([가-힣]{2,4})T?/)?.[1] || "";
+  if (!tn) return null;
+  const cand = guidelines.filter((g) => {
+    if (g.category && g.category !== "curriculum") return false;
+    return (
+      (g.title || "").includes(tn) ||
+      (tn === "손자은" && (g.title || "").includes("손지은")) ||
+      (tn === "손지은" && (g.title || "").includes("손자은"))
+    );
+  });
+  if (!cand.length) return null;
+  if (cand.length === 1) return cand[0];
+  const tk = _gkeys(tt.class_name || "");
+  const cleanName = (tt.class_name || "").replace(/\s*-\s*(초중등\s*모티브샘|[가-힣]{2,4}T?).*/, "").trim();
+  let best: any = null,
+    bs = -1;
+  for (const g of cand) {
+    const gk = _gkeys((g.title || "").replace(/^\[[^\]]*\]/, ""));
+    let sc = 0;
+    for (const x of tk) if (gk.has(x)) sc++;
+    if (tt.class_time && g.content && g.content.includes(tt.class_time)) sc += 2;
+    if (cleanName && g.title && g.title.includes(cleanName)) {
+      sc += 10;
+      if (g.title.includes(`] ${cleanName} -`) || g.title.includes(` ${cleanName} -`)) sc += 10;
+    }
+    if (sc > bs) {
+      bs = sc;
+      best = g;
+    }
+  }
+  if (bs >= 1 && best) return best;
+  return cand[0];
+}
+

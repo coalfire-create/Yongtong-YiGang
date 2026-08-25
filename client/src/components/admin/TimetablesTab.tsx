@@ -21,6 +21,8 @@ import {
   Users,
   Check,
   Zap,
+  FileText,
+  Sparkles,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import {
@@ -31,7 +33,13 @@ import {
   cleanTeacherName,
   normalizeSchool,
   formatClassTitle,
+  parseContent,
+  stringifyContent,
+  matchGuideline,
+  getDivisionFromCategory,
+  BrochureContentParts,
 } from "@/lib/brochure-excel";
+import { BrochureModal } from "@/components/brochure-modal";
 
 interface Teacher {
   id: number;
@@ -85,6 +93,7 @@ export function TimetablesTab() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTimetable, setEditingTimetable] = useState<Timetable | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewGuideline, setPreviewGuideline] = useState<any | null>(null);
   const [showPhotoManager, setShowPhotoManager] = useState(false);
 
   // Inline Row Edit State
@@ -123,6 +132,10 @@ export function TimetablesTab() {
 
   const { data: timetablePhotos = [] } = useQuery<TimetablePhoto[]>({
     queryKey: ["/api/teacher-timetable-photos"],
+  });
+
+  const { data: guidelines = [] } = useQuery<any[]>({
+    queryKey: ["/api/summer-guidelines"],
   });
 
   // Single delete mutation
@@ -903,19 +916,38 @@ export function TimetablesTab() {
                       </div>
                     </td>
 
-                    {/* Brochure Detail Image column */}
+                    {/* Brochure Detail / Text column */}
                     <td className="px-4 py-3 text-center">
-                      {tt.detail_image_url ? (
-                        <button
-                          onClick={() => setPreviewImageUrl(tt.detail_image_url!)}
-                          className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded hover:bg-emerald-100 font-bold text-[11px] transition"
-                        >
-                          <ImageIcon className="w-3.5 h-3.5" />
-                          브로셔 보기
-                        </button>
-                      ) : (
-                        <span className="text-gray-300 text-[11px]">미등록</span>
-                      )}
+                      {(() => {
+                        const matchedGuideline = matchGuideline(tt, guidelines);
+                        return (
+                          <div className="flex flex-col items-center justify-center gap-1">
+                            {matchedGuideline && (
+                              <button
+                                onClick={() => setPreviewGuideline(matchedGuideline)}
+                                title="브로셔 텍스트 상세 모달 미리보기"
+                                className="inline-flex items-center gap-1 bg-[#7B2332]/10 text-[#7B2332] border border-[#7B2332]/30 px-2 py-0.5 rounded hover:bg-[#7B2332]/20 font-bold text-[11px] transition shadow-xs"
+                              >
+                                <FileText className="w-3 h-3" />
+                                브로셔
+                              </button>
+                            )}
+                            {tt.detail_image_url && (
+                              <button
+                                onClick={() => setPreviewImageUrl(tt.detail_image_url!)}
+                                title="상세 브로셔 이미지 미리보기"
+                                className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded hover:bg-emerald-100 font-bold text-[11px] transition shadow-xs"
+                              >
+                                <ImageIcon className="w-3 h-3" />
+                                이미지
+                              </button>
+                            )}
+                            {!matchedGuideline && !tt.detail_image_url && (
+                              <span className="text-gray-300 text-[11px]">미등록</span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     {/* Visibility status */}
@@ -1004,10 +1036,19 @@ export function TimetablesTab() {
         <TimetableModal
           timetable={editingTimetable}
           teachers={teachers}
+          guidelines={guidelines}
           onClose={() => {
             setEditingTimetable(null);
             setIsAddModalOpen(false);
           }}
+        />
+      )}
+
+      {/* 6-1. Brochure Text Modal Preview */}
+      {previewGuideline && (
+        <BrochureModal
+          guideline={previewGuideline}
+          onClose={() => setPreviewGuideline(null)}
         />
       )}
 
@@ -1063,10 +1104,12 @@ export function TimetablesTab() {
 function TimetableModal({
   timetable,
   teachers,
+  guidelines,
   onClose,
 }: {
   timetable: Timetable | null;
   teachers: Teacher[];
+  guidelines: any[];
   onClose: () => void;
 }) {
   const isEdit = !!timetable;
@@ -1077,7 +1120,23 @@ function TimetableModal({
   const [detailImagePreview, setDetailImagePreview] = useState<string>(timetable?.detail_image_url || "");
   const [deleteDetailImage, setDeleteDetailImage] = useState(false);
 
-  const { register, handleSubmit, reset } = useForm({
+  // ── Brochure (Curriculum) State ──
+  const [matchedGuidelineId, setMatchedGuidelineId] = useState<number | null>(null);
+  const [guidelineTitle, setGuidelineTitle] = useState<string>("");
+  const [guidelineDivision, setGuidelineDivision] = useState<string>("고1");
+  const [isRawMode, setIsRawMode] = useState<boolean>(false);
+  const [rawContent, setRawContent] = useState<string>("");
+  const [brochureForm, setBrochureForm] = useState<Required<BrochureContentParts>>({
+    schedule: "",
+    features: "",
+    materials: "",
+    tasks: "",
+    management: "",
+    sessions: "",
+    linked: "",
+  });
+
+  const { register, handleSubmit, reset, watch, setValue } = useForm({
     defaultValues: timetable || {
       category: "고등관-고1",
       subject: "수학",
@@ -1092,7 +1151,7 @@ function TimetableModal({
     },
   });
 
-  // CRITICAL FIX: Reset form values whenever selected timetable prop changes!
+  // Reset form values & brochure curriculum whenever selected timetable changes
   useEffect(() => {
     if (timetable) {
       reset({
@@ -1110,6 +1169,31 @@ function TimetableModal({
       setTeacherImagePreview(timetable.teacher_image_url || "");
       setDetailImagePreview(timetable.detail_image_url || "");
       setDeleteDetailImage(false);
+
+      const mg = matchGuideline(timetable, guidelines);
+      if (mg) {
+        setMatchedGuidelineId(mg.id);
+        const parsed = parseContent(mg.content || "");
+        setBrochureForm(parsed);
+        setRawContent(mg.content || "");
+        setGuidelineDivision(mg.division || getDivisionFromCategory(timetable.category || "고등관-고1"));
+        setGuidelineTitle(mg.title || timetable.class_name);
+      } else {
+        setMatchedGuidelineId(null);
+        const initial = {
+          schedule: timetable.class_time || "",
+          features: timetable.description || "",
+          materials: "",
+          tasks: "",
+          management: "",
+          sessions: "",
+          linked: "",
+        };
+        setBrochureForm(initial);
+        setRawContent(stringifyContent(initial));
+        setGuidelineDivision(getDivisionFromCategory(timetable.category || "고등관-고1"));
+        setGuidelineTitle(timetable.class_name || "");
+      }
     } else {
       reset({
         category: "고등관-고1",
@@ -1126,11 +1210,26 @@ function TimetableModal({
       setTeacherImagePreview("");
       setDetailImagePreview("");
       setDeleteDetailImage(false);
+      setMatchedGuidelineId(null);
+      setBrochureForm({
+        schedule: "",
+        features: "",
+        materials: "",
+        tasks: "",
+        management: "",
+        sessions: "",
+        linked: "",
+      });
+      setRawContent("");
+      setGuidelineDivision("고1");
+      setGuidelineTitle("");
     }
-  }, [timetable, reset]);
+    setIsRawMode(false);
+  }, [timetable, guidelines, reset]);
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
+      // 1. Timetable Save
       const formData = new FormData();
       formData.append("category", data.category || "");
       formData.append("subject", data.subject || "");
@@ -1139,7 +1238,7 @@ function TimetableModal({
       formData.append("teacher_name", data.teacher_name || "");
       formData.append("class_time", data.class_time || "");
       formData.append("start_date", data.start_date || "");
-      formData.append("description", data.description || "");
+      formData.append("description", data.description || brochureForm.features || "");
       formData.append("is_visible", String(data.is_visible ?? true));
       formData.append("is_union", String(data.is_union ?? false));
 
@@ -1173,12 +1272,38 @@ function TimetableModal({
       });
       if (!res.ok) {
         const d = await res.json();
-        throw new Error(d.error || "저장 실패");
+        throw new Error(d.error || "시간표 저장 실패");
       }
-      return res.json();
+      const savedTt = await res.json();
+
+      // 2. Brochure (Curriculum) Guideline Sync
+      const finalContent = isRawMode
+        ? (rawContent || "").trim()
+        : stringifyContent(brochureForm).trim();
+      const div = guidelineDivision || getDivisionFromCategory(data.category);
+      const title = guidelineTitle.trim() || data.class_name;
+
+      if (matchedGuidelineId) {
+        await apiRequest("PATCH", `/api/summer-guidelines/${matchedGuidelineId}`, {
+          title,
+          content: finalContent,
+          division: div,
+          category: "curriculum",
+        });
+      } else if (finalContent) {
+        await apiRequest("POST", "/api/summer-guidelines", {
+          title,
+          content: finalContent,
+          division: div,
+          category: "curriculum",
+        });
+      }
+
+      return savedTt;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/summer-guidelines"] });
       onClose();
     },
     onError: (err: any) => {
@@ -1187,16 +1312,28 @@ function TimetableModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-2xs p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-2xs p-3 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">
-              {isEdit ? `'${timetable.class_name}' 시간표 및 브로셔 수정` : "새 시간표 작성"}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-gray-900">
+                {isEdit ? `'${timetable.class_name}' 시간표 및 브로셔 수정` : "새 시간표 작성"}
+              </h3>
+              {matchedGuidelineId ? (
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-bold">
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  브로셔 연동됨 (#{matchedGuidelineId})
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[11px] font-bold">
+                  새 브로셔 등록 가능
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500 mt-0.5">
-              강좌 제목, 수업시간, 개강일 및 브로셔(상세설명 이미지)를 입력하세요.
+              시간표 기본 정보와 함께 홈페이지 [브로셔] 팝업에 표출되는 상세 커리큘럼을 수정할 수 있습니다.
             </p>
           </div>
           <button
@@ -1208,200 +1345,392 @@ function TimetableModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto space-y-5">
+        <div className="p-6 overflow-y-auto space-y-6">
           <form
             id="timetable-edit-form"
             onSubmit={handleSubmit((data) => mutation.mutate(data))}
-            className="space-y-5"
+            className="space-y-6"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">카테고리(관) *</label>
-                <select
-                  {...register("category", { required: true })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
-                >
-                  {CATEGORY_OPTIONS.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+            {/* Section 1: Timetable Basic Information */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+              <h4 className="text-xs font-extrabold text-gray-900 flex items-center gap-1.5 uppercase tracking-wide border-b border-gray-100 pb-2">
+                <span className="w-2 h-2 rounded-full bg-red-600 inline-block" />
+                1. 기본 수업 정보
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">카테고리(관) *</label>
+                  <select
+                    {...register("category", { required: true })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
+                  >
+                    {CATEGORY_OPTIONS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">과목 *</label>
+                  <select
+                    {...register("subject", { required: true })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
+                  >
+                    {SUBJECT_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">대상 학교</label>
+                  <input
+                    {...register("target_school")}
+                    placeholder="예: 화성고1, 세마고"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">강사명</label>
+                  <input
+                    {...register("teacher_name")}
+                    placeholder="예: 김이강"
+                    list="teacher-suggestions"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                  <datalist id="teacher-suggestions">
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.name} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-gray-700 mb-1">강좌명 (수업 제목) *</label>
+                  <input
+                    {...register("class_name", { required: true })}
+                    placeholder="예: [수학] 수학I 내신대비반"
+                    className="w-full border-2 border-red-200 rounded-lg px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">수업 시간 *</label>
+                  <input
+                    {...register("class_time")}
+                    placeholder="예: 토 18:30-22:00"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">개강일 *</label>
+                  <input
+                    {...register("start_date")}
+                    placeholder="예: 7/15(토)"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">과목 *</label>
-                <select
-                  {...register("subject", { required: true })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
-                >
-                  {SUBJECT_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Checkboxes */}
+              <div className="flex gap-6 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold mt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    {...register("is_visible")}
+                    className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer"
+                  />
+                  <span className="text-gray-800">홈페이지에 노출하기</span>
+                </label>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">대상 학교</label>
-                <input
-                  {...register("target_school")}
-                  placeholder="예: 화성고1, 세마고"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">강사명</label>
-                <input
-                  {...register("teacher_name")}
-                  placeholder="예: 김이강"
-                  list="teacher-suggestions"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-                <datalist id="teacher-suggestions">
-                  {teachers.map((t) => (
-                    <option key={t.id} value={t.name} />
-                  ))}
-                </datalist>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-gray-700 mb-1">강좌명 (수업 제목) *</label>
-                <input
-                  {...register("class_name", { required: true })}
-                  placeholder="예: [수학] 수학I 내신대비반"
-                  className="w-full border-2 border-red-200 rounded-lg px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">수업 시간 *</label>
-                <input
-                  {...register("class_time")}
-                  placeholder="예: 토 18:30-22:00"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">개강일 *</label>
-                <input
-                  {...register("start_date")}
-                  placeholder="예: 7/15(토)"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-gray-700 mb-1">수업 특징/설명</label>
-                <textarea
-                  {...register("description")}
-                  rows={2}
-                  placeholder="강좌의 간단한 설명이나 커리큘럼 특징"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
-                />
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    {...register("is_union")}
+                    className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+                  />
+                  <span className="text-gray-800">연합반 (학교 구분 없음)</span>
+                </label>
               </div>
             </div>
 
-            {/* Checkboxes */}
-            <div className="flex gap-6 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...register("is_visible")}
-                  className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer"
-                />
-                <span className="text-gray-800">홈페이지에 노출하기</span>
-              </label>
+            {/* Section 2: Brochure Curriculum Detail (Modal Content) */}
+            <div className="bg-[#FAF8F5] border border-[#E7DFD5] rounded-xl p-4.5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E7DFD5] pb-3">
+                <div>
+                  <h4 className="text-xs font-extrabold text-[#7B2332] flex items-center gap-1.5 uppercase tracking-wide">
+                    <FileText className="w-4 h-4 text-[#7B2332]" />
+                    2. 브로셔 상세 커리큘럼 (홈페이지 [브로셔] 팝업 내용)
+                  </h4>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    홈페이지 시간표 카드의 [브로셔] 버튼 클릭 시 나타나는 테이블 상세 내용입니다.
+                  </p>
+                </div>
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...register("is_union")}
-                  className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
-                />
-                <span className="text-gray-800">연합반 (학교 구분 없음)</span>
-              </label>
-            </div>
-
-            {/* Images Upload Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-200">
-              {/* Teacher/Course Image */}
-              <div className="border border-gray-200 rounded-xl p-3 bg-gray-50/50">
-                <label className="block text-xs font-bold text-gray-800 mb-1">
-                  강사/시간표 이미지
-                </label>
-                <input
-                  ref={teacherImageRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      const r = new FileReader();
-                      r.onload = () => setTeacherImagePreview(r.result as string);
-                      r.readAsDataURL(f);
-                    }
-                  }}
-                  className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300 cursor-pointer"
-                />
-                {teacherImagePreview && (
-                  <div className="mt-2 relative inline-block">
-                    <img
-                      src={teacherImagePreview}
-                      alt="Preview"
-                      className="w-16 h-16 object-cover rounded-lg border border-gray-300"
-                    />
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-gray-200 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isRawMode) {
+                        setBrochureForm(parseContent(rawContent));
+                      }
+                      setIsRawMode(false);
+                    }}
+                    className={`px-2.5 py-1 text-xs font-bold rounded transition ${
+                      !isRawMode
+                        ? "bg-[#7B2332] text-white shadow-xs"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    항목별 입력
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isRawMode) {
+                        setRawContent(stringifyContent(brochureForm));
+                      }
+                      setIsRawMode(true);
+                    }}
+                    className={`px-2.5 py-1 text-xs font-bold rounded transition ${
+                      isRawMode
+                        ? "bg-[#7B2332] text-white shadow-xs"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    전체 텍스트
+                  </button>
+                </div>
               </div>
 
-              {/* Brochure Detail Image */}
-              <div className="border border-emerald-200 rounded-xl p-3 bg-emerald-50/40">
-                <label className="block text-xs font-bold text-emerald-900 mb-1 flex items-center gap-1">
-                  <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
-                  상세 브로셔 이미지 (커리큘럼)
-                </label>
-                <input
-                  ref={detailImageRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      setDeleteDetailImage(false);
-                      const r = new FileReader();
-                      r.onload = () => setDetailImagePreview(r.result as string);
-                      r.readAsDataURL(f);
-                    }
-                  }}
-                  className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-800 hover:file:bg-emerald-200 cursor-pointer"
-                />
-
-                {detailImagePreview && !deleteDetailImage ? (
-                  <div className="mt-2 flex items-center gap-2">
-                    <img
-                      src={detailImagePreview}
-                      alt="Brochure Preview"
-                      className="w-16 h-16 object-cover rounded-lg border border-emerald-300"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteDetailImage(true);
-                        setDetailImagePreview("");
-                        if (detailImageRef.current) detailImageRef.current.value = "";
-                      }}
-                      className="text-xs font-bold text-red-600 hover:text-red-800 border border-red-200 px-2 py-1 rounded bg-white"
-                    >
-                      브로셔 삭제
-                    </button>
+              {isRawMode ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-gray-700">
+                      브로셔 전체 내용 (텍스트 모드)
+                    </label>
+                    <span className="text-[11px] text-gray-400">
+                      [수업 일정], [강좌 특징] 등의 태그로 구분됩니다.
+                    </span>
                   </div>
-                ) : (
-                  deleteDetailImage && (
-                    <p className="text-xs font-bold text-red-600 mt-1">
-                      저장 시 기존 브로셔 이미지가 삭제됩니다.
-                    </p>
-                  )
-                )}
+                  <textarea
+                    value={rawContent}
+                    onChange={(e) => setRawContent(e.target.value)}
+                    rows={12}
+                    placeholder="[수업 일정]&#10;일 10:00~13:00&#10;&#10;[강좌 특징]&#10;화성고 내신을 위한 최선의 선택.&#10;&#10;[교재/제공자료]&#10;자체 교재 + 프린트&#10;&#10;[과제/TEST]&#10;매시간 과제 체크 및 시험...&#10;&#10;[관리 SYSTEM 및 CLINIC]&#10;• 과제 체크 : 매시간 검사&#10;&#10;[회차별 내용]&#10;1회차: 수업 내용...&#10;&#10;[연계 강좌]&#10;연계 강좌 안내"
+                    className="w-full border border-gray-300 rounded-lg p-3 text-xs font-mono leading-relaxed focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white whitespace-pre"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-gray-800">
+                          수업 일정 (브로셔 상단 뱃지)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const ct = watch("class_time");
+                            if (ct) setBrochureForm({ ...brochureForm, schedule: ct });
+                          }}
+                          className="text-[10px] text-[#7B2332] font-semibold hover:underline"
+                        >
+                          수업시간에서 복사
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={brochureForm.schedule}
+                        onChange={(e) => setBrochureForm({ ...brochureForm, schedule: e.target.value })}
+                        placeholder="예: 일 10:00~13:00"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-800 mb-1">
+                        강좌 특징
+                      </label>
+                      <input
+                        type="text"
+                        value={brochureForm.features}
+                        onChange={(e) => setBrochureForm({ ...brochureForm, features: e.target.value })}
+                        placeholder="예: 화성고 내신을 위한 최선의 선택."
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-800 mb-1">
+                        교재 / 제공자료
+                      </label>
+                      <input
+                        type="text"
+                        value={brochureForm.materials}
+                        onChange={(e) => setBrochureForm({ ...brochureForm, materials: e.target.value })}
+                        placeholder="예: 자체 교재 + 프린트"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-800 mb-1">
+                        과제 / TEST
+                      </label>
+                      <input
+                        type="text"
+                        value={brochureForm.tasks}
+                        onChange={(e) => setBrochureForm({ ...brochureForm, tasks: e.target.value })}
+                        placeholder="예: 매시간 과제 체크 및 시험, 체크내용 문자발송"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-gray-800">
+                        관리 SYSTEM 및 CLINIC
+                      </label>
+                      <span className="text-[11px] text-gray-400">
+                        줄바꿈(엔터) 시 모달에서 깔끔한 리스트 카드로 표출됩니다.
+                      </span>
+                    </div>
+                    <textarea
+                      value={brochureForm.management}
+                      onChange={(e) => setBrochureForm({ ...brochureForm, management: e.target.value })}
+                      rows={3}
+                      placeholder="• 과제 체크 : 매시간 검사&#10;• 테스트 : 전 수업시간에 배운 내용을 바탕으로 테스트 구성&#10;• 클리닉 : 매주 토요일, 보충 및 강제 클리닉 실시."
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs leading-relaxed focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-gray-800">
+                        회차별 내용
+                      </label>
+                      <span className="text-[11px] text-gray-400">
+                        회차별 수업 진도 및 세부 강의 내용
+                      </span>
+                    </div>
+                    <textarea
+                      value={brochureForm.sessions}
+                      onChange={(e) => setBrochureForm({ ...brochureForm, sessions: e.target.value })}
+                      rows={4}
+                      placeholder="화성고 학교 수업 및 시험 범위에 따라 수업.(문학 및 문법)&#10;1회차: 문학 핵심 개념 및 기출 분석&#10;2회차: 문법 심화 문제 풀이..."
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs leading-relaxed focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-800 mb-1">
+                      연계 강좌
+                    </label>
+                    <input
+                      type="text"
+                      value={brochureForm.linked}
+                      onChange={(e) => setBrochureForm({ ...brochureForm, linked: e.target.value })}
+                      placeholder="예: 2학기 중간고사 내신 파이널반 (없으면 -)"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Section 3: Images Upload Section */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+              <h4 className="text-xs font-extrabold text-gray-900 flex items-center gap-1.5 uppercase tracking-wide border-b border-gray-100 pb-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />
+                3. 이미지 첨부 (선택)
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Teacher/Course Image */}
+                <div className="border border-gray-200 rounded-xl p-3 bg-gray-50/50">
+                  <label className="block text-xs font-bold text-gray-800 mb-1">
+                    강사/시간표 이미지
+                  </label>
+                  <input
+                    ref={teacherImageRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        const r = new FileReader();
+                        r.onload = () => setTeacherImagePreview(r.result as string);
+                        r.readAsDataURL(f);
+                      }
+                    }}
+                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300 cursor-pointer"
+                  />
+                  {teacherImagePreview && (
+                    <div className="mt-2 relative inline-block">
+                      <img
+                        src={teacherImagePreview}
+                        alt="Preview"
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-300"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Brochure Detail Image */}
+                <div className="border border-emerald-200 rounded-xl p-3 bg-emerald-50/40">
+                  <label className="block text-xs font-bold text-emerald-900 mb-1 flex items-center gap-1">
+                    <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                    상세 브로셔 이미지 파일 (선택)
+                  </label>
+                  <input
+                    ref={detailImageRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        setDeleteDetailImage(false);
+                        const r = new FileReader();
+                        r.onload = () => setDetailImagePreview(r.result as string);
+                        r.readAsDataURL(f);
+                      }
+                    }}
+                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-800 hover:file:bg-emerald-200 cursor-pointer"
+                  />
+
+                  {detailImagePreview && !deleteDetailImage ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <img
+                        src={detailImagePreview}
+                        alt="Brochure Preview"
+                        className="w-16 h-16 object-cover rounded-lg border border-emerald-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteDetailImage(true);
+                          setDetailImagePreview("");
+                          if (detailImageRef.current) detailImageRef.current.value = "";
+                        }}
+                        className="text-xs font-bold text-red-600 hover:text-red-800 border border-red-200 px-2 py-1 rounded bg-white"
+                      >
+                        이미지 삭제
+                      </button>
+                    </div>
+                  ) : (
+                    deleteDetailImage && (
+                      <p className="text-xs font-bold text-red-600 mt-1">
+                        저장 시 기존 브로셔 이미지가 삭제됩니다.
+                      </p>
+                    )
+                  )}
+                </div>
               </div>
             </div>
           </form>
