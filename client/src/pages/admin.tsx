@@ -3102,25 +3102,28 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   const startEdit = (g: any) => {
     setEditingId(g.id);
     const parsed = parseContent(g.content || "");
-    setEditForm({ 
-      title: g.title, 
-      category: g.category || "curriculum", 
+    setEditForm({
+      title: g.title,
+      category: g.category || "curriculum",
       display_order: g.display_order || 0,
+      rawContent: g.content || "",
+      _rawMode: false,
       ...parsed
     });
   };
 
   const saveEdit = () => {
     if (editingId === null) return;
-    const content = stringifyContent(editForm);
-    updateMutation.mutate({ 
-      id: editingId, 
-      data: { 
+    // 텍스트 편집 모드면 원문 그대로 저장, 아니면 항목별 → content 조립
+    const content = editForm._rawMode ? (editForm.rawContent || "") : stringifyContent(editForm);
+    updateMutation.mutate({
+      id: editingId,
+      data: {
         title: editForm.title,
         category: editForm.category,
         display_order: parseInt(editForm.display_order) || 0,
-        content 
-      } 
+        content
+      }
     });
   };
 
@@ -3232,6 +3235,28 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                   </div>
                 </div>
 
+                {/* 편집 방식 토글: 항목별 / 전체 텍스트 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500">편집 방식:</span>
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, _rawMode: false })}
+                    className={`px-3 py-1 text-xs font-bold rounded border ${!editForm._rawMode ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-600 border-gray-300"}`}
+                  >항목별</button>
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, _rawMode: true, rawContent: editForm.rawContent ?? stringifyContent(editForm) })}
+                    className={`px-3 py-1 text-xs font-bold rounded border ${editForm._rawMode ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-600 border-gray-300"}`}
+                  >전체 텍스트</button>
+                </div>
+
+                {editForm._rawMode ? (
+                  <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">브로셔 전체 내용 (텍스트 편집)</label>
+                    <p className="text-[11px] text-gray-400 mb-2">{`[수업 일정] 같은 대괄호 제목으로 구획을 나눕니다. 입력한 텍스트가 그대로 저장·반영됩니다.`}</p>
+                    <textarea value={editForm.rawContent || ""} onChange={e => setEditForm({...editForm, rawContent: e.target.value})} rows={18} className="w-full border border-gray-300 px-3 py-2 text-sm font-mono focus:border-red-600 rounded whitespace-pre" />
+                  </div>
+                ) : (
                 <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">수업 일정</label>
@@ -3262,6 +3287,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                     <textarea value={editForm.linked} onChange={e => setEditForm({...editForm, linked: e.target.value})} rows={2} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-red-600 rounded" />
                   </div>
                 </div>
+                )}
 
                 <div className="flex gap-2">
                   <button onClick={saveEdit} disabled={updateMutation.isPending} className="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded">저장</button>
