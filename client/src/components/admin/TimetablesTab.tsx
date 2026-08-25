@@ -320,7 +320,7 @@ export function TimetablesTab() {
         className: p.className,
         teacherName: p.teacherName,
         startDate: p.startDate,
-        count: p.count,
+        subject,
         category,
       });
 

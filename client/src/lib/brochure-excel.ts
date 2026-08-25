@@ -202,41 +202,51 @@ export function normalizeSchool(raw: string): string {
   return CANONICAL_SCHOOLS.find((sc) => s.includes(sc)) || s.trim();
 }
 
-// 시간표 수업명/제목 규칙: "[대상] 강좌명 - 강사T (개강일 개강, N회)".
-// 예) [화성고1] S1반 공통수학2 심화 - 최주용T (8/16 개강, 16회)
-//     [영신여고2] 화학 반응의 세계 - 김종인T (학원 개강일과 동일 개강, 9회)
-//     [중3] 통과 - 황준우T (7/11 개강, 15회)
+// 시간표 수업명 규칙: "{학교/학년} {과목} 내신[반-{코드}] - {강사}T ({개강일} 개강)".
+// 예) 화성고 수학 내신반-S1 - 최주용T (8/16 개강)
+//     화성고 영어 내신 - 대니얼T (8/21 개강)
+//     영신여고 과학 내신 - 김종인T (학원 개강일과 동일)
 export function formatClassTitle(params: {
   target: string;
   className: string;
   teacherName: string;
   startDate: string;
-  count: string;
+  subject: string;
   category: string;
 }): string {
-  const { target, className, teacherName, startDate, count, category } = params;
+  const { target, className, teacherName, startDate, subject, category } = params;
 
-  // 대상: 학교명이 있으면 "학교+학년"(영신여고2), 없으면 원본 토큰(고1, 중3)
-  const school = normalizeSchool(target);
-  const grade = (category.match(/(\d)(?!.*\d)/) || [])[1] || "";
-  const normTarget = CANONICAL_SCHOOLS.includes(school) ? `${school}${grade}` : school;
+  // 접두: 학교명이 있으면 학교명(학년 없이), 없으면 학년 토큰(고1/고2/중3)
+  const school = CANONICAL_SCHOOLS.find((sc) => (target || "").includes(sc));
+  const gradeTok = (category.match(/고1|고2|고3|중3/) || [])[0] || "";
+  const prefix = school || gradeTok;
+
+  // 과목: 수학/영어/국어는 일반명 그대로. 과학은 세부(통합과학/물리/화학/생명/지구)를
+  // 살려 같은 페이지 동명 충돌(중복 방지에 걸려 누락)을 막는다.
+  let subj = subject || "수학";
+  if (subj === "과학") {
+    const cn = className || "";
+    if (/통합과학|통과/.test(cn)) subj = "통합과학";
+    else if (/물리/.test(cn)) subj = "물리";
+    else if (/화학/.test(cn)) subj = "화학";
+    else if (/생명|생물/.test(cn)) subj = "생명";
+    else if (/지구/.test(cn)) subj = "지구";
+  }
+
+  // 반 코드: S1/S2/A1/A2/의치서/M/S/A + "반" → "내신반-{코드}", 없으면 "내신"
+  const code = ((className || "").match(/(의치서|S1|S2|A1|A2|M|S|A)\s*반/) || [])[1] || "";
+  const naishin = code ? `내신반-${code}` : "내신";
 
   // 강사: 정리 후 항상 T 접미 (최주용 → 최주용T, 김종인T → 김종인T)
   const t = cleanTeacherName(teacherName);
   const teacherT = t ? `${t}T` : "";
 
-  // 개강일: 요일 괄호 제거 (8/16(일) → 8/16). 날짜가 아닌 문구는 그대로.
-  const dateN = (startDate || "").replace(/\([가-힣]\)/g, "").trim();
-  // 회차: "16회차" → "16회", 숫자만이면 "N회"
-  let countN = (count || "").replace(/회차/g, "회").trim();
-  if (countN && !/회/.test(countN)) countN = `${countN}회`;
+  // 개강일: 요일 괄호 제거, 날짜면 "X 개강", 날짜 아닌 문구면 그대로
+  const isDate = /\d{1,2}\s*[/.]\s*\d{1,2}/.test(startDate || "");
+  const cleanedDate = (startDate || "").replace(/\s*\([가-힣]\)/g, "").replace(/\s*개강.*$/, "").trim();
+  const datePart = isDate ? `${cleanedDate} 개강` : (startDate || "").replace(/\s*개강\s*$/, "").trim();
 
-  let clause = "";
-  if (dateN && countN) clause = ` (${dateN} 개강, ${countN})`;
-  else if (dateN) clause = ` (${dateN} 개강)`;
-  else if (countN) clause = ` (${countN})`;
-
-  const tgt = normTarget ? `[${normTarget}] ` : "";
   const dash = teacherT ? ` - ${teacherT}` : "";
-  return `${tgt}${className}${dash}${clause}`.trim();
+  const paren = datePart ? ` (${datePart})` : "";
+  return `${prefix} ${subj} ${naishin}${dash}${paren}`.replace(/\s+/g, " ").trim();
 }
