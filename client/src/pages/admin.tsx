@@ -3099,7 +3099,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
     addMutation.mutate(data);
   };
 
-  const startEdit = (g: any) => {
+  const startEdit = (g: any, rawMode = false) => {
     setEditingId(g.id);
     const parsed = parseContent(g.content || "");
     setEditForm({
@@ -3107,7 +3107,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
       category: g.category || "curriculum",
       display_order: g.display_order || 0,
       rawContent: g.content || "",
-      _rawMode: false,
+      _rawMode: rawMode,
       ...parsed
     });
   };
@@ -3319,7 +3319,8 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => startEdit(g)} className="p-2 text-gray-400 hover:text-red-600 transition-colors"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => startEdit(g, true)} className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded hover:bg-emerald-100 transition whitespace-nowrap">텍스트 수정</button>
+                  <button onClick={() => startEdit(g)} title="항목별 수정" className="p-2 text-gray-400 hover:text-red-600 transition-colors"><Pencil className="w-4 h-4" /></button>
                   <button onClick={() => { if(confirm("삭제하시겠습니까?")) deleteMutation.mutate(g.id); }} className="p-2 text-gray-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
