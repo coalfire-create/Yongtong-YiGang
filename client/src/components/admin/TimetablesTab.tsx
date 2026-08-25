@@ -312,9 +312,11 @@ export function TimetablesTab() {
       if (!p || !p.className) continue;
 
       const { division, category } = mapTargetToDivision(p.target, fileName);
-      const subject = detectSubject(`${p.className} ${s.name}`);
       const cleanedTeacher = cleanTeacherName(p.teacherName);
       const matchedTeacher = teachers.find((t) => t.name.trim() === cleanedTeacher);
+      // 과목: 강좌명 키워드로 판별하되, 실패 시 매칭된 강사의 과목으로 보완
+      // (예: "2학기 내신 중간고사" + 박소현 → 국어). 그래도 없으면 수학.
+      const subject = detectSubject(`${p.className} ${s.name}`) || matchedTeacher?.subject || "";
       const classTitle = formatClassTitle({
         target: p.target,
         className: p.className,
