@@ -16,13 +16,22 @@ import {
   Search,
   CheckSquare,
   Square,
-  FileText,
   AlertCircle,
   ExternalLink,
   Users,
+  Check,
+  Zap,
 } from "lucide-react";
 import * as XLSX from "xlsx";
-import { isVerticalSheet, parseVerticalSheet, detectSubject, mapTargetToDivision, cleanTeacherName, normalizeSchool, formatClassTitle } from "@/lib/brochure-excel";
+import {
+  isVerticalSheet,
+  parseVerticalSheet,
+  detectSubject,
+  mapTargetToDivision,
+  cleanTeacherName,
+  normalizeSchool,
+  formatClassTitle,
+} from "@/lib/brochure-excel";
 
 interface Teacher {
   id: number;
@@ -77,6 +86,31 @@ export function TimetablesTab() {
   const [editingTimetable, setEditingTimetable] = useState<Timetable | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [showPhotoManager, setShowPhotoManager] = useState(false);
+
+  // Inline Row Edit State
+  const [inlineEditId, setInlineEditId] = useState<number | null>(null);
+  const [inlineForm, setInlineForm] = useState<{
+    category: string;
+    subject: string;
+    target_school: string;
+    class_name: string;
+    teacher_name: string;
+    class_time: string;
+    start_date: string;
+    is_visible: boolean;
+    is_union: boolean;
+  }>({
+    category: "고등관-고1",
+    subject: "수학",
+    target_school: "",
+    class_name: "",
+    teacher_name: "",
+    class_time: "",
+    start_date: "",
+    is_visible: true,
+    is_union: false,
+  });
+  const [inlineSaving, setInlineSaving] = useState(false);
 
   // Queries
   const { data: timetables = [], isLoading } = useQuery<Timetable[]>({
@@ -137,6 +171,70 @@ export function TimetablesTab() {
       queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
     },
   });
+
+  // Inline edit handlers
+  const startInlineEdit = (tt: Timetable) => {
+    setInlineEditId(tt.id);
+    setInlineForm({
+      category: tt.category || "고등관-고1",
+      subject: tt.subject || "수학",
+      target_school: tt.target_school || "",
+      class_name: tt.class_name || "",
+      teacher_name: tt.teacher_name || "",
+      class_time: tt.class_time || "",
+      start_date: tt.start_date || "",
+      is_visible: tt.is_visible ?? true,
+      is_union: tt.is_union ?? false,
+    });
+  };
+
+  const saveInlineEdit = async (id: number) => {
+    if (!inlineForm.class_name.trim()) {
+      alert("강좌명(제목)은 필수 입력 사항입니다.");
+      return;
+    }
+    setInlineSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("category", inlineForm.category);
+      formData.append("subject", inlineForm.subject);
+      formData.append("target_school", inlineForm.target_school);
+      formData.append("class_name", inlineForm.class_name);
+      formData.append("teacher_name", inlineForm.teacher_name);
+      formData.append("class_time", inlineForm.class_time);
+      formData.append("start_date", inlineForm.start_date);
+      formData.append("is_visible", String(inlineForm.is_visible));
+      formData.append("is_union", String(inlineForm.is_union));
+
+      const matchedTeacher = teachers.find((t) => t.name.trim() === inlineForm.teacher_name.trim());
+      if (matchedTeacher) {
+        formData.append("teacher_id", String(matchedTeacher.id));
+      }
+
+      const adminToken = localStorage.getItem("adminToken");
+      const headers: Record<string, string> = {};
+      if (adminToken) headers["X-Admin-Token"] = adminToken;
+
+      const res = await fetch(`/api/timetables/${id}`, {
+        method: "PUT",
+        body: formData,
+        headers,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "수정 중 오류가 발생했습니다.");
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
+      setInlineEditId(null);
+    } catch (err: any) {
+      alert(`수정 실패: ${err.message}`);
+    } finally {
+      setInlineSaving(false);
+    }
+  };
 
   // Filters calculation
   const categoryFiltered = filterCategory === "all"
@@ -217,7 +315,6 @@ export function TimetablesTab() {
       const subject = detectSubject(`${p.className} ${s.name}`);
       const cleanedTeacher = cleanTeacherName(p.teacherName);
       const matchedTeacher = teachers.find((t) => t.name.trim() === cleanedTeacher);
-      // 시간표 수업명: 제목 규칙 "[대상] 강좌명 - 강사T (개강일 개강, N회)"
       const classTitle = formatClassTitle({
         target: p.target,
         className: p.className,
@@ -443,7 +540,7 @@ export function TimetablesTab() {
             </span>
           </h2>
           <p className="text-xs text-gray-500 mt-1">
-            강좌 정보를 수정하거나, 다중 선택하여 삭제/노출 설정을 관리할 수 있습니다.
+            행에서 [빠른 수정]으로 수업명/시간/개강일을 즉시 변경하거나, [상세 수정]에서 브로셔 이미지를 첨부할 수 있습니다.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -578,18 +675,153 @@ export function TimetablesTab() {
                     )}
                   </button>
                 </th>
-                <th className="px-4 py-3.5 font-bold">카테고리 / 학교</th>
-                <th className="px-4 py-3.5 font-bold">과목 / 강좌명</th>
-                <th className="px-4 py-3.5 font-bold">강사</th>
-                <th className="px-4 py-3.5 font-bold">수업시간 / 개강일</th>
-                <th className="px-4 py-3.5 font-bold text-center">브로셔(상세)</th>
+                <th className="px-4 py-3.5 font-bold min-w-[120px]">카테고리 / 학교</th>
+                <th className="px-4 py-3.5 font-bold min-w-[260px]">과목 / 강좌명(제목)</th>
+                <th className="px-4 py-3.5 font-bold min-w-[120px]">강사명</th>
+                <th className="px-4 py-3.5 font-bold min-w-[200px]">수업시간 / 개강일</th>
+                <th className="px-4 py-3.5 font-bold text-center">브로셔</th>
                 <th className="px-4 py-3.5 font-bold text-center">노출 상태</th>
-                <th className="px-4 py-3.5 font-bold text-right">관리</th>
+                <th className="px-4 py-3.5 font-bold text-right min-w-[140px]">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredTimetables.map((tt) => {
                 const isSelected = selectedIds.has(tt.id);
+                const isInlineEditing = inlineEditId === tt.id;
+
+                if (isInlineEditing) {
+                  // Inline Editing Row
+                  return (
+                    <tr key={tt.id} className="bg-amber-50/70 border-2 border-amber-300">
+                      <td className="px-4 py-3 text-center">
+                        <Zap className="w-4 h-4 text-amber-600 mx-auto animate-bounce" />
+                      </td>
+
+                      {/* Category & School */}
+                      <td className="px-4 py-3 space-y-1">
+                        <select
+                          value={inlineForm.category}
+                          onChange={(e) => setInlineForm({ ...inlineForm, category: e.target.value })}
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-xs font-semibold bg-white"
+                        >
+                          {CATEGORY_OPTIONS.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="text"
+                          value={inlineForm.target_school}
+                          onChange={(e) => setInlineForm({ ...inlineForm, target_school: e.target.value })}
+                          placeholder="학교 (예: 화성고1)"
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-xs bg-white"
+                        />
+                      </td>
+
+                      {/* Subject & Class Name (Title) */}
+                      <td className="px-4 py-3 space-y-1">
+                        <div className="flex gap-1 items-center">
+                          <select
+                            value={inlineForm.subject}
+                            onChange={(e) => setInlineForm({ ...inlineForm, subject: e.target.value })}
+                            className="border border-gray-300 rounded px-1.5 py-1 text-xs font-bold bg-white"
+                          >
+                            {SUBJECT_OPTIONS.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                          <label className="flex items-center gap-1 text-[11px] font-bold text-gray-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={inlineForm.is_union}
+                              onChange={(e) => setInlineForm({ ...inlineForm, is_union: e.target.checked })}
+                              className="rounded border-gray-300 text-purple-600"
+                            />
+                            연합반
+                          </label>
+                        </div>
+                        <input
+                          type="text"
+                          value={inlineForm.class_name}
+                          onChange={(e) => setInlineForm({ ...inlineForm, class_name: e.target.value })}
+                          placeholder="강좌명 / 제목 입력..."
+                          className="w-full border-2 border-amber-400 rounded px-2.5 py-1 text-xs font-bold bg-white text-gray-900 shadow-xs"
+                        />
+                      </td>
+
+                      {/* Teacher Name */}
+                      <td className="px-4 py-3">
+                        <input
+                          type="text"
+                          value={inlineForm.teacher_name}
+                          onChange={(e) => setInlineForm({ ...inlineForm, teacher_name: e.target.value })}
+                          placeholder="강사명"
+                          list="teacher-suggestions"
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-xs bg-white font-semibold"
+                        />
+                      </td>
+
+                      {/* Class Time & Start Date */}
+                      <td className="px-4 py-3 space-y-1">
+                        <input
+                          type="text"
+                          value={inlineForm.class_time}
+                          onChange={(e) => setInlineForm({ ...inlineForm, class_time: e.target.value })}
+                          placeholder="수업시간 (예: 토 18:30-22:00)"
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-xs bg-white font-semibold"
+                        />
+                        <input
+                          type="text"
+                          value={inlineForm.start_date}
+                          onChange={(e) => setInlineForm({ ...inlineForm, start_date: e.target.value })}
+                          placeholder="개강일 (예: 7/15(토))"
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-xs bg-white font-bold text-red-600"
+                        />
+                      </td>
+
+                      {/* Brochure Status (Read Only in Inline Mode) */}
+                      <td className="px-4 py-3 text-center">
+                        <span className="text-[11px] text-gray-400">모달에서 수정</span>
+                      </td>
+
+                      {/* Visibility Toggle */}
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setInlineForm({ ...inlineForm, is_visible: !inlineForm.is_visible })}
+                          className={`px-2 py-1 rounded text-xs font-bold border ${
+                            inlineForm.is_visible
+                              ? "bg-green-100 text-green-800 border-green-300"
+                              : "bg-gray-200 text-gray-700 border-gray-300"
+                          }`}
+                        >
+                          {inlineForm.is_visible ? "노출중" : "숨김"}
+                        </button>
+                      </td>
+
+                      {/* Save & Cancel */}
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => saveInlineEdit(tt.id)}
+                            disabled={inlineSaving}
+                            className="flex items-center gap-1 bg-green-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-green-700 shadow-xs disabled:opacity-50 transition"
+                          >
+                            {inlineSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                            저장
+                          </button>
+                          <button
+                            onClick={() => setInlineEditId(null)}
+                            className="bg-gray-200 text-gray-700 font-bold px-2.5 py-1.5 rounded-lg text-xs hover:bg-gray-300 transition"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+
+                // Normal Row
                 return (
                   <tr
                     key={tt.id}
@@ -711,14 +943,23 @@ export function TimetablesTab() {
 
                     {/* Action buttons */}
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => startInlineEdit(tt)}
+                          className="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 rounded-lg text-xs font-bold transition"
+                          title="테이블 행에서 즉시 수정 (제목, 시간, 개강일 등)"
+                        >
+                          <Zap className="w-3 h-3 text-amber-600" />
+                          빠른 수정
+                        </button>
+
                         <button
                           onClick={() => setEditingTimetable(tt)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition"
-                          title="시간표 및 브로셔 수정"
+                          className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition"
+                          title="상세 정보 및 브로셔 이미지 관리"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          수정
+                          <Edit2 className="w-3 h-3" />
+                          상세
                         </button>
 
                         <button
@@ -730,7 +971,7 @@ export function TimetablesTab() {
                           className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                           title="시간표 삭제"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
@@ -834,7 +1075,7 @@ function TimetableModal({
   const [detailImagePreview, setDetailImagePreview] = useState<string>(timetable?.detail_image_url || "");
   const [deleteDetailImage, setDeleteDetailImage] = useState(false);
 
-  const { register, handleSubmit, watch } = useForm({
+  const { register, handleSubmit, reset } = useForm({
     defaultValues: timetable || {
       category: "고등관-고1",
       subject: "수학",
@@ -848,6 +1089,43 @@ function TimetableModal({
       is_union: false,
     },
   });
+
+  // CRITICAL FIX: Reset form values whenever selected timetable prop changes!
+  useEffect(() => {
+    if (timetable) {
+      reset({
+        category: timetable.category || "고등관-고1",
+        subject: timetable.subject || "수학",
+        target_school: timetable.target_school || "",
+        class_name: timetable.class_name || "",
+        teacher_name: timetable.teacher_name || "",
+        class_time: timetable.class_time || "",
+        start_date: timetable.start_date || "",
+        description: timetable.description || "",
+        is_visible: timetable.is_visible ?? true,
+        is_union: timetable.is_union ?? false,
+      });
+      setTeacherImagePreview(timetable.teacher_image_url || "");
+      setDetailImagePreview(timetable.detail_image_url || "");
+      setDeleteDetailImage(false);
+    } else {
+      reset({
+        category: "고등관-고1",
+        subject: "수학",
+        target_school: "",
+        class_name: "",
+        teacher_name: "",
+        class_time: "",
+        start_date: "",
+        description: "",
+        is_visible: true,
+        is_union: false,
+      });
+      setTeacherImagePreview("");
+      setDetailImagePreview("");
+      setDeleteDetailImage(false);
+    }
+  }, [timetable, reset]);
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -916,7 +1194,7 @@ function TimetableModal({
               {isEdit ? `'${timetable.class_name}' 시간표 및 브로셔 수정` : "새 시간표 작성"}
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              시간표 정보 및 브로셔(상세설명 이미지)를 입력하세요.
+              강좌 제목, 수업시간, 개강일 및 브로셔(상세설명 이미지)를 입력하세요.
             </p>
           </div>
           <button
@@ -984,29 +1262,29 @@ function TimetableModal({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-gray-700 mb-1">강좌명 *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">강좌명 (수업 제목) *</label>
                 <input
                   {...register("class_name", { required: true })}
                   placeholder="예: [수학] 수학I 내신대비반"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full border-2 border-red-200 rounded-lg px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">수업 시간</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">수업 시간 *</label>
                 <input
                   {...register("class_time")}
                   placeholder="예: 토 18:30-22:00"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">개강일</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">개강일 *</label>
                 <input
                   {...register("start_date")}
                   placeholder="예: 7/15(토)"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
