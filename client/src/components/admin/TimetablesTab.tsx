@@ -1556,10 +1556,10 @@ function TimetableModal({
                       <label className="block text-xs font-bold text-gray-800 mb-1">
                         강좌 특징
                       </label>
-                      <input
-                        type="text"
+                      <textarea
                         value={brochureForm.features}
                         onChange={(e) => setBrochureForm({ ...brochureForm, features: e.target.value })}
+                        rows={2}
                         placeholder="예: 화성고 내신을 위한 최선의 선택."
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
                       />
@@ -1569,10 +1569,10 @@ function TimetableModal({
                       <label className="block text-xs font-bold text-gray-800 mb-1">
                         교재 / 제공자료
                       </label>
-                      <input
-                        type="text"
+                      <textarea
                         value={brochureForm.materials}
                         onChange={(e) => setBrochureForm({ ...brochureForm, materials: e.target.value })}
+                        rows={2}
                         placeholder="예: 자체 교재 + 프린트"
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
                       />
@@ -1582,10 +1582,10 @@ function TimetableModal({
                       <label className="block text-xs font-bold text-gray-800 mb-1">
                         과제 / TEST
                       </label>
-                      <input
-                        type="text"
+                      <textarea
                         value={brochureForm.tasks}
                         onChange={(e) => setBrochureForm({ ...brochureForm, tasks: e.target.value })}
+                        rows={2}
                         placeholder="예: 매시간 과제 체크 및 시험, 체크내용 문자발송"
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
                       />
@@ -1632,10 +1632,10 @@ function TimetableModal({
                     <label className="block text-xs font-bold text-gray-800 mb-1">
                       연계 강좌
                     </label>
-                    <input
-                      type="text"
+                    <textarea
                       value={brochureForm.linked}
                       onChange={(e) => setBrochureForm({ ...brochureForm, linked: e.target.value })}
+                      rows={2}
                       placeholder="예: 2학기 중간고사 내신 파이널반 (없으면 -)"
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
                     />
