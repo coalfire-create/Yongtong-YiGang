@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
-import { Trash2, Upload, Download, Loader2, Users, Pencil, Check, X, Plus } from "lucide-react";
+import { Trash2, Upload, Download, Loader2, Users, Pencil, Check, X, Plus, Image as ImageIcon } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface Teacher {
@@ -14,6 +14,13 @@ interface Teacher {
   image_url: string | null;
   display_order: number;
   created_at: string;
+}
+
+interface TeacherImageItem {
+  id: number;
+  teacher_id: number;
+  image_url: string;
+  display_order: number;
 }
 
 export function TeachersTab() {
@@ -185,95 +192,201 @@ export function TeachersTab() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredTeachers.map(teacher => (
-          <div key={teacher.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition group">
-            <div className="flex gap-4 items-start">
-              <label className="relative cursor-pointer flex-shrink-0 group/photo">
-                {teacher.image_url ? (
-                  <img src={teacher.image_url} alt={teacher.name} className="w-16 h-16 rounded-full object-cover border-2 border-gray-100 group-hover/photo:opacity-80 transition" />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center border-2 border-dashed border-red-200 group-hover/photo:bg-red-100 transition">
-                    <Users className="w-6 h-6 text-red-400" />
+          <div key={teacher.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition group flex flex-col justify-between">
+            <div>
+              <div className="flex gap-4 items-start">
+                <label className="relative cursor-pointer flex-shrink-0 group/photo">
+                  {teacher.image_url ? (
+                    <img src={teacher.image_url} alt={teacher.name} className="w-16 h-16 rounded-full object-cover border-2 border-gray-100 group-hover/photo:opacity-80 transition" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center border-2 border-dashed border-red-200 group-hover/photo:bg-red-100 transition">
+                      <Users className="w-6 h-6 text-red-400" />
+                    </div>
+                  )}
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition shadow-sm">
+                    <Upload className="w-3 h-3 text-white" />
                   </div>
-                )}
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition shadow-sm">
-                  <Upload className="w-3 h-3 text-white" />
-                </div>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) photoMutation.mutate({ id: teacher.id, file });
-                  }} 
-                />
-              </label>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg">{teacher.name}</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      <span className="text-red-600 font-medium">{teacher.division}</span> · {teacher.subject}
-                    </p>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      if (confirm(`'${teacher.name}' 선생님을 삭제하시겠습니까?`)) {
-                        deleteMutation.mutate(teacher.id);
-                      }
-                    }}
-                    className="p-1.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-gray-50">
-              {editingTeacherId === teacher.id ? (
-                <div className="space-y-2">
-                  <textarea 
-                    value={editBioText}
-                    onChange={(e) => setEditBioText(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg p-2 text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
-                    rows={3}
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) photoMutation.mutate({ id: teacher.id, file });
+                    }} 
                   />
-                  <div className="flex justify-end gap-1">
-                    <button onClick={() => setEditingTeacherId(null)} className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded">취소</button>
+                </label>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-lg">{teacher.name}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        <span className="text-red-600 font-medium">{teacher.division}</span> · {teacher.subject}
+                      </p>
+                    </div>
                     <button 
-                      onClick={() => bioMutation.mutate({ id: teacher.id, bio: editBioText })}
-                      disabled={bioMutation.isPending}
-                      className="px-2 py-1 text-xs bg-red-600 text-white hover:bg-red-700 rounded flex items-center gap-1"
+                      onClick={() => {
+                        if (confirm(`'${teacher.name}' 선생님을 삭제하시겠습니까?`)) {
+                          deleteMutation.mutate(teacher.id);
+                        }
+                      }}
+                      className="p-1.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition opacity-0 group-hover:opacity-100"
                     >
-                      {bioMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                      저장
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div className="relative group/bio">
-                  <p className="text-xs text-gray-600 whitespace-pre-wrap line-clamp-2">
-                    {teacher.description || "약력이 등록되지 않았습니다."}
-                  </p>
-                  <button 
-                    onClick={() => {
-                      setEditingTeacherId(teacher.id);
-                      setEditBioText(teacher.description || "");
-                    }}
-                    className="absolute top-0 right-0 p-1 bg-white border border-gray-200 rounded text-gray-400 hover:text-blue-600 shadow-sm opacity-0 group-hover/bio:opacity-100 transition"
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                {editingTeacherId === teacher.id ? (
+                  <div className="space-y-2">
+                    <textarea 
+                      value={editBioText}
+                      onChange={(e) => setEditBioText(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg p-2 text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
+                      rows={3}
+                    />
+                    <div className="flex justify-end gap-1">
+                      <button onClick={() => setEditingTeacherId(null)} className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded">취소</button>
+                      <button 
+                        onClick={() => bioMutation.mutate({ id: teacher.id, bio: editBioText })}
+                        disabled={bioMutation.isPending}
+                        className="px-2 py-1 text-xs bg-red-600 text-white hover:bg-red-700 rounded flex items-center gap-1"
+                      >
+                        {bioMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                        저장
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative group/bio">
+                    <p className="text-xs text-gray-600 whitespace-pre-wrap line-clamp-2">
+                      {teacher.description || "약력이 등록되지 않았습니다."}
+                    </p>
+                    <button 
+                      onClick={() => {
+                        setEditingTeacherId(teacher.id);
+                        setEditBioText(teacher.description || "");
+                      }}
+                      className="absolute top-0 right-0 p-1 bg-white border border-gray-200 rounded text-gray-400 hover:text-blue-600 shadow-sm opacity-0 group-hover/bio:opacity-100 transition"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Teacher Brochure Images Manager */}
+            <TeacherImagesManager teacherId={teacher.id} teacherName={teacher.name} />
           </div>
         ))}
       </div>
 
       {isAddModalOpen && <AddTeacherModal onClose={() => setIsAddModalOpen(false)} />}
+    </div>
+  );
+}
+
+function TeacherImagesManager({ teacherId, teacherName }: { teacherId: number; teacherName: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: images = [], isLoading } = useQuery<TeacherImageItem[]>({
+    queryKey: ["/api/teachers", teacherId, "images"],
+    queryFn: async () => {
+      const res = await fetch(`/api/teachers/${teacherId}/images`);
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: expanded,
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(`/api/teachers/${teacherId}/images`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("업로드 실패");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teachers", teacherId, "images"] });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (imageId: number) => {
+      await apiRequest("DELETE", `/api/teacher-images/${imageId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teachers", teacherId, "images"] });
+    },
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    for (let i = 0; i < files.length; i++) {
+      uploadMutation.mutate(files[i]);
+    }
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-700 transition-colors"
+      >
+        <ImageIcon className="w-3.5 h-3.5" />
+        강사 브로셔 관리 ({images.length > 0 ? `${images.length}장` : expanded ? "접기" : "펼치기"})
+      </button>
+
+      {expanded && (
+        <div className="mt-3 space-y-3 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="text-[11px] text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"
+            />
+            {uploadMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-red-600" />}
+          </div>
+
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+          ) : images.length === 0 ? (
+            <p className="text-[11px] text-gray-400">등록된 브로셔 이미지가 없습니다.</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {images.map((img) => (
+                <div key={img.id} className="relative group rounded overflow-hidden border border-gray-200 bg-white">
+                  <img src={img.image_url} alt="브로셔" className="w-full h-16 object-cover" />
+                  <button
+                    onClick={() => {
+                      if (confirm("이 브로셔 이미지를 삭제하시겠습니까?")) deleteMutation.mutate(img.id);
+                    }}
+                    className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="삭제"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -313,7 +426,7 @@ function AddTeacherModal({ onClose }: { onClose: () => void }) {
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
           <h3 className="text-xl font-bold text-gray-900">새 강사 추가</h3>

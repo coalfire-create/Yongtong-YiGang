@@ -2046,6 +2046,23 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/timetables/bulk-delete", requireAdmin, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids 배열이 필요합니다." });
+    try {
+      const cols = await pool.query(
+        "SELECT column_name FROM information_schema.columns WHERE table_name = 'reservations' AND column_name = 'timetable_id'"
+      );
+      if (cols.rows.length > 0) {
+        await pool.query("DELETE FROM reservations WHERE timetable_id = ANY($1)", [ids]);
+      }
+      await pool.query("DELETE FROM timetables WHERE id = ANY($1)", [ids]);
+      res.json({ success: true, count: ids.length });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // --- Individual timetable photo upload ---
   app.patch("/api/timetables/:id/photo", requireAdmin, upload.single("image"), async (req, res) => {
     const id = parseInt(req.params.id as string);

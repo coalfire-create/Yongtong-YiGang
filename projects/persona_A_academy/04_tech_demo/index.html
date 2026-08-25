@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>브라이트입시학원 | 영통이강 데모 페이지</title>
+<style>
+  :root{
+    --navy:#1f3a5f;
+    --accent:#2f6fed;
+    --accent-light:#eaf1ff;
+    --gray:#5a6472;
+    --bg:#fbfcff;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    color:#1a1f28;
+    background:var(--bg);
+    line-height:1.6;
+  }
+  .demo-banner{
+    background:#111827;color:#fff;text-align:center;
+    font-size:13px;padding:8px 12px;
+  }
+  header{
+    position:sticky;top:0;background:#fff;z-index:20;
+    border-bottom:1px solid #eef0f4;
+  }
+  .nav-wrap{
+    max-width:1080px;margin:0 auto;padding:14px 20px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .logo{font-size:20px;font-weight:800;color:var(--navy);}
+  nav ul{list-style:none;display:flex;gap:22px;}
+  nav a{color:#333;text-decoration:none;font-size:14px;font-weight:600;}
+  .cta-btn{
+    background:var(--accent);color:#fff;padding:10px 18px;border-radius:999px;
+    font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap;
+  }
+  .hero{
+    max-width:1080px;margin:0 auto;padding:70px 20px 60px;
+    display:grid;grid-template-columns:1.1fr 0.9fr;gap:40px;align-items:center;
+  }
+  .hero h1{font-size:34px;color:var(--navy);line-height:1.35;margin-bottom:16px;}
+  .hero h1 span{color:var(--accent);}
+  .hero p{color:var(--gray);font-size:16px;margin-bottom:26px;}
+  .hero-badges{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px;}
+  .badge{
+    background:var(--accent-light);color:var(--accent);
+    padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;
+  }
+  .hero-visual{
+    background:linear-gradient(135deg,var(--navy),var(--accent));
+    border-radius:var(--radius);height:280px;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:15px;text-align:center;padding:20px;
+  }
+  section{max-width:1080px;margin:0 auto;padding:50px 20px;}
+  .section-title{
+    font-size:24px;color:var(--navy);margin-bottom:8px;font-weight:800;
+  }
+  .section-sub{color:var(--gray);font-size:14px;margin-bottom:30px;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .card{
+    background:#fff;border:1px solid #eef0f4;border-radius:var(--radius);
+    padding:24px;
+  }
+  .card h3{font-size:16px;margin-bottom:10px;color:var(--navy);}
+  .card p{font-size:13.5px;color:var(--gray);}
+  .teacher-card{
+    background:#fff;border:1px solid #eef0f4;border-radius:var(--radius);
+    padding:20px;text-align:center;
+  }
+  .teacher-avatar{
+    width:64px;height:64px;border-radius:50%;background:var(--accent-light);
+    margin:0 auto 12px;display:flex;align-items:center;justify-content:center;
+    color:var(--accent);font-weight:800;font-size:18px;
+  }
+  .review{
+    background:#fff;border:1px solid #eef0f4;border-radius:var(--radius);
+    padding:20px;font-size:13.5px;color:#333;
+  }
+  .review .stars{color:#f5a623;margin-bottom:8px;font-size:14px;}
+  .review .who{margin-top:10px;color:var(--gray);font-size:12.5px;}
+  .notice-list{background:#fff;border:1px solid #eef0f4;border-radius:var(--radius);overflow:hidden;}
+  .notice-item{
+    display:flex;justify-content:space-between;padding:14px 20px;
+    border-bottom:1px solid #f1f2f5;font-size:13.5px;
+  }
+  .notice-item:last-child{border-bottom:none;}
+  .notice-item span:last-child{color:var(--gray);font-size:12.5px;}
+  .contact-wrap{
+    background:var(--navy);border-radius:var(--radius);color:#fff;
+    padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:30px;
+  }
+  .contact-wrap h2{font-size:22px;margin-bottom:10px;}
+  .contact-wrap p{color:#cdd8ee;font-size:13.5px;margin-bottom:20px;}
+  form{display:flex;flex-direction:column;gap:10px;}
+  form input, form select{
+    padding:11px 14px;border-radius:8px;border:none;font-size:13.5px;
+  }
+  form button{
+    background:var(--accent);color:#fff;border:none;padding:12px;
+    border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-top:6px;
+  }
+  footer{
+    text-align:center;padding:30px 20px;color:var(--gray);font-size:12.5px;
+    border-top:1px solid #eef0f4;
+  }
+  @media (max-width:760px){
+    .hero{grid-template-columns:1fr;padding-top:40px;}
+    .grid-3{grid-template-columns:1fr;}
+    .contact-wrap{grid-template-columns:1fr;padding:26px;}
+    nav ul{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-banner">📌 이 페이지는 영통이강.com이 학원 원장님께 제안하는 샘플 데모입니다 (실제 데이터 입력/전송 없음)</div>
+
+<header>
+  <div class="nav-wrap">
+    <div class="logo">브라이트입시학원</div>
+    <nav>
+      <ul>
+        <li><a href="#about">학원소개</a></li>
+        <li><a href="#curriculum">커리큘럼</a></li>
+        <li><a href="#teachers">강사진</a></li>
+        <li><a href="#reviews">학부모후기</a></li>
+        <li><a href="#notice">공지사항</a></li>
+      </ul>
+    </nav>
+    <a href="#contact" class="cta-btn">상담 신청</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div>
+    <div class="hero-badges">
+      <span class="badge">원생 150명 규모</span>
+      <span class="badge">개원 12년차</span>
+      <span class="badge">학부모 만족도 4.8</span>
+    </div>
+    <h1>믿을 수 있는 학원인지,<br><span>홈페이지 하나</span>로 알 수 있습니다</h1>
+    <p>커리큘럼부터 강사진, 학부모님들의 솔직한 후기까지 — 브라이트입시학원의 모든 것을 한눈에 확인하세요.</p>
+    <a href="#contact" class="cta-btn">무료 상담 신청하기</a>
+  </div>
+  <div class="hero-visual">
+    (학원 대표 이미지 / 원장 인사 영상 영역)
+  </div>
+</section>
+
+<section id="about">
+  <div class="section-title">학원 소개</div>
+  <div class="section-sub">체계적인 커리큘럼과 12년의 노하우로 학생 한 명 한 명을 책임집니다.</div>
+  <div class="grid-3">
+    <div class="card"><h3>원장 인사말</h3><p>"아이들의 성적보다 자신감을 먼저 키웁니다." 12년간 지역 학생들과 함께해온 브라이트입시학원입니다.</p></div>
+    <div class="card"><h3>학원 연혁</h3><p>2014년 개원, 누적 졸업생 1,200명, 지역 우수학원 인증 3회 수상.</p></div>
+    <div class="card"><h3>학습 관리 시스템</h3><p>주 1회 학부모 리포트 발송, 월 1회 학습 상담으로 성적 변화를 투명하게 공유합니다.</p></div>
+  </div>
+</section>
+
+<section id="curriculum">
+  <div class="section-title">커리큘럼</div>
+  <div class="section-sub">학년별, 과목별 맞춤 커리큘럼을 제공합니다.</div>
+  <div class="grid-3">
+    <div class="card"><h3>중등 수학 심화반</h3><p>내신+심화 병행, 주 3회 80분 수업, 소수정예 6인 클래스.</p></div>
+    <div class="card"><h3>고등 국어·영어 통합반</h3><p>내신-수능 통합 커리큘럼, 주간 모의고사 진단 포함.</p></div>
+    <div class="card"><h3>입시 컨설팅</h3><p>학기별 진학 상담 및 학습 로드맵 제공.</p></div>
+  </div>
+</section>
+
+<section id="teachers">
+  <div class="section-title">강사진 소개</div>
+  <div class="section-sub">전공 및 강의 경력을 투명하게 공개합니다.</div>
+  <div class="grid-3">
+    <div class="teacher-card"><div class="teacher-avatar">김</div><h3>김OO 원장</h3><p style="font-size:13px;color:var(--gray)">수학 전공 · 강의경력 15년</p></div>
+    <div class="teacher-card"><div class="teacher-avatar">이</div><h3>이OO 강사</h3><p style="font-size:13px;color:var(--gray)">영어교육 전공 · 강의경력 9년</p></div>
+    <div class="teacher-card"><div class="teacher-avatar">박</div><h3>박OO 강사</h3><p style="font-size:13px;color:var(--gray)">국어국문 전공 · 강의경력 7년</p></div>
+  </div>
+</section>
+
+<section id="reviews">
+  <div class="section-title">학부모 후기</div>
+  <div class="section-sub">실제 학부모님들이 남겨주신 후기입니다.</div>
+  <div class="grid-3">
+    <div class="review"><div class="stars">★★★★★</div>아이가 수학을 포기하려던 참이었는데, 소수정예 수업 덕분에 자신감을 찾았어요.<div class="who">중2 학부모</div></div>
+    <div class="review"><div class="stars">★★★★★</div>매주 리포트를 받아보니 학습 상황을 한눈에 알 수 있어 믿음이 갑니다.<div class="who">고1 학부모</div></div>
+    <div class="review"><div class="stars">★★★★☆</div>선생님들이 친절하고 상담도 꼼꼼하게 해주셔서 만족스러워요.<div class="who">중3 학부모</div></div>
+  </div>
+</section>
+
+<section id="notice">
+  <div class="section-title">공지사항 · 입시정보</div>
+  <div class="section-sub">학원 소식과 최신 입시 정보를 안내합니다.</div>
+  <div class="notice-list">
+    <div class="notice-item"><span>2026학년도 겨울방학 특강 안내</span><span>2026.01.05</span></div>
+    <div class="notice-item"><span>중등부 신입생 레벨테스트 일정</span><span>2025.12.20</span></div>
+    <div class="notice-item"><span>2026 수능 출제 경향 분석 세미나</span><span>2025.12.10</span></div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="contact-wrap">
+    <div>
+      <h2>지금 바로 상담을 신청하세요</h2>
+      <p>이름과 연락처만 남겨주시면 24시간 이내에 담당 선생님이 연락드립니다.</p>
+      <p style="font-size:12.5px;color:#a9bcdd;">경기 수원시 영통구 (예시 주소) · 032-000-0000</p>
+    </div>
+    <form onsubmit="event.preventDefault(); alert('데모 페이지입니다. 실제 제출은 되지 않습니다.');">
+      <input type="text" placeholder="학생 이름" required>
+      <input type="tel" placeholder="연락처 (010-0000-0000)" required>
+      <select>
+        <option>학년 선택</option>
+        <option>초등</option>
+        <option>중등</option>
+        <option>고등</option>
+      </select>
+      <input type="text" placeholder="희망 과목 (예: 수학, 영어)">
+      <button type="submit">상담 신청하기</button>
+    </form>
+  </div>
+</section>
+
+<footer>
+  ⓒ 브라이트입시학원 (데모) · 본 페이지는 영통이강.com이 제작한 학원 홈페이지 샘플입니다.<br>
+  실제 계약 시 학원명, 로고, 이미지, 색상은 자유롭게 커스터마이징됩니다.
+</footer>
+
+</body>
+</html>
