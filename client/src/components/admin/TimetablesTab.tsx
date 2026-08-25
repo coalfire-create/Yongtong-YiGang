@@ -22,7 +22,7 @@ import {
   Users,
 } from "lucide-react";
 import * as XLSX from "xlsx";
-import { isVerticalSheet, parseVerticalSheet, detectSubject, mapTargetToDivision, cleanTeacherName, normalizeSchool } from "@/lib/brochure-excel";
+import { isVerticalSheet, parseVerticalSheet, detectSubject, mapTargetToDivision, cleanTeacherName, normalizeSchool, formatClassTitle } from "@/lib/brochure-excel";
 
 interface Teacher {
   id: number;
@@ -217,8 +217,17 @@ export function TimetablesTab() {
       const subject = detectSubject(`${p.className} ${s.name}`);
       const cleanedTeacher = cleanTeacherName(p.teacherName);
       const matchedTeacher = teachers.find((t) => t.name.trim() === cleanedTeacher);
+      // 시간표 수업명: 제목 규칙 "[대상] 강좌명 - 강사T (개강일 개강, N회)"
+      const classTitle = formatClassTitle({
+        target: p.target,
+        className: p.className,
+        teacherName: p.teacherName,
+        startDate: p.startDate,
+        count: p.count,
+        category,
+      });
 
-      const tKey = ttKey(category, p.className, cleanedTeacher, p.startDate);
+      const tKey = ttKey(category, classTitle, cleanedTeacher, p.startDate);
       if (existingTtKeys.has(tKey)) {
         ttSkip++;
       } else {
@@ -227,7 +236,7 @@ export function TimetablesTab() {
             category,
             subject,
             target_school: normalizeSchool(p.target),
-            class_name: p.className,
+            class_name: classTitle,
             teacher_name: cleanedTeacher,
             teacher_id: matchedTeacher ? matchedTeacher.id : undefined,
             class_time: p.schedule,

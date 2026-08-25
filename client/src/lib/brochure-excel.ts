@@ -201,3 +201,42 @@ export function normalizeSchool(raw: string): string {
   const s = raw || "";
   return CANONICAL_SCHOOLS.find((sc) => s.includes(sc)) || s.trim();
 }
+
+// 시간표 수업명/제목 규칙: "[대상] 강좌명 - 강사T (개강일 개강, N회)".
+// 예) [화성고1] S1반 공통수학2 심화 - 최주용T (8/16 개강, 16회)
+//     [영신여고2] 화학 반응의 세계 - 김종인T (학원 개강일과 동일 개강, 9회)
+//     [중3] 통과 - 황준우T (7/11 개강, 15회)
+export function formatClassTitle(params: {
+  target: string;
+  className: string;
+  teacherName: string;
+  startDate: string;
+  count: string;
+  category: string;
+}): string {
+  const { target, className, teacherName, startDate, count, category } = params;
+
+  // 대상: 학교명이 있으면 "학교+학년"(영신여고2), 없으면 원본 토큰(고1, 중3)
+  const school = normalizeSchool(target);
+  const grade = (category.match(/(\d)(?!.*\d)/) || [])[1] || "";
+  const normTarget = CANONICAL_SCHOOLS.includes(school) ? `${school}${grade}` : school;
+
+  // 강사: 정리 후 항상 T 접미 (최주용 → 최주용T, 김종인T → 김종인T)
+  const t = cleanTeacherName(teacherName);
+  const teacherT = t ? `${t}T` : "";
+
+  // 개강일: 요일 괄호 제거 (8/16(일) → 8/16). 날짜가 아닌 문구는 그대로.
+  const dateN = (startDate || "").replace(/\([가-힣]\)/g, "").trim();
+  // 회차: "16회차" → "16회", 숫자만이면 "N회"
+  let countN = (count || "").replace(/회차/g, "회").trim();
+  if (countN && !/회/.test(countN)) countN = `${countN}회`;
+
+  let clause = "";
+  if (dateN && countN) clause = ` (${dateN} 개강, ${countN})`;
+  else if (dateN) clause = ` (${dateN} 개강)`;
+  else if (countN) clause = ` (${countN})`;
+
+  const tgt = normTarget ? `[${normTarget}] ` : "";
+  const dash = teacherT ? ` - ${teacherT}` : "";
+  return `${tgt}${className}${dash}${clause}`.trim();
+}
