@@ -453,7 +453,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           subjectGroups[subj] = {};
         }
 
-        const isUnionSchool = targetSchool === "공통" || targetSchool === "연합" || targetSchool === "연합반" || targetSchool.startsWith("연합 (");
+        const isUnionSchool = isUnionInst || targetSchool === "공통" || targetSchool === "연합" || targetSchool === "연합반" || targetSchool.startsWith("연합 (");
         
         let groupKey = targetSchool;
         if (isUnionSchool) {
