@@ -256,7 +256,7 @@ interface TimetableGalleryProps {
 export function TimetableGallery({ category, filterTabs, summaryDivision, summaryTitle }: TimetableGalleryProps) {
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [reserveTarget, setReserveTarget] = useState<{ id?: number; name?: string; subject?: string; teacherName?: string; classTime?: string; startDate?: string } | null>(null);
-  const [brochure, setBrochure] = useState<any | null>(null);
+  const [brochure, setBrochure] = useState<{ guideline: any, overrideTime?: string } | null>(null);
 
   const { data: rawTimetables = [], isLoading } = useQuery<Timetable[]>({
     queryKey: ["/api/timetables", category],
@@ -557,7 +557,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                           subject={subj}
                           onReserve={openReserve}
                           brochureMap={brochureMap}
-                          onBrochure={setBrochure}
+                          onBrochure={(g, time) => setBrochure({ guideline: g, overrideTime: time })}
                           type="school"
                         />
                       ))}
@@ -583,7 +583,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
                         teachers={teachers}
                         onReserve={openReserve}
                         brochureMap={brochureMap}
-                        onBrochure={setBrochure}
+                        onBrochure={(g, time) => setBrochure({ guideline: g, overrideTime: time })}
                         type="school"
                       />
                     ))}
@@ -605,7 +605,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         classTime={reserveTarget?.classTime}
         startDate={reserveTarget?.startDate}
       />
-      {brochure && <BrochureModal guideline={brochure} onClose={() => setBrochure(null)} />}
+      {brochure && <BrochureModal guideline={brochure.guideline} overrideTime={brochure.overrideTime} onClose={() => setBrochure(null)} />}
     </>
   );
 }
@@ -626,7 +626,7 @@ function GroupCard({
   subject?: string;
   onReserve: (tt: Timetable) => void;
   brochureMap: Map<number, any>;
-  onBrochure: (g: any) => void;
+  onBrochure: (brochure: any, overrideTime?: string) => void;
   type: "teacher" | "school";
 }) {
   const firstTt = timetables[0];
@@ -931,7 +931,7 @@ function GroupCard({
               <div className="flex items-center gap-2 flex-shrink-0">
                 {brochureMap.get(tt.id) && (
                   <button
-                    onClick={() => onBrochure(brochureMap.get(tt.id))}
+                    onClick={() => onBrochure(brochureMap.get(tt.id), tt.class_time)}
                     className="px-4 py-2 border border-[#7B2332] text-[#7B2332] text-xs font-bold hover:bg-[#7B2332]/5 transition-colors"
                   >
                     브로셔

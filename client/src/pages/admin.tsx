@@ -3017,7 +3017,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
 
         for (const sheetName of wb.SheetNames) {
           if (sheetName.includes("예시") || sheetName.includes("안내")) continue;
-          const data = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 }) as any[][];
+          const data = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, raw: false, defval: "" }) as any[][];
           if (!data || data.length === 0) continue;
           // 세로(강사 원본) 양식 감지: 어느 행이든 첫 칸에 "구분" 또는 섹션 라벨이 있으면
           const isVertical = data.some((r) => /구분|수업\s*일정|강좌\s*특징/.test((r && r[0] != null ? r[0].toString() : "")));

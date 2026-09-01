@@ -31,10 +31,10 @@ function cleanTitle(t: string): string {
   return (t || "").replace(/\n/g, " ").trim();
 }
 
-export function BrochureModal({ guideline, onClose }: { guideline: Guideline; onClose: () => void }) {
+export function BrochureModal({ guideline, onClose, overrideTime }: { guideline: Guideline; onClose: () => void; overrideTime?: string }) {
   const sections = parseSections(guideline.content);
   const schedule = sections.find((s) => s.name === "수업 일정");
-  const scheduleLine = schedule ? schedule.body.split("\n").map((l) => l.trim()).filter(Boolean)[0] || "" : "";
+  const scheduleLine = overrideTime || (schedule ? schedule.body.split("\n").map((l) => l.trim()).filter(Boolean)[0] || "" : "");
   const rows = sections.filter((s) => s.name !== "수업 일정");
 
   // 과제/TEST 는 '과제'로 표기 (사이트 정책과 동일)
