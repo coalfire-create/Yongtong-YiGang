@@ -6,7 +6,7 @@ import { TimetablesTab } from "../components/admin/TimetablesTab";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm, useFieldArray } from "react-hook-form";
-import { Trash2, Upload, Download, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown, GripVertical, BookOpen, Trophy } from "lucide-react";
+import { Trash2, Upload, Download, Loader2, Users, User, Calendar, CalendarDays, ArrowLeft, Lock, Megaphone, Eye, EyeOff, Image, Pencil, Check, X, MessageSquare, Star, ListOrdered, Plus, ArrowUp, ArrowDown, GripVertical, BookOpen, Trophy, Search, Phone, Inbox, School, GraduationCap } from "lucide-react";
 import { Link } from "wouter";
 import * as XLSX from "xlsx";
 import { parseVerticalSheet as libParseVerticalSheet } from "@/lib/brochure-excel";
@@ -408,10 +408,41 @@ function downloadExcel(filename: string, rows: Record<string, any>[]) {
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
+const SUBJECT_BADGE_STYLES: Record<string, string> = {
+  "수학": "bg-blue-50 text-blue-700 ring-blue-600/20",
+  "국어": "bg-rose-50 text-rose-700 ring-rose-600/20",
+  "영어": "bg-amber-50 text-amber-700 ring-amber-600/20",
+  "통합과학": "bg-teal-50 text-teal-700 ring-teal-600/20",
+  "통합사회/한국사": "bg-violet-50 text-violet-700 ring-violet-600/20",
+  "탐구": "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
+  "논술": "bg-pink-50 text-pink-700 ring-pink-600/20",
+};
+
+function subjectBadgeClass(subject: string) {
+  return SUBJECT_BADGE_STYLES[subject] || "bg-gray-100 text-gray-700 ring-gray-500/20";
+}
+
+function StatCard({ icon: Icon, label, value, accent }: { icon: React.ElementType; label: string; value: number; accent: string }) {
+  return (
+    <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+      <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg ${accent}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-xs font-medium text-gray-500">{label}</p>
+        <p className="text-2xl font-bold tracking-tight text-gray-900">{value.toLocaleString("ko-KR")}<span className="ml-0.5 text-sm font-medium text-gray-400">건</span></p>
+      </div>
+    </div>
+  );
+}
+
 function ReservationsTab() {
   const { data: reservations = [], isLoading } = useQuery<Reservation[]>({
     queryKey: ["/api/admin/reservations"],
   });
+
+  const [search, setSearch] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState<string>("전체");
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -492,74 +523,180 @@ function ReservationsTab() {
       "학부모 전화": r.parent_phone || "",
     })));
 
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfWeek = startOfToday - 6 * 24 * 60 * 60 * 1000;
+
+  const todayCount = reservations.filter((r) => r.created_at && new Date(r.created_at).getTime() >= startOfToday).length;
+  const weekCount = reservations.filter((r) => r.created_at && new Date(r.created_at).getTime() >= startOfWeek).length;
+
+  const subjectOptions = ["전체", ...Array.from(new Set(reservations.map((r) => r.subject).filter(Boolean)))];
+
+  const filteredReservations = reservations.filter((r) => {
+    if (subjectFilter !== "전체" && r.subject !== subjectFilter) return false;
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    return [r.student_name, r.student_phone, r.parent_phone, r.student_school, r.class_name, r.teacher_name]
+      .some((f) => (f || "").toLowerCase().includes(q));
+  });
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h3 className="text-lg font-bold text-gray-900">수강예약 목록 ({reservations.length}건)</h3>
+      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h3 className="text-xl font-bold text-gray-900">수강예약 신청 관리</h3>
+          <p className="mt-1 text-sm text-gray-500">홈페이지를 통해 접수된 수강예약 신청 내역입니다.</p>
+        </div>
         <div className="flex items-center gap-2">
-          <button onClick={handleReservationsExcelDownloadSample} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-bold rounded border border-gray-300 hover:bg-gray-200 transition-colors">
-            <Download className="w-3.5 h-3.5 text-gray-600" /> 양식 다운
+          <button onClick={handleReservationsExcelDownloadSample} className="flex items-center gap-1.5 px-3 py-2 bg-white text-gray-700 text-xs font-bold rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">
+            <Download className="w-3.5 h-3.5 text-gray-500" /> 양식 다운
           </button>
-          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm hover:bg-emerald-700 transition-colors cursor-pointer">
-            <Upload className="w-3.5 h-3.5" /> 엑셀 가져오기
+          <label className="flex items-center gap-1.5 px-3 py-2 bg-white text-gray-700 text-xs font-bold rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5 text-gray-500" /> 엑셀 가져오기
             <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleReservationsExcelUpload} />
           </label>
-          <button onClick={exportExcel} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded shadow-sm hover:bg-green-700 transition-colors">
+          <button onClick={exportExcel} className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-red-700 transition-colors">
             <Download className="w-3.5 h-3.5" /> 목록 내보내기
           </button>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <StatCard icon={Users} label="전체 신청" value={reservations.length} accent="bg-red-50 text-red-600" />
+        <StatCard icon={CalendarDays} label="오늘 신청" value={todayCount} accent="bg-blue-50 text-blue-600" />
+        <StatCard icon={Calendar} label="최근 7일" value={weekCount} accent="bg-emerald-50 text-emerald-600" />
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <div className="relative flex-1 sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="학생명, 전화번호, 학교로 검색"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
+            data-testid="input-reservation-search"
+          />
+        </div>
+        {subjectOptions.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {subjectOptions.map((s) => (
+              <button
+                key={s}
+                onClick={() => setSubjectFilter(s)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                  subjectFilter === s ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+                data-testid={`button-filter-subject-${s}`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {isLoading ? (
-        <div className="flex items-center justify-center py-10">
+        <div className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
       ) : reservations.length === 0 ? (
-        <p className="text-sm text-gray-400 py-6 text-center">접수된 수강예약이 없습니다.</p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 mb-3">
+            <Inbox className="w-6 h-6 text-gray-400" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">접수된 수강예약이 없습니다.</p>
+          <p className="text-xs text-gray-400 mt-1">신청이 접수되면 이곳에 표시됩니다.</p>
+        </div>
+      ) : filteredReservations.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 mb-3">
+            <Search className="w-6 h-6 text-gray-400" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">검색 조건에 맞는 신청 내역이 없습니다.</p>
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm" data-testid="table-reservations">
-            <thead>
-              <tr className="border-b border-gray-200 text-left">
-                <th className="px-3 py-3 font-bold text-gray-700">학생명</th>
-                <th className="px-3 py-3 font-bold text-gray-700">학교/학년</th>
-                <th className="px-3 py-3 font-bold text-gray-700">연락처</th>
-                <th className="px-3 py-3 font-bold text-gray-700">과목</th>
-                <th className="px-3 py-3 font-bold text-gray-700">수업명</th>
-                <th className="px-3 py-3 font-bold text-gray-700">선생님</th>
-                <th className="px-3 py-3 font-bold text-gray-700">수업시간</th>
-                <th className="px-3 py-3 font-bold text-gray-700">예약일</th>
-                <th className="px-3 py-3 font-bold text-gray-700"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {reservations.map((r) => (
-                <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50" data-testid={`row-reservation-${r.id}`}>
-                  <td className="px-3 py-3 font-medium text-gray-900">{r.student_name || "-"}</td>
-                  <td className="px-3 py-3 text-gray-600">{r.student_school || "-"} {r.student_grade || ""}</td>
-                  <td className="px-3 py-3 text-gray-600">
-                    <div>{r.student_phone || "-"}</div>
-                    {r.parent_phone && <div className="text-xs text-gray-400">학부모: {r.parent_phone}</div>}
-                  </td>
-                  <td className="px-3 py-3 text-gray-600">{r.subject || "-"}</td>
-                  <td className="px-3 py-3 font-medium text-gray-900">{r.class_name || "-"}</td>
-                  <td className="px-3 py-3 text-gray-600">{r.teacher_name || "-"}</td>
-                  <td className="px-3 py-3 text-gray-600">{r.class_time || "-"}</td>
-                  <td className="px-3 py-3 text-gray-400 text-xs">{r.created_at ? new Date(r.created_at).toLocaleDateString("ko-KR") : "-"}</td>
-                  <td className="px-3 py-3">
-                    <button
-                      onClick={() => {
-                        if (confirm("이 예약을 삭제하시겠습니까?")) deleteMutation.mutate(r.id);
-                      }}
-                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                      data-testid={`button-delete-reservation-${r.id}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
+        <div className="rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm" data-testid="table-reservations">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200 text-left">
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">학생</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">연락처</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">과목</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">수업명</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">선생님</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">수업시간</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide">신청일</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredReservations.map((r) => (
+                  <tr key={r.id} className="hover:bg-gray-50/80 transition-colors" data-testid={`row-reservation-${r.id}`}>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-red-50 text-sm font-bold text-red-600">
+                          {(r.student_name || "?").slice(0, 1)}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">{r.student_name || "-"}</div>
+                          <div className="flex items-center gap-1 text-xs text-gray-400">
+                            <School className="w-3 h-3" />
+                            {r.student_school || "학교 미상"}{r.student_grade ? ` · ${r.student_grade}` : ""}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 text-gray-600">
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-gray-400" />
+                        {r.student_phone || "-"}
+                      </div>
+                      {r.parent_phone && (
+                        <div className="mt-0.5 text-xs text-gray-400 pl-5">학부모 {r.parent_phone}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {r.subject ? (
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${subjectBadgeClass(r.subject)}`}>
+                          {r.subject}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 font-medium text-gray-900">{r.class_name || "-"}</td>
+                    <td className="px-4 py-3.5 text-gray-600">
+                      {r.teacher_name ? (
+                        <span className="inline-flex items-center gap-1"><GraduationCap className="w-3.5 h-3.5 text-gray-400" />{r.teacher_name}</span>
+                      ) : "-"}
+                    </td>
+                    <td className="px-4 py-3.5 text-gray-600">{r.class_time || "-"}</td>
+                    <td className="px-4 py-3.5 text-gray-400 text-xs whitespace-nowrap">
+                      {r.created_at ? new Date(r.created_at).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <button
+                        onClick={() => {
+                          if (confirm("이 예약을 삭제하시겠습니까?")) deleteMutation.mutate(r.id);
+                        }}
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="삭제"
+                        data-testid={`button-delete-reservation-${r.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="border-t border-gray-100 bg-gray-50 px-4 py-2.5 text-xs text-gray-400">
+            총 {reservations.length}건 중 {filteredReservations.length}건 표시
+          </div>
         </div>
       )}
     </div>
@@ -583,7 +720,8 @@ const BANNER_DIVISIONS = [
   { key: "main", label: "메인" },
   { key: "high", label: "고등관" },
   { key: "junior", label: "초/중등관" },
-  { key: "owl", label: "올빼미 독학관" },
+  { key: "math", label: "수학스쿨 (소식지)" },
+  { key: "owl", label: "올빼미 (소식지)" },
 ];
 
 function BannersTab() {
@@ -722,15 +860,19 @@ function BannersTab() {
       </div>
 
       <div className="bg-white border border-gray-200 p-6 mb-8" data-testid="form-add-banner">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">{divisionLabel} 배너 추가</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          {divisionLabel} {selectedDivision === "math" || selectedDivision === "owl" ? "소식지/포스터 등록" : "배너 추가"}
+        </h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">제목 (큰 글씨)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {selectedDivision === "math" || selectedDivision === "owl" ? "소식지 제목" : "제목 (큰 글씨)"}
+              </label>
               <input
                 {...register("title")}
                 className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
-                placeholder="예: 2026년 NEW"
+                placeholder={selectedDivision === "math" || selectedDivision === "owl" ? "예: 영통이강 수학스쿨 소식 1호" : "예: 2026년 NEW"}
                 data-testid="input-banner-title"
               />
             </div>
@@ -739,27 +881,27 @@ function BannersTab() {
               <input
                 {...register("subtitle")}
                 className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
-                placeholder="예: 고3 정규/특강"
+                placeholder={selectedDivision === "math" || selectedDivision === "owl" ? "선택사항" : "예: 고3 정규/특강"}
                 data-testid="input-banner-subtitle"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">설명 (선택사항)</label>
             <input
               {...register("description")}
               className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
-              placeholder="배너 하단 설명 문구"
+              placeholder="포스터 또는 배너 상세 설명"
               data-testid="input-banner-description"
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL (선택사항)</label>
               <input
                 {...register("link_url")}
                 className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-red-600"
-                placeholder="/high-school/schedule"
+                placeholder="/math-school 또는 외부 링크"
                 data-testid="input-banner-link"
               />
             </div>
@@ -776,7 +918,9 @@ function BannersTab() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">배경 이미지</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {selectedDivision === "math" || selectedDivision === "owl" ? "포스터 이미지 파일 (필수)" : "배경 이미지"}
+            </label>
             <input
               ref={fileRef}
               type="file"
@@ -799,20 +943,20 @@ function BannersTab() {
             ) : (
               <>
                 <Upload className="w-4 h-4" />
-                배너 추가
+                {selectedDivision === "math" || selectedDivision === "owl" ? "소식지 등록" : "배너 추가"}
               </>
             )}
           </button>
         </form>
       </div>
 
-      <h3 className="text-lg font-bold text-gray-900 mb-4">{divisionLabel} 배너 ({banners.length}개)</h3>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">{divisionLabel} 목록 ({banners.length}개)</h3>
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
       ) : banners.length === 0 ? (
-        <p className="text-sm text-gray-400 py-6 text-center">{divisionLabel} 배너가 없습니다. 배너를 추가하면 해당 페이지에 표시됩니다.</p>
+        <p className="text-sm text-gray-400 py-6 text-center">{divisionLabel}에 등록된 항목이 없습니다. 이미지를 등록하면 해당 페이지에 즉시 표시됩니다.</p>
       ) : (
         <div className="space-y-3">
           {banners.map((b) => (

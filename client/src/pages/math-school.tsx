@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Trophy, Target, BookOpen, Clock, Users, GraduationCap, Phone, MessageSquare, Star, TrendingUp, ShieldCheck, ArrowRight } from "lucide-react";
 import { MathLevelTestModal } from "@/components/math-level-test-modal";
+import { PhotoLightbox, type LightboxPhoto } from "@/components/photo-lightbox";
 import { CONTACTS, toTelHref } from "@shared/contact-info";
 
 const HIGHLIGHTS = [
@@ -65,6 +66,24 @@ export default function MathSchool() {
       return res.json();
     }
   });
+
+  const { data: banners = [] } = useQuery<any[]>({
+    queryKey: ["/api/banners", "math"],
+    queryFn: async () => {
+      const res = await fetch("/api/banners?division=math");
+      if (!res.ok) throw new Error("Failed to fetch math banners");
+      return res.json();
+    }
+  });
+
+  const [posterLightbox, setPosterLightbox] = useState<number | null>(null);
+
+  const activeBanners = banners.filter((b: any) => b.is_active && b.image_url);
+  const mathPosters: LightboxPhoto[] = activeBanners.map((b: any) => ({
+    src: b.image_url,
+    label: b.title || "영통이강 수학스쿨 소식",
+    description: b.description || b.subtitle || "",
+  }));
 
   const filteredClassInfo = teachers
     ? CLASS_INFO.map(gradeInfo => {
@@ -425,37 +444,59 @@ export default function MathSchool() {
         </section>
 
         {/* Posters / Banners Section */}
-        <section className="space-y-12">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900">영통이강 수학스쿨 소식</h2>
-            <p className="text-gray-500 font-medium">최신 교육 정보와 특별 프로그램 안내입니다.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((num) => (
-              <motion.div
-                key={num}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: num * 0.1 }}
-                whileHover={{ y: -10 }}
-                className="rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 bg-white"
-              >
-                <img 
-                  src={`/images/posters/poster-${num}.jpg`} 
-                  alt={`수학스쿨 포스터 ${num}`} 
-                  className="w-full h-auto block"
-                />
-              </motion.div>
-            ))}
-          </div>
-        </section>
+        {mathPosters.length > 0 && (
+          <section className="space-y-12">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl md:text-4xl font-black text-gray-900">영통이강 수학스쿨 소식</h2>
+              <p className="text-gray-500 font-medium">최신 교육 정보와 특별 프로그램 안내입니다.</p>
+            </div>
+            <div className={`grid gap-8 ${mathPosters.length === 1 ? "grid-cols-1 max-w-md mx-auto" : mathPosters.length === 2 ? "grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto" : "grid-cols-1 md:grid-cols-3"}`}>
+              {mathPosters.map((poster, idx) => (
+                <motion.div
+                  key={poster.src + idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                  whileHover={{ y: -8 }}
+                  onClick={() => setPosterLightbox(idx)}
+                  className="rounded-[2rem] overflow-hidden shadow-xl border border-gray-100 bg-white cursor-pointer group relative"
+                >
+                  <div className="aspect-[3/4] w-full overflow-hidden bg-gray-50 flex items-center justify-center">
+                    <img 
+                      src={poster.src} 
+                      alt={poster.label} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
+                    <span className="bg-white/95 rounded-full px-4 py-2 text-xs font-bold text-gray-900 shadow-lg self-center mb-auto mt-auto backdrop-blur-sm">
+                      포스터 크게보기
+                    </span>
+                    <p className="text-white text-sm font-bold truncate">{poster.label}</p>
+                    {poster.description && (
+                      <p className="text-white/80 text-xs truncate mt-0.5">{poster.description}</p>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
       
       <MathLevelTestModal 
         open={showLevelTestModal} 
         onClose={() => setShowLevelTestModal(false)}
       />
+
+      {posterLightbox !== null && (
+        <PhotoLightbox
+          photos={mathPosters}
+          initialIndex={posterLightbox}
+          onClose={() => setPosterLightbox(null)}
+        />
+      )}
     </PageLayout>
   );
 }

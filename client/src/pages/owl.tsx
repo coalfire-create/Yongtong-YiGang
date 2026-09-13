@@ -20,11 +20,7 @@ interface Banner {
   display_order: number;
 }
 
-interface LightboxPhoto {
-  src: string;
-  label: string;
-  description?: string;
-}
+import { PhotoLightbox, type LightboxPhoto } from "@/components/photo-lightbox";
 
 const FACILITY_PHOTOS: LightboxPhoto[] = [
   {
@@ -64,9 +60,7 @@ const FACILITY_PHOTOS: LightboxPhoto[] = [
   },
 ];
 
-const STATIC_POSTERS: LightboxPhoto[] = [
-  { src: "/owl-poster-scholarship.jpeg", label: "영통이강 올빼미 장학생 1기 모집" },
-];
+const STATIC_POSTERS: LightboxPhoto[] = [];
 
 function FadeImage({
   src,
@@ -96,66 +90,7 @@ function FadeImage({
   );
 }
 
-function PhotoLightbox({ photos, initialIndex, onClose }: {
-  photos: LightboxPhoto[];
-  initialIndex: number;
-  onClose: () => void;
-}) {
-  const [idx, setIdx] = useState(initialIndex);
-  const prev = () => setIdx((i) => (i - 1 + photos.length) % photos.length);
-  const next = () => setIdx((i) => (i + 1) % photos.length);
-  const showNav = photos.length > 1;
 
-  return (
-    <div
-      className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center"
-      onClick={onClose}
-      data-testid="lightbox-overlay"
-    >
-      <button
-        className="absolute top-4 right-4 text-white/80 hover:text-white p-2 transition-colors z-[210]"
-        onClick={onClose}
-        data-testid="button-lightbox-close"
-      >
-        <X className="w-7 h-7" />
-      </button>
-      {showNav && (
-        <button
-          className="absolute left-3 sm:left-6 text-white/70 hover:text-white p-2 transition-colors z-[210]"
-          onClick={(e) => { e.stopPropagation(); prev(); }}
-          data-testid="button-lightbox-prev"
-        >
-          <ChevronLeft className="w-8 h-8" />
-        </button>
-      )}
-      <div className="px-4 sm:px-16 max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
-        <img
-          src={photos[idx].src}
-          alt={photos[idx].label}
-          className="w-full max-h-[75vh] object-contain mx-auto rounded"
-        />
-        <div className="mt-4 text-center bg-black/40 p-4 rounded backdrop-blur-sm max-w-2xl mx-auto">
-          <p className="text-white text-lg font-bold">{photos[idx].label}</p>
-          {photos[idx].description && (
-            <p className="text-white/80 text-sm mt-2 leading-relaxed">{photos[idx].description}</p>
-          )}
-        </div>
-        {showNav && (
-          <p className="text-white/40 text-center text-xs mt-4">{idx + 1} / {photos.length}</p>
-        )}
-      </div>
-      {showNav && (
-        <button
-          className="absolute right-3 sm:right-6 text-white/70 hover:text-white p-2 transition-colors z-[210]"
-          onClick={(e) => { e.stopPropagation(); next(); }}
-          data-testid="button-lightbox-next"
-        >
-          <ChevronRight className="w-8 h-8" />
-        </button>
-      )}
-    </div>
-  );
-}
 
 function OwlHeroSection() {
   const [facilityLightbox, setFacilityLightbox] = useState<number | null>(null);
