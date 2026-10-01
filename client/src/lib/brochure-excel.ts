@@ -50,6 +50,44 @@ export function stringifyContent(data: BrochureContentParts): string {
   return res.trim();
 }
 
+// 엑셀 시간 셀은 하루의 비율(0.75 = 18:00)로 읽힌다. 문자열 속 소수 시간을 HH:MM으로 복원.
+// 예) "금 0.75~0.875" → "금 18:00~21:00"
+export function fixExcelTimes(value: unknown): string {
+  const s = value == null ? "" : String(value);
+  return s.replace(/(^|[^\d.])(0?\.\d+)(?![\d.])/g, (_m, pre: string, num: string) => {
+    const mins = Math.round(parseFloat(num) * 24 * 60);
+    const hh = String(Math.floor(mins / 60) % 24).padStart(2, "0");
+    const mm = String(mins % 60).padStart(2, "0");
+    return `${pre}${hh}:${mm}`;
+  });
+}
+
+// content의 [수업 일정] 블록을 schedule로 교체(없으면 맨 앞에 추가).
+// 시간표 수업시간을 브로셔에 동기화할 때 사용 — 나머지 섹션은 그대로 둔다.
+export function setScheduleInContent(content: string, schedule: string): string {
+  const sched = (schedule || "").trim();
+  const lines = (content || "").replace(/\r/g, "").split("\n");
+  const out: string[] = [];
+  let found = false;
+  let skipping = false;
+  for (const line of lines) {
+    const m = line.match(/^\s*\[([^\]]+)\]\s*$/);
+    if (m) {
+      skipping = false;
+      if (!found && m[1].replace(/\s+/g, "") === "수업일정") {
+        found = true;
+        skipping = true;
+        if (sched) out.push("[수업 일정]", sched, "");
+        continue;
+      }
+    }
+    if (!skipping) out.push(line);
+  }
+  let res = out.join("\n");
+  if (!found && sched) res = `[수업 일정]\n${sched}\n\n${res}`;
+  return res.trim();
+}
+
 export interface ParsedClassSheet {
   // 브로셔용
   title: string;
@@ -115,7 +153,8 @@ export function parseVerticalSheet(data: any[][], sheetName: string): ParsedClas
     } else if (cur === "linked") {
       if (b || c) f.linked.push(`${b}${c ? ` - ${c}` : ""}`.trim());
     } else {
-      const v = c || b;
+      let v = c || b;
+      if (v && cur.startsWith("schedule") && cur !== "schedule_date" && cur !== "schedule_count") v = fixExcelTimes(v);
       if (v) f[cur].push(v);
     }
   }
@@ -293,6 +332,17 @@ export function getDivisionFromCategory(category: string): string {
     "고등관": "고1",
   };
   return _divMap[category] || (category.match(/고1|고2|고3|중3/) || [])[0] || "고1";
+}
+
+// 공개 시간표와 동일한 기준으로, 해당 카테고리(학년)에 노출되는 브로셔만 추림.
+// 관리자 화면도 이걸 써야 사이트에 실제로 뜨는 브로셔와 같은 것을 편집하게 된다.
+export function guidelinesForCategory(guidelines: any[], category: string): any[] {
+  const div = getDivisionFromCategory(category || "");
+  return (guidelines || []).filter((g: any) => {
+    if (g.category !== "curriculum") return false;
+    const d = g.division || "";
+    return d === div || d.includes(div);
+  });
 }
 
 export function matchGuideline(

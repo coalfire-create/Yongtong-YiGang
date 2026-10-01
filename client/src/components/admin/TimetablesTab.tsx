@@ -36,6 +36,9 @@ import {
   parseContent,
   stringifyContent,
   matchGuideline,
+  guidelinesForCategory,
+  fixExcelTimes,
+  setScheduleInContent,
   getDivisionFromCategory,
   BrochureContentParts,
 } from "@/lib/brochure-excel";
@@ -93,7 +96,7 @@ export function TimetablesTab() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTimetable, setEditingTimetable] = useState<Timetable | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [previewGuideline, setPreviewGuideline] = useState<any | null>(null);
+  const [previewGuideline, setPreviewGuideline] = useState<{ guideline: any; time?: string } | null>(null);
   const [showPhotoManager, setShowPhotoManager] = useState(false);
 
   // Inline Row Edit State
@@ -238,6 +241,19 @@ export function TimetablesTab() {
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.error || "수정 중 오류가 발생했습니다.");
+      }
+
+      // 수업시간이 바뀌면 연결된 브로셔의 [수업 일정]도 같이 갱신
+      const prev = timetables.find((t) => t.id === id);
+      const newTime = inlineForm.class_time.trim();
+      if (prev && newTime && newTime !== (prev.class_time || "").trim()) {
+        const mg = matchGuideline(prev, guidelinesForCategory(guidelines, prev.category || ""));
+        if (mg) {
+          await apiRequest("PATCH", `/api/summer-guidelines/${mg.id}`, {
+            content: setScheduleInContent(mg.content || "", newTime),
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/summer-guidelines"] });
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
@@ -445,7 +461,7 @@ export function TimetablesTab() {
             else subject = "수학";
           }
           const teacher_name = String(row["강사명"] || row["선생님"] || "").trim();
-          const class_time = String(row["수업시간"] || row["시간"] || "").trim();
+          const class_time = fixExcelTimes(row["수업시간"] || row["시간"] || "").trim();
           const start_date = String(row["개강일"] || row["개강"] || "").trim();
           const description = String(row["수업설명"] || row["설명"] || "").trim();
           const is_union_raw = String(row["연합반여부(Y/N)"] || row["연합반"] || "").trim().toUpperCase();
@@ -919,12 +935,12 @@ export function TimetablesTab() {
                     {/* Brochure Detail / Text column */}
                     <td className="px-4 py-3 text-center">
                       {(() => {
-                        const matchedGuideline = matchGuideline(tt, guidelines);
+                        const matchedGuideline = matchGuideline(tt, guidelinesForCategory(guidelines, tt.category || ""));
                         return (
                           <div className="flex flex-col items-center justify-center gap-1">
                             {matchedGuideline && (
                               <button
-                                onClick={() => setPreviewGuideline(matchedGuideline)}
+                                onClick={() => setPreviewGuideline({ guideline: matchedGuideline, time: tt.class_time })}
                                 title="브로셔 텍스트 상세 모달 미리보기"
                                 className="inline-flex items-center gap-1 bg-[#7B2332]/10 text-[#7B2332] border border-[#7B2332]/30 px-2 py-0.5 rounded hover:bg-[#7B2332]/20 font-bold text-[11px] transition shadow-xs"
                               >
@@ -1047,7 +1063,8 @@ export function TimetablesTab() {
       {/* 6-1. Brochure Text Modal Preview */}
       {previewGuideline && (
         <BrochureModal
-          guideline={previewGuideline}
+          guideline={previewGuideline.guideline}
+          overrideTime={previewGuideline.time}
           onClose={() => setPreviewGuideline(null)}
         />
       )}
@@ -1170,7 +1187,7 @@ function TimetableModal({
       setDetailImagePreview(timetable.detail_image_url || "");
       setDeleteDetailImage(false);
 
-      const mg = matchGuideline(timetable, guidelines);
+      const mg = matchGuideline(timetable, guidelinesForCategory(guidelines, timetable.category || ""));
       if (mg) {
         setMatchedGuidelineId(mg.id);
         const parsed = parseContent(mg.content || "");
@@ -1277,9 +1294,12 @@ function TimetableModal({
       const savedTt = await res.json();
 
       // 2. Brochure (Curriculum) Guideline Sync
-      const finalContent = isRawMode
+      // 브로셔 [수업 일정]은 항상 시간표 수업시간과 동일하게 저장 (수강예약/브로셔 시간 불일치 방지)
+      const classTime = (data.class_time || "").trim();
+      const baseContent = isRawMode
         ? (rawContent || "").trim()
         : stringifyContent(brochureForm).trim();
+      const finalContent = classTime && baseContent ? setScheduleInContent(baseContent, classTime) : baseContent;
       const div = guidelineDivision || getDivisionFromCategory(data.category);
       const title = guidelineTitle.trim() || data.class_name;
 
@@ -1528,28 +1548,13 @@ function TimetableModal({
                 <div className="space-y-3.5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-gray-800">
-                          수업 일정 (브로셔 상단 뱃지)
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const ct = watch("class_time");
-                            if (ct) setBrochureForm({ ...brochureForm, schedule: ct });
-                          }}
-                          className="text-[10px] text-[#7B2332] font-semibold hover:underline"
-                        >
-                          수업시간에서 복사
-                        </button>
+                      <label className="block text-xs font-bold text-gray-800 mb-1">
+                        수업 일정 (브로셔 상단 뱃지)
+                      </label>
+                      <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 font-medium text-gray-700 min-h-[34px]">
+                        {watch("class_time") || <span className="text-gray-400">위 '수업 시간'을 입력하세요</span>}
                       </div>
-                      <input
-                        type="text"
-                        value={brochureForm.schedule}
-                        onChange={(e) => setBrochureForm({ ...brochureForm, schedule: e.target.value })}
-                        placeholder="예: 일 10:00~13:00"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white font-medium"
-                      />
+                      <p className="mt-1 text-[10px] text-gray-500">위 수업 시간과 자동으로 같게 저장됩니다.</p>
                     </div>
 
                     <div>
