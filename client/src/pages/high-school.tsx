@@ -6,6 +6,9 @@ import { TeacherIntroPage } from "@/components/teacher-intro";
 import { BannerCarousel } from "@/components/banner-carousel";
 import { SummaryTimetableSection } from "@/components/summary-timetable";
 import { useQuery } from "@tanstack/react-query";
+import { buildFilterFn, buildFilterTabs, isNonsul, type FilterTab } from "@/lib/timetable-tabs";
+
+export { buildFilterFn, buildFilterTabs, type FilterTab };
 
 const HIGH_SCHOOL_SUBJECTS = ["수학", "국어", "영어", "탐구"];
 
@@ -60,118 +63,6 @@ function QuickMenuCard({
   );
 }
 
-export interface FilterTab {
-  label: string;
-  filterFn: (tt: any) => boolean;
-  isSummary?: boolean;
-}
-
-const isNonsul = (tt: any) =>
-  (tt.class_name || "").includes("논술") ||
-  (tt.subject || "").includes("논술") ||
-  (tt.target_school || "") === "논술";
-
-const SCIENCE_SUBJECTS = ["통합과학", "통과", "물리", "화학", "생명", "지구", "탐구", "생명과학", "지구과학", "물리학", "과학탐구"];
-
-const isHighSchoolMath = (tt: any) => {
-  if (tt.subject && tt.subject !== "수학" && tt.subject !== "수학/탐구") return false;
-  const cn = (tt.class_name || "");
-  return /공통수학|대수|미적분|기하|확통|블랙스타|수학1|수학2/.test(cn);
-};
-
-// 초/중등관 수학: 초등/중등 기초 과정과 고등 선행(공통수학·대수·미적분 등) 과정을 구분
-const isElementaryMiddleMath = (tt: any) => {
-  if (tt.subject && tt.subject !== "수학" && tt.subject !== "수학/탐구") return false;
-  const cn = (tt.class_name || "");
-  if (/1-1|1-2|2-1|2-2|3-1|3-2|초등|중1|중2|중3/.test(cn) && !/공통수학|미적분|기하|확통|블랙스타/.test(cn)) return true;
-  return !isHighSchoolMath(tt);
-};
-
-const isScienceSubject = (tt: any) => {
-  const subj = (tt.subject || "").trim();
-  const cn = (tt.class_name || "").trim();
-  return SCIENCE_SUBJECTS.some(s => subj.includes(s) || cn.includes(s));
-};
-
-export function buildFilterFn(label: string): (tt: any) => boolean {
-  if (label === "전체시간표" || label === "전체") return () => true;
-  if (label.includes("커리큘럼")) return () => true;
-  if (label === "썸머시간표" || label === "요약시간표" || label.includes("내신시간표") || label.includes("중간") || label.includes("파이널") || label.includes("수능")) return () => false;
-  if (label === "논술") return (tt) => isNonsul(tt);
-  if (label === "수학/탐구") return (tt) => ["수학", "탐구", "통합과학", "통합사회/한국사", "물리", "화학", "생명", "생명과학", "지구과학", "지구", "물리학", "과학탐구"].includes(tt.subject) && !isNonsul(tt);
-  if (
-    label === "초&중등 수학" ||
-    label === "초중등 수학" ||
-    label === "초/중등 수학" ||
-    label === "중등 수학" ||
-    label === "초등 수학" ||
-    label.includes("초&중등") ||
-    label.includes("초중등") ||
-    label.includes("초/중등")
-  ) {
-    return (tt) => !isNonsul(tt) && isElementaryMiddleMath(tt);
-  }
-  if (label === "고등과정 수학") {
-    return (tt) => !isNonsul(tt) && isHighSchoolMath(tt);
-  }
-
-  const SUBJECTS = ["국어", "영어", "수학", "탐구", "통합과학", "통합사회/한국사", "생명과학", "사회문화", "생윤"];
-  if (SUBJECTS.includes(label)) {
-    return (tt) => {
-      if (isNonsul(tt)) return false;
-      if (label === "통합사회/한국사") {
-        return (
-          tt.subject === "통합사회/한국사" ||
-          tt.subject === "통사/한국사" ||
-          (tt.subject || "").includes("통사") ||
-          (tt.subject || "").includes("한국사") ||
-          (tt.class_name || "").includes("통합사회") ||
-          (tt.class_name || "").includes("한국사")
-        );
-      }
-      return (
-        tt.subject === label ||
-        (tt.target_school || "") === label ||
-        (tt.subject || "").includes(label) ||
-        (tt.class_name || "").includes(label)
-      );
-    };
-  }
-
-  return (tt) => {
-    if (isNonsul(tt)) return false;
-
-    if (label === "청명고" || label === "영덕고" || label === "영신여고") {
-      const ts = tt.target_school || "";
-      const isUnionSchool = ts === "공통" || ts === "연합" || ts === "연합반" || ts.startsWith("연합 (");
-      if (isUnionSchool) return true;
-    }
-
-    // 타겟 학교나 클래스 이름에 해당 필터 탭 라벨이 포함되어 있으면 true 반환
-    return (tt.target_school || "").includes(label) || (tt.class_name || "").includes(label);
-  };
-}
-
-export function buildFilterTabs(apiTabs: { id: number; label: string }[], category?: string): FilterTab[] {
-  return apiTabs.map((tab) => {
-    let displayLabel = tab.label;
-    if (tab.label === "기말/내신시간표" && (category === "고등관-고1" || category === "고등관-고2")) {
-      displayLabel = "2학기 중간 내신시간표";
-    }
-    const isSummaryOnly =
-      displayLabel === "썸머시간표" ||
-      displayLabel === "요약시간표" ||
-      displayLabel === "2학기 중간 내신시간표" ||
-      displayLabel === "기말/내신시간표" ||
-      displayLabel.includes("파이널") ||
-      displayLabel.includes("수능");
-    return {
-      label: displayLabel,
-      filterFn: buildFilterFn(tab.label),
-      isSummary: isSummaryOnly,
-    };
-  });
-}
 
 const G1_FILTERS_DEFAULT: FilterTab[] = [
   { label: "전체시간표", filterFn: buildFilterFn("전체시간표"), isSummary: false },

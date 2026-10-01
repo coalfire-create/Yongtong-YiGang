@@ -43,6 +43,7 @@ import {
   BrochureContentParts,
 } from "@/lib/brochure-excel";
 import { BrochureModal } from "@/components/brochure-modal";
+import { classifyingTabsFor, matchingTabs } from "@/lib/timetable-tabs";
 
 interface Teacher {
   id: number;
@@ -85,7 +86,13 @@ const CATEGORY_OPTIONS = [
   "고등관",
 ];
 
-const SUBJECT_OPTIONS = ["수학", "국어", "영어", "통합과학", "통합사회/한국사", "탐구", "논술"];
+const SUBJECT_OPTIONS = ["수학", "국어", "영어", "통합과학", "통합사회/한국사", "탐구", "물리", "화학", "생명과학", "지구과학", "논술"];
+// 기존 값이 목록에 없으면 select가 첫 항목(수학)으로 바꿔 저장해버리므로 현재 값을 포함시킨다
+const subjectOptionsWith = (cur?: string) => (cur && !SUBJECT_OPTIONS.includes(cur) ? [cur, ...SUBJECT_OPTIONS] : SUBJECT_OPTIONS);
+
+type FilterTabRow = { label: string; category: string; is_visible?: boolean };
+const NO_TAB_MSG = (cat: string, tabs: string[]) =>
+  `이 수업은 '${cat}' 전체시간표에만 보이고, 학교별/과목별 탭(${tabs.join(", ")}) 어디에도 표시되지 않습니다.\n\n과목 또는 대상 학교를 탭에 맞게 지정해 주세요.`;
 
 export function TimetablesTab() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -139,6 +146,10 @@ export function TimetablesTab() {
 
   const { data: guidelines = [] } = useQuery<any[]>({
     queryKey: ["/api/summer-guidelines"],
+  });
+
+  const { data: filterTabs = [] } = useQuery<FilterTabRow[]>({
+    queryKey: ["/api/filter-tabs"],
   });
 
   // Single delete mutation
@@ -207,6 +218,11 @@ export function TimetablesTab() {
   const saveInlineEdit = async (id: number) => {
     if (!inlineForm.class_name.trim()) {
       alert("강좌명(제목)은 필수 입력 사항입니다.");
+      return;
+    }
+    const catTabs = classifyingTabsFor(inlineForm.category, filterTabs);
+    if (catTabs.length && matchingTabs(inlineForm, catTabs).length === 0) {
+      alert(NO_TAB_MSG(inlineForm.category, catTabs));
       return;
     }
     setInlineSaving(true);
@@ -756,7 +772,7 @@ export function TimetablesTab() {
                             onChange={(e) => setInlineForm({ ...inlineForm, subject: e.target.value })}
                             className="border border-gray-300 rounded px-1.5 py-1 text-xs font-bold bg-white"
                           >
-                            {SUBJECT_OPTIONS.map((s) => (
+                            {subjectOptionsWith(inlineForm.subject).map((s) => (
                               <option key={s} value={s}>{s}</option>
                             ))}
                           </select>
@@ -895,6 +911,17 @@ export function TimetablesTab() {
                             연합반
                           </span>
                         )}
+                        {(() => {
+                          const catTabs = classifyingTabsFor(tt.category || "", filterTabs);
+                          return catTabs.length > 0 && matchingTabs(tt, catTabs).length === 0 ? (
+                            <span
+                              title="전체시간표에만 보이고 학교별/과목별 탭에는 빠져 있습니다"
+                              className="bg-red-50 text-red-700 border border-red-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded flex-shrink-0"
+                            >
+                              탭 누락
+                            </span>
+                          ) : null;
+                        })()}
                         <span className="font-bold text-gray-900 truncate" title={tt.class_name}>
                           {tt.class_name}
                         </span>
@@ -1053,6 +1080,7 @@ export function TimetablesTab() {
           timetable={editingTimetable}
           teachers={teachers}
           guidelines={guidelines}
+          filterTabs={filterTabs}
           onClose={() => {
             setEditingTimetable(null);
             setIsAddModalOpen(false);
@@ -1115,6 +1143,66 @@ export function TimetablesTab() {
   );
 }
 
+/* 학교별/과목별 탭 선택(필수) — 공개 페이지와 같은 규칙으로 노출 탭을 미리 보여준다 */
+const SUBJECT_TAB_TO_SUBJECT: Record<string, string> = {
+  "수학": "수학", "국어": "국어", "영어": "영어", "탐구": "탐구", "통합과학": "통합과학",
+  "통합사회/한국사": "통합사회/한국사", "생명과학": "생명과학", "논술": "논술",
+  "초&중등 수학": "수학", "고등과정 수학": "수학",
+};
+function TabPicker({
+  category,
+  values,
+  filterTabs,
+  onPick,
+}: {
+  category: string;
+  values: { subject: string; target_school: string; class_name: string };
+  filterTabs: FilterTabRow[];
+  onPick: (field: "subject" | "target_school", value: string) => void;
+}) {
+  const tabs = classifyingTabsFor(category, filterTabs);
+  if (!tabs.length) return null;
+  const hit = new Set(matchingTabs(values, tabs));
+  const pick = (label: string) => {
+    if (label === "수학/탐구") {
+      if (!hit.has(label)) onPick("subject", "탐구");
+    } else if (label in SUBJECT_TAB_TO_SUBJECT) {
+      onPick("subject", SUBJECT_TAB_TO_SUBJECT[label]);
+    } else {
+      onPick("target_school", label);
+    }
+  };
+  return (
+    <div className={`rounded-lg border p-3 ${hit.size ? "border-emerald-200 bg-emerald-50/50" : "border-red-300 bg-red-50"}`}>
+      <div className="text-xs font-bold text-gray-800 mb-2">
+        표시될 학교별/과목별 탭 *{" "}
+        <span className="font-medium text-gray-500">(하나 이상 필수 · 누르면 과목/대상 학교가 맞춰집니다)</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {tabs.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => pick(t)}
+            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition ${
+              hit.has(t)
+                ? "bg-emerald-600 text-white border-emerald-600"
+                : "bg-white text-gray-600 border-gray-300 hover:border-[#7B2332] hover:text-[#7B2332]"
+            }`}
+          >
+            {hit.has(t) ? "✓ " : ""}{t}
+          </button>
+        ))}
+      </div>
+      {!hit.size && (
+        <p className="mt-2 text-[11px] font-bold text-red-600">
+          지금 설정으로는 전체시간표에만 보입니다. 위 탭 중 하나를 선택해 주세요.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ========================================================================= */
 /* Timetable Add & Edit Full Modal                                           */
 /* ========================================================================= */
@@ -1122,11 +1210,13 @@ function TimetableModal({
   timetable,
   teachers,
   guidelines,
+  filterTabs,
   onClose,
 }: {
   timetable: Timetable | null;
   teachers: Teacher[];
   guidelines: any[];
+  filterTabs: FilterTabRow[];
   onClose: () => void;
 }) {
   const isEdit = !!timetable;
@@ -1368,7 +1458,14 @@ function TimetableModal({
         <div className="p-6 overflow-y-auto space-y-6">
           <form
             id="timetable-edit-form"
-            onSubmit={handleSubmit((data) => mutation.mutate(data))}
+            onSubmit={handleSubmit((data) => {
+              const catTabs = classifyingTabsFor(data.category, filterTabs);
+              if (catTabs.length && matchingTabs(data, catTabs).length === 0) {
+                alert(NO_TAB_MSG(data.category, catTabs));
+                return;
+              }
+              mutation.mutate(data);
+            })}
             className="space-y-6"
           >
             {/* Section 1: Timetable Basic Information */}
@@ -1397,7 +1494,7 @@ function TimetableModal({
                     {...register("subject", { required: true })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
                   >
-                    {SUBJECT_OPTIONS.map((s) => (
+                    {subjectOptionsWith(timetable?.subject).map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
@@ -1409,6 +1506,19 @@ function TimetableModal({
                     {...register("target_school", { required: true })}
                     placeholder="예: 중3, 화성고1, 물리 (연합반인 경우 '연합' 등 입력)"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <TabPicker
+                    category={watch("category")}
+                    values={{
+                      subject: watch("subject"),
+                      target_school: watch("target_school"),
+                      class_name: watch("class_name"),
+                    }}
+                    filterTabs={filterTabs}
+                    onPick={(field, value) => setValue(field, value, { shouldDirty: true })}
                   />
                 </div>
 
