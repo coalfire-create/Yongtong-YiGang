@@ -366,7 +366,7 @@ export function matchGuideline(
   let best: any = null,
     bs = -1;
   for (const g of cand) {
-    const gk = _gkeys((g.title || "").replace(/^\[[^\]]*\]/, ""));
+    const gk = _gkeys(g.title || "");
     let sc = 0;
     for (const x of tk) if (gk.has(x)) sc++;
     if (tt.class_time && g.content && g.content.includes(tt.class_time)) sc += 2;
