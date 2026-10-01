@@ -8,6 +8,7 @@ export type AdminTab =
   | "summary-timetables" 
   | "admissions-posters" 
   | "banners" 
+  | "newsletters" 
   | "popups" 
   | "briefings" 
   | "sms" 
@@ -112,6 +113,7 @@ export function AdminLayout({ children, activeTab, onTabChange, mobileMenuOpen, 
              <div className="px-3 mb-3 text-xs font-bold text-gray-500 uppercase tracking-widest">콘텐츠 및 운영</div>
              <div className="space-y-1">
                <SidebarButton id="banners" icon={Image} label="배너 관리" tab={activeTab} setTab={onTabChange} setMobileMenuOpen={setMobileMenuOpen} />
+               <SidebarButton id="newsletters" icon={BookOpen} label="소식지 (수학스쿨/올빼미)" tab={activeTab} setTab={onTabChange} setMobileMenuOpen={setMobileMenuOpen} />
                <SidebarButton id="popups" icon={Megaphone} label="팝업 관리" tab={activeTab} setTab={onTabChange} setMobileMenuOpen={setMobileMenuOpen} />
                <SidebarButton id="notices" icon={Megaphone} label="공지사항" tab={activeTab} setTab={onTabChange} setMobileMenuOpen={setMobileMenuOpen} />
                <SidebarButton id="reviews" icon={Star} label="합격후기" tab={activeTab} setTab={onTabChange} setMobileMenuOpen={setMobileMenuOpen} />

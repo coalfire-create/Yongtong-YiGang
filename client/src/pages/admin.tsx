@@ -723,12 +723,15 @@ const BANNER_DIVISIONS = [
   { key: "math", label: "수학스쿨 (소식지)" },
   { key: "owl", label: "올빼미 (소식지)" },
 ];
+const NEWSLETTER_DIVISIONS = BANNER_DIVISIONS.filter((d) => d.key === "math" || d.key === "owl");
+const MAIN_BANNER_DIVISIONS = BANNER_DIVISIONS.filter((d) => d.key !== "math" && d.key !== "owl");
 
-function BannersTab() {
+function BannersTab({ divisions = MAIN_BANNER_DIVISIONS }: { divisions?: { key: string; label: string }[] }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const editFileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [selectedDivision, setSelectedDivision] = useState("main");
+  const [selectedDivision, setSelectedDivision] = useState(divisions[0].key);
+  const isNewsletter = selectedDivision === "math" || selectedDivision === "owl";
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string>("");
 
@@ -739,14 +742,15 @@ function BannersTab() {
     title: string; subtitle: string; description: string; link_url: string; display_order: string;
   }>();
 
-  const { data: banners = [], isLoading } = useQuery<Banner[]>({
+  // 관리자 전용 목록 — 토큰 헤더가 없으면 401로 빈 목록처럼 보여 추가/삭제가 안 되는 것처럼 보였음
+  const { data: banners = [], isLoading, error: listError } = useQuery<Banner[]>({
     queryKey: ["/api/banners/all", selectedDivision],
     queryFn: async () => {
-      const res = await fetch(`/api/banners/all?division=${selectedDivision}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch");
+      const res = await apiRequest("GET", `/api/banners/all?division=${selectedDivision}`);
       return res.json();
     },
   });
+  const onMutationError = (err: any) => alert(`처리 실패: ${err?.message || "오류가 발생했습니다."}\n로그인이 만료됐다면 새로고침 후 다시 로그인해 주세요.`);
 
   const invalidateBannerCaches = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/banners/all", selectedDivision] });
@@ -767,6 +771,7 @@ function BannersTab() {
       reset();
       if (fileRef.current) fileRef.current.value = "";
     },
+    onError: onMutationError,
   });
 
   const updateMutation = useMutation({
@@ -784,6 +789,7 @@ function BannersTab() {
       setEditImagePreview("");
       if (editFileRef.current) editFileRef.current.value = "";
     },
+    onError: onMutationError,
   });
 
   const toggleMutation = useMutation({
@@ -791,6 +797,7 @@ function BannersTab() {
       await apiRequest("PATCH", `/api/banners/${id}/toggle`);
     },
     onSuccess: invalidateBannerCaches,
+    onError: onMutationError,
   });
 
   const deleteMutation = useMutation({
@@ -798,6 +805,7 @@ function BannersTab() {
       await apiRequest("DELETE", `/api/banners/${id}`);
     },
     onSuccess: invalidateBannerCaches,
+    onError: onMutationError,
   });
 
   const handleEditStart = (b: Banner) => {
@@ -830,23 +838,30 @@ function BannersTab() {
     formData.append("display_order", data.display_order || "0");
     formData.append("division", selectedDivision);
     const file = fileRef.current?.files?.[0];
+    if (isNewsletter && !file) {
+      alert("소식지 이미지 파일을 선택해 주세요.");
+      setUploading(false);
+      return;
+    }
     if (file) formData.append("image", file);
     try {
       await addMutation.mutateAsync(formData);
+    } catch {
+      /* onError에서 안내 */
     } finally {
       setUploading(false);
     }
   };
 
-  const divisionLabel = BANNER_DIVISIONS.find((d) => d.key === selectedDivision)?.label || selectedDivision;
+  const divisionLabel = divisions.find((d) => d.key === selectedDivision)?.label || selectedDivision;
 
   return (
     <div>
       <div className="flex flex-wrap gap-2 mb-6" data-testid="banner-division-tabs">
-        {BANNER_DIVISIONS.map((div) => (
+        {divisions.map((div) => (
           <button
             key={div.key}
-            onClick={() => setSelectedDivision(div.key)}
+            onClick={() => { setSelectedDivision(div.key); setEditingId(null); }}
             className={`px-4 py-2 text-sm font-semibold transition-colors ${
               selectedDivision === div.key
                 ? "bg-[#7B2332] text-white"
@@ -955,6 +970,8 @@ function BannersTab() {
         <div className="flex items-center justify-center py-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
+      ) : listError ? (
+        <p className="text-sm text-red-600 py-6 text-center font-semibold">목록을 불러오지 못했습니다. 새로고침 후 다시 로그인해 주세요.</p>
       ) : banners.length === 0 ? (
         <p className="text-sm text-gray-400 py-6 text-center">{divisionLabel}에 등록된 항목이 없습니다. 이미지를 등록하면 해당 페이지에 즉시 표시됩니다.</p>
       ) : (
@@ -989,7 +1006,7 @@ function BannersTab() {
                   title="수정" data-testid={`button-edit-banner-${b.id}`}>
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button onClick={() => { if (confirm(`"${b.title}" 배너를 삭제하시겠습니까?`)) deleteMutation.mutate(b.id); }}
+                <button onClick={() => { if (confirm(`"${b.title || "제목 없음"}" ${isNewsletter ? "소식지" : "배너"}를 삭제하시겠습니까?`)) deleteMutation.mutate(b.id); }}
                   className="flex-shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors" data-testid={`button-delete-banner-${b.id}`}>
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -5990,6 +6007,7 @@ export default function AdminPage() {
         : tab === "summary-timetables" ? <SummaryTimetablesTab /> 
         : tab === "admissions-posters" ? <SummaryTimetablesTab defaultDivision="admissions-high" /> 
         : tab === "banners" ? <BannersTab /> 
+        : tab === "newsletters" ? <BannersTab key="newsletters" divisions={NEWSLETTER_DIVISIONS} /> 
         : tab === "popups" ? <PopupsTab /> 
         : tab === "briefings" ? <BriefingsTab /> 
         : tab === "briefing-events" ? <BriefingEventsTab /> 
