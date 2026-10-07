@@ -35,10 +35,23 @@ export const isScienceSubject = (tt: any) => {
   return SCIENCE_SUBJECTS.some(s => subj.includes(s) || cn.includes(s));
 };
 
+// 사진(요약) 시간표를 띄우는 탭인지. 관리자에서 탭 이름을 바꿔도 깨지지 않게 부분 일치로 판단
+export function isSummaryLabel(label: string): boolean {
+  return (
+    label === "썸머시간표" ||
+    label === "요약시간표" ||
+    label.includes("내신시간표") ||
+    label.includes("중간") ||
+    label.includes("기말") ||
+    label.includes("파이널") ||
+    label.includes("수능")
+  );
+}
+
 export function buildFilterFn(label: string): (tt: any) => boolean {
   if (label === "전체시간표" || label === "전체") return () => true;
   if (label.includes("커리큘럼")) return () => true;
-  if (label === "썸머시간표" || label === "요약시간표" || label.includes("내신시간표") || label.includes("중간") || label.includes("파이널") || label.includes("수능")) return () => false;
+  if (isSummaryLabel(label)) return () => false;
   if (label === "논술") return (tt) => isNonsul(tt);
   if (label === "수학/탐구") {
     // 과목명이 "과학"/"물리"/"통합사회한국사"처럼 조금씩 달라도 빠지지 않게 과학·사회 계열 전부 포함
@@ -99,31 +112,18 @@ export function buildFilterFn(label: string): (tt: any) => boolean {
   };
 }
 
-export function buildFilterTabs(apiTabs: { id: number; label: string }[], category?: string): FilterTab[] {
-  return apiTabs.map((tab) => {
-    let displayLabel = tab.label;
-    if (tab.label === "기말/내신시간표" && (category === "고등관-고1" || category === "고등관-고2")) {
-      displayLabel = "2학기 중간 내신시간표";
-    }
-    const isSummaryOnly =
-      displayLabel === "썸머시간표" ||
-      displayLabel === "요약시간표" ||
-      displayLabel === "2학기 중간 내신시간표" ||
-      displayLabel === "기말/내신시간표" ||
-      displayLabel.includes("파이널") ||
-      displayLabel.includes("수능");
-    return {
-      label: displayLabel,
-      filterFn: buildFilterFn(tab.label),
-      isSummary: isSummaryOnly,
-    };
-  });
+export function buildFilterTabs(apiTabs: { id: number; label: string }[], _category?: string): FilterTab[] {
+  return apiTabs.map((tab) => ({
+    label: tab.label,
+    filterFn: buildFilterFn(tab.label),
+    isSummary: isSummaryLabel(tab.label),
+  }));
 }
 
 // 탭 라벨이 실제 분류 탭인지 (전체/요약 탭 제외)
 export function isClassifyingTab(label: string): boolean {
   if (label === "전체시간표" || label === "전체" || label.includes("커리큘럼")) return false;
-  if (label === "썸머시간표" || label === "요약시간표" || label.includes("내신시간표") || label.includes("중간") || label.includes("파이널") || label.includes("수능")) return false;
+  if (isSummaryLabel(label)) return false;
   return true;
 }
 

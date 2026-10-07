@@ -504,11 +504,13 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
       {isSummaryView && summaryDivision ? (
         (() => {
-          const isFinal = (activeTab?.label || "").includes("기말") || (activeTab?.label || "").includes("내신") || (activeTab?.label || "").includes("중간");
-          const isCsatFinal = (activeTab?.label || "").includes("파이널") || (activeTab?.label || "").includes("수능");
+          const tabLabel = activeTab?.label || "";
+          const isExam = tabLabel.includes("기말") || tabLabel.includes("내신") || tabLabel.includes("중간");
+          const isCsatFinal = tabLabel.includes("파이널") || tabLabel.includes("수능");
           let displayTitle = summaryTitle || "2학기 시간표";
-          if (isFinal) {
-            displayTitle = (category === "고등관-고1" || category === "고등관-고2") ? "중간/내신시간표" : "기말/내신시간표";
+          if (isExam) {
+            // 관리자에서 지정한 탭 이름을 그대로 제목으로 사용
+            displayTitle = tabLabel;
           } else if (isCsatFinal) {
             displayTitle = "수능파이널 시간표";
           }
