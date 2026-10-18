@@ -289,6 +289,8 @@ async function ensureTimetablesTable() {
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS is_visible BOOLEAN NOT NULL DEFAULT true`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS is_union BOOLEAN NOT NULL DEFAULT false`);
     await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS teacher_ids INTEGER[]`);
+    // 시간표 ↔ 브로셔(summer_guidelines) 명시 연결. 없으면 프론트에서 강사명 기반 자동 매칭.
+    await pool.query(`ALTER TABLE timetables ADD COLUMN IF NOT EXISTS guideline_id INTEGER`);
     await pool.query(`UPDATE timetables SET subject = '논술' WHERE class_name LIKE '%약술논술%'`);
 
     // Auto-seed 고등관-고3 timetables if empty
@@ -1382,6 +1384,7 @@ export async function registerRoutes(
     if (isNaN(id)) return res.status(400).json({ error: "유효하지 않은 ID" });
     try {
       await pool.query("DELETE FROM summer_guidelines WHERE id = $1", [id]);
+      await pool.query("UPDATE timetables SET guideline_id = NULL WHERE guideline_id = $1", [id]);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -2422,6 +2425,10 @@ export async function registerRoutes(
       }
       if (body.is_union !== undefined) {
         addField("is_union", toBool(body.is_union));
+      }
+      if (body.guideline_id !== undefined) {
+        const gid = Number(body.guideline_id);
+        addField("guideline_id", body.guideline_id && !isNaN(gid) ? gid : null);
       }
       if (body.teacher_ids !== undefined) {
         let teacherIdsArray: number[] = [];

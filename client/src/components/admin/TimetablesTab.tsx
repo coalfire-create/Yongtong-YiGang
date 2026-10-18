@@ -39,6 +39,8 @@ import {
   guidelinesForCategory,
   fixExcelTimes,
   setScheduleInContent,
+  claimedGuidelineIds,
+  resolveGuideline,
   getDivisionFromCategory,
   BrochureContentParts,
 } from "@/lib/brochure-excel";
@@ -69,6 +71,7 @@ interface Timetable {
   teacher_image_url?: string | null;
   detail_image_url?: string | null;
   teacher_ids?: number[] | null;
+  guideline_id?: number | null;
 }
 
 interface TimetablePhoto {
@@ -147,6 +150,7 @@ export function TimetablesTab() {
   const { data: guidelines = [] } = useQuery<any[]>({
     queryKey: ["/api/summer-guidelines"],
   });
+  const claimedIds = claimedGuidelineIds(timetables);
 
   const { data: filterTabs = [] } = useQuery<FilterTabRow[]>({
     queryKey: ["/api/filter-tabs"],
@@ -263,7 +267,7 @@ export function TimetablesTab() {
       const prev = timetables.find((t) => t.id === id);
       const newTime = inlineForm.class_time.trim();
       if (prev && newTime && newTime !== (prev.class_time || "").trim()) {
-        const mg = matchGuideline(prev, guidelinesForCategory(guidelines, prev.category || ""));
+        const mg = resolveGuideline(prev, guidelines, claimedIds);
         if (mg) {
           await apiRequest("PATCH", `/api/summer-guidelines/${mg.id}`, {
             content: setScheduleInContent(mg.content || "", newTime),
@@ -962,7 +966,7 @@ export function TimetablesTab() {
                     {/* Brochure Detail / Text column */}
                     <td className="px-4 py-3 text-center">
                       {(() => {
-                        const matchedGuideline = matchGuideline(tt, guidelinesForCategory(guidelines, tt.category || ""));
+                        const matchedGuideline = resolveGuideline(tt, guidelines, claimedIds);
                         return (
                           <div className="flex flex-col items-center justify-center gap-1">
                             {matchedGuideline && (
@@ -1081,6 +1085,7 @@ export function TimetablesTab() {
           teachers={teachers}
           guidelines={guidelines}
           filterTabs={filterTabs}
+          timetables={timetables}
           onClose={() => {
             setEditingTimetable(null);
             setIsAddModalOpen(false);
@@ -1211,12 +1216,14 @@ function TimetableModal({
   teachers,
   guidelines,
   filterTabs,
+  timetables,
   onClose,
 }: {
   timetable: Timetable | null;
   teachers: Teacher[];
   guidelines: any[];
   filterTabs: FilterTabRow[];
+  timetables: Timetable[];
   onClose: () => void;
 }) {
   const isEdit = !!timetable;
@@ -1229,6 +1236,10 @@ function TimetableModal({
 
   // ── Brochure (Curriculum) State ──
   const [matchedGuidelineId, setMatchedGuidelineId] = useState<number | null>(null);
+  // 같은 브로셔를 자동 매칭으로 함께 쓰고 있는 다른 시간표들 (명시 연결 전 상태에서만 의미 있음)
+  const [sharedWith, setSharedWith] = useState<Timetable[]>([]);
+  // true면 저장 시 기존 브로셔를 수정하지 않고 이 수업 전용 브로셔를 새로 만든다
+  const [splitBrochure, setSplitBrochure] = useState<boolean>(false);
   const [guidelineTitle, setGuidelineTitle] = useState<string>("");
   const [guidelineDivision, setGuidelineDivision] = useState<string>("고1");
   const [isRawMode, setIsRawMode] = useState<boolean>(false);
@@ -1277,7 +1288,15 @@ function TimetableModal({
       setDetailImagePreview(timetable.detail_image_url || "");
       setDeleteDetailImage(false);
 
-      const mg = matchGuideline(timetable, guidelinesForCategory(guidelines, timetable.category || ""));
+      const others = timetables.filter((t) => t.id !== timetable.id);
+      const claimed = claimedGuidelineIds(others);
+      const mg = resolveGuideline(timetable, guidelines, claimed);
+      const isExplicit = !!mg && mg.id === timetable.guideline_id;
+      const shared = mg && !isExplicit
+        ? others.filter((t) => resolveGuideline(t, guidelines, claimed)?.id === mg.id)
+        : [];
+      setSharedWith(shared);
+      setSplitBrochure(shared.length > 0);
       if (mg) {
         setMatchedGuidelineId(mg.id);
         const parsed = parseContent(mg.content || "");
@@ -1318,6 +1337,8 @@ function TimetableModal({
       setDetailImagePreview("");
       setDeleteDetailImage(false);
       setMatchedGuidelineId(null);
+      setSharedWith([]);
+      setSplitBrochure(false);
       setBrochureForm({
         schedule: "",
         features: "",
@@ -1332,7 +1353,7 @@ function TimetableModal({
       setGuidelineTitle("");
     }
     setIsRawMode(false);
-  }, [timetable, guidelines, reset]);
+  }, [timetable, guidelines, timetables, reset]);
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -1393,20 +1414,36 @@ function TimetableModal({
       const div = guidelineDivision || getDivisionFromCategory(data.category);
       const title = guidelineTitle.trim() || data.class_name;
 
-      if (matchedGuidelineId) {
+      let linkId: number | null = null;
+      if (matchedGuidelineId && !splitBrochure) {
         await apiRequest("PATCH", `/api/summer-guidelines/${matchedGuidelineId}`, {
           title,
           content: finalContent,
           division: div,
           category: "curriculum",
         });
+        linkId = matchedGuidelineId;
       } else if (finalContent) {
-        await apiRequest("POST", "/api/summer-guidelines", {
+        const gRes = await apiRequest("POST", "/api/summer-guidelines", {
           title,
           content: finalContent,
           division: div,
           category: "curriculum",
         });
+        linkId = (await gRes.json())?.id ?? null;
+      }
+
+      // 3. 시간표에 브로셔를 명시 연결 → 이후 같은 강사의 다른 반과 섞이지 않음
+      if (linkId && linkId !== savedTt.guideline_id) {
+        const linkForm = new FormData();
+        linkForm.append("guideline_id", String(linkId));
+        const linkRes = await fetch(`/api/timetables/${savedTt.id}`, {
+          method: "PUT",
+          body: linkForm,
+          headers,
+          credentials: "include",
+        });
+        if (!linkRes.ok) throw new Error("브로셔 연결 저장 실패");
       }
 
       return savedTt;
@@ -1634,6 +1671,38 @@ function TimetableModal({
                     전체 텍스트
                   </button>
                 </div>
+              </div>
+
+              {sharedWith.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                  <p className="text-[11px] text-amber-800 font-semibold leading-relaxed">
+                    이 브로셔는 같은 강사의 다른 시간표와 함께 사용 중입니다:{" "}
+                    {sharedWith.map((t) => t.class_name).join(", ")}
+                  </p>
+                  <label className="flex items-center gap-2 text-xs font-bold text-amber-900 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={splitBrochure}
+                      onChange={(e) => setSplitBrochure(e.target.checked)}
+                      className="w-4 h-4 accent-[#7B2332]"
+                    />
+                    이 수업 전용 브로셔로 분리하여 저장 (다른 시간표 브로셔는 그대로 유지)
+                  </label>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-800 mb-1">
+                  브로셔 제목 (과정명 · 회차 등, 팝업 상단에 표시)
+                </label>
+                <input
+                  type="text"
+                  value={guidelineTitle}
+                  onChange={(e) => setGuidelineTitle(e.target.value)}
+                  placeholder="예) [고2] 미적분 정규반 - 홍길동T (10/20 개강, 8회)"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#7B2332] focus:border-[#7B2332] bg-white"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">비워두면 수업명이 제목으로 사용됩니다.</p>
               </div>
 
               {isRawMode ? (

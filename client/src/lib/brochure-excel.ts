@@ -345,14 +345,32 @@ export function guidelinesForCategory(guidelines: any[], category: string): any[
   });
 }
 
+// 다른 시간표가 명시적으로(guideline_id) 연결해 둔 브로셔 id 집합.
+// 자동 매칭에서 이 브로셔들을 제외해야, 같은 강사의 다른 반(예: 블랙스타/블랙스타2)이
+// 서로의 브로셔를 가져가 내용이 "연동"되는 문제가 생기지 않는다.
+export function claimedGuidelineIds(timetables: { guideline_id?: number | null }[]): Set<number> {
+  const s = new Set<number>();
+  for (const t of timetables) if (t.guideline_id) s.add(t.guideline_id);
+  return s;
+}
+
+// 시간표 → 브로셔 매칭.
+// 1) 시간표에 guideline_id가 있으면 그 브로셔를 그대로 사용 (명시 연결)
+// 2) 없으면 강사명/반 키워드로 추정하되, 다른 시간표가 명시 연결한 브로셔(claimed)는 제외
 export function matchGuideline(
-  tt: { teacher_name?: string; class_name?: string; class_time?: string; category?: string },
-  guidelines: any[]
+  tt: { teacher_name?: string; class_name?: string; class_time?: string; category?: string; guideline_id?: number | null },
+  guidelines: any[],
+  claimed?: Set<number>
 ): any | null {
+  if (tt.guideline_id) {
+    const linked = guidelines.find((g) => g.id === tt.guideline_id);
+    if (linked) return linked;
+  }
   const tn = (tt.teacher_name || "").match(/([가-힣]{2,4})T?/)?.[1] || "";
   if (!tn) return null;
   const cand = guidelines.filter((g) => {
     if (g.category && g.category !== "curriculum") return false;
+    if (claimed?.has(g.id)) return false;
     return (
       (g.title || "").includes(tn) ||
       (tn === "손자은" && (g.title || "").includes("손지은")) ||
@@ -383,3 +401,16 @@ export function matchGuideline(
   return cand[0];
 }
 
+// 시간표 1개의 브로셔 결정: 명시 연결(guideline_id)은 학년 필터와 무관하게 우선,
+// 없으면 해당 학년 브로셔 중에서 자동 매칭(다른 시간표가 연결한 브로셔 제외).
+export function resolveGuideline(
+  tt: { teacher_name?: string; class_name?: string; class_time?: string; category?: string; guideline_id?: number | null },
+  allGuidelines: any[],
+  claimed?: Set<number>
+): any | null {
+  if (tt.guideline_id) {
+    const linked = (allGuidelines || []).find((g: any) => g.id === tt.guideline_id);
+    if (linked) return linked;
+  }
+  return matchGuideline(tt, guidelinesForCategory(allGuidelines, tt.category || ""), claimed);
+}
