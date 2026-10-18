@@ -3165,7 +3165,7 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
   const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!confirm(`엑셀 파일 [${file.name}]의 데이터를 추가하시겠습니까?\n(강사 원본 양식은 시트마다 한 강좌씩, 학년은 시트명/제목에서 자동 인식하며 못 찾으면 현재 [${activeTab}] 탭에 등록됩니다)`)) {
+    if (!confirm(`엑셀 파일 [${file.name}]의 데이터를 등록하시겠습니까?\n(같은 학년·같은 제목의 커리큘럼이 이미 있으면 내용을 덮어씁니다)\n(강사 원본 양식은 시트마다 한 강좌씩, 학년은 시트명/제목에서 자동 인식하며 못 찾으면 현재 [${activeTab}] 탭에 등록됩니다)`)) {
       e.target.value = "";
       return;
     }
@@ -3196,15 +3196,34 @@ function SummerGuidelinesManager({ activeTab }: { activeTab: "중등" | "고1" |
           return;
         }
 
-        let successCount = 0;
+        // 같은 학년 + 같은 제목의 브로셔가 이미 있으면 새로 만들지 않고 내용을 덮어쓴다
+        const existingKeys = new Map<string, number>();
+        const gr = await fetch("/api/summer-guidelines");
+        if (gr.ok) {
+          for (const g of (await gr.json()) || []) existingKeys.set(`${g.division} ${(g.title || "").trim()}`, g.id);
+        }
+
+        let createdCount = 0, updatedCount = 0;
+        const summary: string[] = [];
         for (const p of payloads) {
-          const res = await apiRequest("POST", "/api/summer-guidelines", p);
-          if (res.ok) successCount++;
+          const key = `${p.division} ${p.title.trim()}`;
+          const existingId = existingKeys.get(key);
+          if (existingId) {
+            const res = await apiRequest("PATCH", `/api/summer-guidelines/${existingId}`, { content: p.content, category: p.category });
+            if (res.ok) { updatedCount++; summary.push(`· [덮어씀] ${p.title} → ${p.division}`); }
+          } else {
+            const res = await apiRequest("POST", "/api/summer-guidelines", p);
+            if (res.ok) {
+              createdCount++;
+              summary.push(`· [신규] ${p.title} → ${p.division}`);
+              const created = await res.json();
+              if (created?.id) existingKeys.set(key, created.id);
+            }
+          }
         }
 
         queryClient.invalidateQueries({ queryKey: ["/api/summer-guidelines"] });
-        const summary = payloads.map((p) => `· ${p.title} → ${p.division}`).join("\n");
-        alert(`총 ${successCount}개의 커리큘럼이 등록되었습니다!\n\n${summary}`);
+        alert(`신규 ${createdCount}개 등록, ${updatedCount}개 덮어쓰기 완료!\n\n${summary.join("\n")}`);
       } catch (err: any) {
         console.error(err);
         if (String(err?.message || "").includes("401")) {

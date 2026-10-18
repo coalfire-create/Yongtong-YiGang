@@ -334,12 +334,13 @@ export function TimetablesTab() {
     sheets: { name: string; aoa: any[][] }[],
     fileName: string
   ) => {
-    const existingKeys = new Set<string>();
+    // "학년 제목" → 기존 브로셔 id. 같은 제목이 있으면 새로 만들지 않고 내용을 덮어쓴다.
+    const existingKeys = new Map<string, number>();
     try {
       const gr = await fetch("/api/summer-guidelines");
       if (gr.ok) {
         const gs = await gr.json();
-        for (const g of gs || []) existingKeys.add(`${g.division} ${(g.title || "").trim()}`);
+        for (const g of gs || []) existingKeys.set(`${g.division} ${(g.title || "").trim()}`, g.id);
       }
     } catch { /* ignore */ }
 
@@ -355,7 +356,7 @@ export function TimetablesTab() {
       }
     } catch { /* ignore */ }
 
-    let ttCount = 0, ttSkip = 0, brCount = 0, brSkip = 0, failed = 0;
+    let ttCount = 0, ttSkip = 0, brCount = 0, brUpdate = 0, failed = 0;
     for (const s of sheets) {
       const p = parseVerticalSheet(s.aoa, s.name);
       if (!p || !p.className) continue;
@@ -399,20 +400,26 @@ export function TimetablesTab() {
       }
 
       const key = `${division} ${p.title.trim()}`;
-      if (existingKeys.has(key)) {
-        brSkip++;
-      } else {
-        try {
-          await apiRequest("POST", "/api/summer-guidelines", {
+      const existingId = existingKeys.get(key);
+      try {
+        if (existingId) {
+          await apiRequest("PATCH", `/api/summer-guidelines/${existingId}`, {
+            content: p.content,
+            category: "curriculum",
+          });
+          brUpdate++;
+        } else {
+          const gRes = await apiRequest("POST", "/api/summer-guidelines", {
             division,
             title: p.title,
             category: "curriculum",
             content: p.content,
           });
           brCount++;
-          existingKeys.add(key);
-        } catch { failed++; }
-      }
+          const created = await gRes.json();
+          if (created?.id) existingKeys.set(key, created.id);
+        }
+      } catch { failed++; }
     }
 
     queryClient.invalidateQueries({ queryKey: ["/api/timetables"] });
@@ -420,7 +427,7 @@ export function TimetablesTab() {
     alert(
       `통합 업로드 완료!\n\n` +
         `· 시간표 ${ttCount}개 등록${ttSkip ? `, ${ttSkip}개는 이미 존재하여 건너뜀` : ""}\n` +
-        `· 브로셔 ${brCount}개 등록${brSkip ? `, ${brSkip}개는 이미 존재하여 건너뜀` : ""}` +
+        `· 브로셔 ${brCount}개 등록${brUpdate ? `, ${brUpdate}개는 같은 제목이 있어 내용 덮어씀` : ""}` +
         (failed ? `\n· 실패 ${failed}건` : "")
     );
   };
@@ -428,7 +435,7 @@ export function TimetablesTab() {
   const handleTimetableExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!confirm(`[${file.name}] 파일을 업로드하시겠습니까?\n(강사 세로형 원본 파일이면 시간표와 브로셔가 함께 자동 등록됩니다.)`)) {
+    if (!confirm(`[${file.name}] 파일을 업로드하시겠습니까?\n(강사 세로형 원본 파일이면 시간표와 브로셔가 함께 자동 등록되며, 같은 제목의 브로셔는 내용을 덮어씁니다.)`)) {
       e.target.value = "";
       return;
     }
