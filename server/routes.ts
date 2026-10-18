@@ -2295,14 +2295,16 @@ export async function registerRoutes(
   });
 
   app.post("/api/timetables", requireAdmin, upload.fields([{ name: "teacher_image", maxCount: 1 }, { name: "detail_image", maxCount: 1 }]), async (req, res) => {
-    const { teacher_id, teacher_ids, teacher_name, category, target_school, class_name, class_time, class_date, start_date, description, subject, is_visible, is_union } = req.body;
+    const { teacher_id, teacher_ids, teacher_name, category, target_school, class_name, class_time, class_date, start_date, description, subject, is_visible, is_union, guideline_id } = req.body;
     let teacherIdsArray: number[] | null = null;
     if (teacher_ids) {
       teacherIdsArray = Array.isArray(teacher_ids) ? teacher_ids.map(Number) : String(teacher_ids).split(",").map(Number).filter(id => !isNaN(id));
     }
+    const gid = guideline_id ? Number(guideline_id) : null;
+    const parsedGuidelineId = gid && !isNaN(gid) ? gid : null;
     const dateValue = start_date || class_date || "";
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
-    console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, dateValue, subject });
+    console.log("[POST /api/timetables] body:", { teacher_id, teacher_name, category, target_school, class_name, class_time, dateValue, subject, guideline_id });
     if (!class_name) {
       return res.status(400).json({ error: "수업명은 필수입니다." });
     }
@@ -2343,8 +2345,8 @@ export async function registerRoutes(
       );
       const next_order = countRes.rows[0].next_order;
       const { rows } = await pool.query(
-        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, detail_image_url, display_order, description, subject, is_visible, is_union, teacher_ids)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+        `INSERT INTO timetables (title, teacher_id, teacher_name, category, target_school, class_name, class_time, start_date, teacher_image_url, detail_image_url, display_order, description, subject, is_visible, is_union, teacher_ids, guideline_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
         [
           class_name || "",
           teacher_id ? Number(teacher_id) : null,
@@ -2361,7 +2363,8 @@ export async function registerRoutes(
           subject || "",
           is_visible !== undefined ? is_visible === "true" || is_visible === true : true,
           is_union !== undefined ? is_union === "true" || is_union === true : false,
-          teacherIdsArray
+          teacherIdsArray,
+          parsedGuidelineId,
         ]
       );
       res.json(rows[0]);

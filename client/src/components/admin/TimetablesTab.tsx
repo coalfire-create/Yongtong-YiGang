@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -150,6 +150,18 @@ export function TimetablesTab() {
   const { data: guidelines = [] } = useQuery<any[]>({
     queryKey: ["/api/summer-guidelines"],
   });
+  const brochureMap = useMemo(() => {
+    const map = new Map<number, any>();
+    const claimed = claimedGuidelineIds(timetables);
+    for (const tt of timetables) {
+      const g = resolveGuideline(tt, guidelines, claimed);
+      if (g) {
+        map.set(tt.id, g);
+        claimed.add(g.id);
+      }
+    }
+    return map;
+  }, [timetables, guidelines]);
   const claimedIds = claimedGuidelineIds(timetables);
 
   const { data: filterTabs = [] } = useQuery<FilterTabRow[]>({
@@ -973,7 +985,7 @@ export function TimetablesTab() {
                     {/* Brochure Detail / Text column */}
                     <td className="px-4 py-3 text-center">
                       {(() => {
-                        const matchedGuideline = resolveGuideline(tt, guidelines, claimedIds);
+                        const matchedGuideline = brochureMap.get(tt.id);
                         return (
                           <div className="flex flex-col items-center justify-center gap-1">
                             {matchedGuideline && (

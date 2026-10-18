@@ -224,7 +224,7 @@ const getG2ScienceClassScore = (className: string, teacherName: string): number 
   return base + 9;
 };
 
-import { matchGuideline, guidelinesForCategory, claimedGuidelineIds } from "@/lib/brochure-excel";
+import { resolveGuideline, claimedGuidelineIds } from "@/lib/brochure-excel";
 
 const sortByGroupKey = <T,>(entries: [string, T][], subject?: string): [string, T][] =>
   [...entries].sort(([a], [b]) => {
@@ -305,15 +305,14 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
       return res.json();
     },
   });
-  // division이 "고1", "병점 고1", "가온고1", "일반고2 연합" 등 다양한 형태이므로 includes 매칭 사용
-  const myGuidelines = guidelinesForCategory(guidelines, category);
   const brochureMap = new Map<number, any>();
   const claimed = claimedGuidelineIds(timetables);
   for (const tt of timetables) {
-    // 명시 연결된 브로셔는 학년(division) 필터와 무관하게 우선 사용
-    const linked = tt.guideline_id ? (guidelines || []).find((g: any) => g.id === tt.guideline_id) : null;
-    const g = linked || matchGuideline(tt, myGuidelines, claimed);
-    if (g) brochureMap.set(tt.id, g);
+    const g = resolveGuideline(tt, guidelines, claimed);
+    if (g) {
+      brochureMap.set(tt.id, g);
+      claimed.add(g.id);
+    }
   }
 
   const activeTab = filterTabs?.[selectedFilter];

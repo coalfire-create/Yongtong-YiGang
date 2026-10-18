@@ -354,55 +354,23 @@ export function claimedGuidelineIds(timetables: { guideline_id?: number | null }
   return s;
 }
 
-// 시간표 → 브로셔 매칭.
-// 1) 시간표에 guideline_id가 있으면 그 브로셔를 그대로 사용 (명시 연결)
-// 2) 없으면 강사명/반 키워드로 추정하되, 다른 시간표가 명시 연결한 브로셔(claimed)는 제외
-export function matchGuideline(
-  tt: { teacher_name?: string; class_name?: string; class_time?: string; category?: string; guideline_id?: number | null },
-  guidelines: any[],
-  claimed?: Set<number>
-): any | null {
-  if (tt.guideline_id) {
-    const linked = guidelines.find((g) => g.id === tt.guideline_id);
-    if (linked) return linked;
-  }
-  const tn = (tt.teacher_name || "").match(/([가-힣]{2,4})T?/)?.[1] || "";
-  if (!tn) return null;
-  const cand = guidelines.filter((g) => {
-    if (g.category && g.category !== "curriculum") return false;
-    if (claimed?.has(g.id)) return false;
-    return (
-      (g.title || "").includes(tn) ||
-      (tn === "손자은" && (g.title || "").includes("손지은")) ||
-      (tn === "손지은" && (g.title || "").includes("손자은"))
-    );
-  });
-  if (!cand.length) return null;
-  if (cand.length === 1) return cand[0];
-  const tk = _gkeys(tt.class_name || "");
-  const cleanName = (tt.class_name || "").replace(/\s*-\s*(초중등\s*모티브샘|[가-힣]{2,4}T?).*/, "").trim();
-  let best: any = null,
-    bs = -1;
-  for (const g of cand) {
-    const gk = _gkeys(g.title || "");
-    let sc = 0;
-    for (const x of tk) if (gk.has(x)) sc++;
-    if (tt.class_time && g.content && g.content.includes(tt.class_time)) sc += 2;
-    if (cleanName && g.title && g.title.includes(cleanName)) {
-      sc += 10;
-      if (g.title.includes(`] ${cleanName} -`) || g.title.includes(` ${cleanName} -`)) sc += 10;
-    }
-    if (sc > bs) {
-      bs = sc;
-      best = g;
-    }
-  }
-  if (bs >= 1 && best) return best;
-  return cand[0];
-}
+const cleanClassName = (name: string): string =>
+  (name || "").replace(/\s*-\s*(초중등\s*모티브샘|[가-힣]{2,4}T?).*/, "").trim();
 
-// 시간표 1개의 브로셔 결정: 명시 연결(guideline_id)은 학년 필터와 무관하게 우선,
-// 없으면 해당 학년 브로셔 중에서 자동 매칭(다른 시간표가 연결한 브로셔 제외).
+const teacherMatchesName = (tn: string, gTitle: string): boolean => {
+  if (!tn) return false;
+  return (
+    (gTitle || "").includes(tn) ||
+    (tn === "손자은" && (gTitle || "").includes("손지은")) ||
+    (tn === "손지은" && (gTitle || "").includes("손자은"))
+  );
+};
+
+// 시간표 1개의 브로셔 결정:
+// 1) 명시 연결(guideline_id) 최우선 사용
+// 2) 전체 브로셔 중 제목이 정확히 일치하는 브로셔(단, claimed 제외) 최우선 매칭 (학년/카테고리 구분 무관)
+// 3) 해당 카테고리(division) 내에서 강사명, 수업명(cleanName), 수업시간(class_time), 키워드로 채점하여 최적 매칭
+// 4) 카테고리 내에서 명확한 매칭(sc >= 5)이 없을 경우, 전체 브로셔에서 강사명 + 수업명/시간 일치 검색
 export function resolveGuideline(
   tt: { teacher_name?: string; class_name?: string; class_time?: string; category?: string; guideline_id?: number | null },
   allGuidelines: any[],
@@ -412,5 +380,91 @@ export function resolveGuideline(
     const linked = (allGuidelines || []).find((g: any) => g.id === tt.guideline_id);
     if (linked) return linked;
   }
-  return matchGuideline(tt, guidelinesForCategory(allGuidelines, tt.category || ""), claimed);
+
+  const tn = (tt.teacher_name || "").match(/([가-힣]{2,4})T?/)?.[1] || "";
+  if (!tn) return null;
+
+  const ttNameTrim = (tt.class_name || "").trim();
+  const ttClean = cleanClassName(tt.class_name || "");
+
+  // 1. 전체 브로셔 대상 제목 완전 일치 우선 (예: '블랙스타2 - 정준교T (10/20 개강, 19회)')
+  if (ttNameTrim) {
+    const exact = (allGuidelines || []).find(
+      (g: any) =>
+        !claimed?.has(g.id) &&
+        (!g.category || g.category === "curriculum") &&
+        teacherMatchesName(tn, g.title) &&
+        (g.title || "").trim() === ttNameTrim
+    );
+    if (exact) return exact;
+  }
+
+  const scoreGuideline = (g: any) => {
+    let sc = 0;
+    const gClean = cleanClassName(g.title || "");
+    if (ttClean && gClean === ttClean) sc += 15;
+    else if (ttClean && (g.title || "").includes(ttClean)) sc += 10;
+    else if (ttClean && gClean && (ttClean.includes(gClean) || gClean.includes(ttClean))) sc += 5;
+
+    if (tt.class_time && g.content && g.content.includes(tt.class_time.trim())) sc += 5;
+
+    const tk = _gkeys(tt.class_name || "");
+    const gk = _gkeys(g.title || "");
+    for (const x of tk) if (gk.has(x)) sc += 1;
+    return sc;
+  };
+
+  // 2. 카테고리(division) 일치 후보 우선 채점
+  const myGuidelines = guidelinesForCategory(allGuidelines, tt.category || "");
+  const inCatCands = myGuidelines.filter(
+    (g: any) =>
+      !claimed?.has(g.id) &&
+      (!g.category || g.category === "curriculum") &&
+      teacherMatchesName(tn, g.title)
+  );
+
+  let bestInCat: any = null,
+    bsInCat = -1;
+  for (const g of inCatCands) {
+    const sc = scoreGuideline(g);
+    if (sc > bsInCat) {
+      bsInCat = sc;
+      bestInCat = g;
+    }
+  }
+
+  // 카테고리 내에서 수업명 일치 또는 시간 일치(sc >= 5)가 있다면 확정
+  if (bestInCat && bsInCat >= 5) return bestInCat;
+
+  // 3. 카테고리 밖(다른 학년 탭에 잘못 등록된 경우 등) 전체 브로셔 검색
+  const allCands = (allGuidelines || []).filter(
+    (g: any) =>
+      !claimed?.has(g.id) &&
+      (!g.category || g.category === "curriculum") &&
+      teacherMatchesName(tn, g.title)
+  );
+
+  let bestAll: any = null,
+    bsAll = -1;
+  for (const g of allCands) {
+    const sc = scoreGuideline(g);
+    if (sc > bsAll) {
+      bsAll = sc;
+      bestAll = g;
+    }
+  }
+
+  if (bestAll && bsAll >= 5) return bestAll;
+  if (bestInCat && bsInCat >= 1) return bestInCat;
+  if (bestAll && bsAll >= 1) return bestAll;
+  return inCatCands[0] || allCands[0] || null;
+}
+
+// 시간표 → 브로셔 매칭 (resolveGuideline으로 통합 위임)
+export function matchGuideline(
+  tt: { teacher_name?: string; class_name?: string; class_time?: string; category?: string; guideline_id?: number | null },
+  guidelines: any[],
+  claimed?: Set<number>
+): any | null {
+  return resolveGuideline(tt, guidelines, claimed);
 }
