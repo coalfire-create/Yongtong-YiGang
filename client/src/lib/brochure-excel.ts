@@ -399,6 +399,12 @@ export function resolveGuideline(
     if (exact) return exact;
   }
 
+  // '[예비고1]' 같은 다음 학기 수업은 같은 강사의 현재 학기 브로셔에 자동 연결하지 않음
+  // (예비 브로셔끼리만 자동 매칭 — 잘못된 커리큘럼 노출·관리자 저장 시 기존 브로셔 일정 덮어쓰기 방지)
+  if (/\[예비/.test(ttNameTrim)) {
+    allGuidelines = (allGuidelines || []).filter((g: any) => (g.title || "").includes("예비"));
+  }
+
   const scoreGuideline = (g: any) => {
     let sc = 0;
     const gClean = cleanClassName(g.title || "");

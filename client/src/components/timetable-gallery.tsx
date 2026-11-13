@@ -62,6 +62,7 @@ function sciSubjectOf(className: string, guidelineTitle?: string): string {
   if (/생명|세포/.test(s)) return "생명";
   if (/화학|물질과에너지|물질과|개정화학/.test(s)) return "화학";
   if (/물리|역학/.test(s)) return "물리";
+  if (/지구/.test(s)) return "지구";
   return "통합과학";
 }
 
