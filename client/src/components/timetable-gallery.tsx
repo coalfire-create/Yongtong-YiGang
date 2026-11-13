@@ -78,6 +78,10 @@ const SCHOOL_ORDER = [
   "영덕고",
   "수원고",
   "청명고",
+  "태장고",
+  "안법고",
+  "신갈고",
+  "흥덕고",
   "고색고",
   "동국고",
   "동탄국제고",
@@ -88,8 +92,10 @@ const SCHOOL_ORDER = [
 const REAL_SCHOOLS = SCHOOL_ORDER.filter((s) => !s.startsWith("연합") && s !== "공통");
 // "화성고1", "고2-청명고반", "영신여고반" 등을 "화성고", "청명고", "영신여고"로 정규화.
 // 학교명을 포함하지 않으면(예: "연합", "공통", "특강반") 원본을 그대로 반환.
-const normalizeSchoolName = (raw: string): string => {
+// preferred: 현재 선택된 학교 탭. "영덕고, 태장고" 같은 공용반을 태장고 탭에서는 태장고 아래에 표시.
+const normalizeSchoolName = (raw: string, preferred?: string): string => {
   const s = raw || "";
+  if (preferred && REAL_SCHOOLS.includes(preferred) && s.includes(preferred)) return preferred;
   return REAL_SCHOOLS.find((school) => s.includes(school)) || s;
 };
 
@@ -437,7 +443,7 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
         // 학교명 뒤 학년/반 표기를 정규 학교명으로 통일 → "화성고1"이 "화성고" 그룹으로 합쳐짐
         instances.push({
           isUnion,
-          targetSchool: normalizeSchoolName(tt.target_school || "") || "연합",
+          targetSchool: normalizeSchoolName(tt.target_school || "", activeTab?.label) || "연합",
         });
       }
     }
