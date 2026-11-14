@@ -107,7 +107,7 @@ const G3_FILTERS_DEFAULT: FilterTab[] = [
 function SchedulePageLayout({ grade, category, summaryDivision, filterTabs: defaultFilterTabs }: { grade: string; category: string; color?: string; summaryDivision?: string; filterTabs?: FilterTab[] }) {
   const [location] = useLocation();
 
-  const { data: apiTabs } = useQuery<{ id: number; label: string; category: string; display_order: number; is_visible: boolean }[]>({
+  const { data: apiTabs } = useQuery<{ id: number; label: string; category: string; display_order: number; is_visible: boolean; is_summary?: boolean }[]>({
     queryKey: ["/api/filter-tabs", category],
     queryFn: async () => {
       const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(category)}`);

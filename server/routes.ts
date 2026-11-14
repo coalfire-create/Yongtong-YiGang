@@ -718,6 +718,30 @@ async function ensureFilterTabsTable() {
       )
     `);
     await pool.query(`ALTER TABLE filter_tabs ADD COLUMN IF NOT EXISTS is_visible BOOLEAN NOT NULL DEFAULT true`);
+
+    // 사진(요약) 시간표 탭 플래그.
+    // 탭 이름(목차)을 "윈터 시간표" 등으로 바꿔도 사진이 사라지지 않도록 DB에 고정한다.
+    // 컬럼을 새로 만드는 최초 1회에만 기존 이름 규칙으로 값을 채우고, 이후에는 관리자 설정을 덮어쓰지 않는다.
+    const { rows: summaryColRows } = await pool.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'filter_tabs' AND column_name = 'is_summary'`
+    );
+    const needsSummaryBackfill = summaryColRows.length === 0;
+    await pool.query(`ALTER TABLE filter_tabs ADD COLUMN IF NOT EXISTS is_summary BOOLEAN NOT NULL DEFAULT false`);
+    if (needsSummaryBackfill) {
+      const backfill = await pool.query(`
+        UPDATE filter_tabs SET is_summary = true
+        WHERE label LIKE '%내신시간표%'
+           OR label LIKE '%요약%'
+           OR label LIKE '%중간%'
+           OR label LIKE '%기말%'
+           OR label LIKE '%파이널%'
+           OR label LIKE '%수능%'
+           OR label LIKE '%썸머%'
+           OR label LIKE '%윈터%'
+           OR label LIKE '%방학%'
+      `);
+      console.log("[Startup Migration] filter_tabs.is_summary backfilled rows:", backfill.rowCount);
+    }
     // Ensure 고등관-고3 filter_tabs do not contain 사회문화, 생윤
     await pool.query(`DELETE FROM filter_tabs WHERE category = '고등관-고3' AND (label = '사회문화' OR label = '생윤' OR label = '2학기 중간 내신시간표' OR label = '기말/내신시간표')`);
     await pool.query(`UPDATE filter_tabs SET display_order = 0 WHERE category = '고등관-고3' AND label = '전체'`);
@@ -3075,9 +3099,24 @@ export async function registerRoutes(
     const { label } = req.body;
     if (!label) return res.status(400).json({ error: "label이 필요합니다." });
     try {
+      // 이름만 바꾸고 is_summary(사진 시간표 여부)는 그대로 유지한다
       const { rows } = await pool.query(
         "UPDATE filter_tabs SET label = $1 WHERE id = $2 RETURNING *",
         [label, req.params.id]
+      );
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.patch("/api/filter-tabs/:id/summary", requireAdmin, async (req, res) => {
+    const { is_summary } = req.body;
+    if (typeof is_summary !== "boolean") return res.status(400).json({ error: "is_summary must be a boolean." });
+    try {
+      const { rows } = await pool.query(
+        "UPDATE filter_tabs SET is_summary = $1 WHERE id = $2 RETURNING *",
+        [is_summary, req.params.id]
       );
       res.json(rows[0]);
     } catch (err: any) {

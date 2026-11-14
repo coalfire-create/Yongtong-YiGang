@@ -514,16 +514,8 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
 
       {isSummaryView && summaryDivision ? (
         (() => {
-          const tabLabel = activeTab?.label || "";
-          const isExam = tabLabel.includes("기말") || tabLabel.includes("내신") || tabLabel.includes("중간");
-          const isCsatFinal = tabLabel.includes("파이널") || tabLabel.includes("수능");
-          let displayTitle = summaryTitle || "2학기 시간표";
-          if (isExam) {
-            // 관리자에서 지정한 탭 이름을 그대로 제목으로 사용
-            displayTitle = tabLabel;
-          } else if (isCsatFinal) {
-            displayTitle = "수능파이널 시간표";
-          }
+          // 사진 시간표 제목은 관리자 "필터 탭(목차) 관리"에서 지정한 탭 이름을 그대로 사용
+          const displayTitle = activeTab?.label || summaryTitle || "2학기 시간표";
           return (
             <SummaryTimetableSection
               division={summaryDivision}

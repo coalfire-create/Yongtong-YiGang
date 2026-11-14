@@ -228,7 +228,7 @@ function MiddleSchoolReservationForm() {
 export function MiddleSchool() {
   const [activeTab, setActiveTab] = useState<"schedule" | "reservation">("schedule");
 
-  const { data: apiTabs } = useQuery<{ id: number; label: string; category: string; display_order: number; is_visible: boolean }[]>({
+  const { data: apiTabs } = useQuery<{ id: number; label: string; category: string; display_order: number; is_visible: boolean; is_summary?: boolean }[]>({
     queryKey: ["/api/filter-tabs", MIDDLE3_CATEGORY],
     queryFn: async () => {
       const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(MIDDLE3_CATEGORY)}`);

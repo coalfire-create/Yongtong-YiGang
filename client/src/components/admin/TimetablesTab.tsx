@@ -93,7 +93,7 @@ const SUBJECT_OPTIONS = ["수학", "국어", "영어", "통합과학", "통합�
 // 기존 값이 목록에 없으면 select가 첫 항목(수학)으로 바꿔 저장해버리므로 현재 값을 포함시킨다
 const subjectOptionsWith = (cur?: string) => (cur && !SUBJECT_OPTIONS.includes(cur) ? [cur, ...SUBJECT_OPTIONS] : SUBJECT_OPTIONS);
 
-type FilterTabRow = { label: string; category: string; is_visible?: boolean };
+type FilterTabRow = { label: string; category: string; is_visible?: boolean; is_summary?: boolean };
 const NO_TAB_MSG = (cat: string, tabs: string[]) =>
   `이 수업은 '${cat}' 전체시간표에만 보이고, 학교별/과목별 탭(${tabs.join(", ")}) 어디에도 표시되지 않습니다.\n\n과목 또는 대상 학교를 탭에 맞게 지정해 주세요.`;
 

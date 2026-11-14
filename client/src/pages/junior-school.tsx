@@ -87,7 +87,7 @@ export function JuniorSchool() {
 }
 
 export function JuniorSchoolSchedule() {
-  const { data: apiTabs } = useQuery<{ id: number; label: string; category: string; display_order: number; is_visible: boolean }[]>({
+  const { data: apiTabs } = useQuery<{ id: number; label: string; category: string; display_order: number; is_visible: boolean; is_summary?: boolean }[]>({
     queryKey: ["/api/filter-tabs", JUNIOR_CATEGORY],
     queryFn: async () => {
       const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(JUNIOR_CATEGORY)}`);

@@ -35,17 +35,30 @@ export const isScienceSubject = (tt: any) => {
   return SCIENCE_SUBJECTS.some(s => subj.includes(s) || cn.includes(s));
 };
 
-// 사진(요약) 시간표를 띄우는 탭인지. 관리자에서 탭 이름을 바꿔도 깨지지 않게 부분 일치로 판단
+// 사진(요약) 시간표를 띄우는 탭인지 이름으로 추측. DB에 is_summary 플래그가 없는 탭에만 쓰는 보조 수단
 export function isSummaryLabel(label: string): boolean {
+  const l = label || "";
   return (
-    label === "썸머시간표" ||
-    label === "요약시간표" ||
-    label.includes("내신시간표") ||
-    label.includes("중간") ||
-    label.includes("기말") ||
-    label.includes("파이널") ||
-    label.includes("수능")
+    l === "썸머시간표" ||
+    l === "요약시간표" ||
+    l.includes("내신시간표") ||
+    l.includes("요약") ||
+    l.includes("중간") ||
+    l.includes("기말") ||
+    l.includes("파이널") ||
+    l.includes("수능") ||
+    l.includes("썸머") ||
+    l.includes("윈터") ||
+    l.includes("방학")
   );
+}
+
+// 사진(요약) 시간표 탭 판단의 단일 기준.
+// 관리자에서 저장한 is_summary 플래그가 있으면 탭 이름을 어떻게 바꿔도 그 값을 그대로 따르고,
+// 플래그가 없는(구버전) 탭만 이름으로 추측한다.
+export function isSummaryTab(tab: { label: string; is_summary?: boolean | null }): boolean {
+  if (typeof tab.is_summary === "boolean") return tab.is_summary;
+  return isSummaryLabel(tab.label || "");
 }
 
 export function buildFilterFn(label: string): (tt: any) => boolean {
@@ -112,12 +125,19 @@ export function buildFilterFn(label: string): (tt: any) => boolean {
   };
 }
 
-export function buildFilterTabs(apiTabs: { id: number; label: string }[], _category?: string): FilterTab[] {
-  return apiTabs.map((tab) => ({
-    label: tab.label,
-    filterFn: buildFilterFn(tab.label),
-    isSummary: isSummaryLabel(tab.label),
-  }));
+export function buildFilterTabs(
+  apiTabs: { id: number; label: string; is_summary?: boolean | null }[],
+  _category?: string,
+): FilterTab[] {
+  return apiTabs.map((tab) => {
+    const summary = isSummaryTab(tab);
+    return {
+      label: tab.label,
+      // 사진 탭은 강좌 카드 목록을 비우고 사진 섹션을 띄운다
+      filterFn: summary ? () => false : buildFilterFn(tab.label),
+      isSummary: summary,
+    };
+  });
 }
 
 // 탭 라벨이 실제 분류 탭인지 (전체/요약 탭 제외)
@@ -138,9 +158,12 @@ const DEFAULT_TAB_LABELS: Record<string, string[]> = {
 };
 
 // 해당 카테고리 공개 페이지에 실제로 보이는 학교별/과목별 탭 라벨 (페이지별 숨김 규칙 반영)
-export function classifyingTabsFor(category: string, allTabs: { label: string; category: string; is_visible?: boolean }[]): string[] {
+export function classifyingTabsFor(
+  category: string,
+  allTabs: { label: string; category: string; is_visible?: boolean; is_summary?: boolean | null }[],
+): string[] {
   let labels = (allTabs || [])
-    .filter((t) => t.category === category && t.is_visible !== false)
+    .filter((t) => t.category === category && t.is_visible !== false && !isSummaryTab(t))
     .map((t) => t.label);
   if (category === "고등관-고1") labels = labels.filter((l) => l !== "동탄국제고");
   if (category === "고등관-고3") labels = labels.filter((l) => l !== "사회문화" && l !== "생윤");

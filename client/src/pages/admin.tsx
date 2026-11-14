@@ -10,6 +10,7 @@ import { Trash2, Upload, Download, Loader2, Users, User, Calendar, CalendarDays,
 import { Link } from "wouter";
 import * as XLSX from "xlsx";
 import { parseVerticalSheet as libParseVerticalSheet } from "@/lib/brochure-excel";
+import { isSummaryTab } from "@/lib/timetable-tabs";
 import {
   DndContext,
   closestCenter,
@@ -2609,7 +2610,7 @@ const SUMMARY_DIVISIONS = [
   { value: "admissions-junior", label: "입시실적 (초/중등관)" },
 ] as const;
 
-// 고1/고2/고3 구분은 "필터 탭(목차) 관리"의 첫 번째 탭(요약시간표 트리거)과 연동됩니다.
+// 고1/고2/고3 구분은 "필터 탭(목차) 관리"에서 "사진 시간표"로 지정한 탭과 연동됩니다.
 const SUMMARY_DIVISION_FILTER_CATEGORY: Record<string, string> = {
   "high-g1": "고등관-고1",
   "high-g2": "고등관-고2",
@@ -2663,7 +2664,7 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
   const divisionLabel = SUMMARY_DIVISIONS.find((d) => d.value === selectedDivision)?.label || selectedDivision;
 
   const filterCategory = SUMMARY_DIVISION_FILTER_CATEGORY[selectedDivision];
-  const { data: linkedFilterTabs = [] } = useQuery<{ id: number; label: string; is_visible: boolean; display_order: number }[]>({
+  const { data: linkedFilterTabs = [] } = useQuery<{ id: number; label: string; is_visible: boolean; display_order: number; is_summary?: boolean }[]>({
     queryKey: ["/api/filter-tabs", filterCategory],
     queryFn: async () => {
       const res = await fetch(`/api/filter-tabs?category=${encodeURIComponent(filterCategory)}`);
@@ -2672,8 +2673,8 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
     },
     enabled: !!filterCategory,
   });
-  // 필터 탭 목록의 첫 번째 항목이 공개 사이트에서 이 요약시간표 섹션을 여는 탭입니다.
-  const linkedSummaryTab = linkedFilterTabs[0];
+  // 공개 사이트에서 이 사진(요약) 시간표 섹션을 여는 탭 = "사진 시간표"로 지정된 탭.
+  const linkedSummaryTab = linkedFilterTabs.find((t) => isSummaryTab(t)) || linkedFilterTabs[0];
   const fallbackTitle = (selectedDivision === "high-g1" || selectedDivision === "high-g2") ? "중간/내신 시간표" : "기말/내신 시간표";
   const summaryTitle = linkedSummaryTab?.label || fallbackTitle;
   const summaryHidden = !!linkedSummaryTab && linkedSummaryTab.is_visible === false;
@@ -2819,7 +2820,7 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
             필터 탭(목차) 관리 — {divisionLabel}
           </h3>
           <p className="text-xs text-gray-500 mb-4">
-            해당 학년 페이지의 시간표 필터 탭(목차)을 추가, 삭제, 수정, 순서 변경 및 숨김 설정할 수 있습니다.
+            해당 학년 페이지의 시간표 필터 탭(목차)을 추가, 삭제, 수정, 순서 변경 및 숨김 설정할 수 있습니다. 사진 아이콘을 누르면 그 탭이 아래에 등록한 시간표 사진을 띄우는 "사진 시간표" 탭이 됩니다.
           </p>
           <FilterTabsManager category={filterCategory} />
         </div>
@@ -2836,7 +2837,7 @@ function SummaryTimetablesTab({ defaultDivision = "high-g1" }: { defaultDivision
         </h3>
         {filterCategory && (
           <p className="text-xs text-gray-400 mb-4">
-            이 제목과 숨김 여부는 상단 "필터 탭(목차) 관리"의 첫 번째 탭과 연동됩니다.
+            이 제목과 숨김 여부는 상단 "필터 탭(목차) 관리"에서 사진 아이콘으로 지정한 "사진 시간표" 탭과 연동됩니다. 탭 이름을 바꿔도 사진은 그대로 유지됩니다.
           </p>
         )}
         <div className="space-y-4">
@@ -5014,6 +5015,7 @@ interface FilterTabItem {
   label: string;
   display_order: number;
   is_visible: boolean;
+  is_summary?: boolean;
 }
 
 const FILTER_TAB_CATEGORIES = [
@@ -5035,6 +5037,7 @@ function SortableFilterTabRow({
   onEditSave,
   onDelete,
   onToggleVisibility,
+  onToggleSummary,
   isUpdatePending,
 }: {
   tab: FilterTabItem;
@@ -5047,11 +5050,13 @@ function SortableFilterTabRow({
   onEditSave: (id: number, label: string) => void;
   onDelete: (id: number, label: string) => void;
   onToggleVisibility: (id: number, currentVisible: boolean) => void;
+  onToggleSummary: (id: number, currentSummary: boolean) => void;
   isUpdatePending: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tab.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : (!tab.is_visible ? 0.5 : 1) };
   const isEditing = editingId === tab.id;
+  const isSummary = isSummaryTab(tab);
   return (
     <div
       ref={setNodeRef}
@@ -5092,11 +5097,27 @@ function SortableFilterTabRow({
         <>
           <span className="flex-1 text-sm font-medium text-gray-800 flex items-center gap-2">
             {tab.label}
+            {isSummary && (
+              <span
+                className="px-1.5 py-0.5 text-[10px] font-bold bg-[#7B2332]/10 text-[#7B2332] rounded"
+                data-testid={`badge-filter-tab-summary-${tab.id}`}
+              >
+                사진 시간표
+              </span>
+            )}
             {!tab.is_visible && (
               <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gray-100 text-gray-500 rounded">숨김</span>
             )}
           </span>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onToggleSummary(tab.id, isSummary)}
+              className={`p-1 ${isSummary ? "text-[#7B2332]" : "text-gray-400 hover:text-[#7B2332]"}`}
+              title={isSummary ? "사진(요약) 시간표 탭 해제 — 강좌 카드 목록으로 바뀝니다" : "사진(요약) 시간표 탭으로 지정 — 등록한 시간표 사진이 표시됩니다"}
+              data-testid={`button-toggle-summary-${tab.id}`}
+            >
+              <Image className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={() => onToggleVisibility(tab.id, tab.is_visible)}
               className="p-1 text-gray-400 hover:text-blue-600"
@@ -5179,6 +5200,16 @@ function FilterTabsManager({ category }: { category: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", category] });
       setEditingId(null);
+    },
+  });
+
+  const toggleSummaryMutation = useMutation({
+    mutationFn: async ({ id, is_summary }: { id: number; is_summary: boolean }) => {
+      await apiRequest("PATCH", `/api/filter-tabs/${id}/summary`, { is_summary });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs", category] });
+      queryClient.invalidateQueries({ queryKey: ["/api/filter-tabs"] });
     },
   });
 
@@ -5272,6 +5303,7 @@ function FilterTabsManager({ category }: { category: string }) {
                   onEditSave={(id, label) => updateMutation.mutate({ id, label })}
                   onDelete={(id, label) => { if (confirm(`"${label}" 목차를 삭제하시겠습니까?`)) deleteMutation.mutate(id); }}
                   onToggleVisibility={(id, current) => toggleVisibilityMutation.mutate({ id, is_visible: !current })}
+                  onToggleSummary={(id, current) => toggleSummaryMutation.mutate({ id, is_summary: !current })}
                   isUpdatePending={updateMutation.isPending}
                 />
               ))}
