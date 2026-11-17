@@ -862,7 +862,7 @@ function GroupCard({
         ) : (
           <>
             <div className="w-12 h-12 rounded bg-[#7B2332]/5 flex items-center justify-center border border-[#7B2332]/10 overflow-hidden">
-              {firstTt.school_logo_url && !SCIENCE_CARD_ORDER.includes(title) ? (
+              {firstTt.school_logo_url && !SCIENCE_CARD_ORDER.includes(title) && title !== "특강반" ? (
                 <img src={firstTt.school_logo_url} alt={title} className="w-full h-full object-contain" />
               ) : title === "공통" || title === "연합" ? (
                 <Users className="w-6 h-6 text-blue-600" />
