@@ -99,13 +99,20 @@ const normalizeSchoolName = (raw: string, preferred?: string): string => {
   return REAL_SCHOOLS.find((school) => s.includes(school)) || s;
 };
 
+// 예비고 영어 방학(윈터) 수업은 학교별 반이어도 특강반에 함께 노출 (3월 개강 정규 내신은 제외)
+const isWinterEnglish = (tt: { subject?: string; class_name?: string; start_date?: string }): boolean =>
+  tt.subject === "영어" &&
+  (tt.class_name || "").startsWith("[예비") &&
+  !/3월/.test(tt.start_date || "") &&
+  !/3월/.test(tt.class_name || "");
+
 const getSchoolRank = (name: string): number => {
   const sciIdx = SCIENCE_CARD_ORDER.indexOf(name);
   if (sciIdx !== -1) return 0.01 + sciIdx * 0.01; // Render science cards in order: 통합과학 -> 물리 -> 화학 -> 생명 -> 지구
 
   const si = SCI_SUB_ORDER.indexOf(name);
   if (si !== -1) return 0.5 + si * 0.01; // 탐구 특강반 과목별 소그룹: 연합반 다음, 학교별 앞
-  if (name === "특강반") return 0.5;
+  if (name === "특강반") return -1; // 특강반 -> 정규반(연합) -> 학교별 순
   
   if (name.includes("특강")) {
     const schoolIdx = SCHOOL_ORDER.findIndex(s => s !== "공통" && s !== "연합" && name.includes(s));
@@ -134,6 +141,8 @@ const getMathTeacherScore = (teacherName: string): number => {
 
 const getMathSpecialLectureScore = (className: string): number => {
   const t = className.toUpperCase();
+  // 수학 진도 순서: 공통수학2 -> 대수 -> 미적분1
+  if (t.includes("공수2") || t.includes("공통수학2")) return 0;
   // 1. 대수특강: 대수 포함하되 미적/미적분 미포함
   if (t.includes("대수") && !t.includes("미적")) return 1;
   // 2. 대수미적분 특강: 대수와 미적이 같이 있거나, 또는 미적만 있는 경우
@@ -413,11 +422,17 @@ export function TimetableGallery({ category, filterTabs, summaryDivision, summar
           (tt.class_name || "").includes("올데이") ||
           (tt.class_name || "").toUpperCase().includes("ALLDAY") ||
           (tt.class_name || "").toUpperCase().includes("ALL-DAY") ||
-          (tt.target_school || "").includes("올데이")
+          (tt.target_school || "").includes("올데이") ||
+          isWinterEnglish(tt)
         );
-      
+
       if (isSpecialLecture) {
-        const schoolMatch = SCHOOL_ORDER.find(s => s !== "공통" && s !== "연합" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
+        // 공용반("영덕고, 태장고")은 선택한 학교 탭이 있으면 그 학교 섹션에 표시
+        const preferred = activeTab?.label;
+        const schoolMatch =
+          preferred && REAL_SCHOOLS.includes(preferred) && ((tt.target_school || "").includes(preferred) || (tt.class_name || "").includes(preferred))
+            ? preferred
+            : SCHOOL_ORDER.find(s => s !== "공통" && s !== "연합" && ((tt.target_school || "").includes(s) || (tt.class_name || "").includes(s)));
         
         if (schoolMatch) {
           // 학교별 올데이/특강 -> 해당 학교 섹션(예: 화성고)에 노출
@@ -857,7 +872,9 @@ function GroupCard({
             </div>
             <div>
               <h4 className="text-base font-bold text-gray-900">
-                {(title === "공통" || title === "연합" || title === "연합반")
+                {(subject === "수학" || firstTt?.subject === "수학") && (title === "공통" || title.startsWith("연합"))
+                  ? (title.startsWith("연합 (") ? title.replace(/^연합/, "정규반") : "정규반")
+                  : (title === "공통" || title === "연합" || title === "연합반")
                   ? ((subject === "국어" || firstTt?.subject === "국어")
                       ? (firstTt?.teacher_name?.includes("손자은") ? "수능국어 - 손자은T" : "수능국어")
                       : ((subject === "통사/한국사" || subject === "통합사회한국사" || subject === "기타" || firstTt?.subject === "기타" || firstTt?.subject === "통사/한국사")
